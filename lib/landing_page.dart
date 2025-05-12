@@ -9,7 +9,7 @@ class LandingPage extends StatelessWidget {
     return Scaffold(
       drawer: const SideNav(),
       appBar: AppBar(
-        title: const Text('RNR Fitness Gym App'),
+        title: const Text('RNR Fitness Gym'),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
