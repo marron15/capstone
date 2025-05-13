@@ -7,6 +7,9 @@ class LandingPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+    final isSmallScreen = screenSize.width < 600;
+
     return Scaffold(
       drawer: const SideNav(),
       appBar: AppBar(
@@ -26,65 +29,78 @@ class LandingPage extends StatelessWidget {
             ),
           ),
           Container(
-            color: Colors.black.withAlpha((0.5 * 255).toInt()), // 0.5 = 50% opacity, adjust as needed
+            color: Colors.black.withAlpha((0.5 * 255).toInt()),
           ),
-          SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 0.0, vertical: 32.0),
+          SafeArea(
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Center(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SizedBox(height: 32),
-                          Text(
-                            'Welcome to RNR FITNESS GYM',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                            ),
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isSmallScreen ? 20.0 : screenSize.width * 0.1,
+                      vertical: screenSize.height * 0.06,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Welcome to RNR FITNESS GYM',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: isSmallScreen 
+                                ? screenSize.width * 0.08 
+                                : screenSize.width * 0.05,
+                            fontWeight: FontWeight.bold,
+                            height: 1.2,
                           ),
-                          SizedBox(height: 16),
-                          Text(
-                            'Where every drop of sweat brings you closer to the best version of yourself!',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                            ),
+                        ),
+                        SizedBox(height: screenSize.height * 0.025),
+                        Text(
+                          'Where every drop of sweat brings you closer to the best version of yourself!',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: isSmallScreen 
+                                ? screenSize.width * 0.05 
+                                : screenSize.width * 0.035,
+                            height: 1.4,
                           ),
-                          SizedBox(height: 32),
-                          SizedBox(
-                            width: 180,
-                            child: ElevatedButton(
-                              onPressed: () {}, // TODO: Add navigation or action
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.black87,
-                                foregroundColor: Colors.white,
-                                padding: EdgeInsets.symmetric(horizontal: 0, vertical: 16),
-                                textStyle: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
+                        ),
+                        SizedBox(height: screenSize.height * 0.045),
+                        SizedBox(
+                          width: isSmallScreen 
+                              ? screenSize.width * 0.6 
+                              : screenSize.width * 0.3,
+                          child: ElevatedButton(
+                            onPressed: () {},
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.black87,
+                              foregroundColor: Colors.white,
+                              padding: EdgeInsets.symmetric(
+                                horizontal: screenSize.width * 0.04,
+                                vertical: screenSize.height * 0.025,
                               ),
-                              child: Text('Get Started'),
+                              textStyle: TextStyle(
+                                fontSize: isSmallScreen 
+                                    ? screenSize.width * 0.05 
+                                    : screenSize.width * 0.035,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
+                            child: Text('Get Started'),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
-                  SizedBox(height: 40),
+                  SizedBox(height: screenSize.height * 0.06),
                   EquipmentImagesSection(),
+                  SizedBox(height: screenSize.height * 0.06),
                 ],
               ),
             ),
