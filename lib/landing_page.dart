@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'sidenav.dart';
 import 'equipment_images.dart';
+import 'services.dart';
 
 class LandingPage extends StatelessWidget {
   const LandingPage({Key? key}) : super(key: key);
@@ -101,6 +102,11 @@ class LandingPage extends StatelessWidget {
                   SizedBox(height: screenSize.height * 0.06),
                   EquipmentImagesSection(),
                   SizedBox(height: screenSize.height * 0.06),
+                  ServicesSection(
+                    isSmallScreen: isSmallScreen,
+                    screenWidth: screenSize.width,
+                    screenHeight: screenSize.height,
+                  ),
                 ],
               ),
             ),
