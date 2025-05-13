@@ -48,31 +48,54 @@ class LandingPage extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Welcome to RNR FITNESS GYM',
+                          'Welcome to RNR\nFITNESS GYM',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: isSmallScreen 
-                                ? screenSize.width * 0.08 
-                                : screenSize.width * 0.05,
-                            fontWeight: FontWeight.bold,
-                            height: 1.2,
+                                ? screenSize.width * 0.10 
+                                : screenSize.width * 0.06,
+                            fontWeight: FontWeight.w900,
+                            height: 1.1,
+                            letterSpacing: 1.2,
                           ),
                         ),
-                        SizedBox(height: screenSize.height * 0.025),
+                        SizedBox(height: screenSize.height * 0.03),
                         Text(
-                          'Where every drop of sweat brings you closer to the best version of yourself!',
+                          'Do you want to get Gym Membership?\nClick Get Started now!',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: isSmallScreen 
-                                ? screenSize.width * 0.05 
-                                : screenSize.width * 0.035,
-                            height: 1.4,
+                                ? screenSize.width * 0.048 
+                                : screenSize.width * 0.032,
+                            fontWeight: FontWeight.w500,
+                            height: 1.5,
                           ),
                         ),
-                        SizedBox(height: screenSize.height * 0.045),
+                        SizedBox(height: screenSize.height * 0.012),
+                        Text(
+                          'Business Hours: 11:00AM - 9:00PM',
+                          style: TextStyle(
+                            color: Colors.white.withAlpha((0.9 * 255).toInt()),
+                            fontSize: isSmallScreen 
+                                ? screenSize.width * 0.045 
+                                : screenSize.width * 0.03,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                        Text(
+                          'Monday to Saturday',
+                          style: TextStyle(
+                            color: Colors.white.withAlpha((0.9 * 255).toInt()),
+                            fontSize: isSmallScreen 
+                                ? screenSize.width * 0.045 
+                                : screenSize.width * 0.03,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                        SizedBox(height: screenSize.height * 0.04),
                         SizedBox(
                           width: isSmallScreen 
-                              ? screenSize.width * 0.6 
+                              ? screenSize.width * 0.7 
                               : screenSize.width * 0.3,
                           child: ElevatedButton(
                             onPressed: () {},
@@ -85,13 +108,14 @@ class LandingPage extends StatelessWidget {
                               ),
                               textStyle: TextStyle(
                                 fontSize: isSmallScreen 
-                                    ? screenSize.width * 0.05 
+                                    ? screenSize.width * 0.055 
                                     : screenSize.width * 0.035,
                                 fontWeight: FontWeight.bold,
                               ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
+                              elevation: 4,
                             ),
                             child: Text('Get Started'),
                           ),

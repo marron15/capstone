@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'products.dart';
 
-class ServicesSection extends StatelessWidget {
+class ProductsSection extends StatelessWidget {
   final bool isSmallScreen;
   final double screenWidth;
   final double screenHeight;
 
-  const ServicesSection({
+  const ProductsSection({
     Key? key,
     required this.isSmallScreen,
     required this.screenWidth,
@@ -18,72 +17,50 @@ class ServicesSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: isSmallScreen ? 20.0 : screenWidth * 0.1,
-          ),
-          child: Text(
-            'Services',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: isSmallScreen ? screenWidth * 0.07 : screenWidth * 0.045,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-        SizedBox(height: screenHeight * 0.03),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
             children: [
               SizedBox(width: isSmallScreen ? 20.0 : screenWidth * 0.1),
-              _ServiceCard(
-                imagePath: 'assets/images/services&products/Lockers.jpg',
-                title: 'Locker Rental',
-                description: 'Secure your belongings with our lockers you can bring your own lock. Rental fee: 50 pesos/month.',
+              _ProductCard(
+                imagePath: 'assets/images/services&products/whey.png',
+                title: 'Whey Protein',
+                description: 'Whey protein with vitamins C. Convenient sachets.',
               ),
               SizedBox(width: 16),
-              _ServiceCard(
-                imagePath: 'assets/images/services&products/FreeLockers.jpg',
-                title: 'Free Lockers',
-                description: 'Free open lockers for your convenience.',
+              _ProductCard(
+                imagePath: 'assets/images/services&products/Mass.png',
+                title: 'Serious Mass',
+                description: 'High-calorie mass gainer. 12 lbs, chocolate flavor.',
+              ),
+              SizedBox(width: 16),
+              _ProductCard(
+                imagePath: 'assets/images/services&products/Creatine.png',
+                title: 'Prothin Creatine',
+                description: 'Monohydrate creatine powder. 60 servings.',
+              ),
+              SizedBox(width: 16),
+              _ProductCard(
+                imagePath: 'assets/images/services&products/Amino.png',
+                title: 'Amino 2222 Tabs',
+                description: 'Full spectrum blend micronized aminos. 320 tablets.',
               ),
               SizedBox(width: isSmallScreen ? 20.0 : screenWidth * 0.1),
             ],
           ),
         ),
         SizedBox(height: screenHeight * 0.06),
-        // Products Section Title
-        Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: isSmallScreen ? 20.0 : screenWidth * 0.1,
-          ),
-          child: Text(
-            'Products',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: isSmallScreen ? screenWidth * 0.07 : screenWidth * 0.045,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-        SizedBox(height: screenHeight * 0.03),
-        ProductsSection(
-          isSmallScreen: isSmallScreen,
-          screenWidth: screenWidth,
-          screenHeight: screenHeight,
-        ),
       ],
     );
   }
 }
 
-class _ServiceCard extends StatelessWidget {
+class _ProductCard extends StatelessWidget {
   final String imagePath;
   final String title;
   final String description;
 
-  const _ServiceCard({
+  const _ProductCard({
     required this.imagePath,
     required this.title,
     required this.description,
@@ -92,8 +69,8 @@ class _ServiceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 240,
-      height: 220,
+      width: 200,
+      height: 240,
       margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(18),
@@ -111,17 +88,17 @@ class _ServiceCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(18),
             child: Image.asset(
               imagePath,
-              width: 240,
-              height: 220,
+              width: 200,
+              height: 240,
               fit: BoxFit.cover,
             ),
           ),
           Container(
-            width: 240,
-            height: 220,
+            width: 200,
+            height: 240,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(18),
-              color: Colors.black.withAlpha((0.45 * 255).toInt()),
+              color: Colors.black.withAlpha((0.35 * 255).toInt()),
             ),
           ),
           Padding(
@@ -135,7 +112,7 @@ class _ServiceCard extends StatelessWidget {
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
-                    fontSize: 20,
+                    fontSize: 18,
                   ),
                 ),
                 SizedBox(height: 6),
@@ -143,7 +120,7 @@ class _ServiceCard extends StatelessWidget {
                   description,
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 14,
+                    fontSize: 13,
                   ),
                 ),
               ],
