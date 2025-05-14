@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'trainers.dart';
 
 class PlansSection extends StatelessWidget {
   final bool isSmallScreen;
@@ -30,7 +31,6 @@ class PlansSection extends StatelessWidget {
             ),
           ),
         ),
-        SizedBox(height: screenHeight * 0.03),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
@@ -80,6 +80,11 @@ class PlansSection extends StatelessWidget {
             ],
           ),
         ),
+        TrainersSection(
+          isSmallScreen: isSmallScreen,
+          screenWidth: screenWidth,
+        ),
+        SizedBox(height: screenHeight * 0.03),
       ],
     );
   }
