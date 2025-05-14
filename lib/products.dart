@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'plans.dart';
 
 class ProductsSection extends StatelessWidget {
   final bool isSmallScreen;
@@ -50,6 +51,11 @@ class ProductsSection extends StatelessWidget {
           ),
         ),
         SizedBox(height: screenHeight * 0.06),
+        PlansSection(
+          isSmallScreen: isSmallScreen,
+          screenWidth: screenWidth,
+          screenHeight: screenHeight,
+        ),
       ],
     );
   }
