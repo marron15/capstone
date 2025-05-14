@@ -15,28 +15,33 @@ class PlansSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Padding(
           padding: EdgeInsets.symmetric(
             horizontal: isSmallScreen ? 20.0 : screenWidth * 0.1,
           ),
-          child: Text(
-            'Our Membership Prices',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: isSmallScreen ? screenWidth * 0.07 : screenWidth * 0.045,
-              fontWeight: FontWeight.bold,
+          child: Center(
+            child: Text(
+              'Our Membership Prices',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: (isSmallScreen ? screenWidth * 0.07 : screenWidth * 0.045).clamp(22.0, 48.0),
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
             ),
           ),
         ),
+        SizedBox(height: 20),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SizedBox(width: isSmallScreen ? 20.0 : screenWidth * 0.1),
-              _MembershipCard(
+              _FlexibleMembershipCard(
                 title: 'Daily',
                 price: '₱50.00',
                 priceSuffix: '/day',
@@ -48,9 +53,11 @@ class PlansSection extends StatelessWidget {
                 buttonText: 'Get Membership Now',
                 gradient: null,
                 backgroundColor: Colors.black,
+                isSmallScreen: isSmallScreen,
+                screenWidth: screenWidth,
               ),
               SizedBox(width: 24),
-              _MembershipCard(
+              _FlexibleMembershipCard(
                 title: 'Half Month',
                 price: '₱175.00',
                 priceSuffix: '/month',
@@ -62,9 +69,11 @@ class PlansSection extends StatelessWidget {
                 buttonText: 'Get Membership Now',
                 gradient: null,
                 backgroundColor: Colors.black,
+                isSmallScreen: isSmallScreen,
+                screenWidth: screenWidth,
               ),
               SizedBox(width: 24),
-              _MembershipCard(
+              _FlexibleMembershipCard(
                 title: '1 Month',
                 price: '₱400.00',
                 priceSuffix: '/month',
@@ -77,6 +86,8 @@ class PlansSection extends StatelessWidget {
                 buttonText: 'Get Membership Now',
                 gradient: null,
                 backgroundColor: Colors.black,
+                isSmallScreen: isSmallScreen,
+                screenWidth: screenWidth,
               ),
               SizedBox(width: isSmallScreen ? 20.0 : screenWidth * 0.1),
             ],
@@ -84,6 +95,50 @@ class PlansSection extends StatelessWidget {
         ),
         SizedBox(height: screenHeight * 0.03),
       ],
+    );
+  }
+}
+
+class _FlexibleMembershipCard extends StatelessWidget {
+  final String title;
+  final String price;
+  final String priceSuffix;
+  final List<String> features;
+  final String buttonText;
+  final Gradient? gradient;
+  final Color? backgroundColor;
+  final bool isSmallScreen;
+  final double screenWidth;
+
+  const _FlexibleMembershipCard({
+    required this.title,
+    required this.price,
+    required this.priceSuffix,
+    required this.features,
+    required this.buttonText,
+    this.gradient,
+    this.backgroundColor,
+    required this.isSmallScreen,
+    required this.screenWidth,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    double cardWidth = isSmallScreen ? screenWidth * 0.7 : screenWidth * 0.22;
+    cardWidth = cardWidth.clamp(180.0, 340.0);
+    return SizedBox(
+      width: cardWidth,
+      child: _MembershipCard(
+        title: title,
+        price: price,
+        priceSuffix: priceSuffix,
+        features: features,
+        buttonText: buttonText,
+        gradient: gradient,
+        backgroundColor: backgroundColor,
+        isSmallScreen: isSmallScreen,
+        screenWidth: screenWidth,
+      ),
     );
   }
 }
@@ -96,6 +151,8 @@ class _MembershipCard extends StatelessWidget {
   final String buttonText;
   final Gradient? gradient;
   final Color? backgroundColor;
+  final bool isSmallScreen;
+  final double screenWidth;
 
   const _MembershipCard({
     required this.title,
@@ -105,12 +162,13 @@ class _MembershipCard extends StatelessWidget {
     required this.buttonText,
     this.gradient,
     this.backgroundColor,
+    required this.isSmallScreen,
+    required this.screenWidth,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 260,
       margin: const EdgeInsets.symmetric(vertical: 8),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -127,7 +185,7 @@ class _MembershipCard extends StatelessWidget {
             style: TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
-              fontSize: 22,
+              fontSize: (isSmallScreen ? screenWidth * 0.045 : screenWidth * 0.018).clamp(16.0, 26.0),
             ),
           ),
           SizedBox(height: 12),
@@ -139,7 +197,7 @@ class _MembershipCard extends StatelessWidget {
                 style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
-                  fontSize: 36,
+                  fontSize: (isSmallScreen ? screenWidth * 0.09 : screenWidth * 0.04).clamp(22.0, 38.0),
                 ),
               ),
               SizedBox(width: 6),
@@ -149,13 +207,12 @@ class _MembershipCard extends StatelessWidget {
                   priceSuffix,
                   style: TextStyle(
                     color: Colors.white70,
-                    fontSize: 16,
+                    fontSize: (isSmallScreen ? screenWidth * 0.025 : screenWidth * 0.012).clamp(12.0, 18.0),
                   ),
                 ),
               ),
             ],
           ),
-          
           SizedBox(height: 10),
           ...features.map((f) => Padding(
                 padding: const EdgeInsets.only(bottom: 6.0),
@@ -169,7 +226,7 @@ class _MembershipCard extends StatelessWidget {
                         f,
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 15,
+                          fontSize: (isSmallScreen ? screenWidth * 0.025 : screenWidth * 0.012).clamp(12.0, 18.0),
                         ),
                       ),
                     ),
@@ -187,7 +244,7 @@ class _MembershipCard extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 textStyle: TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 16,
+                  fontSize: (isSmallScreen ? screenWidth * 0.025 : screenWidth * 0.012).clamp(14.0, 18.0),
                 ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),

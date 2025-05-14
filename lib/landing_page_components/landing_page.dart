@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'sidenav.dart';
+import 'header.dart';
 import 'equipment_images.dart';
 import 'services.dart';
 import 'products.dart';
@@ -15,13 +15,7 @@ class LandingPage extends StatelessWidget {
     final isSmallScreen = screenSize.width < 600;
 
     return Scaffold(
-      drawer: const SideNav(),
-      appBar: AppBar(
-        title: const Text('RNR Fitness Gym'),
-        backgroundColor: const Color.fromARGB(255, 0, 0, 0),
-        foregroundColor: const Color.fromARGB(255, 255, 255, 255),
-        elevation: 0,
-      ),
+      
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -32,15 +26,14 @@ class LandingPage extends StatelessWidget {
               fit: BoxFit.cover,
             ),
           ),
-          Container(
-            color: Colors.black.withAlpha((0.5 * 255).toInt()),
-          ),
+          Container(color: Colors.black.withAlpha((0.7 * 255).toInt())),
           SafeArea(
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  const BlackHeader(),
                   Container(
                     width: double.infinity,
                     padding: EdgeInsets.symmetric(
@@ -48,15 +41,22 @@ class LandingPage extends StatelessWidget {
                       vertical: screenSize.height * 0.06,
                     ),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Text(
-                          'Welcome to RNR\nFITNESS GYM',
+                          'Welcome to RNR FITNESS GYM',
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: isSmallScreen 
-                                ? screenSize.width * 0.10 
-                                : screenSize.width * 0.06,
+                            fontSize:
+                                (isSmallScreen
+                                    ? (screenSize.width * 0.10).clamp(
+                                      28.0,
+                                      38.0,
+                                    )
+                                    : (screenSize.width * 0.06).clamp(
+                                      32.0,
+                                      48.0,
+                                    )),
                             fontWeight: FontWeight.w900,
                             height: 1.1,
                             letterSpacing: 1.2,
@@ -67,21 +67,35 @@ class LandingPage extends StatelessWidget {
                           'Do you want to get Gym Membership?\nClick Get Started now!',
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: isSmallScreen 
-                                ? screenSize.width * 0.048 
-                                : screenSize.width * 0.032,
+                            fontSize:
+                                (isSmallScreen
+                                    ? (screenSize.width * 0.048).clamp(
+                                      15.0,
+                                      22.0,
+                                    )
+                                    : (screenSize.width * 0.032).clamp(
+                                      16.0,
+                                      26.0,
+                                    )),
                             fontWeight: FontWeight.w500,
                             height: 1.5,
                           ),
                         ),
                         SizedBox(height: screenSize.height * 0.012),
                         Text(
-                          'Business Hours: 11:00AM - 9:00PM',
+                          '\nBusiness Hours: 11:00AM - 9:00PM',
                           style: TextStyle(
                             color: Colors.white.withAlpha((0.9 * 255).toInt()),
-                            fontSize: isSmallScreen 
-                                ? screenSize.width * 0.045 
-                                : screenSize.width * 0.03,
+                            fontSize:
+                                (isSmallScreen
+                                    ? (screenSize.width * 0.045).clamp(
+                                      13.0,
+                                      20.0,
+                                    )
+                                    : (screenSize.width * 0.03).clamp(
+                                      14.0,
+                                      22.0,
+                                    )),
                             fontWeight: FontWeight.w400,
                           ),
                         ),
@@ -89,34 +103,49 @@ class LandingPage extends StatelessWidget {
                           'Monday to Saturday',
                           style: TextStyle(
                             color: Colors.white.withAlpha((0.9 * 255).toInt()),
-                            fontSize: isSmallScreen 
-                                ? screenSize.width * 0.045 
-                                : screenSize.width * 0.03,
+                            fontSize:
+                                (isSmallScreen
+                                    ? (screenSize.width * 0.045).clamp(
+                                      13.0,
+                                      20.0,
+                                    )
+                                    : (screenSize.width * 0.03).clamp(
+                                      14.0,
+                                      22.0,
+                                    )),
                             fontWeight: FontWeight.w400,
                           ),
                         ),
                         SizedBox(height: screenSize.height * 0.04),
                         SizedBox(
-                          width: isSmallScreen 
-                              ? screenSize.width * 0.7 
-                              : screenSize.width * 0.3,
+                          width: (isSmallScreen
+                                  ? screenSize.width * 0.7
+                                  : screenSize.width * 0.3)
+                              .clamp(180.0, 340.0),
                           child: ElevatedButton(
                             onPressed: () {},
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.black87,
                               foregroundColor: Colors.white,
                               padding: EdgeInsets.symmetric(
-                                horizontal: screenSize.width * 0.04,
-                                vertical: screenSize.height * 0.025,
+                                horizontal: (screenSize.width * 0.04).clamp(
+                                  16.0,
+                                  32.0,
+                                ),
+                                vertical: (screenSize.height * 0.025).clamp(
+                                  10.0,
+                                  22.0,
+                                ),
                               ),
                               textStyle: TextStyle(
-                                fontSize: isSmallScreen 
-                                    ? screenSize.width * 0.055 
-                                    : screenSize.width * 0.035,
+                                fontSize: (isSmallScreen
+                                        ? screenSize.width * 0.055
+                                        : screenSize.width * 0.035)
+                                    .clamp(16.0, 28.0),
                                 fontWeight: FontWeight.bold,
                               ),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(11),
                               ),
                               elevation: 4,
                             ),
@@ -127,7 +156,11 @@ class LandingPage extends StatelessWidget {
                     ),
                   ),
                   SizedBox(height: screenSize.height * 0.06),
-                  EquipmentImagesSection(),
+                  EquipmentImagesSection(
+                    isSmallScreen: isSmallScreen,
+                    screenWidth: screenSize.width,
+                    screenHeight: screenSize.height,
+                  ),
                   SizedBox(height: screenSize.height * 0.06),
                   ServicesSection(
                     isSmallScreen: isSmallScreen,
@@ -152,7 +185,10 @@ class LandingPage extends StatelessWidget {
                     screenWidth: screenSize.width,
                   ),
                   SizedBox(height: screenSize.height * 0.06),
-                  Footer(isSmallScreen: isSmallScreen, screenWidth: screenSize.width),
+                  Footer(
+                    isSmallScreen: isSmallScreen,
+                    screenWidth: screenSize.width,
+                  ),
                 ],
               ),
             ),
@@ -166,7 +202,11 @@ class LandingPage extends StatelessWidget {
 class Footer extends StatelessWidget {
   final bool isSmallScreen;
   final double screenWidth;
-  const Footer({Key? key, required this.isSmallScreen, required this.screenWidth}) : super(key: key);
+  const Footer({
+    Key? key,
+    required this.isSmallScreen,
+    required this.screenWidth,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -214,6 +254,3 @@ class Footer extends StatelessWidget {
     );
   }
 }
-
-
-

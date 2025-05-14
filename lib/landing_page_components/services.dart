@@ -15,18 +15,21 @@ class ServicesSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Padding(
           padding: EdgeInsets.symmetric(
             horizontal: isSmallScreen ? 20.0 : screenWidth * 0.1,
           ),
-          child: Text(
-            'Services',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: isSmallScreen ? screenWidth * 0.07 : screenWidth * 0.045,
-              fontWeight: FontWeight.bold,
+          child: Center(
+            child: Text(
+              'Services',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: (isSmallScreen ? screenWidth * 0.07 : screenWidth * 0.045).clamp(22.0, 48.0),
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
             ),
           ),
         ),
@@ -34,15 +37,16 @@ class ServicesSection extends StatelessWidget {
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               SizedBox(width: isSmallScreen ? 20.0 : screenWidth * 0.1),
-              _ServiceCard(
+              _FlexibleServiceCard(
                 imagePath: 'assets/images/services&products/Lockers.jpg',
                 title: 'Locker Rental',
                 description: 'Secure your belongings with our lockers you can bring your own lock. Rental fee: 50 pesos/month.',
               ),
               SizedBox(width: 16),
-              _ServiceCard(
+              _FlexibleServiceCard(
                 imagePath: 'assets/images/services&products/FreeLockers.jpg',
                 title: 'Free Lockers',
                 description: 'Free open lockers for your convenience.',
@@ -53,6 +57,34 @@ class ServicesSection extends StatelessWidget {
         ),
         SizedBox(height: screenHeight * 0.06),
       ],
+    );
+  }
+}
+
+class _FlexibleServiceCard extends StatelessWidget {
+  final String imagePath;
+  final String title;
+  final String description;
+
+  const _FlexibleServiceCard({
+    required this.imagePath,
+    required this.title,
+    required this.description,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    double cardWidth = screenWidth < 900 ? screenWidth * 0.5 : 240;
+    cardWidth = cardWidth.clamp(160.0, 280.0);
+    return SizedBox(
+      width: cardWidth,
+      height: 220,
+      child: _ServiceCard(
+        imagePath: imagePath,
+        title: title,
+        description: description,
+      ),
     );
   }
 }
@@ -71,9 +103,6 @@ class _ServiceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 240,
-      height: 220,
-      margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
@@ -90,13 +119,13 @@ class _ServiceCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(18),
             child: Image.asset(
               imagePath,
-              width: 240,
+              width: double.infinity,
               height: 220,
               fit: BoxFit.cover,
             ),
           ),
           Container(
-            width: 240,
+            width: double.infinity,
             height: 220,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(18),

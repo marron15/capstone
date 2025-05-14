@@ -15,18 +15,21 @@ class ProductsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Padding(
           padding: EdgeInsets.symmetric(
             horizontal: isSmallScreen ? 20.0 : screenWidth * 0.1,
           ),
-          child: Text(
-            'Products',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: isSmallScreen ? screenWidth * 0.07 : screenWidth * 0.045,
-              fontWeight: FontWeight.bold,
+          child: Center(
+            child: Text(
+              'Products',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: (isSmallScreen ? screenWidth * 0.07 : screenWidth * 0.045).clamp(22.0, 48.0),
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
             ),
           ),
         ),
@@ -34,30 +37,39 @@ class ProductsSection extends StatelessWidget {
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               SizedBox(width: isSmallScreen ? 20.0 : screenWidth * 0.1),
-              _ProductCard(
+              _FlexibleProductCard(
                 imagePath: 'assets/images/services&products/whey.png',
                 title: 'Whey Protein',
                 description: 'Whey protein with vitamins C. Convenient sachets.',
+                isSmallScreen: isSmallScreen,
+                screenWidth: screenWidth,
               ),
               SizedBox(width: 16),
-              _ProductCard(
+              _FlexibleProductCard(
                 imagePath: 'assets/images/services&products/Mass.png',
                 title: 'Serious Mass',
                 description: 'High-calorie mass gainer. 12 lbs, chocolate flavor.',
+                isSmallScreen: isSmallScreen,
+                screenWidth: screenWidth,
               ),
               SizedBox(width: 16),
-              _ProductCard(
+              _FlexibleProductCard(
                 imagePath: 'assets/images/services&products/Creatine.png',
                 title: 'Prothin Creatine',
                 description: 'Monohydrate creatine powder. 60 servings.',
+                isSmallScreen: isSmallScreen,
+                screenWidth: screenWidth,
               ),
               SizedBox(width: 16),
-              _ProductCard(
+              _FlexibleProductCard(
                 imagePath: 'assets/images/services&products/Amino.png',
                 title: 'Amino 2222 Tabs',
                 description: 'Full spectrum blend micronized aminos. 320 tablets.',
+                isSmallScreen: isSmallScreen,
+                screenWidth: screenWidth,
               ),
               SizedBox(width: isSmallScreen ? 20.0 : screenWidth * 0.1),
             ],
@@ -69,23 +81,57 @@ class ProductsSection extends StatelessWidget {
   }
 }
 
+class _FlexibleProductCard extends StatelessWidget {
+  final String imagePath;
+  final String title;
+  final String description;
+  final bool isSmallScreen;
+  final double screenWidth;
+
+  const _FlexibleProductCard({
+    required this.imagePath,
+    required this.title,
+    required this.description,
+    required this.isSmallScreen,
+    required this.screenWidth,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    double cardWidth = isSmallScreen ? screenWidth * 0.6 : screenWidth * 0.18;
+    cardWidth = cardWidth.clamp(150.0, 260.0);
+    return SizedBox(
+      width: cardWidth,
+      height: 260,
+      child: _ProductCard(
+        imagePath: imagePath,
+        title: title,
+        description: description,
+        isSmallScreen: isSmallScreen,
+        screenWidth: screenWidth,
+      ),
+    );
+  }
+}
+
 class _ProductCard extends StatelessWidget {
   final String imagePath;
   final String title;
   final String description;
+  final bool isSmallScreen;
+  final double screenWidth;
 
   const _ProductCard({
     required this.imagePath,
     required this.title,
     required this.description,
+    required this.isSmallScreen,
+    required this.screenWidth,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 200,
-      height: 240,
-      margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
@@ -102,14 +148,14 @@ class _ProductCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(18),
             child: Image.asset(
               imagePath,
-              width: 200,
-              height: 240,
+              width: double.infinity,
+              height: 260,
               fit: BoxFit.cover,
             ),
           ),
           Container(
-            width: 200,
-            height: 240,
+            width: double.infinity,
+            height: 260,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(18),
               color: Colors.black.withAlpha((0.35 * 255).toInt()),
@@ -126,7 +172,7 @@ class _ProductCard extends StatelessWidget {
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
-                    fontSize: 18,
+                    fontSize: (isSmallScreen ? screenWidth * 0.045 : screenWidth * 0.018).clamp(14.0, 22.0),
                   ),
                 ),
                 SizedBox(height: 6),
@@ -134,7 +180,7 @@ class _ProductCard extends StatelessWidget {
                   description,
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 13,
+                    fontSize: (isSmallScreen ? screenWidth * 0.03 : screenWidth * 0.012).clamp(11.0, 16.0),
                   ),
                 ),
               ],
