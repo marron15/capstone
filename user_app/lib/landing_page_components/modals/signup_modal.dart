@@ -58,7 +58,7 @@ class _SignUpModalState extends State<SignUpModal> with TickerProviderStateMixin
       hintStyle: const TextStyle(color: Colors.white38),
       prefixIcon: Icon(icon, color: Colors.white70),
       filled: true,
-      fillColor: Colors.white.withOpacity(0.08),
+      fillColor: Colors.white.withAlpha((0.08 * 255).toInt()),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
@@ -66,7 +66,7 @@ class _SignUpModalState extends State<SignUpModal> with TickerProviderStateMixin
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(color: Colors.white.withOpacity(0.18), width: 1.2),
+        borderSide: BorderSide(color: Colors.white.withAlpha((0.18 * 255).toInt()), width: 1.2),
       ),
       suffixIcon: suffixIcon,
     );
@@ -95,16 +95,16 @@ class _SignUpModalState extends State<SignUpModal> with TickerProviderStateMixin
                         borderRadius: BorderRadius.circular(22),
                         gradient: LinearGradient(
                           colors: [
-                            Colors.white.withOpacity(0.13),
-                            Colors.blueGrey.withOpacity(0.10)
+                            Colors.white.withAlpha((0.13 * 255).toInt()),
+                            Colors.blueGrey.withAlpha((0.10 * 255).toInt())
                           ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
-                        border: Border.all(color: Colors.white.withOpacity(0.25), width: 1.5),
+                        border: Border.all(color: Colors.white.withAlpha((0.25 * 255).toInt()), width: 1.5),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.blueAccent.withOpacity(0.18),
+                            color: Colors.blueAccent.withAlpha((0.18 * 255).toInt()),
                             blurRadius: 32,
                             spreadRadius: 2,
                             offset: const Offset(0, 8),
@@ -135,8 +135,8 @@ class _SignUpModalState extends State<SignUpModal> with TickerProviderStateMixin
                                                 shape: BoxShape.circle,
                                                 gradient: LinearGradient(
                                                   colors: [
-                                                    Colors.blueAccent.withOpacity(0.25),
-                                                    Colors.lightBlueAccent.withOpacity(0.18)
+                                                    Colors.blueAccent.withAlpha((0.25 * 255).toInt()),
+                                                    Colors.lightBlueAccent.withAlpha((0.18 * 255).toInt())
                                                   ],
                                                   begin: Alignment.topLeft,
                                                   end: Alignment.bottomRight,
@@ -176,7 +176,7 @@ class _SignUpModalState extends State<SignUpModal> with TickerProviderStateMixin
                                 margin: const EdgeInsets.only(bottom: 10),
                                 child: Divider(
                                   thickness: 1.5,
-                                  color: Colors.lightBlueAccent.withOpacity(0.22),
+                                  color: Colors.lightBlueAccent.withAlpha((0.22 * 255).toInt()),
                                   height: 24,
                                   endIndent: 12,
                                   indent: 2,
@@ -319,7 +319,7 @@ class _AnimatedGradientButtonState extends State<_AnimatedGradientButton> with S
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.blueAccent.withOpacity(0.28),
+                    color: Colors.blueAccent.withAlpha((0.28 * 255).toInt()),
                     blurRadius: 16,
                     offset: const Offset(0, 6),
                   ),
