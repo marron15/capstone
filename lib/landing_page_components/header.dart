@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'modals/signup_modal.dart';
 
 class BlackHeader extends StatelessWidget {
   const BlackHeader({Key? key}) : super(key: key);
@@ -31,7 +32,12 @@ class BlackHeader extends StatelessWidget {
           _HeaderNavButton(icon: Icons.info_outline, label: 'About Us', onTap: () {}),
           const SizedBox(width: 12),
           ElevatedButton(
-            onPressed: () {},
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) => const SignUpModal(),
+              );
+            },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.blue,
               foregroundColor: Colors.white,
