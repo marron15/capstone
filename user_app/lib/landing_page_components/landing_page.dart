@@ -7,8 +7,40 @@ import 'plans.dart';
 import 'trainers.dart';
 import 'modals/signup_modal.dart';
 
-class LandingPage extends StatelessWidget {
+class LandingPage extends StatefulWidget {
   const LandingPage({Key? key}) : super(key: key);
+
+  @override
+  State<LandingPage> createState() => _LandingPageState();
+}
+
+class _LandingPageState extends State<LandingPage> {
+  final ScrollController _scrollController = ScrollController();
+
+  void _scrollToSection(int index) {
+    final sections = [
+      0.0, // Home
+      _equipmentImagesKey.currentContext?.size?.height ?? 0.0,
+      _servicesKey.currentContext?.size?.height ?? 0.0,
+      _productsKey.currentContext?.size?.height ?? 0.0,
+      _plansKey.currentContext?.size?.height ?? 0.0,
+      _trainersKey.currentContext?.size?.height ?? 0.0,
+    ];
+
+    if (index < sections.length) {
+      _scrollController.animateTo(
+        sections[index],
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
+  final GlobalKey _equipmentImagesKey = GlobalKey();
+  final GlobalKey _servicesKey = GlobalKey();
+  final GlobalKey _productsKey = GlobalKey();
+  final GlobalKey _plansKey = GlobalKey();
+  final GlobalKey _trainersKey = GlobalKey();
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +50,9 @@ class LandingPage extends StatelessWidget {
     return Scaffold(
       body: Column(
         children: [
-          const BlackHeader(),
+          BlackHeader(
+            onNavTap: _scrollToSection,
+          ),
           Expanded(
             child: Stack(
               fit: StackFit.expand,
@@ -33,6 +67,7 @@ class LandingPage extends StatelessWidget {
                 Container(color: Colors.black.withAlpha((0.7 * 255).toInt())),
                 SafeArea(
                   child: SingleChildScrollView(
+                    controller: _scrollController,
                     physics: const BouncingScrollPhysics(),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -126,7 +161,12 @@ class LandingPage extends StatelessWidget {
                                         : screenSize.width * 0.3)
                                     .clamp(180.0, 340.0),
                                 child: ElevatedButton(
-                                  onPressed: () {},
+                                  onPressed: () {
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) => const SignUpModal(),
+                                    );
+                                  },
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.black87,
                                     foregroundColor: Colors.white,
@@ -152,7 +192,7 @@ class LandingPage extends StatelessWidget {
                                     ),
                                     elevation: 4,
                                   ),
-                                  child: Text('Get Started'),
+                                  child: const Text('Get Started'),
                                 ),
                               ),
                             ],
@@ -160,30 +200,35 @@ class LandingPage extends StatelessWidget {
                         ),
                         SizedBox(height: screenSize.height * 0.06),
                         EquipmentImagesSection(
+                          key: _equipmentImagesKey,
                           isSmallScreen: isSmallScreen,
                           screenWidth: screenSize.width,
                           screenHeight: screenSize.height,
                         ),
                         SizedBox(height: screenSize.height * 0.06),
                         ServicesSection(
+                          key: _servicesKey,
                           isSmallScreen: isSmallScreen,
                           screenWidth: screenSize.width,
                           screenHeight: screenSize.height,
                         ),
                         SizedBox(height: screenSize.height * 0.06),
                         ProductsSection(
+                          key: _productsKey,
                           isSmallScreen: isSmallScreen,
                           screenWidth: screenSize.width,
                           screenHeight: screenSize.height,
                         ),
                         SizedBox(height: screenSize.height * 0.06),
                         PlansSection(
+                          key: _plansKey,
                           isSmallScreen: isSmallScreen,
                           screenWidth: screenSize.width,
                           screenHeight: screenSize.height,
                         ),
                         SizedBox(height: screenSize.height * 0.06),
                         TrainersSection(
+                          key: _trainersKey,
                           isSmallScreen: isSmallScreen,
                           screenWidth: screenSize.width,
                         ),

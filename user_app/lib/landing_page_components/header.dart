@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 import 'modals/signup_modal.dart';
 
 class BlackHeader extends StatelessWidget {
-  const BlackHeader({Key? key}) : super(key: key);
+  final Function(int) onNavTap;
+
+  const BlackHeader({
+    Key? key,
+    required this.onNavTap,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -26,10 +31,10 @@ class BlackHeader extends StatelessWidget {
           ),
           const Spacer(),
           // Navigation Buttons
-          _HeaderNavButton(icon: Icons.home, label: 'Home', onTap: () {}),
-          _HeaderNavButton(icon: Icons.school, label: 'Programs', onTap: () {}),
-          _HeaderNavButton(icon: Icons.card_membership, label: 'Membership', onTap: () {}),
-          _HeaderNavButton(icon: Icons.info_outline, label: 'About Us', onTap: () {}),
+          _HeaderNavButton(icon: Icons.home, label: 'Home', onTap: () => onNavTap(0)),
+          _HeaderNavButton(icon: Icons.school, label: 'Programs', onTap: () => onNavTap(1)),
+          _HeaderNavButton(icon: Icons.card_membership, label: 'Membership', onTap: () => onNavTap(3)),
+          _HeaderNavButton(icon: Icons.info_outline, label: 'About Us', onTap: () => onNavTap(4)),
           const SizedBox(width: 12),
           ElevatedButton(
             onPressed: () {
