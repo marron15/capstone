@@ -44,6 +44,7 @@ class PlansSection extends StatelessWidget {
                 features: [
                   'For Membership - You can walk in Gym for paying Cash or Through G-Cash.',
                   'No Annual',
+                  'Add-Ons: Personal Trainer - ₱2,500 Total (Membership Included)',
                 ],
                 buttonText: 'Get Membership Now',
                 gradient: null,
@@ -57,6 +58,7 @@ class PlansSection extends StatelessWidget {
                 features: [
                   'For Membership - You can walk in Gym for paying Cash or Through G-Cash.',
                   'No Annual',
+                  'Add-Ons: Personal Trainer - ₱2,500 Total (Membership Included)',
                 ],
                 buttonText: 'Get Membership Now',
                 gradient: null,
@@ -71,6 +73,7 @@ class PlansSection extends StatelessWidget {
                   'For Membership - You can walk in Gym for paying Cash or Through G-Cash.',
                   'Renew for 1 Month Membership  ₱350.00',
                   'No Annual',
+                  'Add-Ons: Personal Trainer - ₱2,500 Total (Membership Included)',
                 ],
                 buttonText: 'Get Membership Now',
                 gradient: null,

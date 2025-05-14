@@ -48,7 +48,7 @@ class TrainersSection extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Marron Jeremy',
+                      'Rueben Latigay / Owner',
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -57,9 +57,9 @@ class TrainersSection extends StatelessWidget {
                     ),
                     SizedBox(height: 8),
                     Text(
-                      'Certified fitness trainer with 5+ years of experience helping clients achieve their goals.',
+                      'New to gym? you have free 3 days trial! to be his trainer, after that you can pay for Membership',
                       style: TextStyle(
-                        color: Colors.white70,
+                        color: const Color.fromARGB(255, 255, 255, 255),
                         fontSize: 15,
                       ),
                     ),

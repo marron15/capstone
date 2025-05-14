@@ -11,7 +11,7 @@ class SideNav extends StatelessWidget {
           padding: EdgeInsets.zero,
           children: [
             DrawerHeader(
-              decoration: const BoxDecoration(color: Colors.white),
+              decoration: const BoxDecoration(color: Color.fromARGB(255, 255, 255, 255)),
               margin: EdgeInsets.zero,
               padding: EdgeInsets.zero,
               child: SafeArea(

@@ -15,8 +15,8 @@ class LandingPage extends StatelessWidget {
       drawer: const SideNav(),
       appBar: AppBar(
         title: const Text('RNR Fitness Gym'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        backgroundColor: const Color.fromARGB(255, 0, 0, 0),
+        foregroundColor: const Color.fromARGB(255, 255, 255, 255),
         elevation: 0,
       ),
       body: Stack(
