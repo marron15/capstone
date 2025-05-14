@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'plans.dart';
 
 class ProductsSection extends StatelessWidget {
   final bool isSmallScreen;
@@ -18,6 +17,20 @@ class ProductsSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: isSmallScreen ? 20.0 : screenWidth * 0.1,
+          ),
+          child: Text(
+            'Products',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: isSmallScreen ? screenWidth * 0.07 : screenWidth * 0.045,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        SizedBox(height: screenHeight * 0.03),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
@@ -51,11 +64,6 @@ class ProductsSection extends StatelessWidget {
           ),
         ),
         SizedBox(height: screenHeight * 0.06),
-        PlansSection(
-          isSmallScreen: isSmallScreen,
-          screenWidth: screenWidth,
-          screenHeight: screenHeight,
-        ),
       ],
     );
   }

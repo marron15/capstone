@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'trainers.dart';
 
 class PlansSection extends StatelessWidget {
   final bool isSmallScreen;
@@ -82,10 +81,6 @@ class PlansSection extends StatelessWidget {
               SizedBox(width: isSmallScreen ? 20.0 : screenWidth * 0.1),
             ],
           ),
-        ),
-        TrainersSection(
-          isSmallScreen: isSmallScreen,
-          screenWidth: screenWidth,
         ),
         SizedBox(height: screenHeight * 0.03),
       ],

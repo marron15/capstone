@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'sidenav.dart';
 import 'equipment_images.dart';
 import 'services.dart';
+import 'products.dart';
+import 'plans.dart';
+import 'trainers.dart';
 
 class LandingPage extends StatelessWidget {
   const LandingPage({Key? key}) : super(key: key);
@@ -130,6 +133,23 @@ class LandingPage extends StatelessWidget {
                     isSmallScreen: isSmallScreen,
                     screenWidth: screenSize.width,
                     screenHeight: screenSize.height,
+                  ),
+                  SizedBox(height: screenSize.height * 0.06),
+                  ProductsSection(
+                    isSmallScreen: isSmallScreen,
+                    screenWidth: screenSize.width,
+                    screenHeight: screenSize.height,
+                  ),
+                  SizedBox(height: screenSize.height * 0.06),
+                  PlansSection(
+                    isSmallScreen: isSmallScreen,
+                    screenWidth: screenSize.width,
+                    screenHeight: screenSize.height,
+                  ),
+                  SizedBox(height: screenSize.height * 0.06),
+                  TrainersSection(
+                    isSmallScreen: isSmallScreen,
+                    screenWidth: screenSize.width,
                   ),
                   SizedBox(height: screenSize.height * 0.06),
                   Footer(isSmallScreen: isSmallScreen, screenWidth: screenSize.width),
