@@ -4,6 +4,7 @@ import '../statistics/new_week_members.dart';
 import '../statistics/total_memberships.dart';
 import '../statistics/new_members_month.dart';
 import '../statistics/trainers_total_pie.dart';
+import '../sidenav.dart';
 
 class StatisticPage extends StatelessWidget {
   const StatisticPage({super.key});
@@ -12,6 +13,11 @@ class StatisticPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFE5E5E5),
+      drawer: const SideNav(),
+      appBar: AppBar(
+        title: const Text('Dashboard'),
+        backgroundColor: Colors.blue,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
