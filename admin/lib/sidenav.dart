@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dashboard/admin_profile.dart';
+import 'dashboard/home.dart';
 
 class SideNav extends StatelessWidget {
   const SideNav({super.key});
@@ -27,6 +28,12 @@ class SideNav extends StatelessWidget {
             title: const Text('Dashboard'),
             onTap: () {
               Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const StatisticPage(),
+                ),
+              );
             },
           ),
           ListTile(

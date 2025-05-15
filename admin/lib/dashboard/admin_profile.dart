@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../modal/admin_modal.dart';
+import '../sidenav.dart';
 
 class AdminProfilePage extends StatefulWidget {
   const AdminProfilePage({super.key});
@@ -114,16 +115,11 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      drawer: const SideNav(),
       appBar: AppBar(
         title: const Text('Admin Profiles'),
         backgroundColor: Colors.blue,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
