@@ -1,115 +1,43 @@
 import 'package:flutter/material.dart';
-import '../modal/admin_modal.dart';
 import '../sidenav.dart';
+import '../modal/trainer_modal.dart';
 
-class AdminProfilePage extends StatefulWidget {
-  const AdminProfilePage({super.key});
+class TrainersPage extends StatefulWidget {
+  const TrainersPage({super.key});
 
   @override
-  State<AdminProfilePage> createState() => _AdminProfilePageState();
+  State<TrainersPage> createState() => _TrainersPageState();
 }
 
-class _AdminProfilePageState extends State<AdminProfilePage> {
-  // Pre-filled data for the admin profiles table
-  List<Map<String, dynamic>> _admins = [
+class _TrainersPageState extends State<TrainersPage> {
+  // Sample data for trainers
+  List<Map<String, String>> _trainers = [
     {
       'firstName': 'John',
       'lastName': 'Doe',
-      'email': 'john.doe@example.com',
-      'contactNumber': '+1 123-456-7890',
-      'password': '********'
+      'contactNumber': '+1 123-456-7890'
     },
     {
       'firstName': 'Jane',
       'lastName': 'Smith',
-      'email': 'jane.smith@example.com',
-      'contactNumber': '+1 234-567-8901',
-      'password': '********'
+      'contactNumber': '+1 234-567-8901'
     },
     {
       'firstName': 'Michael',
       'lastName': 'Johnson',
-      'email': 'michael.j@example.com',
-      'contactNumber': '+1 345-678-9012',
-      'password': '********'
+      'contactNumber': '+1 345-678-9012'
     },
     {
       'firstName': 'Emily',
       'lastName': 'Williams',
-      'email': 'emily.w@example.com',
-      'contactNumber': '+1 456-789-0123',
-      'password': '********'
+      'contactNumber': '+1 456-789-0123'
     },
     {
       'firstName': 'Robert',
       'lastName': 'Brown',
-      'email': 'robert.b@example.com',
-      'contactNumber': '+1 567-890-1234',
-      'password': '********'
-    },
-    {
-      'firstName': 'Sarah',
-      'lastName': 'Davis',
-      'email': 'sarah.d@example.com',
-      'contactNumber': '+1 678-901-2345',
-      'password': '********'
-    },
-    {
-      'firstName': 'David',
-      'lastName': 'Miller',
-      'email': 'david.m@example.com',
-      'contactNumber': '+1 789-012-3456',
-      'password': '********'
-    },
-    {
-      'firstName': 'Jennifer',
-      'lastName': 'Wilson',
-      'email': 'jennifer.w@example.com',
-      'contactNumber': '+1 890-123-4567',
-      'password': '********'
-    },
-    {
-      'firstName': 'James',
-      'lastName': 'Taylor',
-      'email': 'james.t@example.com',
-      'contactNumber': '+1 901-234-5678',
-      'password': '********'
-    },
-    {
-      'firstName': 'Lisa',
-      'lastName': 'Anderson',
-      'email': 'lisa.a@example.com',
-      'contactNumber': '+1 012-345-6789',
-      'password': '********'
+      'contactNumber': '+1 567-890-1234'
     },
   ];
-
-  // Index of highlighted rows
-  final List<int> _highlightedRows = [2, 4, 6]; // Michael, Robert, David
-
-  TextEditingController searchController = TextEditingController();
-
-  // Add a new admin to the list
-  void _addAdmin(Map<String, dynamic> admin) {
-    setState(() {
-      _admins.add(admin);
-    });
-  }
-
-  // Remove an admin from the list
-  void _removeAdmin(int index) {
-    if (index >= 0 && index < _admins.length) {
-      setState(() {
-        _admins.removeAt(index);
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    searchController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -117,7 +45,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
       backgroundColor: Colors.white,
       drawer: const SideNav(),
       appBar: AppBar(
-        title: const Text('Admin Profiles'),
+        title: const Text('Gym Trainers'),
         backgroundColor: Colors.blue,
         elevation: 0,
       ),
@@ -132,7 +60,11 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
               children: [
                 ElevatedButton(
                   onPressed: () {
-                    AdminModal.showAddAdminModal(context, _addAdmin);
+                    TrainerModal.showAddTrainerModal(context, (newTrainer) {
+                      setState(() {
+                        _trainers.add(newTrainer);
+                      });
+                    });
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
@@ -149,7 +81,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                     children: [
                       Icon(Icons.add, size: 16),
                       SizedBox(width: 4),
-                      Text('new admin', style: TextStyle(fontSize: 14)),
+                      Text('new trainer', style: TextStyle(fontSize: 14)),
                     ],
                   ),
                 ),
@@ -161,9 +93,8 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(18),
                   ),
-                  child: TextField(
-                    controller: searchController,
-                    decoration: const InputDecoration(
+                  child: const TextField(
+                    decoration: InputDecoration(
                       hintText: 'Search',
                       prefixIcon:
                           Icon(Icons.search, color: Colors.grey, size: 20),
@@ -188,9 +119,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
               children: [
                 _buildHeaderCell('First Name', flex: 3),
                 _buildHeaderCell('Last Name', flex: 3),
-                _buildHeaderCell('Email', flex: 5),
-                _buildHeaderCell('Contact Number', flex: 3),
-                _buildHeaderCell('Password', flex: 2),
+                _buildHeaderCell('Contact Number', flex: 4),
                 _buildHeaderCell('Actions', flex: 2),
               ],
             ),
@@ -198,11 +127,10 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
           Expanded(
             child: ListView.separated(
               padding: const EdgeInsets.only(bottom: 16),
-              itemCount: _admins.length,
+              itemCount: _trainers.length,
               separatorBuilder: (context, index) =>
                   const Divider(height: 1, thickness: 1, color: Colors.black12),
               itemBuilder: (context, index) {
-                bool isHighlighted = _highlightedRows.contains(index);
                 return Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -211,14 +139,10 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                   ),
                   child: Row(
                     children: [
-                      _buildCell(_admins[index]['firstName'],
-                          flex: 3, isHighlighted: isHighlighted),
-                      _buildCell(_admins[index]['lastName'],
-                          flex: 3, isHighlighted: isHighlighted),
-                      _buildEmailCell(_admins[index]['email'], flex: 5),
-                      _buildCell(_admins[index]['contactNumber'],
-                          flex: 3, isHighlighted: isHighlighted),
-                      _buildPasswordCell(_admins[index]['password'], flex: 2),
+                      _buildCell(_trainers[index]['firstName'] ?? '', flex: 3),
+                      _buildCell(_trainers[index]['lastName'] ?? '', flex: 3),
+                      _buildCell(_trainers[index]['contactNumber'] ?? '',
+                          flex: 4),
                       Expanded(
                         flex: 2,
                         child: Row(
@@ -227,22 +151,17 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                               icon: const Icon(Icons.edit,
                                   size: 18, color: Colors.blue),
                               onPressed: () {
-                                // Edit admin modal
-                                final admin = _admins[index];
+                                // Edit trainer modal
+                                final trainer = _trainers[index];
                                 TextEditingController firstNameController =
                                     TextEditingController(
-                                        text: admin['firstName']);
+                                        text: trainer['firstName']);
                                 TextEditingController lastNameController =
                                     TextEditingController(
-                                        text: admin['lastName']);
-                                TextEditingController emailController =
-                                    TextEditingController(text: admin['email']);
+                                        text: trainer['lastName']);
                                 TextEditingController contactNumberController =
                                     TextEditingController(
-                                        text: admin['contactNumber']);
-                                TextEditingController passwordController =
-                                    TextEditingController(
-                                        text: admin['password']);
+                                        text: trainer['contactNumber']);
                                 final _formKey = GlobalKey<FormState>();
                                 showDialog(
                                   context: context,
@@ -252,7 +171,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Container(
-                                        width: 500,
+                                        width: 400,
                                         padding: const EdgeInsets.all(20),
                                         child: Form(
                                           key: _formKey,
@@ -287,18 +206,6 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                                               ),
                                               const SizedBox(height: 16),
                                               TextFormField(
-                                                controller: emailController,
-                                                decoration:
-                                                    const InputDecoration(
-                                                        labelText: 'Email'),
-                                                validator: (value) =>
-                                                    value == null ||
-                                                            value.isEmpty
-                                                        ? 'Please enter email'
-                                                        : null,
-                                              ),
-                                              const SizedBox(height: 16),
-                                              TextFormField(
                                                 controller:
                                                     contactNumberController,
                                                 decoration:
@@ -309,19 +216,6 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                                                             null ||
                                                         value.isEmpty
                                                     ? 'Please enter contact number'
-                                                    : null,
-                                              ),
-                                              const SizedBox(height: 16),
-                                              TextFormField(
-                                                controller: passwordController,
-                                                decoration:
-                                                    const InputDecoration(
-                                                        labelText: 'Password'),
-                                                obscureText: true,
-                                                validator: (value) => value ==
-                                                            null ||
-                                                        value.isEmpty
-                                                    ? 'Please enter password'
                                                     : null,
                                               ),
                                               const SizedBox(height: 24),
@@ -342,26 +236,16 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                                                       if (_formKey.currentState!
                                                           .validate()) {
                                                         setState(() {
-                                                          _admins[index] = {
+                                                          _trainers[index] = {
                                                             'firstName':
                                                                 firstNameController
                                                                     .text,
                                                             'lastName':
                                                                 lastNameController
                                                                     .text,
-                                                            'email':
-                                                                emailController
-                                                                    .text,
                                                             'contactNumber':
                                                                 contactNumberController
                                                                     .text,
-                                                            'password': passwordController
-                                                                    .text
-                                                                    .isNotEmpty
-                                                                ? '********'
-                                                                : _admins[index]
-                                                                    [
-                                                                    'password'],
                                                           };
                                                         });
                                                         Navigator.of(context)
@@ -388,7 +272,9 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                               icon: const Icon(Icons.delete,
                                   size: 18, color: Colors.red),
                               onPressed: () {
-                                _removeAdmin(index);
+                                setState(() {
+                                  _trainers.removeAt(index);
+                                });
                               },
                               padding: EdgeInsets.zero,
                               constraints: const BoxConstraints(),
@@ -421,40 +307,14 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
     );
   }
 
-  Widget _buildCell(String text, {int flex = 1, bool isHighlighted = false}) {
+  Widget _buildCell(String text, {int flex = 1}) {
     return Expanded(
       flex: flex,
       child: Text(
         text,
-        style: TextStyle(
-          fontSize: 14,
-          color: isHighlighted ? Colors.black87 : Colors.black87,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmailCell(String email, {int flex = 1}) {
-    return Expanded(
-      flex: flex,
-      child: Text(
-        email,
         style: const TextStyle(
           fontSize: 14,
-          color: Colors.blue,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPasswordCell(String password, {int flex = 1}) {
-    return Expanded(
-      flex: flex,
-      child: Text(
-        password,
-        style: const TextStyle(
-          fontSize: 14,
-          letterSpacing: 1.5,
+          color: Colors.black87,
         ),
       ),
     );

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dashboard/admin_profile.dart';
+import 'dashboard/trainers.dart';
 import 'dashboard/home.dart';
 
 class SideNav extends StatelessWidget {
@@ -54,7 +55,12 @@ class SideNav extends StatelessWidget {
             title: const Text('Trainers'),
             onTap: () {
               Navigator.pop(context);
-              // TODO: Navigate to Trainers
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const TrainersPage(),
+                ),
+              );
             },
           ),
           ListTile(
