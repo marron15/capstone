@@ -4,38 +4,73 @@ import 'modals/signup_modal.dart';
 class BlackHeader extends StatelessWidget {
   final Function(int) onNavTap;
 
-  const BlackHeader({
-    Key? key,
-    required this.onNavTap,
-  }) : super(key: key);
+  const BlackHeader({Key? key, required this.onNavTap}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenWidth < 600;
+
     return Container(
       width: double.infinity,
       color: Colors.black,
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      padding: EdgeInsets.symmetric(
+        horizontal: isSmallScreen ? 16 : 24,
+        vertical: 12,
+      ),
       child: Row(
         children: [
-          // Logo or App Name
-          const Icon(Icons.fitness_center, color: Colors.white, size: 28),
-          const SizedBox(width: 12),
-          const Text(
-            'RNR Fitness Gym',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 22,
-              letterSpacing: 1.2,
+          if (isSmallScreen) ...[
+            Builder(
+              builder:
+                  (context) => IconButton(
+                    icon: const Icon(Icons.menu, color: Colors.white),
+                    onPressed: () {
+                      Scaffold.of(context).openDrawer();
+                    },
+                  ),
             ),
-          ),
+            const SizedBox(width: 8),
+          ],
+          const Icon(Icons.fitness_center, color: Colors.white, size: 28),
+          if (!isSmallScreen) ...[
+            const SizedBox(width: 12),
+            const Text(
+              'RNR Fitness Gym',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 22,
+                letterSpacing: 1.2,
+              ),
+            ),
+          ],
           const Spacer(),
-          // Navigation Buttons
-          _HeaderNavButton(icon: Icons.home, label: 'Home', onTap: () => onNavTap(0)),
-          _HeaderNavButton(icon: Icons.school, label: 'Programs', onTap: () => onNavTap(1)),
-          _HeaderNavButton(icon: Icons.card_membership, label: 'Membership', onTap: () => onNavTap(3)),
-          _HeaderNavButton(icon: Icons.info_outline, label: 'About Us', onTap: () => onNavTap(4)),
-          const SizedBox(width: 12),
+          // Navigation Buttons - Only show on larger screens
+          if (!isSmallScreen) ...[
+            _HeaderNavButton(
+              icon: Icons.home,
+              label: 'Home',
+              onTap: () => onNavTap(0),
+            ),
+            _HeaderNavButton(
+              icon: Icons.school,
+              label: 'Programs',
+              onTap: () => onNavTap(1),
+            ),
+            _HeaderNavButton(
+              icon: Icons.card_membership,
+              label: 'Membership',
+              onTap: () => onNavTap(3),
+            ),
+            _HeaderNavButton(
+              icon: Icons.info_outline,
+              label: 'About Us',
+              onTap: () => onNavTap(4),
+            ),
+            const SizedBox(width: 12),
+          ],
+          // Sign Up Button
           ElevatedButton(
             onPressed: () {
               showDialog(
@@ -46,13 +81,19 @@ class BlackHeader extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.blue,
               foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              padding: EdgeInsets.symmetric(
+                horizontal: isSmallScreen ? 16 : 20,
+                vertical: isSmallScreen ? 8 : 12,
+              ),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
               ),
               elevation: 0,
             ),
-            child: const Text('Sign Up'),
+            child: Text(
+              'Sign Up',
+              style: TextStyle(fontSize: isSmallScreen ? 14 : 16),
+            ),
           ),
         ],
       ),

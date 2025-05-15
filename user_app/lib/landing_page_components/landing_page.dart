@@ -48,10 +48,81 @@ class _LandingPageState extends State<LandingPage> {
     final isSmallScreen = screenSize.width < 600;
 
     return Scaffold(
+      drawer: Drawer(
+        backgroundColor: Colors.black,
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            DrawerHeader(
+              decoration: BoxDecoration(
+                color: Colors.black,
+                border: Border(
+                  bottom: BorderSide(
+                    color: Colors.white.withOpacity(0.1),
+                    width: 1,
+                  ),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    Icons.fitness_center,
+                    color: Colors.white,
+                    size: 40,
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'RNR Fitness Gym',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            _DrawerNavItem(
+              icon: Icons.home,
+              label: 'Home',
+              onTap: () {
+                Navigator.pop(context);
+                _scrollToSection(0);
+              },
+            ),
+            _DrawerNavItem(
+              icon: Icons.school,
+              label: 'Programs',
+              onTap: () {
+                Navigator.pop(context);
+                _scrollToSection(1);
+              },
+            ),
+            _DrawerNavItem(
+              icon: Icons.card_membership,
+              label: 'Membership',
+              onTap: () {
+                Navigator.pop(context);
+                _scrollToSection(3);
+              },
+            ),
+            _DrawerNavItem(
+              icon: Icons.info_outline,
+              label: 'About Us',
+              onTap: () {
+                Navigator.pop(context);
+                _scrollToSection(4);
+              },
+            ),
+          ],
+        ),
+      ),
       body: Column(
         children: [
-          BlackHeader(
-            onNavTap: _scrollToSection,
+          Container(
+            color: Colors.black,
+            child: SafeArea(child: BlackHeader(onNavTap: _scrollToSection)),
           ),
           Expanded(
             child: Stack(
@@ -75,7 +146,8 @@ class _LandingPageState extends State<LandingPage> {
                         Container(
                           width: double.infinity,
                           padding: EdgeInsets.symmetric(
-                            horizontal: isSmallScreen ? 20.0 : screenSize.width * 0.1,
+                            horizontal:
+                                isSmallScreen ? 20.0 : screenSize.width * 0.1,
                             vertical: screenSize.height * 0.06,
                           ),
                           child: Column(
@@ -123,7 +195,9 @@ class _LandingPageState extends State<LandingPage> {
                               Text(
                                 '\nBusiness Hours: 11:00AM - 9:00PM',
                                 style: TextStyle(
-                                  color: Colors.white.withAlpha((0.9 * 255).toInt()),
+                                  color: Colors.white.withAlpha(
+                                    (0.9 * 255).toInt(),
+                                  ),
                                   fontSize:
                                       (isSmallScreen
                                           ? (screenSize.width * 0.045).clamp(
@@ -140,7 +214,9 @@ class _LandingPageState extends State<LandingPage> {
                               Text(
                                 'Monday to Saturday',
                                 style: TextStyle(
-                                  color: Colors.white.withAlpha((0.9 * 255).toInt()),
+                                  color: Colors.white.withAlpha(
+                                    (0.9 * 255).toInt(),
+                                  ),
                                   fontSize:
                                       (isSmallScreen
                                           ? (screenSize.width * 0.045).clamp(
@@ -171,14 +247,10 @@ class _LandingPageState extends State<LandingPage> {
                                     backgroundColor: Colors.black87,
                                     foregroundColor: Colors.white,
                                     padding: EdgeInsets.symmetric(
-                                      horizontal: (screenSize.width * 0.04).clamp(
-                                        16.0,
-                                        32.0,
-                                      ),
-                                      vertical: (screenSize.height * 0.025).clamp(
-                                        10.0,
-                                        22.0,
-                                      ),
+                                      horizontal: (screenSize.width * 0.04)
+                                          .clamp(16.0, 32.0),
+                                      vertical: (screenSize.height * 0.025)
+                                          .clamp(10.0, 22.0),
                                     ),
                                     textStyle: TextStyle(
                                       fontSize: (isSmallScreen
@@ -302,6 +374,30 @@ class Footer extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _DrawerNavItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _DrawerNavItem({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Icon(icon, color: Colors.white),
+      title: Text(
+        label,
+        style: const TextStyle(color: Colors.white, fontSize: 16),
+      ),
+      onTap: onTap,
     );
   }
 }

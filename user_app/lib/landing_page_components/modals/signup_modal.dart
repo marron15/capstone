@@ -8,7 +8,8 @@ class SignUpModal extends StatefulWidget {
   State<SignUpModal> createState() => _SignUpModalState();
 }
 
-class _SignUpModalState extends State<SignUpModal> with TickerProviderStateMixin {
+class _SignUpModalState extends State<SignUpModal>
+    with TickerProviderStateMixin {
   bool _obscurePassword = true;
   bool _obscureRePassword = true;
   late AnimationController _controller;
@@ -25,12 +26,23 @@ class _SignUpModalState extends State<SignUpModal> with TickerProviderStateMixin
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 350));
-    _scaleAnim = CurvedAnimation(parent: _controller, curve: Curves.easeOutBack);
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 350),
+    );
+    _scaleAnim = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOutBack,
+    );
     _fadeAnim = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
     _controller.forward();
-    _iconController = AnimationController(vsync: this, duration: const Duration(seconds: 2))..repeat(reverse: true);
-    _iconAnim = Tween<double>(begin: 0.0, end: 0.12).animate(CurvedAnimation(parent: _iconController, curve: Curves.easeInOut));
+    _iconController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
+    _iconAnim = Tween<double>(begin: 0.0, end: 0.12).animate(
+      CurvedAnimation(parent: _iconController, curve: Curves.easeInOut),
+    );
   }
 
   @override
@@ -66,7 +78,10 @@ class _SignUpModalState extends State<SignUpModal> with TickerProviderStateMixin
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(color: Colors.white.withAlpha((0.18 * 255).toInt()), width: 1.2),
+        borderSide: BorderSide(
+          color: Colors.white.withAlpha((0.18 * 255).toInt()),
+          width: 1.2,
+        ),
       ),
       suffixIcon: suffixIcon,
     );
@@ -90,21 +105,29 @@ class _SignUpModalState extends State<SignUpModal> with TickerProviderStateMixin
                   BackdropFilter(
                     filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
                     child: Container(
-                      width: 440,
+                      width:
+                          MediaQuery.of(context).size.width < 460
+                              ? MediaQuery.of(context).size.width * 0.95
+                              : 440,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(22),
                         gradient: LinearGradient(
                           colors: [
                             Colors.white.withAlpha((0.13 * 255).toInt()),
-                            Colors.blueGrey.withAlpha((0.10 * 255).toInt())
+                            Colors.blueGrey.withAlpha((0.10 * 255).toInt()),
                           ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
-                        border: Border.all(color: Colors.white.withAlpha((0.25 * 255).toInt()), width: 1.5),
+                        border: Border.all(
+                          color: Colors.white.withAlpha((0.25 * 255).toInt()),
+                          width: 1.5,
+                        ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.blueAccent.withAlpha((0.18 * 255).toInt()),
+                            color: Colors.blueAccent.withAlpha(
+                              (0.18 * 255).toInt(),
+                            ),
                             blurRadius: 32,
                             spreadRadius: 2,
                             offset: const Offset(0, 8),
@@ -112,56 +135,88 @@ class _SignUpModalState extends State<SignUpModal> with TickerProviderStateMixin
                         ],
                       ),
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 36),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 30,
+                          vertical: 36,
+                        ),
                         child: SingleChildScrollView(
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Row(
-                                    children: [
-                                      AnimatedBuilder(
-                                        animation: _iconAnim ?? const AlwaysStoppedAnimation(0.0),
-                                        builder: (context, child) {
-                                          return Transform.rotate(
-                                            angle: (_iconAnim ?? const AlwaysStoppedAnimation(0.0)).value,
-                                            child: Container(
-                                              width: 36,
-                                              height: 36,
-                                              decoration: BoxDecoration(
-                                                shape: BoxShape.circle,
-                                                gradient: LinearGradient(
-                                                  colors: [
-                                                    Colors.blueAccent.withAlpha((0.25 * 255).toInt()),
-                                                    Colors.lightBlueAccent.withAlpha((0.18 * 255).toInt())
-                                                  ],
-                                                  begin: Alignment.topLeft,
-                                                  end: Alignment.bottomRight,
+                                  Expanded(
+                                    child: Row(
+                                      children: [
+                                        AnimatedBuilder(
+                                          animation:
+                                              _iconAnim ??
+                                              const AlwaysStoppedAnimation(0.0),
+                                          builder: (context, child) {
+                                            return Transform.rotate(
+                                              angle:
+                                                  (_iconAnim ??
+                                                          const AlwaysStoppedAnimation(
+                                                            0.0,
+                                                          ))
+                                                      .value,
+                                              child: Container(
+                                                width: 36,
+                                                height: 36,
+                                                decoration: BoxDecoration(
+                                                  shape: BoxShape.circle,
+                                                  gradient: LinearGradient(
+                                                    colors: [
+                                                      Colors.blueAccent
+                                                          .withAlpha(
+                                                            (0.25 * 255)
+                                                                .toInt(),
+                                                          ),
+                                                      Colors.lightBlueAccent
+                                                          .withAlpha(
+                                                            (0.18 * 255)
+                                                                .toInt(),
+                                                          ),
+                                                    ],
+                                                    begin: Alignment.topLeft,
+                                                    end: Alignment.bottomRight,
+                                                  ),
+                                                ),
+                                                child: const Icon(
+                                                  Icons.fitness_center,
+                                                  color: Colors.lightBlueAccent,
+                                                  size: 24,
                                                 ),
                                               ),
-                                              child: const Icon(Icons.fitness_center, color: Colors.lightBlueAccent, size: 24),
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                      const SizedBox(width: 12),
-                                      const Text(
-                                        'Get a Membership Now',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 22,
-                                          color: Colors.white,
-                                          letterSpacing: 0.2,
+                                            );
+                                          },
                                         ),
-                                      ),
-                                    ],
+                                        const SizedBox(width: 12),
+                                        Flexible(
+                                          child: Text(
+                                            'Get a Membership Now',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 22,
+                                              color: Colors.white,
+                                              letterSpacing: 0.2,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                            maxLines: 1,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                   IconButton(
-                                    icon: const Icon(Icons.close, size: 26, color: Colors.white),
-                                    onPressed: () => Navigator.of(context).pop(),
+                                    icon: const Icon(
+                                      Icons.close,
+                                      size: 26,
+                                      color: Colors.white,
+                                    ),
+                                    onPressed:
+                                        () => Navigator.of(context).pop(),
                                     tooltip: 'Close',
                                   ),
                                 ],
@@ -169,14 +224,19 @@ class _SignUpModalState extends State<SignUpModal> with TickerProviderStateMixin
                               const SizedBox(height: 4),
                               const Text(
                                 'Sign up to access exclusive gym plans and offers.',
-                                style: TextStyle(fontSize: 15, color: Colors.white70),
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  color: Colors.white70,
+                                ),
                               ),
                               const SizedBox(height: 14),
                               Container(
                                 margin: const EdgeInsets.only(bottom: 10),
                                 child: Divider(
                                   thickness: 1.5,
-                                  color: Colors.lightBlueAccent.withAlpha((0.22 * 255).toInt()),
+                                  color: Colors.lightBlueAccent.withAlpha(
+                                    (0.22 * 255).toInt(),
+                                  ),
                                   height: 24,
                                   endIndent: 12,
                                   indent: 2,
@@ -214,8 +274,18 @@ class _SignUpModalState extends State<SignUpModal> with TickerProviderStateMixin
                                   icon: Icons.lock_outline,
                                   focusNode: _passFocus,
                                   suffixIcon: IconButton(
-                                    icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility, color: Colors.white70),
-                                    onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                                    icon: Icon(
+                                      _obscurePassword
+                                          ? Icons.visibility_off
+                                          : Icons.visibility,
+                                      color: Colors.white70,
+                                    ),
+                                    onPressed:
+                                        () => setState(
+                                          () =>
+                                              _obscurePassword =
+                                                  !_obscurePassword,
+                                        ),
                                   ),
                                 ),
                               ),
@@ -229,8 +299,18 @@ class _SignUpModalState extends State<SignUpModal> with TickerProviderStateMixin
                                   icon: Icons.lock_outline,
                                   focusNode: _rePassFocus,
                                   suffixIcon: IconButton(
-                                    icon: Icon(_obscureRePassword ? Icons.visibility_off : Icons.visibility, color: Colors.white70),
-                                    onPressed: () => setState(() => _obscureRePassword = !_obscureRePassword),
+                                    icon: Icon(
+                                      _obscureRePassword
+                                          ? Icons.visibility_off
+                                          : Icons.visibility,
+                                      color: Colors.white70,
+                                    ),
+                                    onPressed:
+                                        () => setState(
+                                          () =>
+                                              _obscureRePassword =
+                                                  !_obscureRePassword,
+                                        ),
                                   ),
                                 ),
                               ),
@@ -239,7 +319,14 @@ class _SignUpModalState extends State<SignUpModal> with TickerProviderStateMixin
                                 onPressed: () {
                                   // Handle sign up logic here
                                 },
-                                child: const Text('Sign Up', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, letterSpacing: 0.5)),
+                                child: const Text(
+                                  'Sign Up',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
                               ),
                             ],
                           ),
@@ -263,18 +350,28 @@ class _AnimatedGradientButton extends StatefulWidget {
   const _AnimatedGradientButton({required this.onPressed, required this.child});
 
   @override
-  State<_AnimatedGradientButton> createState() => _AnimatedGradientButtonState();
+  State<_AnimatedGradientButton> createState() =>
+      _AnimatedGradientButtonState();
 }
 
-class _AnimatedGradientButtonState extends State<_AnimatedGradientButton> with SingleTickerProviderStateMixin {
+class _AnimatedGradientButtonState extends State<_AnimatedGradientButton>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnim;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 90), lowerBound: 0.0, upperBound: 0.08);
-    _scaleAnim = Tween<double>(begin: 1.0, end: 0.96).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 90),
+      lowerBound: 0.0,
+      upperBound: 0.08,
+    );
+    _scaleAnim = Tween<double>(
+      begin: 1.0,
+      end: 0.96,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
   }
 
   @override
@@ -327,7 +424,11 @@ class _AnimatedGradientButtonState extends State<_AnimatedGradientButton> with S
               ),
               alignment: Alignment.center,
               child: DefaultTextStyle.merge(
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
                 child: widget.child,
               ),
             ),
