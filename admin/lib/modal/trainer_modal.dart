@@ -7,7 +7,7 @@ class TrainerModal {
     final TextEditingController lastNameController = TextEditingController();
     final TextEditingController contactNumberController =
         TextEditingController();
-    final _formKey = GlobalKey<FormState>();
+    final formKey = GlobalKey<FormState>();
 
     showDialog(
       context: context,
@@ -20,7 +20,7 @@ class TrainerModal {
             width: 400,
             padding: const EdgeInsets.all(20),
             child: Form(
-              key: _formKey,
+              key: formKey,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -62,7 +62,7 @@ class TrainerModal {
                       const SizedBox(width: 12),
                       ElevatedButton(
                         onPressed: () {
-                          if (_formKey.currentState!.validate()) {
+                          if (formKey.currentState!.validate()) {
                             onAdd({
                               'firstName': firstNameController.text,
                               'lastName': lastNameController.text,

@@ -162,7 +162,7 @@ class _TrainersPageState extends State<TrainersPage> {
                                 TextEditingController contactNumberController =
                                     TextEditingController(
                                         text: trainer['contactNumber']);
-                                final _formKey = GlobalKey<FormState>();
+                                final formKey = GlobalKey<FormState>();
                                 showDialog(
                                   context: context,
                                   builder: (BuildContext context) {
@@ -174,7 +174,7 @@ class _TrainersPageState extends State<TrainersPage> {
                                         width: 400,
                                         padding: const EdgeInsets.all(20),
                                         child: Form(
-                                          key: _formKey,
+                                          key: formKey,
                                           child: Column(
                                             mainAxisSize: MainAxisSize.min,
                                             crossAxisAlignment:
@@ -233,7 +233,7 @@ class _TrainersPageState extends State<TrainersPage> {
                                                   const SizedBox(width: 12),
                                                   ElevatedButton(
                                                     onPressed: () {
-                                                      if (_formKey.currentState!
+                                                      if (formKey.currentState!
                                                           .validate()) {
                                                         setState(() {
                                                           _trainers[index] = {

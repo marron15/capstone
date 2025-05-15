@@ -243,7 +243,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                                 TextEditingController passwordController =
                                     TextEditingController(
                                         text: admin['password']);
-                                final _formKey = GlobalKey<FormState>();
+                                final formKey = GlobalKey<FormState>();
                                 showDialog(
                                   context: context,
                                   builder: (BuildContext context) {
@@ -255,7 +255,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                                         width: 500,
                                         padding: const EdgeInsets.all(20),
                                         child: Form(
-                                          key: _formKey,
+                                          key: formKey,
                                           child: Column(
                                             mainAxisSize: MainAxisSize.min,
                                             crossAxisAlignment:
@@ -339,7 +339,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                                                   const SizedBox(width: 12),
                                                   ElevatedButton(
                                                     onPressed: () {
-                                                      if (_formKey.currentState!
+                                                      if (formKey.currentState!
                                                           .validate()) {
                                                         setState(() {
                                                           _admins[index] = {
