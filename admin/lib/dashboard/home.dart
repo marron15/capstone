@@ -114,26 +114,5 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-class _EmptyBarGraph extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      height: 100,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.blueAccent, width: 3),
-        color: Colors.blue[50],
-      ),
-      child: const Center(
-        child: Text(
-          'Bar Graph',
-          style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
-        ),
-      ),
-    );
-  }
-}
-
 
 
