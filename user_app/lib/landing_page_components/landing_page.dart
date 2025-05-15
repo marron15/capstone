@@ -59,7 +59,7 @@ class _LandingPageState extends State<LandingPage> {
                 color: Colors.black,
                 border: Border(
                   bottom: BorderSide(
-                    color: Colors.white.withOpacity(0.1),
+                    color: Colors.white.withAlpha((0.1 * 255).toInt()),
                     width: 1,
                   ),
                 ),
