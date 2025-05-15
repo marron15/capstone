@@ -9,7 +9,7 @@ dependencies:
     sdk: flutter
   
   # Chart Libraries
-  syncfusion_flutter_charts: ^24.1.44  # Comprehensive charting library
+  syncfusion_flutter_charts: ^29.2.4  # Comprehensive charting library
   fl_chart: ^0.65.0                    # Beautiful and responsive charts
   
   # Data Handling and Formatting
