@@ -6,7 +6,7 @@ import '../statistics/new_members_month.dart';
 import '../statistics/trainers_total_pie.dart';
 
 class StatisticPage extends StatelessWidget {
-  const StatisticPage({Key? key}) : super(key: key);
+  const StatisticPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +34,7 @@ class StatisticPage extends StatelessWidget {
                     crossAxisSpacing: 24,
                     mainAxisSpacing: 24,
                     childAspectRatio: 1.2,
-                    children: [
+                    children: const [
                       // Week Paid Members (Pie Chart)
                       _StatCard(
                         title: 'Week Paid Members',
@@ -81,7 +81,8 @@ class _StatCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final Widget child;
-  const _StatCard({required this.title, required this.child, this.subtitle = ''});
+  const _StatCard(
+      {required this.title, required this.child, this.subtitle = ''});
 
   @override
   Widget build(BuildContext context) {
@@ -113,6 +114,3 @@ class _StatCard extends StatelessWidget {
     );
   }
 }
-
-
-

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 
 class WeekPaidMembers extends StatelessWidget {
+  const WeekPaidMembers({super.key});
+
   @override
   Widget build(BuildContext context) {
     final List<PieData> data = [
@@ -13,7 +15,7 @@ class WeekPaidMembers extends StatelessWidget {
       width: 350,
       height: 350,
       child: SfCircularChart(
-        legend: Legend(isVisible: true, position: LegendPosition.bottom),
+        legend: const Legend(isVisible: true, position: LegendPosition.bottom),
         series: <PieSeries<PieData, String>>[
           PieSeries<PieData, String>(
             dataSource: data,

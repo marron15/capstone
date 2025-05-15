@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({Key? key}) : super(key: key);
+  const LoginPage({super.key});
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -29,7 +29,10 @@ class _LoginPageState extends State<LoginPage> {
         height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFF141E30), Color(0xFF232526)], // Dark gym-like gradient
+            colors: [
+              Color(0xFF141E30),
+              Color(0xFF232526)
+            ], // Dark gym-like gradient
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -50,7 +53,8 @@ class _LoginPageState extends State<LoginPage> {
                   horizontal: size.width < 500 ? 16 : 0,
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 36),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 32, vertical: 36),
                   child: Form(
                     key: _formKey,
                     child: Column(
@@ -63,7 +67,8 @@ class _LoginPageState extends State<LoginPage> {
                             CircleAvatar(
                               radius: 34,
                               backgroundColor: Colors.greenAccent.withAlpha(38),
-                              child: Icon(Icons.fitness_center, size: 44, color: Colors.greenAccent.shade400),
+                              child: Icon(Icons.fitness_center,
+                                  size: 44, color: Colors.greenAccent.shade400),
                             ),
                             const SizedBox(height: 14),
                             Text(
@@ -84,8 +89,10 @@ class _LoginPageState extends State<LoginPage> {
                           style: const TextStyle(color: Colors.white),
                           decoration: InputDecoration(
                             labelText: 'Account',
-                            labelStyle: TextStyle(color: Colors.greenAccent.shade100),
-                            prefixIcon: Icon(Icons.person, color: Colors.greenAccent.shade100),
+                            labelStyle:
+                                TextStyle(color: Colors.greenAccent.shade100),
+                            prefixIcon: Icon(Icons.person,
+                                color: Colors.greenAccent.shade100),
                             filled: true,
                             fillColor: const Color(0xFF232526),
                             border: OutlineInputBorder(
@@ -93,7 +100,8 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(color: Colors.greenAccent.shade400, width: 2),
+                              borderSide: BorderSide(
+                                  color: Colors.greenAccent.shade400, width: 2),
                             ),
                           ),
                           validator: (value) {
@@ -110,8 +118,10 @@ class _LoginPageState extends State<LoginPage> {
                           style: const TextStyle(color: Colors.white),
                           decoration: InputDecoration(
                             labelText: 'Password',
-                            labelStyle: TextStyle(color: Colors.greenAccent.shade100),
-                            prefixIcon: Icon(Icons.lock, color: Colors.greenAccent.shade100),
+                            labelStyle:
+                                TextStyle(color: Colors.greenAccent.shade100),
+                            prefixIcon: Icon(Icons.lock,
+                                color: Colors.greenAccent.shade100),
                             filled: true,
                             fillColor: const Color(0xFF232526),
                             border: OutlineInputBorder(
@@ -119,7 +129,8 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(color: Colors.greenAccent.shade400, width: 2),
+                              borderSide: BorderSide(
+                                  color: Colors.greenAccent.shade400, width: 2),
                             ),
                             suffixIcon: IconButton(
                               icon: Icon(
@@ -149,7 +160,9 @@ class _LoginPageState extends State<LoginPage> {
                             onPressed: () {
                               // TODO: Implement forgot password functionality
                             },
-                            child: Text('Forgot Password?', style: TextStyle(color: Colors.greenAccent.shade200)),
+                            child: Text('Forgot Password?',
+                                style: TextStyle(
+                                    color: Colors.greenAccent.shade200)),
                           ),
                         ),
                         const SizedBox(height: 24),
@@ -171,7 +184,10 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                             child: const Text(
                               'Login',
-                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1),
+                              style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1),
                             ),
                           ),
                         ),

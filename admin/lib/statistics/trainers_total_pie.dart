@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 
 class TrainersTotalPieChart extends StatelessWidget {
+  const TrainersTotalPieChart({super.key});
+
   @override
   Widget build(BuildContext context) {
     final List<PieData> data = [
@@ -13,7 +15,7 @@ class TrainersTotalPieChart extends StatelessWidget {
       width: 350,
       height: 350,
       child: SfCircularChart(
-        legend: Legend(isVisible: true, position: LegendPosition.bottom),
+        legend: const Legend(isVisible: true, position: LegendPosition.bottom),
         series: <PieSeries<PieData, String>>[
           PieSeries<PieData, String>(
             dataSource: data,
@@ -34,4 +36,4 @@ class PieData {
   final double value;
   final Color color;
   PieData(this.label, this.value, this.color);
-} 
+}
