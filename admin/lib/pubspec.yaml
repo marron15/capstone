@@ -1,0 +1,35 @@
+name: admin
+description: Admin dashboard for the capstone project
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # Chart Libraries
+  syncfusion_flutter_charts: ^24.1.44  # Comprehensive charting library
+  fl_chart: ^0.65.0                    # Beautiful and responsive charts
+  
+  # Data Handling and Formatting
+  intl: ^0.18.0                        # For date/number formatting
+  collection: ^1.17.0                  # For data manipulation
+  
+  # State Management (choose one based on your preference)
+  provider: ^6.1.1                     # Simple state management
+  
+  # HTTP Client for API calls
+  http: ^1.1.0                         # For making API requests
+  
+  # Utilities
+  jiffy: ^6.2.1                        # For date manipulation
+  decimal: ^2.3.3                      # For precise decimal calculations
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true

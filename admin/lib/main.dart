@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'login.dart';
+import 'dashboard/home.dart';
 
 void main() {
   runApp(const AdminApp());
@@ -19,7 +19,7 @@ class AdminApp extends StatelessWidget {
           contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         ),
       ),
-      home: const LoginPage(),
+      home: const StatisticPage(),
     );
   }
 }
