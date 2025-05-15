@@ -17,30 +17,31 @@ class LandingPage extends StatefulWidget {
 class _LandingPageState extends State<LandingPage> {
   final ScrollController _scrollController = ScrollController();
 
-  void _scrollToSection(int index) {
-    final sections = [
-      0.0, // Home
-      _equipmentImagesKey.currentContext?.size?.height ?? 0.0,
-      _servicesKey.currentContext?.size?.height ?? 0.0,
-      _productsKey.currentContext?.size?.height ?? 0.0,
-      _plansKey.currentContext?.size?.height ?? 0.0,
-      _trainersKey.currentContext?.size?.height ?? 0.0,
-    ];
-
-    if (index < sections.length) {
-      _scrollController.animateTo(
-        sections[index],
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeInOut,
-      );
-    }
-  }
-
   final GlobalKey _equipmentImagesKey = GlobalKey();
   final GlobalKey _servicesKey = GlobalKey();
   final GlobalKey _productsKey = GlobalKey();
   final GlobalKey _plansKey = GlobalKey();
   final GlobalKey _trainersKey = GlobalKey();
+
+  void _scrollToSection(int index) {
+    final contextList = [
+      _equipmentImagesKey.currentContext,
+      _servicesKey.currentContext,
+      _productsKey.currentContext,
+      _plansKey.currentContext,
+      _trainersKey.currentContext,
+    ];
+    if (index >= 0 && index < contextList.length) {
+      final ctx = contextList[index];
+      if (ctx != null) {
+        Scrollable.ensureVisible(
+          ctx,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -88,7 +89,11 @@ class _LandingPageState extends State<LandingPage> {
               label: 'Home',
               onTap: () {
                 Navigator.pop(context);
-                _scrollToSection(0);
+                _scrollController.animateTo(
+                  0.0,
+                  duration: const Duration(milliseconds: 500),
+                  curve: Curves.easeInOut,
+                );
               },
             ),
             _DrawerNavItem(
@@ -96,7 +101,7 @@ class _LandingPageState extends State<LandingPage> {
               label: 'Programs',
               onTap: () {
                 Navigator.pop(context);
-                _scrollToSection(1);
+                _scrollToSection(0);
               },
             ),
             _DrawerNavItem(
