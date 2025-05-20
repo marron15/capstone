@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'sidenav/header.dart';
+import 'header.dart';
 import 'equipment_images.dart';
 import 'services.dart';
 import 'products.dart';
@@ -7,7 +7,8 @@ import 'plans.dart';
 import 'trainers.dart';
 import 'modals/signup_modal.dart';
 import 'footer.dart';
-import './profile.dart';
+import 'User Profile/profile.dart';
+import 'User Profile/profile_data.dart';
 
 class LandingPage extends StatefulWidget {
   const LandingPage({Key? key}) : super(key: key);
@@ -66,32 +67,49 @@ class _LandingPageState extends State<LandingPage> {
                   ),
                 ),
               ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => ProfilePage()),
-                      );
-                    },
-                    child: CircleAvatar(
-                      radius: 32,
-                      backgroundColor: Colors.white24,
-                      child: Icon(Icons.person, color: Colors.white, size: 40),
+              child: ValueListenableBuilder<ProfileData>(
+                valueListenable: profileNotifier,
+                builder:
+                    (context, profile, _) => Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ProfilePage(),
+                              ),
+                            );
+                          },
+                          child: CircleAvatar(
+                            radius: 32,
+                            backgroundColor: Colors.white24,
+                            backgroundImage:
+                                profile.imageFile != null
+                                    ? FileImage(profile.imageFile!)
+                                    : null,
+                            child:
+                                profile.imageFile == null
+                                    ? Icon(
+                                      Icons.person,
+                                      color: Colors.white,
+                                      size: 40,
+                                    )
+                                    : null,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          profile.name.isNotEmpty ? profile.name : 'Guest',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Guest',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
               ),
             ),
             _DrawerNavItem(

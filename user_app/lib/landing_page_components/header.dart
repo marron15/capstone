@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import '../modals/signup_modal.dart';
-import '../modals/login.dart';
-import '../profile.dart';
+import 'modals/signup_modal.dart';
+import 'modals/login.dart';
 
 class BlackHeader extends StatelessWidget {
   final Function(int) onNavTap;
