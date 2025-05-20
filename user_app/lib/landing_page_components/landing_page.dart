@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'header.dart';
+import 'sidenav/header.dart';
 import 'equipment_images.dart';
 import 'services.dart';
 import 'products.dart';

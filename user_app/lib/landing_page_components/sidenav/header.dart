@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'modals/signup_modal.dart';
+import '../modals/signup_modal.dart';
+import '../modals/login.dart';
 
 class BlackHeader extends StatelessWidget {
   final Function(int) onNavTap;
@@ -70,6 +71,32 @@ class BlackHeader extends StatelessWidget {
             ),
             const SizedBox(width: 12),
           ],
+          // Login Button
+          ElevatedButton(
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) => const LoginModal(),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: Colors.black,
+              padding: EdgeInsets.symmetric(
+                horizontal: isSmallScreen ? 14 : 18,
+                vertical: isSmallScreen ? 8 : 12,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              elevation: 0,
+            ),
+            child: Text(
+              'Login',
+              style: TextStyle(fontSize: isSmallScreen ? 14 : 16),
+            ),
+          ),
+          const SizedBox(width: 10),
           // Sign Up Button
           ElevatedButton(
             onPressed: () {
