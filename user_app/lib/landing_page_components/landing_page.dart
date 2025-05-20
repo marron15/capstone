@@ -6,7 +6,8 @@ import 'products.dart';
 import 'plans.dart';
 import 'trainers.dart';
 import 'modals/signup_modal.dart';
-import '../footer.dart';
+import 'footer.dart';
+import './profile.dart';
 
 class LandingPage extends StatefulWidget {
   const LandingPage({Key? key}) : super(key: key);
@@ -65,7 +66,33 @@ class _LandingPageState extends State<LandingPage> {
                   ),
                 ),
               ),
-              child: SizedBox.shrink(),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => ProfilePage()),
+                      );
+                    },
+                    child: CircleAvatar(
+                      radius: 32,
+                      backgroundColor: Colors.white24,
+                      child: Icon(Icons.person, color: Colors.white, size: 40),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Guest',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
             ),
             _DrawerNavItem(
               icon: Icons.home,
