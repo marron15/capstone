@@ -26,7 +26,10 @@ class ProductsSection extends StatelessWidget {
               'Products',
               style: TextStyle(
                 color: Colors.white,
-                fontSize: (isSmallScreen ? screenWidth * 0.07 : screenWidth * 0.045).clamp(22.0, 48.0),
+                fontSize: (isSmallScreen
+                        ? screenWidth * 0.07
+                        : screenWidth * 0.045)
+                    .clamp(22.0, 48.0),
                 fontWeight: FontWeight.bold,
               ),
               textAlign: TextAlign.center,
@@ -43,7 +46,8 @@ class ProductsSection extends StatelessWidget {
               _FlexibleProductCard(
                 imagePath: 'assets/images/services&products/whey.png',
                 title: 'Whey Protein',
-                description: 'Whey protein with vitamins C. Convenient sachets.',
+                description:
+                    'Whey protein with vitamins C. Convenient sachets.',
                 isSmallScreen: isSmallScreen,
                 screenWidth: screenWidth,
               ),
@@ -51,7 +55,8 @@ class ProductsSection extends StatelessWidget {
               _FlexibleProductCard(
                 imagePath: 'assets/images/services&products/Mass.png',
                 title: 'Serious Mass',
-                description: 'High-calorie mass gainer. 12 lbs, chocolate flavor.',
+                description:
+                    'High-calorie mass gainer. 12 lbs, chocolate flavor.',
                 isSmallScreen: isSmallScreen,
                 screenWidth: screenWidth,
               ),
@@ -67,7 +72,8 @@ class ProductsSection extends StatelessWidget {
               _FlexibleProductCard(
                 imagePath: 'assets/images/services&products/Amino.png',
                 title: 'Amino 2222 Tabs',
-                description: 'Full spectrum blend micronized aminos. 320 tablets.',
+                description:
+                    'Full spectrum blend micronized aminos. 320 tablets.',
                 isSmallScreen: isSmallScreen,
                 screenWidth: screenWidth,
               ),
@@ -135,11 +141,7 @@ class _ProductCard extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black26,
-            blurRadius: 8,
-            offset: Offset(0, 4),
-          ),
+          BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 4)),
         ],
       ),
       child: Stack(
@@ -172,7 +174,10 @@ class _ProductCard extends StatelessWidget {
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
-                    fontSize: (isSmallScreen ? screenWidth * 0.045 : screenWidth * 0.018).clamp(14.0, 22.0),
+                    fontSize: (isSmallScreen
+                            ? screenWidth * 0.045
+                            : screenWidth * 0.018)
+                        .clamp(14.0, 22.0),
                   ),
                 ),
                 SizedBox(height: 6),
@@ -180,7 +185,10 @@ class _ProductCard extends StatelessWidget {
                   description,
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: (isSmallScreen ? screenWidth * 0.03 : screenWidth * 0.012).clamp(11.0, 16.0),
+                    fontSize: (isSmallScreen
+                            ? screenWidth * 0.03
+                            : screenWidth * 0.012)
+                        .clamp(11.0, 16.0),
                   ),
                 ),
               ],

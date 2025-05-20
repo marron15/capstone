@@ -26,7 +26,10 @@ class ServicesSection extends StatelessWidget {
               'Services',
               style: TextStyle(
                 color: Colors.white,
-                fontSize: (isSmallScreen ? screenWidth * 0.07 : screenWidth * 0.045).clamp(22.0, 48.0),
+                fontSize: (isSmallScreen
+                        ? screenWidth * 0.07
+                        : screenWidth * 0.045)
+                    .clamp(22.0, 48.0),
                 fontWeight: FontWeight.bold,
               ),
               textAlign: TextAlign.center,
@@ -43,7 +46,8 @@ class ServicesSection extends StatelessWidget {
               _FlexibleServiceCard(
                 imagePath: 'assets/images/services&products/Lockers.jpg',
                 title: 'Locker Rental',
-                description: 'Secure your belongings with our lockers you can bring your own lock. Rental fee: 50 pesos/month.',
+                description:
+                    'Secure your belongings with our lockers you can bring your own lock. Rental fee: 50 pesos/month.',
               ),
               SizedBox(width: 16),
               _FlexibleServiceCard(
@@ -106,11 +110,7 @@ class _ServiceCard extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black26,
-            blurRadius: 8,
-            offset: Offset(0, 4),
-          ),
+          BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 4)),
         ],
       ),
       child: Stack(
@@ -149,10 +149,7 @@ class _ServiceCard extends StatelessWidget {
                 SizedBox(height: 6),
                 Text(
                   description,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: Colors.white, fontSize: 14),
                 ),
               ],
             ),

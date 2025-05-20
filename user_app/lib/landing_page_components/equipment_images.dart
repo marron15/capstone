@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
 class EquipmentImagesSection extends StatelessWidget {
-  const EquipmentImagesSection({Key? key,required this.isSmallScreen,
+  const EquipmentImagesSection({
+    Key? key,
+    required this.isSmallScreen,
     required this.screenWidth,
-    required this.screenHeight,}) : super(key: key);
-
+    required this.screenHeight,
+  }) : super(key: key);
 
   final bool isSmallScreen;
   final double screenWidth;
@@ -22,9 +24,11 @@ class EquipmentImagesSection extends StatelessWidget {
               'Equipments',
               style: TextStyle(
                 color: Colors.white,
-                fontSize: (isSmallScreen ? screenWidth * 0.07 : screenWidth * 0.045).clamp(22.0, 48.0),
+                fontSize: (isSmallScreen
+                        ? screenWidth * 0.07
+                        : screenWidth * 0.045)
+                    .clamp(22.0, 48.0),
                 fontWeight: FontWeight.bold,
-
               ),
               textAlign: TextAlign.center,
             ),
@@ -109,11 +113,7 @@ class _EquipmentCard extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black26,
-            blurRadius: 8,
-            offset: Offset(0, 4),
-          ),
+          BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 4)),
         ],
       ),
       child: Stack(
@@ -152,10 +152,7 @@ class _EquipmentCard extends StatelessWidget {
                 SizedBox(height: 8),
                 Text(
                   description,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                  ),
+                  style: TextStyle(color: Colors.white, fontSize: 16),
                 ),
               ],
             ),

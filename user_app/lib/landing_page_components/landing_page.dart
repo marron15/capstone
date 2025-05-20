@@ -6,6 +6,7 @@ import 'products.dart';
 import 'plans.dart';
 import 'trainers.dart';
 import 'modals/signup_modal.dart';
+import '../footer.dart';
 
 class LandingPage extends StatefulWidget {
   const LandingPage({Key? key}) : super(key: key);
@@ -197,44 +198,6 @@ class _LandingPageState extends State<LandingPage> {
                                 ),
                               ),
                               SizedBox(height: screenSize.height * 0.012),
-                              Text(
-                                '\nBusiness Hours: 11:00AM - 9:00PM',
-                                style: TextStyle(
-                                  color: Colors.white.withAlpha(
-                                    (0.9 * 255).toInt(),
-                                  ),
-                                  fontSize:
-                                      (isSmallScreen
-                                          ? (screenSize.width * 0.045).clamp(
-                                            13.0,
-                                            20.0,
-                                          )
-                                          : (screenSize.width * 0.03).clamp(
-                                            14.0,
-                                            22.0,
-                                          )),
-                                  fontWeight: FontWeight.w400,
-                                ),
-                              ),
-                              Text(
-                                'Monday to Saturday',
-                                style: TextStyle(
-                                  color: Colors.white.withAlpha(
-                                    (0.9 * 255).toInt(),
-                                  ),
-                                  fontSize:
-                                      (isSmallScreen
-                                          ? (screenSize.width * 0.045).clamp(
-                                            13.0,
-                                            20.0,
-                                          )
-                                          : (screenSize.width * 0.03).clamp(
-                                            14.0,
-                                            22.0,
-                                          )),
-                                  fontWeight: FontWeight.w400,
-                                ),
-                              ),
                               SizedBox(height: screenSize.height * 0.04),
                               SizedBox(
                                 width: (isSmallScreen
@@ -319,62 +282,6 @@ class _LandingPageState extends State<LandingPage> {
                   ),
                 ),
               ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class Footer extends StatelessWidget {
-  final bool isSmallScreen;
-  final double screenWidth;
-  const Footer({
-    Key? key,
-    required this.isSmallScreen,
-    required this.screenWidth,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      color: Colors.black,
-      padding: EdgeInsets.symmetric(
-        vertical: 32.0,
-        horizontal: isSmallScreen ? 16.0 : screenWidth * 0.1,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Image.asset(
-                'assets/images/RNR1.png',
-                width: isSmallScreen ? 60 : 80,
-                fit: BoxFit.contain,
-              ),
-              const SizedBox(width: 16),
-              const Text(
-                'FITNESS GYM',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.2,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 32),
-          const Text(
-            '875 RIZAL AVENUE WEST TAPINAC , OLONGAPO CITY',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              letterSpacing: 1.1,
             ),
           ),
         ],
