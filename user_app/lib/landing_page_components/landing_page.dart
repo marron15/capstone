@@ -65,25 +65,7 @@ class _LandingPageState extends State<LandingPage> {
                   ),
                 ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(
-                    Icons.fitness_center,
-                    color: Colors.white,
-                    size: 40,
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'RNR Fitness Gym',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
+              child: SizedBox.shrink(),
             ),
             _DrawerNavItem(
               icon: Icons.home,

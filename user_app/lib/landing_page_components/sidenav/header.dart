@@ -33,19 +33,6 @@ class BlackHeader extends StatelessWidget {
             ),
             const SizedBox(width: 8),
           ],
-          const Icon(Icons.fitness_center, color: Colors.white, size: 28),
-          if (!isSmallScreen) ...[
-            const SizedBox(width: 12),
-            const Text(
-              'RNR Fitness Gym',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 22,
-                letterSpacing: 1.2,
-              ),
-            ),
-          ],
           const Spacer(),
           // Navigation Buttons - Only show on larger screens
           if (!isSmallScreen) ...[
