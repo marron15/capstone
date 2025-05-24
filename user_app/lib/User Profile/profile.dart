@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'profile_data.dart';
+import 'note.dart';
+import 'transaction.dart';
 
 class ProfilePage extends StatefulWidget {
   @override
@@ -11,6 +13,7 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   late TextEditingController _nameController;
   late TextEditingController _contactController;
+  final TextEditingController _noteController = TextEditingController();
   late VoidCallback _nameListener;
   late VoidCallback _contactListener;
   File? _imageFile;
@@ -35,6 +38,7 @@ class _ProfilePageState extends State<ProfilePage> {
     _contactController.removeListener(_contactListener);
     _nameController.dispose();
     _contactController.dispose();
+    _noteController.dispose();
     super.dispose();
   }
 
@@ -69,74 +73,90 @@ class _ProfilePageState extends State<ProfilePage> {
     return Scaffold(
       appBar: AppBar(title: Text('Profile')),
       body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            SizedBox(height: 24),
-            Center(
-              child: GestureDetector(
-                onTap: _pickImage,
-                child: CircleAvatar(
-                  radius: 50,
-                  backgroundColor: Colors.grey[300],
-                  backgroundImage:
-                      _imageFile != null ? FileImage(_imageFile!) : null,
-                  child:
-                      _imageFile == null
-                          ? Icon(
-                            Icons.camera_alt,
-                            size: 40,
-                            color: Colors.grey[700],
-                          )
-                          : null,
-                ),
-              ),
-            ),
-            SizedBox(height: 32),
-            TextField(
-              controller: _nameController,
-              decoration: InputDecoration(
-                labelText: 'Name',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            SizedBox(height: 20),
-            TextField(
-              controller: _contactController,
-              keyboardType: TextInputType.phone,
-              decoration: InputDecoration(
-                labelText: 'Contact Number',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            SizedBox(height: 32),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'Membership Expiration: ',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                ),
-                Text(
-                  '--:--:--',
-                  style: TextStyle(
-                    fontSize: 18,
-                    letterSpacing: 2,
-                    color: Colors.redAccent,
+        padding: const EdgeInsets.symmetric(horizontal: 28.0, vertical: 32.0),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              SizedBox(height: 40),
+              Center(
+                child: GestureDetector(
+                  onTap: _pickImage,
+                  child: CircleAvatar(
+                    radius: 54,
+                    backgroundColor: Colors.grey[300],
+                    backgroundImage:
+                        _imageFile != null ? FileImage(_imageFile!) : null,
+                    child:
+                        _imageFile == null
+                            ? Icon(
+                              Icons.camera_alt,
+                              size: 48,
+                              color: Colors.grey[700],
+                            )
+                            : null,
                   ),
                 ),
-              ],
-            ),
-            Spacer(),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _hasChanges() ? _saveProfile : null,
-                child: Text('Save'),
               ),
-            ),
-          ],
+              SizedBox(height: 44),
+              TextField(
+                controller: _nameController,
+                decoration: InputDecoration(
+                  labelText: 'Name',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              SizedBox(height: 28),
+              TextField(
+                controller: _contactController,
+                keyboardType: TextInputType.phone,
+                decoration: InputDecoration(
+                  labelText: 'Contact Number',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              SizedBox(height: 40),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Membership Expiration: ',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                  ),
+                  Text(
+                    '--:--:--',
+                    style: TextStyle(
+                      fontSize: 18,
+                      letterSpacing: 2,
+                      color: Colors.redAccent,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 40),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _hasChanges() ? _saveProfile : null,
+                  child: Text('Save'),
+                ),
+              ),
+              SizedBox(height: 48),
+              NoteWidget(
+                controller: _noteController,
+                onSave: () {
+                  final note = _noteController.text;
+                  // TODO: Send 'note' to backend here
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text('Note saved!')));
+                },
+              ),
+              SizedBox(height: 44),
+              TransactionProofWidget(),
+              SizedBox(height: 44),
+            ],
+          ),
         ),
       ),
     );
