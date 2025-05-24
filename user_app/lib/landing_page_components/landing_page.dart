@@ -5,10 +5,10 @@ import 'services.dart';
 import 'products.dart';
 import 'plans.dart';
 import 'trainers.dart';
-import 'modals/signup_modal.dart';
+import '../modals/signup_modal.dart';
 import 'footer.dart';
-import 'User Profile/profile.dart';
-import 'User Profile/profile_data.dart';
+import '../User Profile/profile.dart';
+import '../User Profile/profile_data.dart';
 
 class LandingPage extends StatefulWidget {
   const LandingPage({Key? key}) : super(key: key);
