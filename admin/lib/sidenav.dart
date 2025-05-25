@@ -11,9 +11,9 @@ class SideNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
+        child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
           Expanded(
             child: ListView(
               padding: EdgeInsets.zero,
@@ -83,8 +83,8 @@ class SideNav extends StatelessWidget {
                   },
                 ),
                 ListTile(
-                  leading: const Icon(Icons.shopping_bag),
-                  title: const Text('Products'),
+                  leading: const Icon(Icons.shopping_cart),
+                  title: const Text('Product'),
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(
@@ -99,27 +99,23 @@ class SideNav extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            child: ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red.shade50,
-                foregroundColor: Colors.red,
-                minimumSize: const Size.fromHeight(48),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                elevation: 0,
-              ),
-              icon: const Icon(Icons.logout),
-              label: const Text('Logout'),
-              onPressed: () {
-                // TODO: Implement actual logout logic
-                Navigator.of(context).popUntil((route) => route.isFirst);
-              },
-            ),
-          ),
-        ],
-      ),
-    );
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red.shade50,
+                    foregroundColor: Colors.red,
+                    minimumSize: const Size.fromHeight(48),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    elevation: 0,
+                  ),
+                  icon: const Icon(Icons.logout),
+                  label: const Text('Logout'),
+                  onPressed: () {
+                    // TODO: Implement actual logout logic
+                    Navigator.of(context).popUntil((route) => route.isFirst);
+                  }))
+        ]));
   }
 }
