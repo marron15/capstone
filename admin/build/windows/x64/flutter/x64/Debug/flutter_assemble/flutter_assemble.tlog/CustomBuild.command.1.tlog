@@ -1,0 +1,28 @@
+^C:\XAMPP\HTDOCS\CAPSTONE\ADMIN\LIB\BUILD\WINDOWS\X64\CMAKEFILES\E4EA28D0BF16BC520DA1C053B6F31CD9\FLUTTER_WINDOWS.DLL.RULE
+setlocal
+"C:\Program Files\Microsoft Visual Studio\2022\Preview\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E env FLUTTER_ROOT=C:\src\flutter PROJECT_DIR=C:\xampp\htdocs\capstone\admin\lib FLUTTER_ROOT=C:\src\flutter FLUTTER_EPHEMERAL_DIR=C:\xampp\htdocs\capstone\admin\lib\windows\flutter\ephemeral PROJECT_DIR=C:\xampp\htdocs\capstone\admin\lib FLUTTER_TARGET=C:\xampp\htdocs\capstone\admin\lib\main.dart DART_OBFUSCATION=false TRACK_WIDGET_CREATION=true TREE_SHAKE_ICONS=false PACKAGE_CONFIG=C:\xampp\htdocs\capstone\admin\lib\.dart_tool\package_config.json C:/src/flutter/packages/flutter_tools/bin/tool_backend.bat windows-x64 Debug
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\XAMPP\HTDOCS\CAPSTONE\ADMIN\LIB\BUILD\WINDOWS\X64\CMAKEFILES\5264D530C213D827AC3714B18FF0A578\FLUTTER_ASSEMBLE.RULE
+setlocal
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\XAMPP\HTDOCS\CAPSTONE\ADMIN\LIB\WINDOWS\FLUTTER\CMAKELISTS.TXT
+setlocal
+"C:\Program Files\Microsoft Visual Studio\2022\Preview\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SC:/xampp/htdocs/capstone/admin/lib/windows -BC:/xampp/htdocs/capstone/admin/lib/build/windows/x64 --check-stamp-file C:/xampp/htdocs/capstone/admin/lib/build/windows/x64/flutter/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

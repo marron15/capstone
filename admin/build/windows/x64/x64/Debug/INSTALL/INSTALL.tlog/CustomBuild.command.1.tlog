@@ -1,0 +1,10 @@
+^C:\XAMPP\HTDOCS\CAPSTONE\ADMIN\LIB\BUILD\WINDOWS\X64\CMAKEFILES\E399EEC57638D4A909E65D0C65D7B270\INSTALL_FORCE.RULE
+setlocal
+cd .
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

@@ -1,0 +1,10 @@
+^C:\XAMPP\HTDOCS\CAPSTONE\ADMIN\LIB\BUILD\WINDOWS\X64\CMAKEFILES\E399EEC57638D4A909E65D0C65D7B270\GENERATE.STAMP.RULE
+setlocal
+"C:\Program Files\Microsoft Visual Studio\2022\Preview\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SC:/xampp/htdocs/capstone/admin/lib/windows -BC:/xampp/htdocs/capstone/admin/lib/build/windows/x64 --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/xampp/htdocs/capstone/admin/lib/build/windows/x64/admin.sln
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

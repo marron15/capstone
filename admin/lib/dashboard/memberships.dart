@@ -9,29 +9,75 @@ class MembershipsPage extends StatefulWidget {
 }
 
 class _MembershipsPageState extends State<MembershipsPage> {
-  // Sample data for memberships
-  List<Map<String, String>> _memberships = [
+  // Sample data for memberships with expiration dates
+  List<Map<String, dynamic>> _memberships = [
     {
       'name': 'Alice Johnson',
       'contactNumber': '+1 123-456-7890',
-      'duration': '1 Month',
+      'membershipType': 'Monthly',
+      'expirationDate': DateTime.now().add(const Duration(days: 30)),
     },
     {
       'name': 'Bob Smith',
       'contactNumber': '+1 234-567-8901',
-      'duration': '3 Months',
+      'membershipType': 'Half Month',
+      'expirationDate': DateTime.now().add(const Duration(days: 15)),
     },
     {
       'name': 'Charlie Brown',
       'contactNumber': '+1 345-678-9012',
-      'duration': '6 Months',
+      'membershipType': 'Daily',
+      'expirationDate': DateTime.now().add(const Duration(days: 1)),
     },
     {
       'name': 'Diana Prince',
       'contactNumber': '+1 456-789-0123',
-      'duration': '1 Year',
+      'membershipType': 'Monthly',
+      'expirationDate': DateTime.now().add(const Duration(days: 30)),
     },
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _sortMembershipsByExpiration();
+  }
+
+  void _sortMembershipsByExpiration() {
+    _memberships.sort((a, b) {
+      final DateTime dateA = a['expirationDate'] as DateTime;
+      final DateTime dateB = b['expirationDate'] as DateTime;
+      return dateA.compareTo(dateB);
+    });
+  }
+
+  String _getRemainingTime(DateTime expirationDate) {
+    final now = DateTime.now();
+    final difference = expirationDate.difference(now);
+
+    if (difference.inDays < 0) {
+      return 'Expired';
+    } else if (difference.inDays == 0) {
+      return 'Expires today';
+    } else if (difference.inDays == 1) {
+      return '1 day remaining';
+    } else {
+      return '${difference.inDays} days remaining';
+    }
+  }
+
+  Color _getMembershipTypeColor(String membershipType) {
+    switch (membershipType) {
+      case 'Daily':
+        return Colors.orange;
+      case 'Half Month':
+        return Colors.blue;
+      case 'Monthly':
+        return Colors.green;
+      default:
+        return Colors.black87;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +85,7 @@ class _MembershipsPageState extends State<MembershipsPage> {
       backgroundColor: Colors.white,
       drawer: const SideNav(),
       appBar: AppBar(
-        title: const Text('Memberships'),
+        title: const Text('Membership Management'),
         backgroundColor: Colors.blue,
         elevation: 0,
       ),
@@ -58,7 +104,8 @@ class _MembershipsPageState extends State<MembershipsPage> {
               children: [
                 _buildHeaderCell('Name', flex: 3),
                 _buildHeaderCell('Contact Number', flex: 3),
-                _buildHeaderCell('Membership Duration', flex: 3, isBold: true),
+                _buildHeaderCell('Membership Type', flex: 3, isBold: true),
+                _buildHeaderCell('Time Remaining', flex: 3, isBold: true),
                 _buildHeaderCell('View Profile', flex: 2, isBold: true),
               ],
             ),
@@ -70,19 +117,35 @@ class _MembershipsPageState extends State<MembershipsPage> {
               separatorBuilder: (context, index) =>
                   const Divider(height: 1, thickness: 1, color: Colors.black12),
               itemBuilder: (context, index) {
+                final membership = _memberships[index];
+                final expirationDate = membership['expirationDate'] as DateTime;
+                final remainingTime = _getRemainingTime(expirationDate);
+                final membershipType = membership['membershipType'] as String;
+
                 return Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
+                  decoration: BoxDecoration(
+                    color: remainingTime == 'Expired'
+                        ? Colors.red.shade50
+                        : Colors.white,
                   ),
                   child: Row(
                     children: [
-                      _buildCell(_memberships[index]['name'] ?? '', flex: 3),
-                      _buildCell(_memberships[index]['contactNumber'] ?? '',
-                          flex: 3),
-                      _buildCell(_memberships[index]['duration'] ?? '',
-                          flex: 3),
+                      _buildCell(membership['name'] ?? '', flex: 3),
+                      _buildCell(membership['contactNumber'] ?? '', flex: 3),
+                      _buildCell(
+                        membershipType,
+                        flex: 3,
+                        color: _getMembershipTypeColor(membershipType),
+                      ),
+                      _buildCell(
+                        remainingTime,
+                        flex: 3,
+                        color: remainingTime == 'Expired'
+                            ? Colors.red
+                            : Colors.black87,
+                      ),
                       Expanded(
                         flex: 2,
                         child: TextButton(
@@ -126,14 +189,14 @@ class _MembershipsPageState extends State<MembershipsPage> {
     );
   }
 
-  Widget _buildCell(String text, {int flex = 1}) {
+  Widget _buildCell(String text, {int flex = 1, Color? color}) {
     return Expanded(
       flex: flex,
       child: Text(
         text,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 14,
-          color: Colors.black87,
+          color: color ?? Colors.black87,
         ),
       ),
     );

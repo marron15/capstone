@@ -70,7 +70,7 @@ class SideNav extends StatelessWidget {
                 ),
                 ListTile(
                   leading: const Icon(Icons.card_membership),
-                  title: const Text('Memberships'),
+                  title: const Text('Membership'),
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(
