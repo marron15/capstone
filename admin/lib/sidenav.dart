@@ -3,6 +3,7 @@ import 'dashboard/admin_profile.dart';
 import 'dashboard/trainers.dart';
 import 'dashboard/home.dart';
 import 'dashboard/memberships.dart';
+import 'dashboard/admin_products.dart';
 
 class SideNav extends StatelessWidget {
   const SideNav({super.key});
@@ -77,6 +78,19 @@ class SideNav extends StatelessWidget {
                       context,
                       MaterialPageRoute(
                         builder: (context) => const MembershipsPage(),
+                      ),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.shopping_bag),
+                  title: const Text('Products'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const AdminProductsPage(),
                       ),
                     );
                   },
