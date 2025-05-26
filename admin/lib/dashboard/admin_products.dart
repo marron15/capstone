@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../sidenav.dart';
 
 class AdminProductsPage extends StatelessWidget {
-  const AdminProductsPage({Key? key}) : super(key: key);
+  const AdminProductsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -29,15 +29,15 @@ class AdminProductsPage extends StatelessWidget {
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: Colors.grey.withOpacity(0.08),
+                color: Colors.grey.withAlpha(20),
                 blurRadius: 16,
                 offset: const Offset(0, 8),
               ),
             ],
           ),
-          child: Column(
+          child: const Column(
             mainAxisSize: MainAxisSize.min,
-            children: const [
+            children: [
               Icon(Icons.shopping_bag_outlined,
                   size: 64, color: Colors.blueGrey),
               SizedBox(height: 16),
@@ -59,9 +59,9 @@ class AdminProductsPage extends StatelessWidget {
           // TODO: Implement add product functionality
         },
         backgroundColor: Colors.blue,
-        child: const Icon(Icons.add),
         tooltip: 'Add Product',
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: const Icon(Icons.add),
       ),
     );
   }

@@ -145,8 +145,7 @@ class _ProfilePageState extends State<ProfilePage> {
               NoteWidget(
                 controller: _noteController,
                 onSave: () {
-                  final note = _noteController.text;
-                  // TODO: Send 'note' to backend here
+                  // TODO: Send _noteController.text to backend here
                   ScaffoldMessenger.of(
                     context,
                   ).showSnackBar(SnackBar(content: Text('Note saved!')));
