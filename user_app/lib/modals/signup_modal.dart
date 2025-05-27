@@ -18,8 +18,18 @@ class _SignUpModalState extends State<SignUpModal>
   late AnimationController _iconController;
   Animation<double>? _iconAnim;
 
-  final FocusNode _nameFocus = FocusNode();
+  int _currentStep = 0;
+  String? _selectedMonth;
+  int? _selectedDay;
+  int? _selectedYear;
+  final FocusNode _firstNameFocus = FocusNode();
+  final FocusNode _middleNameFocus = FocusNode();
+  final FocusNode _lastNameFocus = FocusNode();
   final FocusNode _contactFocus = FocusNode();
+  final FocusNode _emailFocus = FocusNode();
+  final FocusNode _dobDayFocus = FocusNode();
+  final FocusNode _dobMonthFocus = FocusNode();
+  final FocusNode _dobYearFocus = FocusNode();
   final FocusNode _passFocus = FocusNode();
   final FocusNode _rePassFocus = FocusNode();
 
@@ -49,8 +59,14 @@ class _SignUpModalState extends State<SignUpModal>
   void dispose() {
     _controller.dispose();
     _iconController.dispose();
-    _nameFocus.dispose();
+    _firstNameFocus.dispose();
+    _middleNameFocus.dispose();
+    _lastNameFocus.dispose();
     _contactFocus.dispose();
+    _emailFocus.dispose();
+    _dobDayFocus.dispose();
+    _dobMonthFocus.dispose();
+    _dobYearFocus.dispose();
     _passFocus.dispose();
     _rePassFocus.dispose();
     super.dispose();
@@ -106,9 +122,9 @@ class _SignUpModalState extends State<SignUpModal>
                     filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
                     child: Container(
                       width:
-                          MediaQuery.of(context).size.width < 460
-                              ? MediaQuery.of(context).size.width * 0.95
-                              : 440,
+                          MediaQuery.of(context).size.width < 600
+                              ? MediaQuery.of(context).size.width * 0.99
+                              : 560,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(22),
                         gradient: LinearGradient(
@@ -136,7 +152,7 @@ class _SignUpModalState extends State<SignUpModal>
                       ),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 30,
+                          horizontal: 38,
                           vertical: 36,
                         ),
                         child: SingleChildScrollView(
@@ -198,12 +214,10 @@ class _SignUpModalState extends State<SignUpModal>
                                             'Get a Membership Now',
                                             style: TextStyle(
                                               fontWeight: FontWeight.bold,
-                                              fontSize: 22,
+                                              fontSize: 20,
                                               color: Colors.white,
                                               letterSpacing: 0.2,
                                             ),
-                                            overflow: TextOverflow.ellipsis,
-                                            maxLines: 1,
                                           ),
                                         ),
                                       ],
@@ -221,14 +235,7 @@ class _SignUpModalState extends State<SignUpModal>
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 4),
-                              const Text(
-                                'Sign up to access exclusive gym plans and offers.',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  color: Colors.white70,
-                                ),
-                              ),
+
                               const SizedBox(height: 14),
                               Container(
                                 margin: const EdgeInsets.only(bottom: 10),
@@ -242,92 +249,337 @@ class _SignUpModalState extends State<SignUpModal>
                                   indent: 2,
                                 ),
                               ),
-                              TextField(
-                                focusNode: _nameFocus,
-                                style: const TextStyle(color: Colors.white),
-                                decoration: _inputDecoration(
-                                  label: 'Name',
-                                  icon: Icons.person_outline,
-                                  focusNode: _nameFocus,
-                                  hintText: 'Full Name',
+                              if (_currentStep == 0) ...[
+                                Column(
+                                  children: [
+                                    TextField(
+                                      focusNode: _firstNameFocus,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                      ),
+                                      decoration: _inputDecoration(
+                                        label: 'First Name',
+                                        icon: Icons.person_outline,
+                                        focusNode: _firstNameFocus,
+                                        hintText: 'First Name',
+                                      ),
+                                    ),
+                                    const SizedBox(height: 14),
+                                    TextField(
+                                      focusNode: _middleNameFocus,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                      ),
+                                      decoration: _inputDecoration(
+                                        label: 'Middle Name',
+                                        icon: Icons.person_outline,
+                                        focusNode: _middleNameFocus,
+                                        hintText: 'M.I.',
+                                      ),
+                                    ),
+                                    const SizedBox(height: 14),
+                                    TextField(
+                                      focusNode: _lastNameFocus,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                      ),
+                                      decoration: _inputDecoration(
+                                        label: 'Last Name',
+                                        icon: Icons.person_outline,
+                                        focusNode: _lastNameFocus,
+                                        hintText: 'Last Name',
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                              const SizedBox(height: 18),
-                              TextField(
-                                focusNode: _contactFocus,
-                                style: const TextStyle(color: Colors.white),
-                                decoration: _inputDecoration(
-                                  label: 'Contact Number',
-                                  icon: Icons.phone_outlined,
+                                const SizedBox(height: 18),
+                                TextField(
                                   focusNode: _contactFocus,
-                                  hintText: '09XXXXXXXXX',
+                                  style: const TextStyle(color: Colors.white),
+                                  decoration: _inputDecoration(
+                                    label: 'Contact Number',
+                                    icon: Icons.phone_outlined,
+                                    focusNode: _contactFocus,
+                                    hintText: '09XXXXXXXXX',
+                                  ),
+                                  keyboardType: TextInputType.phone,
                                 ),
-                                keyboardType: TextInputType.phone,
-                              ),
-                              const SizedBox(height: 18),
-                              TextField(
-                                focusNode: _passFocus,
-                                obscureText: _obscurePassword,
-                                style: const TextStyle(color: Colors.white),
-                                decoration: _inputDecoration(
-                                  label: 'Password',
-                                  icon: Icons.lock_outline,
-                                  focusNode: _passFocus,
-                                  suffixIcon: IconButton(
-                                    icon: Icon(
-                                      _obscurePassword
-                                          ? Icons.visibility_off
-                                          : Icons.visibility,
-                                      color: Colors.white70,
+                                const SizedBox(height: 18),
+                                TextField(
+                                  focusNode: _emailFocus,
+                                  style: const TextStyle(color: Colors.white),
+                                  decoration: _inputDecoration(
+                                    label: 'Email',
+                                    icon: Icons.email_outlined,
+                                    focusNode: _emailFocus,
+                                    hintText: 'example@email.com',
+                                  ),
+                                  keyboardType: TextInputType.emailAddress,
+                                ),
+                                const SizedBox(height: 32),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton.icon(
+                                    style: ElevatedButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 10,
+                                      ),
+                                      backgroundColor: const Color(0xFF1976D2),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(14),
+                                      ),
                                     ),
-                                    onPressed:
-                                        () => setState(
-                                          () =>
-                                              _obscurePassword =
-                                                  !_obscurePassword,
-                                        ),
+                                    onPressed: () {
+                                      setState(() {
+                                        _currentStep = 1;
+                                      });
+                                    },
+                                    icon: const Icon(
+                                      Icons.arrow_forward,
+                                      size: 18,
+                                      color: Colors.white,
+                                    ),
+                                    label: const Text(
+                                      'Next',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 15,
+                                        color: Colors.white,
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ),
-                              const SizedBox(height: 18),
-                              TextField(
-                                focusNode: _rePassFocus,
-                                obscureText: _obscureRePassword,
-                                style: const TextStyle(color: Colors.white),
-                                decoration: _inputDecoration(
-                                  label: 'Re-Enter Password',
-                                  icon: Icons.lock_outline,
-                                  focusNode: _rePassFocus,
-                                  suffixIcon: IconButton(
-                                    icon: Icon(
-                                      _obscureRePassword
-                                          ? Icons.visibility_off
-                                          : Icons.visibility,
-                                      color: Colors.white70,
-                                    ),
-                                    onPressed:
-                                        () => setState(
-                                          () =>
-                                              _obscureRePassword =
-                                                  !_obscureRePassword,
-                                        ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 32),
-                              _AnimatedGradientButton(
-                                onPressed: () {
-                                  // Handle sign up logic here
-                                },
-                                child: const Text(
-                                  'Sign Up',
+                              ] else ...[
+                                const Text(
+                                  'Select Birthdate',
                                   style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 18,
-                                    letterSpacing: 0.5,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 16,
                                   ),
                                 ),
-                              ),
+                                SizedBox(height: 10),
+                                Column(
+                                  children: [
+                                    DropdownButtonFormField<String>(
+                                      value: _selectedMonth,
+                                      decoration: _inputDecoration(
+                                        label: 'Month',
+                                        icon: Icons.calendar_today,
+                                        focusNode: null,
+                                      ),
+                                      dropdownColor: Colors.blueGrey[900],
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                      ),
+                                      items:
+                                          [
+                                                'January',
+                                                'February',
+                                                'March',
+                                                'April',
+                                                'May',
+                                                'June',
+                                                'July',
+                                                'August',
+                                                'September',
+                                                'October',
+                                                'November',
+                                                'December',
+                                              ]
+                                              .map(
+                                                (month) => DropdownMenuItem(
+                                                  value: month,
+                                                  child: Text(month),
+                                                ),
+                                              )
+                                              .toList(),
+                                      onChanged:
+                                          (val) => setState(
+                                            () => _selectedMonth = val,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 14),
+                                    DropdownButtonFormField<int>(
+                                      value: _selectedDay,
+                                      decoration: _inputDecoration(
+                                        label: 'Day',
+                                        icon: Icons.calendar_today,
+                                        focusNode: null,
+                                      ),
+                                      dropdownColor: Colors.blueGrey[900],
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                      ),
+                                      items:
+                                          List.generate(31, (i) => i + 1)
+                                              .map(
+                                                (day) => DropdownMenuItem(
+                                                  value: day,
+                                                  child: Text(day.toString()),
+                                                ),
+                                              )
+                                              .toList(),
+                                      onChanged:
+                                          (val) => setState(
+                                            () => _selectedDay = val,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 14),
+                                    DropdownButtonFormField<int>(
+                                      value: _selectedYear,
+                                      decoration: _inputDecoration(
+                                        label: 'Year',
+                                        icon: Icons.calendar_today,
+                                        focusNode: null,
+                                      ),
+                                      dropdownColor: Colors.blueGrey[900],
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                      ),
+                                      items:
+                                          List.generate(
+                                                DateTime.now().year - 1949,
+                                                (i) => 1950 + i,
+                                              )
+                                              .map(
+                                                (year) => DropdownMenuItem(
+                                                  value: year,
+                                                  child: Text(year.toString()),
+                                                ),
+                                              )
+                                              .toList(),
+                                      onChanged:
+                                          (val) => setState(
+                                            () => _selectedYear = val,
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 18),
+                                TextField(
+                                  focusNode: _passFocus,
+                                  obscureText: _obscurePassword,
+                                  style: const TextStyle(color: Colors.white),
+                                  decoration: _inputDecoration(
+                                    label: 'Password',
+                                    icon: Icons.lock_outline,
+                                    focusNode: _passFocus,
+                                    suffixIcon: IconButton(
+                                      icon: Icon(
+                                        _obscurePassword
+                                            ? Icons.visibility_off
+                                            : Icons.visibility,
+                                        color: Colors.white70,
+                                      ),
+                                      onPressed:
+                                          () => setState(
+                                            () =>
+                                                _obscurePassword =
+                                                    !_obscurePassword,
+                                          ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 18),
+                                TextField(
+                                  focusNode: _rePassFocus,
+                                  obscureText: _obscureRePassword,
+                                  style: const TextStyle(color: Colors.white),
+                                  decoration: _inputDecoration(
+                                    label: 'Re-Enter Password',
+                                    icon: Icons.lock_outline,
+                                    focusNode: _rePassFocus,
+                                    suffixIcon: IconButton(
+                                      icon: Icon(
+                                        _obscureRePassword
+                                            ? Icons.visibility_off
+                                            : Icons.visibility,
+                                        color: Colors.white70,
+                                      ),
+                                      onPressed:
+                                          () => setState(
+                                            () =>
+                                                _obscureRePassword =
+                                                    !_obscureRePassword,
+                                          ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 32),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: SizedBox(
+                                        width: double.infinity,
+                                        child: ElevatedButton.icon(
+                                          style: ElevatedButton.styleFrom(
+                                            padding: const EdgeInsets.symmetric(
+                                              vertical: 10,
+                                            ),
+                                            backgroundColor: const Color(
+                                              0xFF1976D2,
+                                            ),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(14),
+                                            ),
+                                          ),
+                                          onPressed: () {
+                                            setState(() {
+                                              _currentStep = 0;
+                                            });
+                                          },
+                                          icon: const Icon(
+                                            Icons.arrow_back,
+                                            size: 18,
+                                            color: Colors.white,
+                                          ),
+                                          label: const Text(
+                                            'Back',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w500,
+                                              fontSize: 15,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 20),
+                                    Expanded(
+                                      child: SizedBox(
+                                        width: double.infinity,
+                                        child: ElevatedButton(
+                                          style: ElevatedButton.styleFrom(
+                                            padding: const EdgeInsets.symmetric(
+                                              vertical: 10,
+                                            ),
+                                            backgroundColor: const Color(
+                                              0xFF1976D2,
+                                            ),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(14),
+                                            ),
+                                          ),
+                                          onPressed: () {
+                                            // Handle sign up logic here
+                                          },
+                                          child: const Text(
+                                            'Sign Up',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w500,
+                                              fontSize: 15,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ],
                           ),
                         ),

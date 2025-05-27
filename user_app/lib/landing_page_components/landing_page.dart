@@ -101,7 +101,12 @@ class _LandingPageState extends State<LandingPage> {
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          profile.name.isNotEmpty ? profile.name : 'Guest',
+                          ('${profile.firstName} ${profile.middleName} ${profile.lastName}')
+                                  .trim()
+                                  .isNotEmpty
+                              ? ('${profile.firstName} ${profile.middleName} ${profile.lastName}')
+                                  .trim()
+                              : 'Guest',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 18,
