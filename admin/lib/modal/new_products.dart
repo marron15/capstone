@@ -18,10 +18,12 @@ class Product {
 
 class AddProductModal extends StatefulWidget {
   final Function(Product) onProductAdded;
+  final Product? initialProduct;
 
   const AddProductModal({
     super.key,
     required this.onProductAdded,
+    this.initialProduct,
   });
 
   @override
@@ -35,6 +37,17 @@ class _AddProductModalState extends State<AddProductModal> {
   final _descriptionController = TextEditingController();
 
   Uint8List? _imageBytes;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialProduct != null) {
+      _nameController.text = widget.initialProduct!.name;
+      _priceController.text = widget.initialProduct!.price.toString();
+      _descriptionController.text = widget.initialProduct!.description;
+      _imageBytes = widget.initialProduct!.imageBytes;
+    }
+  }
 
   @override
   void dispose() {
@@ -120,9 +133,12 @@ class _AddProductModalState extends State<AddProductModal> {
       Navigator.of(context).pop();
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Product added successfully!'),
-          backgroundColor: Colors.green,
+        SnackBar(
+          content: Text(widget.initialProduct == null
+              ? 'Product added successfully!'
+              : 'Product updated!'),
+          backgroundColor:
+              widget.initialProduct == null ? Colors.green : Colors.blue,
         ),
       );
     } else if (_imageBytes == null) {
@@ -139,7 +155,8 @@ class _AddProductModalState extends State<AddProductModal> {
   Widget build(BuildContext context) {
     return AlertDialog(
       backgroundColor: Colors.grey[50],
-      title: const Text('Add New Product'),
+      title: Text(
+          widget.initialProduct == null ? 'Add New Product' : 'Edit Product'),
       content: Form(
         key: _formKey,
         child: SingleChildScrollView(
@@ -245,7 +262,8 @@ class _AddProductModalState extends State<AddProductModal> {
               borderRadius: BorderRadius.circular(8),
             ),
           ),
-          child: const Text('Add Product'),
+          child: Text(
+              widget.initialProduct == null ? 'Add Product' : 'Save Changes'),
         ),
       ],
     );
