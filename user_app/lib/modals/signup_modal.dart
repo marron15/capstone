@@ -717,7 +717,52 @@ class _SignUpModalState extends State<SignUpModal>
                                     Expanded(
                                       child: SizedBox(
                                         width: double.infinity,
-                                        child: ElevatedButton.icon(
+                                        child: ElevatedButton(
+                                          style: ElevatedButton.styleFrom(
+                                            padding: const EdgeInsets.symmetric(
+                                              vertical: 10,
+                                            ),
+                                            backgroundColor: const Color(
+                                              0xFF1976D2,
+                                            ),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(14),
+                                            ),
+                                          ),
+                                          onPressed: () {
+                                            setState(() {
+                                              _currentStep = 1;
+                                            });
+                                          },
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              Icon(
+                                                Icons.arrow_back,
+                                                size: 18,
+                                                color: Colors.white,
+                                              ),
+                                              SizedBox(width: 8),
+                                              Text(
+                                                'Back',
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.w500,
+                                                  fontSize: 15,
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 20),
+                                    Expanded(
+                                      child: SizedBox(
+                                        width: double.infinity,
+                                        child: ElevatedButton(
                                           style: ElevatedButton.styleFrom(
                                             padding: const EdgeInsets.symmetric(
                                               vertical: 10,
@@ -808,47 +853,6 @@ class _SignUpModalState extends State<SignUpModal>
                                                     (context) => ProfilePage(),
                                               ),
                                             );
-                                          },
-                                          icon: const Icon(
-                                            Icons.arrow_back,
-                                            size: 18,
-                                            color: Colors.white,
-                                          ),
-                                          label: const Text(
-                                            'Back',
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.w500,
-                                              fontSize: 15,
-                                              color: Colors.white,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 20),
-                                    Expanded(
-                                      child: SizedBox(
-                                        width: double.infinity,
-                                        child: ElevatedButton(
-                                          style: ElevatedButton.styleFrom(
-                                            padding: const EdgeInsets.symmetric(
-                                              vertical: 10,
-                                            ),
-                                            backgroundColor: const Color(
-                                              0xFF1976D2,
-                                            ),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(14),
-                                            ),
-                                          ),
-                                          onPressed: () {
-                                            // Handle final sign up logic here
-                                            String emergencyName =
-                                                _emergencyNameController.text;
-                                            String emergencyPhone =
-                                                _emergencyPhoneController.text;
-                                            // TODO: Send these values to your backend
                                           },
                                           child: const Text(
                                             'Sign Up',
