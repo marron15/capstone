@@ -36,6 +36,11 @@ class _ProfilePageState extends State<ProfilePage> {
   late VoidCallback _emailListener;
   File? _imageFile;
   DateTime? _birthdate;
+  TextEditingController _passwordController = TextEditingController();
+  TextEditingController _rePasswordController = TextEditingController();
+  bool _obscurePassword = true;
+  bool _obscureRePassword = true;
+  String? _passwordError;
 
   @override
   void initState() {
@@ -67,6 +72,8 @@ class _ProfilePageState extends State<ProfilePage> {
     _contactController.dispose();
     _emailController.dispose();
     _noteController.dispose();
+    _passwordController.dispose();
+    _rePasswordController.dispose();
     super.dispose();
   }
 
@@ -90,6 +97,18 @@ class _ProfilePageState extends State<ProfilePage> {
 
   void _saveProfile() {
     FocusScope.of(context).unfocus();
+    setState(() {
+      _passwordError = null;
+    });
+    if (_passwordController.text.isNotEmpty ||
+        _rePasswordController.text.isNotEmpty) {
+      if (_passwordController.text != _rePasswordController.text) {
+        setState(() {
+          _passwordError = 'Passwords do not match';
+        });
+        return;
+      }
+    }
     profileNotifier.value = ProfileData(
       imageFile: _imageFile,
       firstName: _firstNameController.text,
@@ -202,6 +221,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   border: OutlineInputBorder(),
                 ),
               ),
+
               SizedBox(height: 28),
               GestureDetector(
                 onTap: _pickBirthdate,
@@ -218,6 +238,49 @@ class _ProfilePageState extends State<ProfilePage> {
                               ? "	${_birthdate!.year}-${_birthdate!.month.toString().padLeft(2, '0')}-${_birthdate!.day.toString().padLeft(2, '0')}"
                               : '',
                     ),
+                  ),
+                ),
+              ),
+              SizedBox(height: 28),
+              TextField(
+                controller: _passwordController,
+                obscureText: _obscurePassword,
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  border: OutlineInputBorder(),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
+                    },
+                  ),
+                ),
+              ),
+              SizedBox(height: 20),
+              TextField(
+                controller: _rePasswordController,
+                obscureText: _obscureRePassword,
+                decoration: InputDecoration(
+                  labelText: 'Re-enter Password',
+                  border: OutlineInputBorder(),
+                  errorText: _passwordError,
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscureRePassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscureRePassword = !_obscureRePassword;
+                      });
+                    },
                   ),
                 ),
               ),
@@ -239,6 +302,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ],
               ),
+
               SizedBox(height: 40),
               SizedBox(
                 width: double.infinity,

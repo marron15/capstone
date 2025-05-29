@@ -21,6 +21,10 @@ class _LoginModalState extends State<LoginModal> with TickerProviderStateMixin {
   final FocusNode _contactFocus = FocusNode();
   final FocusNode _passFocus = FocusNode();
 
+  final TextEditingController _contactOrEmailController =
+      TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
@@ -49,6 +53,8 @@ class _LoginModalState extends State<LoginModal> with TickerProviderStateMixin {
     _iconController.dispose();
     _contactFocus.dispose();
     _passFocus.dispose();
+    _contactOrEmailController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 
@@ -61,10 +67,10 @@ class _LoginModalState extends State<LoginModal> with TickerProviderStateMixin {
   }) {
     return InputDecoration(
       labelText: label,
-      labelStyle: const TextStyle(color: Colors.white70),
+      labelStyle: const TextStyle(color: Colors.white),
       hintText: hintText,
-      hintStyle: const TextStyle(color: Colors.white38),
-      prefixIcon: Icon(icon, color: Colors.white70),
+      hintStyle: const TextStyle(color: Colors.white),
+      prefixIcon: Icon(icon, color: Colors.white),
       filled: true,
       fillColor: Colors.white.withAlpha((0.08 * 255).toInt()),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
@@ -189,16 +195,18 @@ class _LoginModalState extends State<LoginModal> with TickerProviderStateMixin {
                                         ),
                                         const SizedBox(width: 12),
                                         Flexible(
-                                          child: Text(
-                                            'Welcome Back',
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 22,
-                                              color: Colors.white,
-                                              letterSpacing: 0.2,
+                                          child: Center(
+                                            child: Text(
+                                              'Welcome Back',
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 22,
+                                                color: Colors.white,
+                                                letterSpacing: 0.2,
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
+                                              maxLines: 1,
                                             ),
-                                            overflow: TextOverflow.ellipsis,
-                                            maxLines: 1,
                                           ),
                                         ),
                                       ],
@@ -216,15 +224,17 @@ class _LoginModalState extends State<LoginModal> with TickerProviderStateMixin {
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 4),
-                              const Text(
-                                'Log in to your account.',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  color: Colors.white70,
+                              const SizedBox(height: 8),
+                              Center(
+                                child: const Text(
+                                  'Login your account',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    color: Colors.white,
+                                  ),
                                 ),
                               ),
-                              const SizedBox(height: 14),
+                              const SizedBox(height: 5),
                               Container(
                                 margin: const EdgeInsets.only(bottom: 10),
                                 child: Divider(
@@ -232,24 +242,27 @@ class _LoginModalState extends State<LoginModal> with TickerProviderStateMixin {
                                   color: Colors.lightBlueAccent.withAlpha(
                                     (0.22 * 255).toInt(),
                                   ),
-                                  height: 24,
+                                  height: 50,
                                   endIndent: 12,
                                   indent: 2,
                                 ),
                               ),
                               TextField(
+                                controller: _contactOrEmailController,
                                 focusNode: _contactFocus,
                                 style: const TextStyle(color: Colors.white),
                                 decoration: _inputDecoration(
-                                  label: 'Contact Number',
-                                  icon: Icons.phone_outlined,
+                                  label: 'Contact Number or Email',
+                                  icon: Icons.person_outline,
                                   focusNode: _contactFocus,
-                                  hintText: '09XXXXXXXXX',
+                                  hintText:
+                                      '09XX XXX XXXX or email@example.com',
                                 ),
-                                keyboardType: TextInputType.phone,
+                                keyboardType: TextInputType.text,
                               ),
-                              const SizedBox(height: 18),
+                              const SizedBox(height: 35),
                               TextField(
+                                controller: _passwordController,
                                 focusNode: _passFocus,
                                 obscureText: _obscurePassword,
                                 style: const TextStyle(color: Colors.white),
@@ -262,7 +275,7 @@ class _LoginModalState extends State<LoginModal> with TickerProviderStateMixin {
                                       _obscurePassword
                                           ? Icons.visibility_off
                                           : Icons.visibility,
-                                      color: Colors.white70,
+                                      color: Colors.white,
                                     ),
                                     onPressed:
                                         () => setState(
@@ -290,12 +303,12 @@ class _LoginModalState extends State<LoginModal> with TickerProviderStateMixin {
                                     child: const Text(
                                       'Forgot Password?',
                                       style: TextStyle(
-                                        color: Colors.white70,
+                                        color: Colors.white,
                                         fontSize: 14,
                                       ),
                                     ),
                                     style: TextButton.styleFrom(
-                                      foregroundColor: Colors.white70,
+                                      foregroundColor: Colors.white,
                                       padding: EdgeInsets.zero,
                                       minimumSize: Size(0, 0),
                                       tapTargetSize:
@@ -304,7 +317,7 @@ class _LoginModalState extends State<LoginModal> with TickerProviderStateMixin {
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 8),
+                              const SizedBox(height: 50),
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
@@ -345,6 +358,9 @@ class _LoginModalState extends State<LoginModal> with TickerProviderStateMixin {
                               const SizedBox(height: 24),
                               _AnimatedGradientButton(
                                 onPressed: () {
+                                  final contactOrEmail =
+                                      _contactOrEmailController.text.trim();
+                                  final password = _passwordController.text;
                                   // Handle login logic here
                                 },
                                 child: const Text(

@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
+import '../User Profile/profile.dart';
+import '../User Profile/profile_data.dart';
 
 class SignUpModal extends StatefulWidget {
   const SignUpModal({Key? key}) : super(key: key);
@@ -42,6 +44,13 @@ class _SignUpModalState extends State<SignUpModal>
       TextEditingController();
   final TextEditingController _emergencyPhoneController =
       TextEditingController();
+  final TextEditingController _firstNameController = TextEditingController();
+  final TextEditingController _middleNameController = TextEditingController();
+  final TextEditingController _lastNameController = TextEditingController();
+  final TextEditingController _contactController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _rePasswordController = TextEditingController();
 
   @override
   void initState() {
@@ -81,6 +90,13 @@ class _SignUpModalState extends State<SignUpModal>
     _rePassFocus.dispose();
     _emergencyNameController.dispose();
     _emergencyPhoneController.dispose();
+    _firstNameController.dispose();
+    _middleNameController.dispose();
+    _lastNameController.dispose();
+    _contactController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _rePasswordController.dispose();
     super.dispose();
   }
 
@@ -306,6 +322,7 @@ class _SignUpModalState extends State<SignUpModal>
                                       ),
                                     ),
                                     TextField(
+                                      controller: _firstNameController,
                                       focusNode: _firstNameFocus,
                                       style: const TextStyle(
                                         color: Colors.white,
@@ -319,6 +336,7 @@ class _SignUpModalState extends State<SignUpModal>
                                     ),
                                     const SizedBox(height: 14),
                                     TextField(
+                                      controller: _middleNameController,
                                       focusNode: _middleNameFocus,
                                       style: const TextStyle(
                                         color: Colors.white,
@@ -332,6 +350,7 @@ class _SignUpModalState extends State<SignUpModal>
                                     ),
                                     const SizedBox(height: 14),
                                     TextField(
+                                      controller: _lastNameController,
                                       focusNode: _lastNameFocus,
                                       style: const TextStyle(
                                         color: Colors.white,
@@ -616,6 +635,7 @@ class _SignUpModalState extends State<SignUpModal>
                               ] else ...[
                                 // Contact, email, and password step
                                 TextField(
+                                  controller: _contactController,
                                   focusNode: _contactFocus,
                                   style: const TextStyle(color: Colors.white),
                                   decoration: _inputDecoration(
@@ -628,6 +648,7 @@ class _SignUpModalState extends State<SignUpModal>
                                 ),
                                 const SizedBox(height: 18),
                                 TextField(
+                                  controller: _emailController,
                                   focusNode: _emailFocus,
                                   style: const TextStyle(color: Colors.white),
                                   decoration: _inputDecoration(
@@ -640,6 +661,7 @@ class _SignUpModalState extends State<SignUpModal>
                                 ),
                                 const SizedBox(height: 18),
                                 TextField(
+                                  controller: _passwordController,
                                   focusNode: _passFocus,
                                   obscureText: _obscurePassword,
                                   style: const TextStyle(color: Colors.white),
@@ -665,6 +687,7 @@ class _SignUpModalState extends State<SignUpModal>
                                 ),
                                 const SizedBox(height: 18),
                                 TextField(
+                                  controller: _rePasswordController,
                                   focusNode: _rePassFocus,
                                   obscureText: _obscureRePassword,
                                   style: const TextStyle(color: Colors.white),
@@ -708,9 +731,83 @@ class _SignUpModalState extends State<SignUpModal>
                                             ),
                                           ),
                                           onPressed: () {
-                                            setState(() {
-                                              _currentStep = 1;
-                                            });
+                                            // Collect all values
+                                            String firstName =
+                                                _firstNameController.text
+                                                    .trim();
+                                            String middleName =
+                                                _middleNameController.text
+                                                    .trim();
+                                            String lastName =
+                                                _lastNameController.text.trim();
+                                            String contact =
+                                                _contactController.text.trim();
+                                            String email =
+                                                _emailController.text.trim();
+                                            String password =
+                                                _passwordController.text;
+                                            String rePassword =
+                                                _rePasswordController.text;
+                                            String emergencyName =
+                                                _emergencyNameController.text
+                                                    .trim();
+                                            String emergencyPhone =
+                                                _emergencyPhoneController.text
+                                                    .trim();
+
+                                            // Prepare birthdate from selected fields
+                                            DateTime? birthdate;
+                                            if (_selectedYear != null &&
+                                                _selectedMonth != null &&
+                                                _selectedDay != null) {
+                                              final monthIndex =
+                                                  [
+                                                    'January',
+                                                    'February',
+                                                    'March',
+                                                    'April',
+                                                    'May',
+                                                    'June',
+                                                    'July',
+                                                    'August',
+                                                    'September',
+                                                    'October',
+                                                    'November',
+                                                    'December',
+                                                  ].indexOf(_selectedMonth!) +
+                                                  1;
+                                              birthdate = DateTime(
+                                                _selectedYear!,
+                                                monthIndex,
+                                                _selectedDay!,
+                                              );
+                                            }
+
+                                            // Update profileNotifier for frontend profile page
+                                            profileNotifier.value = ProfileData(
+                                              imageFile: _selectedImage,
+                                              firstName: firstName,
+                                              middleName: middleName,
+                                              lastName: lastName,
+                                              contactNumber: contact,
+                                              email: email,
+                                              birthdate: birthdate,
+                                            );
+
+                                            // TODO: Add validation and backend call here
+
+                                            // Simulate success and navigate to User Profile
+                                            Navigator.of(
+                                              context,
+                                            ).pop(); // Close the modal
+                                            Navigator.of(
+                                              context,
+                                            ).pushReplacement(
+                                              MaterialPageRoute(
+                                                builder:
+                                                    (context) => ProfilePage(),
+                                              ),
+                                            );
                                           },
                                           icon: const Icon(
                                             Icons.arrow_back,
