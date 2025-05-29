@@ -1,5 +1,9 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 
 class SignUpModal extends StatefulWidget {
   const SignUpModal({Key? key}) : super(key: key);
@@ -25,13 +29,19 @@ class _SignUpModalState extends State<SignUpModal>
   final FocusNode _firstNameFocus = FocusNode();
   final FocusNode _middleNameFocus = FocusNode();
   final FocusNode _lastNameFocus = FocusNode();
-  final FocusNode _contactFocus = FocusNode();
-  final FocusNode _emailFocus = FocusNode();
   final FocusNode _dobDayFocus = FocusNode();
   final FocusNode _dobMonthFocus = FocusNode();
   final FocusNode _dobYearFocus = FocusNode();
+  final FocusNode _emailFocus = FocusNode();
+  final FocusNode _contactFocus = FocusNode();
   final FocusNode _passFocus = FocusNode();
   final FocusNode _rePassFocus = FocusNode();
+  File? _selectedImage;
+  Uint8List? _webImageBytes;
+  final TextEditingController _emergencyNameController =
+      TextEditingController();
+  final TextEditingController _emergencyPhoneController =
+      TextEditingController();
 
   @override
   void initState() {
@@ -69,6 +79,8 @@ class _SignUpModalState extends State<SignUpModal>
     _dobYearFocus.dispose();
     _passFocus.dispose();
     _rePassFocus.dispose();
+    _emergencyNameController.dispose();
+    _emergencyPhoneController.dispose();
     super.dispose();
   }
 
@@ -101,6 +113,38 @@ class _SignUpModalState extends State<SignUpModal>
       ),
       suffixIcon: suffixIcon,
     );
+  }
+
+  Future<void> _pickImage() async {
+    if (kIsWeb) {
+      // Use file_picker for web
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+      );
+      if (result != null && result.files.single.bytes != null) {
+        setState(() {
+          _webImageBytes = result.files.single.bytes;
+        });
+      }
+    } else if (Platform.isAndroid || Platform.isIOS) {
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+      if (image != null) {
+        setState(() {
+          _selectedImage = File(image.path);
+        });
+      }
+    } else {
+      // Desktop (Windows, macOS, Linux)
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+      );
+      if (result != null && result.files.single.path != null) {
+        setState(() {
+          _selectedImage = File(result.files.single.path!);
+        });
+      }
+    }
   }
 
   @override
@@ -252,6 +296,15 @@ class _SignUpModalState extends State<SignUpModal>
                               if (_currentStep == 0) ...[
                                 Column(
                                   children: [
+                                    const SizedBox(height: 5),
+                                    const Text(
+                                      'Information \n',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 16,
+                                      ),
+                                    ),
                                     TextField(
                                       focusNode: _firstNameFocus,
                                       style: const TextStyle(
@@ -290,77 +343,16 @@ class _SignUpModalState extends State<SignUpModal>
                                         hintText: 'Last Name',
                                       ),
                                     ),
-                                  ],
-                                ),
-                                const SizedBox(height: 18),
-                                TextField(
-                                  focusNode: _contactFocus,
-                                  style: const TextStyle(color: Colors.white),
-                                  decoration: _inputDecoration(
-                                    label: 'Contact Number',
-                                    icon: Icons.phone_outlined,
-                                    focusNode: _contactFocus,
-                                    hintText: '09XXXXXXXXX',
-                                  ),
-                                  keyboardType: TextInputType.phone,
-                                ),
-                                const SizedBox(height: 18),
-                                TextField(
-                                  focusNode: _emailFocus,
-                                  style: const TextStyle(color: Colors.white),
-                                  decoration: _inputDecoration(
-                                    label: 'Email',
-                                    icon: Icons.email_outlined,
-                                    focusNode: _emailFocus,
-                                    hintText: 'example@email.com',
-                                  ),
-                                  keyboardType: TextInputType.emailAddress,
-                                ),
-                                const SizedBox(height: 32),
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: ElevatedButton.icon(
-                                    style: ElevatedButton.styleFrom(
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 10,
-                                      ),
-                                      backgroundColor: const Color(0xFF1976D2),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(14),
-                                      ),
-                                    ),
-                                    onPressed: () {
-                                      setState(() {
-                                        _currentStep = 1;
-                                      });
-                                    },
-                                    icon: const Icon(
-                                      Icons.arrow_forward,
-                                      size: 18,
-                                      color: Colors.white,
-                                    ),
-                                    label: const Text(
-                                      'Next',
+                                    const SizedBox(height: 24),
+                                    const Text(
+                                      'Select Birthdate',
                                       style: TextStyle(
-                                        fontWeight: FontWeight.w500,
-                                        fontSize: 15,
                                         color: Colors.white,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 16,
                                       ),
                                     ),
-                                  ),
-                                ),
-                              ] else ...[
-                                const Text(
-                                  'Select Birthdate',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                                SizedBox(height: 10),
-                                Column(
-                                  children: [
+                                    SizedBox(height: 10),
                                     DropdownButtonFormField<String>(
                                       value: _selectedMonth,
                                       decoration: _inputDecoration(
@@ -456,6 +448,196 @@ class _SignUpModalState extends State<SignUpModal>
                                     ),
                                   ],
                                 ),
+                                const SizedBox(height: 32),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton.icon(
+                                    style: ElevatedButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 10,
+                                      ),
+                                      backgroundColor: const Color(0xFF1976D2),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(14),
+                                      ),
+                                    ),
+                                    onPressed: () {
+                                      setState(() {
+                                        _currentStep = 1;
+                                      });
+                                    },
+                                    icon: const Icon(
+                                      Icons.arrow_forward,
+                                      size: 18,
+                                      color: Colors.white,
+                                    ),
+                                    label: const Text(
+                                      'Next',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 15,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ] else if (_currentStep == 1) ...[
+                                // Emergency contact and image upload step
+                                const Text(
+                                  'Upload an Image',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                Center(
+                                  child: CircleAvatar(
+                                    radius: 48,
+                                    backgroundColor: Colors.white24,
+                                    backgroundImage:
+                                        _webImageBytes != null
+                                            ? MemoryImage(_webImageBytes!)
+                                            : _selectedImage != null
+                                            ? FileImage(_selectedImage!)
+                                                as ImageProvider
+                                            : null,
+                                    child:
+                                        (_webImageBytes == null &&
+                                                _selectedImage == null)
+                                            ? IconButton(
+                                              icon: const Icon(
+                                                Icons.camera_alt,
+                                                color: Colors.white,
+                                                size: 32,
+                                              ),
+                                              onPressed: _pickImage,
+                                            )
+                                            : null,
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
+                                TextField(
+                                  controller: _emergencyNameController,
+                                  style: const TextStyle(color: Colors.white),
+                                  decoration: _inputDecoration(
+                                    label: 'Emergency Contact Name',
+                                    icon: Icons.person,
+                                    hintText: 'Full Name',
+                                  ),
+                                ),
+                                const SizedBox(height: 14),
+                                TextField(
+                                  controller: _emergencyPhoneController,
+                                  style: const TextStyle(color: Colors.white),
+                                  decoration: _inputDecoration(
+                                    label: 'Emergency Contact Phone',
+                                    icon: Icons.phone,
+                                    hintText: '09XXXXXXXXX',
+                                  ),
+                                  keyboardType: TextInputType.phone,
+                                ),
+                                const SizedBox(height: 32),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: SizedBox(
+                                        width: double.infinity,
+                                        child: ElevatedButton.icon(
+                                          style: ElevatedButton.styleFrom(
+                                            padding: const EdgeInsets.symmetric(
+                                              vertical: 10,
+                                            ),
+                                            backgroundColor: const Color(
+                                              0xFF1976D2,
+                                            ),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(14),
+                                            ),
+                                          ),
+                                          onPressed: () {
+                                            setState(() {
+                                              _currentStep = 0;
+                                            });
+                                          },
+                                          icon: const Icon(
+                                            Icons.arrow_back,
+                                            size: 18,
+                                            color: Colors.white,
+                                          ),
+                                          label: const Text(
+                                            'Back',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w500,
+                                              fontSize: 15,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 20),
+                                    Expanded(
+                                      child: SizedBox(
+                                        width: double.infinity,
+                                        child: ElevatedButton(
+                                          style: ElevatedButton.styleFrom(
+                                            padding: const EdgeInsets.symmetric(
+                                              vertical: 10,
+                                            ),
+                                            backgroundColor: const Color(
+                                              0xFF1976D2,
+                                            ),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(14),
+                                            ),
+                                          ),
+                                          onPressed: () {
+                                            setState(() {
+                                              _currentStep = 2;
+                                            });
+                                          },
+                                          child: const Text(
+                                            'Next',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w500,
+                                              fontSize: 15,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ] else ...[
+                                // Contact, email, and password step
+                                TextField(
+                                  focusNode: _contactFocus,
+                                  style: const TextStyle(color: Colors.white),
+                                  decoration: _inputDecoration(
+                                    label: 'Contact Number',
+                                    icon: Icons.phone_outlined,
+                                    focusNode: _contactFocus,
+                                    hintText: '09XXXXXXXXX',
+                                  ),
+                                  keyboardType: TextInputType.phone,
+                                ),
+                                const SizedBox(height: 18),
+                                TextField(
+                                  focusNode: _emailFocus,
+                                  style: const TextStyle(color: Colors.white),
+                                  decoration: _inputDecoration(
+                                    label: 'Email',
+                                    icon: Icons.email_outlined,
+                                    focusNode: _emailFocus,
+                                    hintText: 'example@email.com',
+                                  ),
+                                  keyboardType: TextInputType.emailAddress,
+                                ),
                                 const SizedBox(height: 18),
                                 TextField(
                                   focusNode: _passFocus,
@@ -527,7 +709,7 @@ class _SignUpModalState extends State<SignUpModal>
                                           ),
                                           onPressed: () {
                                             setState(() {
-                                              _currentStep = 0;
+                                              _currentStep = 1;
                                             });
                                           },
                                           icon: const Icon(
@@ -564,7 +746,12 @@ class _SignUpModalState extends State<SignUpModal>
                                             ),
                                           ),
                                           onPressed: () {
-                                            // Handle sign up logic here
+                                            // Handle final sign up logic here
+                                            String emergencyName =
+                                                _emergencyNameController.text;
+                                            String emergencyPhone =
+                                                _emergencyPhoneController.text;
+                                            // TODO: Send these values to your backend
                                           },
                                           child: const Text(
                                             'Sign Up',

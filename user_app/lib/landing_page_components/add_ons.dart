@@ -23,7 +23,7 @@ class ServicesSection extends StatelessWidget {
           ),
           child: Center(
             child: Text(
-              'Services',
+              'Add-Ons',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: (isSmallScreen

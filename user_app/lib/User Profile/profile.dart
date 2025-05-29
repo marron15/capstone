@@ -4,6 +4,8 @@ import 'dart:io';
 import 'profile_data.dart';
 import 'note.dart';
 import 'transaction.dart';
+import 'emergency_contact.dart';
+import '../landing_page_components/landing_page.dart';
 
 class ProfilePage extends StatefulWidget {
   @override
@@ -120,7 +122,18 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Profile')),
+      appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(Icons.home),
+          onPressed: () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => LandingPage()),
+            );
+          },
+        ),
+        title: Text('Profile'),
+      ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 28.0, vertical: 32.0),
         child: SingleChildScrollView(
@@ -246,6 +259,8 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               SizedBox(height: 44),
               TransactionProofWidget(),
+              SizedBox(height: 44),
+              EmergencyContactWidget(),
               SizedBox(height: 44),
             ],
           ),

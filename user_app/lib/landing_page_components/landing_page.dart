@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'header.dart';
 import 'equipment_images.dart';
-import 'services.dart';
+import 'add_ons.dart';
 import 'products.dart';
 import 'plans.dart';
 import 'trainers.dart';
@@ -57,65 +57,60 @@ class _LandingPageState extends State<LandingPage> {
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            DrawerHeader(
-              decoration: BoxDecoration(
-                color: Colors.black,
-                border: Border(
-                  bottom: BorderSide(
-                    color: Colors.white.withAlpha((0.1 * 255).toInt()),
-                    width: 1,
+            SizedBox(height: 80),
+            ValueListenableBuilder<ProfileData>(
+              valueListenable: profileNotifier,
+              builder:
+                  (context, profile, _) => Column(
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ProfilePage(),
+                            ),
+                          );
+                        },
+                        child: CircleAvatar(
+                          radius: 60,
+                          backgroundColor: const Color.fromARGB(
+                            59,
+                            170,
+                            170,
+                            170,
+                          ),
+                          backgroundImage:
+                              profile.imageFile != null
+                                  ? FileImage(profile.imageFile!)
+                                  : null,
+                          child:
+                              profile.imageFile == null
+                                  ? Icon(
+                                    Icons.person,
+                                    color: Colors.white,
+                                    size: 60,
+                                  )
+                                  : null,
+                        ),
+                      ),
+                      const SizedBox(height: 15),
+                      Text(
+                        ('${profile.firstName} ${profile.middleName} ${profile.lastName}')
+                                .trim()
+                                .isNotEmpty
+                            ? ('${profile.firstName} ${profile.middleName} ${profile.lastName}')
+                                .trim()
+                            : 'Guest',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 20),
+                    ],
                   ),
-                ),
-              ),
-              child: ValueListenableBuilder<ProfileData>(
-                valueListenable: profileNotifier,
-                builder:
-                    (context, profile, _) => Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => ProfilePage(),
-                              ),
-                            );
-                          },
-                          child: CircleAvatar(
-                            radius: 32,
-                            backgroundColor: Colors.white24,
-                            backgroundImage:
-                                profile.imageFile != null
-                                    ? FileImage(profile.imageFile!)
-                                    : null,
-                            child:
-                                profile.imageFile == null
-                                    ? Icon(
-                                      Icons.person,
-                                      color: Colors.white,
-                                      size: 40,
-                                    )
-                                    : null,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          ('${profile.firstName} ${profile.middleName} ${profile.lastName}')
-                                  .trim()
-                                  .isNotEmpty
-                              ? ('${profile.firstName} ${profile.middleName} ${profile.lastName}')
-                                  .trim()
-                              : 'Guest',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-              ),
             ),
             _DrawerNavItem(
               icon: Icons.home,
@@ -139,10 +134,26 @@ class _LandingPageState extends State<LandingPage> {
             ),
             _DrawerNavItem(
               icon: Icons.card_membership,
-              label: 'Membership',
+              label: 'Services',
               onTap: () {
                 Navigator.pop(context);
                 _scrollToSection(3);
+              },
+            ),
+            _DrawerNavItem(
+              icon: Icons.shopping_cart,
+              label: 'Products',
+              onTap: () {
+                Navigator.pop(context);
+                _scrollToSection(2);
+              },
+            ),
+            _DrawerNavItem(
+              icon: Icons.person,
+              label: 'Trainers',
+              onTap: () {
+                Navigator.pop(context);
+                _scrollToSection(4);
               },
             ),
             _DrawerNavItem(
@@ -278,6 +289,13 @@ class _LandingPageState extends State<LandingPage> {
                           screenHeight: screenSize.height,
                         ),
                         SizedBox(height: screenSize.height * 0.06),
+                        PlansSection(
+                          key: _plansKey,
+                          isSmallScreen: isSmallScreen,
+                          screenWidth: screenSize.width,
+                          screenHeight: screenSize.height,
+                        ),
+                        SizedBox(height: screenSize.height * 0.06),
                         ServicesSection(
                           key: _servicesKey,
                           isSmallScreen: isSmallScreen,
@@ -287,13 +305,6 @@ class _LandingPageState extends State<LandingPage> {
                         SizedBox(height: screenSize.height * 0.06),
                         ProductsSection(
                           key: _productsKey,
-                          isSmallScreen: isSmallScreen,
-                          screenWidth: screenSize.width,
-                          screenHeight: screenSize.height,
-                        ),
-                        SizedBox(height: screenSize.height * 0.06),
-                        PlansSection(
-                          key: _plansKey,
                           isSmallScreen: isSmallScreen,
                           screenWidth: screenSize.width,
                           screenHeight: screenSize.height,

@@ -26,7 +26,10 @@ class PlansSection extends StatelessWidget {
               'Our Membership Prices',
               style: TextStyle(
                 color: Colors.white,
-                fontSize: (isSmallScreen ? screenWidth * 0.07 : screenWidth * 0.045).clamp(22.0, 48.0),
+                fontSize: (isSmallScreen
+                        ? screenWidth * 0.07
+                        : screenWidth * 0.045)
+                    .clamp(22.0, 48.0),
                 fontWeight: FontWeight.bold,
               ),
               textAlign: TextAlign.center,
@@ -38,7 +41,7 @@ class PlansSection extends StatelessWidget {
           scrollDirection: Axis.horizontal,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               SizedBox(width: isSmallScreen ? 20.0 : screenWidth * 0.1),
               _FlexibleMembershipCard(
@@ -185,7 +188,10 @@ class _MembershipCard extends StatelessWidget {
             style: TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
-              fontSize: (isSmallScreen ? screenWidth * 0.045 : screenWidth * 0.018).clamp(16.0, 26.0),
+              fontSize: (isSmallScreen
+                      ? screenWidth * 0.045
+                      : screenWidth * 0.018)
+                  .clamp(16.0, 26.0),
             ),
           ),
           SizedBox(height: 12),
@@ -197,7 +203,10 @@ class _MembershipCard extends StatelessWidget {
                 style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
-                  fontSize: (isSmallScreen ? screenWidth * 0.09 : screenWidth * 0.04).clamp(22.0, 38.0),
+                  fontSize: (isSmallScreen
+                          ? screenWidth * 0.09
+                          : screenWidth * 0.04)
+                      .clamp(22.0, 38.0),
                 ),
               ),
               SizedBox(width: 6),
@@ -207,32 +216,40 @@ class _MembershipCard extends StatelessWidget {
                   priceSuffix,
                   style: TextStyle(
                     color: Colors.white70,
-                    fontSize: (isSmallScreen ? screenWidth * 0.025 : screenWidth * 0.012).clamp(12.0, 18.0),
+                    fontSize: (isSmallScreen
+                            ? screenWidth * 0.025
+                            : screenWidth * 0.012)
+                        .clamp(12.0, 18.0),
                   ),
                 ),
               ),
             ],
           ),
           SizedBox(height: 10),
-          ...features.map((f) => Padding(
-                padding: const EdgeInsets.only(bottom: 6.0),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(Icons.check, color: Colors.white, size: 18),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        f,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: (isSmallScreen ? screenWidth * 0.025 : screenWidth * 0.012).clamp(12.0, 18.0),
-                        ),
+          ...features.map(
+            (f) => Padding(
+              padding: const EdgeInsets.only(bottom: 6.0),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.check, color: Colors.white, size: 18),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      f,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: (isSmallScreen
+                                ? screenWidth * 0.025
+                                : screenWidth * 0.012)
+                            .clamp(12.0, 18.0),
                       ),
                     ),
-                  ],
-                ),
-              )),
+                  ),
+                ],
+              ),
+            ),
+          ),
           SizedBox(height: 18),
           SizedBox(
             width: double.infinity,
@@ -244,7 +261,10 @@ class _MembershipCard extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 textStyle: TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: (isSmallScreen ? screenWidth * 0.025 : screenWidth * 0.012).clamp(14.0, 18.0),
+                  fontSize: (isSmallScreen
+                          ? screenWidth * 0.025
+                          : screenWidth * 0.012)
+                      .clamp(14.0, 18.0),
                 ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
