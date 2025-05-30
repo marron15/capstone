@@ -109,12 +109,12 @@ class _SignUpModalState extends State<SignUpModal>
   }) {
     return InputDecoration(
       labelText: label,
-      labelStyle: const TextStyle(color: Colors.white70),
+      labelStyle: const TextStyle(color: Colors.white),
       hintText: hintText,
-      hintStyle: const TextStyle(color: Colors.white38),
-      prefixIcon: Icon(icon, color: Colors.white70),
+      hintStyle: const TextStyle(color: Colors.white54),
+      prefixIcon: Icon(icon, color: Colors.white),
       filled: true,
-      fillColor: Colors.white.withAlpha((0.08 * 255).toInt()),
+      fillColor: Colors.black.withAlpha((0.3 * 255).toInt()),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
@@ -187,14 +187,7 @@ class _SignUpModalState extends State<SignUpModal>
                               : 560,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(22),
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.white.withAlpha((0.13 * 255).toInt()),
-                            Colors.blueGrey.withAlpha((0.10 * 255).toInt()),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
+                        color: Colors.black.withAlpha((0.7 * 255).toInt()),
                         border: Border.all(
                           color: Colors.white.withAlpha((0.25 * 255).toInt()),
                           width: 1.5,
@@ -839,19 +832,45 @@ class _SignUpModalState extends State<SignUpModal>
                                               birthdate: birthdate,
                                             );
 
-                                            // TODO: Add validation and backend call here
+                                            // Prepare user data for backend
+                                            final userData = {
+                                              "firstName": firstName,
+                                              "middleName": middleName,
+                                              "lastName": lastName,
+                                              "contactNumber": contact,
+                                              "email": email,
+                                              "birthdate":
+                                                  birthdate?.toIso8601String(),
+                                              "emergencyContactName":
+                                                  emergencyName,
+                                              "emergencyContactPhone":
+                                                  emergencyPhone,
+                                              // TODO: Add image handling if needed
+                                            };
+                                            // TODO: Send userData to backend here
 
-                                            // Simulate success and navigate to User Profile
-                                            Navigator.of(
-                                              context,
-                                            ).pop(); // Close the modal
-                                            Navigator.of(
-                                              context,
-                                            ).pushReplacement(
-                                              MaterialPageRoute(
-                                                builder:
-                                                    (context) => ProfilePage(),
-                                              ),
+                                            // Show success alert and then route to profile
+                                            showDialog(
+                                              context: context,
+                                              builder:
+                                                  (context) => AlertDialog(
+                                                    title: Text(
+                                                      'Sign in Successful',
+                                                    ),
+                                                    actions: [
+                                                      TextButton(
+                                                        onPressed: () {
+                                                          Navigator.of(
+                                                            context,
+                                                          ).pop(); // Close dialog
+                                                          Navigator.of(
+                                                            context,
+                                                          ).pop(); // Close modal
+                                                        },
+                                                        child: Text('OK'),
+                                                      ),
+                                                    ],
+                                                  ),
                                             );
                                           },
                                           child: const Text(
