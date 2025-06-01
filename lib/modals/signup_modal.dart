@@ -51,6 +51,16 @@ class _SignUpModalState extends State<SignUpModal>
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _rePasswordController = TextEditingController();
+
+  // Error state variables for required fields
+  String? _firstNameError;
+  String? _lastNameError;
+  String? _birthdateError;
+  String? _emergencyNameError;
+  String? _emergencyPhoneError;
+  String? _contactError;
+  String? _emailError;
+  String? _passwordError; // Already exists, but will reuse
   String? _rePasswordError;
 
   @override
@@ -111,6 +121,7 @@ class _SignUpModalState extends State<SignUpModal>
     FocusNode? focusNode,
     Widget? suffixIcon,
     String? hintText,
+    String? errorText,
   }) {
     return InputDecoration(
       labelText: label,
@@ -133,6 +144,7 @@ class _SignUpModalState extends State<SignUpModal>
         ),
       ),
       suffixIcon: suffixIcon,
+      errorText: errorText,
     );
   }
 
@@ -354,6 +366,7 @@ class _SignUpModalState extends State<SignUpModal>
                                         icon: Icons.person_outline,
                                         focusNode: _firstNameFocus,
                                         hintText: 'First Name',
+                                        errorText: _firstNameError,
                                       ),
                                     ),
                                     const SizedBox(height: 14),
@@ -382,6 +395,7 @@ class _SignUpModalState extends State<SignUpModal>
                                         icon: Icons.person_outline,
                                         focusNode: _lastNameFocus,
                                         hintText: 'Last Name',
+                                        errorText: _lastNameError,
                                       ),
                                     ),
                                     const SizedBox(height: 24),
@@ -400,6 +414,7 @@ class _SignUpModalState extends State<SignUpModal>
                                         label: 'Month',
                                         icon: Icons.calendar_today,
                                         focusNode: null,
+                                        errorText: _birthdateError,
                                       ),
                                       dropdownColor: Colors.blueGrey[900],
                                       style: const TextStyle(
@@ -439,6 +454,7 @@ class _SignUpModalState extends State<SignUpModal>
                                         label: 'Day',
                                         icon: Icons.calendar_today,
                                         focusNode: null,
+                                        errorText: _birthdateError,
                                       ),
                                       dropdownColor: Colors.blueGrey[900],
                                       style: const TextStyle(
@@ -465,6 +481,7 @@ class _SignUpModalState extends State<SignUpModal>
                                         label: 'Year',
                                         icon: Icons.calendar_today,
                                         focusNode: null,
+                                        errorText: _birthdateError,
                                       ),
                                       dropdownColor: Colors.blueGrey[900],
                                       style: const TextStyle(
@@ -503,9 +520,48 @@ class _SignUpModalState extends State<SignUpModal>
                                       ),
                                     ),
                                     onPressed: () {
+                                      // Clear previous errors for step 0
                                       setState(() {
-                                        _currentStep = 1;
+                                        _firstNameError = null;
+                                        _lastNameError = null;
+                                        _birthdateError = null;
                                       });
+
+                                      // Validate fields for step 0
+                                      bool hasError = false;
+                                      if (_firstNameController.text
+                                          .trim()
+                                          .isEmpty) {
+                                        setState(() {
+                                          _firstNameError =
+                                              'First Name is required.';
+                                        });
+                                        hasError = true;
+                                      }
+                                      if (_lastNameController.text
+                                          .trim()
+                                          .isEmpty) {
+                                        setState(() {
+                                          _lastNameError =
+                                              'Last Name is required.';
+                                        });
+                                        hasError = true;
+                                      }
+                                      if (_selectedMonth == null ||
+                                          _selectedDay == null ||
+                                          _selectedYear == null) {
+                                        setState(() {
+                                          _birthdateError =
+                                              'Birthdate is required.';
+                                        });
+                                        hasError = true;
+                                      }
+
+                                      if (!hasError) {
+                                        setState(() {
+                                          _currentStep = 1;
+                                        });
+                                      }
                                     },
                                     icon: const Icon(
                                       Icons.arrow_forward,
@@ -566,6 +622,7 @@ class _SignUpModalState extends State<SignUpModal>
                                     label: 'Emergency Contact Name',
                                     icon: Icons.person,
                                     hintText: 'Full Name',
+                                    errorText: _emergencyNameError,
                                   ),
                                 ),
                                 const SizedBox(height: 14),
@@ -576,6 +633,7 @@ class _SignUpModalState extends State<SignUpModal>
                                     label: 'Emergency Contact Phone',
                                     icon: Icons.phone,
                                     hintText: '09XXXXXXXXX',
+                                    errorText: _emergencyPhoneError,
                                   ),
                                   keyboardType: TextInputType.phone,
                                 ),
@@ -633,9 +691,38 @@ class _SignUpModalState extends State<SignUpModal>
                                             ),
                                           ),
                                           onPressed: () {
+                                            // Clear previous errors for step 1
                                             setState(() {
-                                              _currentStep = 2;
+                                              _emergencyNameError = null;
+                                              _emergencyPhoneError = null;
                                             });
+
+                                            // Validate fields for step 1
+                                            bool hasError = false;
+                                            if (_emergencyNameController.text
+                                                .trim()
+                                                .isEmpty) {
+                                              setState(() {
+                                                _emergencyNameError =
+                                                    'Emergency contact name is required.';
+                                              });
+                                              hasError = true;
+                                            }
+                                            if (_emergencyPhoneController.text
+                                                .trim()
+                                                .isEmpty) {
+                                              setState(() {
+                                                _emergencyPhoneError =
+                                                    'Emergency contact phone is required.';
+                                              });
+                                              hasError = true;
+                                            }
+
+                                            if (!hasError) {
+                                              setState(() {
+                                                _currentStep = 2;
+                                              });
+                                            }
                                           },
                                           child: const Text(
                                             'Next',
@@ -661,6 +748,7 @@ class _SignUpModalState extends State<SignUpModal>
                                     icon: Icons.phone_outlined,
                                     focusNode: _contactFocus,
                                     hintText: '09XXXXXXXXX',
+                                    errorText: _contactError,
                                   ),
                                   keyboardType: TextInputType.phone,
                                 ),
@@ -674,6 +762,7 @@ class _SignUpModalState extends State<SignUpModal>
                                     icon: Icons.email_outlined,
                                     focusNode: _emailFocus,
                                     hintText: 'example@email.com',
+                                    errorText: _emailError,
                                   ),
                                   keyboardType: TextInputType.emailAddress,
                                 ),
@@ -701,7 +790,7 @@ class _SignUpModalState extends State<SignUpModal>
                                                     !_obscurePassword,
                                           ),
                                     ),
-                                  ),
+                                  ).copyWith(errorText: _passwordError),
                                 ),
                                 const SizedBox(height: 18),
                                 TextField(
@@ -747,120 +836,168 @@ class _SignUpModalState extends State<SignUpModal>
                                             ),
                                           ),
                                           onPressed: () {
-                                            // Collect all values
-                                            String firstName =
-                                                _firstNameController.text
-                                                    .trim();
-                                            String middleName =
-                                                _middleNameController.text
-                                                    .trim();
-                                            String lastName =
-                                                _lastNameController.text.trim();
-                                            String contact =
-                                                _contactController.text.trim();
-                                            String email =
-                                                _emailController.text.trim();
-                                            String password =
-                                                _passwordController.text;
-                                            String rePassword =
-                                                _rePasswordController.text;
-                                            String emergencyName =
-                                                _emergencyNameController.text
-                                                    .trim();
-                                            String emergencyPhone =
-                                                _emergencyPhoneController.text
-                                                    .trim();
+                                            // Clear previous errors for step 2
+                                            setState(() {
+                                              _contactError = null;
+                                              _emailError = null;
+                                              _passwordError = null;
+                                            });
 
-                                            // Prepare birthdate from selected fields
-                                            DateTime? birthdate;
-                                            if (_selectedYear != null &&
-                                                _selectedMonth != null &&
-                                                _selectedDay != null) {
-                                              final monthIndex =
-                                                  [
-                                                    'January',
-                                                    'February',
-                                                    'March',
-                                                    'April',
-                                                    'May',
-                                                    'June',
-                                                    'July',
-                                                    'August',
-                                                    'September',
-                                                    'October',
-                                                    'November',
-                                                    'December',
-                                                  ].indexOf(_selectedMonth!) +
-                                                  1;
-                                              birthdate = DateTime(
-                                                _selectedYear!,
-                                                monthIndex,
-                                                _selectedDay!,
-                                              );
+                                            // Validate fields for step 2
+                                            bool hasError = false;
+                                            if (_contactController.text
+                                                .trim()
+                                                .isEmpty) {
+                                              setState(() {
+                                                _contactError =
+                                                    'Contact number is required.';
+                                              });
+                                              hasError = true;
+                                            }
+                                            if (_emailController.text
+                                                .trim()
+                                                .isEmpty) {
+                                              setState(() {
+                                                _emailError =
+                                                    'Email is required.';
+                                              });
+                                              hasError = true;
+                                            }
+                                            if (_passwordController
+                                                .text
+                                                .isEmpty) {
+                                              setState(() {
+                                                _passwordError =
+                                                    'Password is required.';
+                                              });
+                                              hasError = true;
                                             }
 
-                                            // Update profileNotifier for frontend profile page
-                                            profileNotifier.value = ProfileData(
-                                              imageFile: _selectedImage,
-                                              webImageBytes: _webImageBytes,
-                                              firstName: firstName,
-                                              middleName: middleName,
-                                              lastName: lastName,
-                                              contactNumber: contact,
-                                              email: email,
-                                              birthdate: birthdate,
-                                              emergencyContactName:
-                                                  emergencyName,
-                                              emergencyContactPhone:
-                                                  emergencyPhone,
-                                              password: password,
-                                            );
+                                            // Check for password mismatch error (handled by listener, but double check)
+                                            if (_rePasswordError != null) {
+                                              hasError = true;
+                                            }
 
-                                            // Prepare user data for backend
-                                            final userData = {
-                                              "firstName": firstName,
-                                              "middleName": middleName,
-                                              "lastName": lastName,
-                                              "contactNumber": contact,
-                                              "email": email,
-                                              "birthdate":
-                                                  birthdate?.toIso8601String(),
-                                              "emergencyContactName":
-                                                  emergencyName,
-                                              "emergencyContactPhone":
-                                                  emergencyPhone,
-                                              // TODO: Add image handling if needed
-                                            };
-                                            // TODO: Send userData to backend here
+                                            if (!hasError) {
+                                              // Collect all values
+                                              String firstName =
+                                                  _firstNameController.text
+                                                      .trim();
+                                              String middleName =
+                                                  _middleNameController.text
+                                                      .trim();
+                                              String lastName =
+                                                  _lastNameController.text
+                                                      .trim();
+                                              String contact =
+                                                  _contactController.text
+                                                      .trim();
+                                              String email =
+                                                  _emailController.text.trim();
+                                              String password =
+                                                  _passwordController.text;
+                                              String rePassword =
+                                                  _rePasswordController.text;
+                                              String emergencyName =
+                                                  _emergencyNameController.text
+                                                      .trim();
+                                              String emergencyPhone =
+                                                  _emergencyPhoneController.text
+                                                      .trim();
 
-                                            // Show success alert and then route to profile
-                                            showDialog(
-                                              context: context,
-                                              builder:
-                                                  (context) => AlertDialog(
-                                                    title: Text(
-                                                      'Sign in Successful',
-                                                    ),
-                                                    actions: [
-                                                      TextButton(
-                                                        onPressed: () {
-                                                          Navigator.of(
-                                                            context,
-                                                          ).pop(); // Close dialog
-                                                          Navigator.push(
-                                                            context,
-                                                            MaterialPageRoute(
-                                                              builder:
-                                                                  (context) =>
-                                                                      ProfilePage(),
-                                                            ),
-                                                          ); // Navigate to ProfilePage
-                                                        },
-                                                        child: Text('OK'),
+                                              // Prepare birthdate from selected fields
+                                              DateTime? birthdate;
+                                              if (_selectedYear != null &&
+                                                  _selectedMonth != null &&
+                                                  _selectedDay != null) {
+                                                final monthIndex =
+                                                    [
+                                                      'January',
+                                                      'February',
+                                                      'March',
+                                                      'April',
+                                                      'May',
+                                                      'June',
+                                                      'July',
+                                                      'August',
+                                                      'September',
+                                                      'October',
+                                                      'November',
+                                                      'December',
+                                                    ].indexOf(_selectedMonth!) +
+                                                    1;
+                                                birthdate = DateTime(
+                                                  _selectedYear!,
+                                                  monthIndex,
+                                                  _selectedDay!,
+                                                );
+                                              }
+
+                                              // Update profileNotifier for frontend profile page
+                                              profileNotifier
+                                                  .value = ProfileData(
+                                                imageFile: _selectedImage,
+                                                webImageBytes: _webImageBytes,
+                                                firstName: firstName,
+                                                middleName: middleName,
+                                                lastName: lastName,
+                                                contactNumber: contact,
+                                                email: email,
+                                                birthdate: birthdate,
+                                                emergencyContactName:
+                                                    emergencyName,
+                                                emergencyContactPhone:
+                                                    emergencyPhone,
+                                                password: password,
+                                              );
+
+                                              // Prepare user data for backend
+                                              final userData = {
+                                                "firstName": firstName,
+                                                "middleName": middleName,
+                                                "lastName": lastName,
+                                                "contactNumber": contact,
+                                                "email": email,
+                                                "birthdate":
+                                                    birthdate
+                                                        ?.toIso8601String(),
+                                                "emergencyContactName":
+                                                    emergencyName,
+                                                "emergencyContactPhone":
+                                                    emergencyPhone,
+                                                // TODO: Add image handling if needed
+                                              };
+                                              // TODO: Send userData to backend here
+
+                                              // Show success alert and then route to profile
+                                              showDialog(
+                                                context: context,
+                                                builder:
+                                                    (context) => AlertDialog(
+                                                      title: Text(
+                                                        'Sign in Successful',
                                                       ),
-                                                    ],
-                                                  ),
-                                            );
+                                                      actions: [
+                                                        TextButton(
+                                                          onPressed: () {
+                                                            Navigator.of(
+                                                              context,
+                                                            ).pop(); // Close dialog
+                                                            Navigator.push(
+                                                              context,
+                                                              MaterialPageRoute(
+                                                                builder:
+                                                                    (context) =>
+                                                                        ProfilePage(),
+                                                              ),
+                                                            ); // Navigate to ProfilePage
+                                                          },
+                                                          child: Text('OK'),
+                                                        ),
+                                                      ],
+                                                    ),
+                                              );
+                                            }
                                           },
                                           child: const Text(
                                             'Sign Up',
