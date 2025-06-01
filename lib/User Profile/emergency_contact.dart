@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'dart:typed_data';
+import 'profile_data.dart';
 
 class EmergencyContactWidget extends StatefulWidget {
   @override
@@ -9,10 +11,23 @@ class EmergencyContactWidget extends StatefulWidget {
 
 class _EmergencyContactWidgetState extends State<EmergencyContactWidget> {
   File? _emergencyImageFile;
+  Uint8List? _webImageBytes;
   final TextEditingController _emergencyNameController =
       TextEditingController();
   final TextEditingController _emergencyPhoneController =
       TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize controllers and image from profileNotifier
+    _emergencyNameController.text =
+        profileNotifier.value.emergencyContactName ?? '';
+    _emergencyPhoneController.text =
+        profileNotifier.value.emergencyContactPhone ?? '';
+    _emergencyImageFile = profileNotifier.value.imageFile;
+    _webImageBytes = profileNotifier.value.webImageBytes;
+  }
 
   Future<void> _pickEmergencyImage() async {
     final picker = ImagePicker();
@@ -53,7 +68,9 @@ class _EmergencyContactWidgetState extends State<EmergencyContactWidget> {
               backgroundImage:
                   _emergencyImageFile != null
                       ? FileImage(_emergencyImageFile!)
-                      : null,
+                      : (_webImageBytes != null
+                          ? MemoryImage(_webImageBytes!)
+                          : null),
               child:
                   _emergencyImageFile == null
                       ? Icon(

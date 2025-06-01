@@ -37,9 +37,7 @@ class _ProfilePageState extends State<ProfilePage> {
   File? _imageFile;
   DateTime? _birthdate;
   TextEditingController _passwordController = TextEditingController();
-  TextEditingController _rePasswordController = TextEditingController();
   bool _obscurePassword = true;
-  bool _obscureRePassword = true;
   String? _passwordError;
 
   @override
@@ -47,6 +45,7 @@ class _ProfilePageState extends State<ProfilePage> {
     super.initState();
     _birthdate = profileNotifier.value.birthdate;
     _imageFile = profileNotifier.value.imageFile;
+    _passwordController.text = profileNotifier.value.password ?? '';
     _firstNameListener = () => setState(() {});
     _middleNameListener = () => setState(() {});
     _lastNameListener = () => setState(() {});
@@ -73,7 +72,6 @@ class _ProfilePageState extends State<ProfilePage> {
     _emailController.dispose();
     _noteController.dispose();
     _passwordController.dispose();
-    _rePasswordController.dispose();
     super.dispose();
   }
 
@@ -100,11 +98,10 @@ class _ProfilePageState extends State<ProfilePage> {
     setState(() {
       _passwordError = null;
     });
-    if (_passwordController.text.isNotEmpty ||
-        _rePasswordController.text.isNotEmpty) {
-      if (_passwordController.text != _rePasswordController.text) {
+    if (_passwordController.text.isNotEmpty) {
+      if (_passwordController.text != profileNotifier.value.password) {
         setState(() {
-          _passwordError = 'Passwords do not match';
+          _passwordError = 'Password does not match';
         });
         return;
       }
@@ -261,28 +258,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     },
                   ),
                 ),
-              ),
-              SizedBox(height: 20),
-              TextField(
-                controller: _rePasswordController,
-                obscureText: _obscureRePassword,
-                decoration: InputDecoration(
-                  labelText: 'Re-enter Password',
-                  border: OutlineInputBorder(),
-                  errorText: _passwordError,
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscureRePassword
-                          ? Icons.visibility_off
-                          : Icons.visibility,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _obscureRePassword = !_obscureRePassword;
-                      });
-                    },
-                  ),
-                ),
+                readOnly: true,
               ),
               SizedBox(height: 40),
               Row(

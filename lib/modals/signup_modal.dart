@@ -51,6 +51,7 @@ class _SignUpModalState extends State<SignUpModal>
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _rePasswordController = TextEditingController();
+  String? _rePasswordError;
 
   @override
   void initState() {
@@ -72,6 +73,8 @@ class _SignUpModalState extends State<SignUpModal>
     _iconAnim = Tween<double>(begin: 0.0, end: 0.12).animate(
       CurvedAnimation(parent: _iconController, curve: Curves.easeInOut),
     );
+    _emailController.addListener(_emailListener);
+    _rePasswordController.addListener(_validatePasswordMatch);
   }
 
   @override
@@ -97,6 +100,8 @@ class _SignUpModalState extends State<SignUpModal>
     _emailController.dispose();
     _passwordController.dispose();
     _rePasswordController.dispose();
+    _emailController.removeListener(_emailListener);
+    _rePasswordController.removeListener(_validatePasswordMatch);
     super.dispose();
   }
 
@@ -160,6 +165,30 @@ class _SignUpModalState extends State<SignUpModal>
           _selectedImage = File(result.files.single.path!);
         });
       }
+    }
+  }
+
+  void _emailListener() {
+    // Implementation of _emailListener method
+  }
+
+  void _validatePasswordMatch() {
+    // Only validate if re-enter password field is not empty
+    if (_rePasswordController.text.isEmpty) {
+      setState(() {
+        _rePasswordError = null;
+      });
+      return;
+    }
+
+    if (_passwordController.text != _rePasswordController.text) {
+      setState(() {
+        _rePasswordError = 'Passwords do not match.';
+      });
+    } else {
+      setState(() {
+        _rePasswordError = null;
+      });
     }
   }
 
@@ -698,54 +727,11 @@ class _SignUpModalState extends State<SignUpModal>
                                                     !_obscureRePassword,
                                           ),
                                     ),
-                                  ),
+                                  ).copyWith(errorText: _rePasswordError),
                                 ),
                                 const SizedBox(height: 32),
                                 Row(
                                   children: [
-                                    Expanded(
-                                      child: SizedBox(
-                                        width: double.infinity,
-                                        child: ElevatedButton(
-                                          style: ElevatedButton.styleFrom(
-                                            padding: const EdgeInsets.symmetric(
-                                              vertical: 10,
-                                            ),
-                                            backgroundColor: Colors.white,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(14),
-                                            ),
-                                          ),
-                                          onPressed: () {
-                                            setState(() {
-                                              _currentStep = 1;
-                                            });
-                                          },
-                                          child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            children: [
-                                              Icon(
-                                                Icons.arrow_back,
-                                                size: 18,
-                                                color: Colors.black,
-                                              ),
-                                              SizedBox(width: 8),
-                                              Text(
-                                                'Back',
-                                                style: TextStyle(
-                                                  fontWeight: FontWeight.w500,
-                                                  fontSize: 15,
-                                                  color: Colors.black,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 20),
                                     Expanded(
                                       child: SizedBox(
                                         width: double.infinity,
@@ -816,12 +802,18 @@ class _SignUpModalState extends State<SignUpModal>
                                             // Update profileNotifier for frontend profile page
                                             profileNotifier.value = ProfileData(
                                               imageFile: _selectedImage,
+                                              webImageBytes: _webImageBytes,
                                               firstName: firstName,
                                               middleName: middleName,
                                               lastName: lastName,
                                               contactNumber: contact,
                                               email: email,
                                               birthdate: birthdate,
+                                              emergencyContactName:
+                                                  emergencyName,
+                                              emergencyContactPhone:
+                                                  emergencyPhone,
+                                              password: password,
                                             );
 
                                             // Prepare user data for backend
@@ -855,9 +847,14 @@ class _SignUpModalState extends State<SignUpModal>
                                                           Navigator.of(
                                                             context,
                                                           ).pop(); // Close dialog
-                                                          Navigator.of(
+                                                          Navigator.push(
                                                             context,
-                                                          ).pop(); // Close modal
+                                                            MaterialPageRoute(
+                                                              builder:
+                                                                  (context) =>
+                                                                      ProfilePage(),
+                                                            ),
+                                                          ); // Navigate to ProfilePage
                                                         },
                                                         child: Text('OK'),
                                                       ),
