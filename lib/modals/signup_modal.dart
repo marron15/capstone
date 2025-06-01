@@ -63,6 +63,23 @@ class _SignUpModalState extends State<SignUpModal>
   String? _passwordError; // Already exists, but will reuse
   String? _rePasswordError;
 
+  // Controllers for new address fields
+  final TextEditingController _addressController = TextEditingController();
+  final TextEditingController _streetController = TextEditingController();
+  final TextEditingController _cityController = TextEditingController();
+  final TextEditingController _stateProvinceController =
+      TextEditingController();
+  final TextEditingController _postalCodeController = TextEditingController();
+  final TextEditingController _countryController = TextEditingController();
+
+  // Error state variables for new address fields
+  String? _addressError;
+  String? _streetError;
+  String? _cityError;
+  String? _stateProvinceError;
+  String? _postalCodeError;
+  String? _countryError;
+
   @override
   void initState() {
     super.initState();
@@ -332,7 +349,7 @@ class _SignUpModalState extends State<SignUpModal>
 
                               const SizedBox(height: 1),
                               Container(
-                                margin: const EdgeInsets.only(bottom: 10),
+                                margin: const EdgeInsets.only(bottom: 20),
                                 child: Divider(
                                   thickness: 1.5,
                                   color: Colors.lightBlueAccent.withAlpha(
@@ -579,6 +596,229 @@ class _SignUpModalState extends State<SignUpModal>
                                   ),
                                 ),
                               ] else if (_currentStep == 1) ...[
+                                // New Address step
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Address Information',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    TextField(
+                                      controller: _addressController,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                      ),
+                                      decoration: _inputDecoration(
+                                        label: 'Address',
+                                        icon: Icons.location_on_outlined,
+                                        hintText: 'Enter your address',
+                                        errorText: _addressError,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 14),
+                                    TextField(
+                                      controller: _streetController,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                      ),
+                                      decoration: _inputDecoration(
+                                        label: 'Street',
+                                        icon: Icons.streetview,
+                                        hintText: 'Enter street name',
+                                        errorText: _streetError,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 14),
+                                    TextField(
+                                      controller: _cityController,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                      ),
+                                      decoration: _inputDecoration(
+                                        label: 'City',
+                                        icon: Icons.location_city_outlined,
+                                        hintText: 'Enter city name',
+                                        errorText: _cityError,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 14),
+                                    TextField(
+                                      controller: _stateProvinceController,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                      ),
+                                      decoration: _inputDecoration(
+                                        label: 'State / Province',
+                                        icon: Icons.location_city,
+                                        hintText: 'Enter state or province',
+                                        errorText: _stateProvinceError,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 14),
+                                    TextField(
+                                      controller: _postalCodeController,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                      ),
+                                      decoration: _inputDecoration(
+                                        label: 'Postal Code',
+                                        icon: Icons.markunread_mailbox_outlined,
+                                        hintText: 'Enter postal code',
+                                        errorText: _postalCodeError,
+                                      ),
+                                      keyboardType: TextInputType.number,
+                                    ),
+                                    const SizedBox(height: 14),
+                                    TextField(
+                                      controller: _countryController,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                      ),
+                                      decoration: _inputDecoration(
+                                        label: 'Country',
+                                        icon: Icons.public_outlined,
+                                        hintText: 'Enter country',
+                                        errorText: _countryError,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 32),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: SizedBox(
+                                        width: double.infinity,
+                                        child: ElevatedButton.icon(
+                                          style: ElevatedButton.styleFrom(
+                                            padding: const EdgeInsets.symmetric(
+                                              vertical: 10,
+                                            ),
+                                            backgroundColor: Colors.white,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(14),
+                                            ),
+                                          ),
+                                          onPressed: () {
+                                            setState(() {
+                                              _currentStep = 0;
+                                            });
+                                          },
+                                          icon: const Icon(
+                                            Icons.arrow_back,
+                                            size: 18,
+                                            color: Colors.black,
+                                          ),
+                                          label: const Text(
+                                            'Back',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w500,
+                                              fontSize: 15,
+                                              color: Colors.black,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 20),
+                                    Expanded(
+                                      child: SizedBox(
+                                        width: double.infinity,
+                                        child: ElevatedButton(
+                                          style: ElevatedButton.styleFrom(
+                                            padding: const EdgeInsets.symmetric(
+                                              vertical: 10,
+                                            ),
+                                            backgroundColor: Colors.white,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(14),
+                                            ),
+                                          ),
+                                          onPressed: () {
+                                            setState(() {
+                                              _addressError = null;
+                                              _streetError = null;
+                                              _cityError = null;
+                                              _stateProvinceError = null;
+                                              _postalCodeError = null;
+                                              _countryError = null;
+                                            });
+
+                                            bool hasError = false;
+                                            if (_addressController.text
+                                                .trim()
+                                                .isEmpty) {
+                                              setState(() {
+                                                _addressError =
+                                                    'Address is required.';
+                                              });
+                                              hasError = true;
+                                            }
+                                            if (_cityController.text
+                                                .trim()
+                                                .isEmpty) {
+                                              setState(() {
+                                                _cityError =
+                                                    'City is required.';
+                                              });
+                                              hasError = true;
+                                            }
+                                            if (_stateProvinceController.text
+                                                .trim()
+                                                .isEmpty) {
+                                              setState(() {
+                                                _stateProvinceError =
+                                                    'State / Province is required.';
+                                              });
+                                              hasError = true;
+                                            }
+                                            if (_postalCodeController.text
+                                                .trim()
+                                                .isEmpty) {
+                                              setState(() {
+                                                _postalCodeError =
+                                                    'Postal Code is required.';
+                                              });
+                                              hasError = true;
+                                            }
+                                            if (_countryController.text
+                                                .trim()
+                                                .isEmpty) {
+                                              setState(() {
+                                                _countryError =
+                                                    'Country is required.';
+                                              });
+                                              hasError = true;
+                                            }
+
+                                            if (!hasError) {
+                                              setState(() {
+                                                _currentStep = 2;
+                                              });
+                                            }
+                                          },
+                                          child: const Text(
+                                            'Next',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w500,
+                                              fontSize: 15,
+                                              color: Colors.black,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ] else if (_currentStep == 2) ...[
                                 // Emergency contact and image upload step
                                 const Text(
                                   'Upload an Image',
@@ -656,7 +896,7 @@ class _SignUpModalState extends State<SignUpModal>
                                           ),
                                           onPressed: () {
                                             setState(() {
-                                              _currentStep = 0;
+                                              _currentStep = 1;
                                             });
                                           },
                                           icon: const Icon(
@@ -691,13 +931,11 @@ class _SignUpModalState extends State<SignUpModal>
                                             ),
                                           ),
                                           onPressed: () {
-                                            // Clear previous errors for step 1
                                             setState(() {
                                               _emergencyNameError = null;
                                               _emergencyPhoneError = null;
                                             });
 
-                                            // Validate fields for step 1
                                             bool hasError = false;
                                             if (_emergencyNameController.text
                                                 .trim()
@@ -720,7 +958,7 @@ class _SignUpModalState extends State<SignUpModal>
 
                                             if (!hasError) {
                                               setState(() {
-                                                _currentStep = 2;
+                                                _currentStep = 3;
                                               });
                                             }
                                           },
@@ -836,14 +1074,12 @@ class _SignUpModalState extends State<SignUpModal>
                                             ),
                                           ),
                                           onPressed: () {
-                                            // Clear previous errors for step 2
                                             setState(() {
                                               _contactError = null;
                                               _emailError = null;
                                               _passwordError = null;
                                             });
 
-                                            // Validate fields for step 2
                                             bool hasError = false;
                                             if (_contactController.text
                                                 .trim()
@@ -873,13 +1109,11 @@ class _SignUpModalState extends State<SignUpModal>
                                               hasError = true;
                                             }
 
-                                            // Check for password mismatch error (handled by listener, but double check)
                                             if (_rePasswordError != null) {
                                               hasError = true;
                                             }
 
                                             if (!hasError) {
-                                              // Collect all values
                                               String firstName =
                                                   _firstNameController.text
                                                       .trim();
@@ -905,7 +1139,6 @@ class _SignUpModalState extends State<SignUpModal>
                                                   _emergencyPhoneController.text
                                                       .trim();
 
-                                              // Prepare birthdate from selected fields
                                               DateTime? birthdate;
                                               if (_selectedYear != null &&
                                                   _selectedMonth != null &&
@@ -933,7 +1166,6 @@ class _SignUpModalState extends State<SignUpModal>
                                                 );
                                               }
 
-                                              // Update profileNotifier for frontend profile page
                                               profileNotifier
                                                   .value = ProfileData(
                                                 imageFile: _selectedImage,
@@ -949,9 +1181,26 @@ class _SignUpModalState extends State<SignUpModal>
                                                 emergencyContactPhone:
                                                     emergencyPhone,
                                                 password: password,
+                                                address:
+                                                    _addressController.text
+                                                        .trim(),
+                                                street:
+                                                    _streetController.text
+                                                        .trim(),
+                                                city:
+                                                    _cityController.text.trim(),
+                                                stateProvince:
+                                                    _stateProvinceController
+                                                        .text
+                                                        .trim(),
+                                                postalCode:
+                                                    _postalCodeController.text
+                                                        .trim(),
+                                                country:
+                                                    _countryController.text
+                                                        .trim(),
                                               );
 
-                                              // Prepare user data for backend
                                               final userData = {
                                                 "firstName": firstName,
                                                 "middleName": middleName,
@@ -965,11 +1214,27 @@ class _SignUpModalState extends State<SignUpModal>
                                                     emergencyName,
                                                 "emergencyContactPhone":
                                                     emergencyPhone,
-                                                // TODO: Add image handling if needed
+                                                "address":
+                                                    _addressController.text
+                                                        .trim(),
+                                                "street":
+                                                    _streetController.text
+                                                        .trim(),
+                                                "city":
+                                                    _cityController.text.trim(),
+                                                "stateProvince":
+                                                    _stateProvinceController
+                                                        .text
+                                                        .trim(),
+                                                "postalCode":
+                                                    _postalCodeController.text
+                                                        .trim(),
+                                                "country":
+                                                    _countryController.text
+                                                        .trim(),
                                               };
                                               // TODO: Send userData to backend here
 
-                                              // Show success alert and then route to profile
                                               showDialog(
                                                 context: context,
                                                 builder:
@@ -982,7 +1247,7 @@ class _SignUpModalState extends State<SignUpModal>
                                                           onPressed: () {
                                                             Navigator.of(
                                                               context,
-                                                            ).pop(); // Close dialog
+                                                            ).pop();
                                                             Navigator.push(
                                                               context,
                                                               MaterialPageRoute(
@@ -990,7 +1255,7 @@ class _SignUpModalState extends State<SignUpModal>
                                                                     (context) =>
                                                                         ProfilePage(),
                                                               ),
-                                                            ); // Navigate to ProfilePage
+                                                            );
                                                           },
                                                           child: Text('OK'),
                                                         ),

@@ -40,12 +40,41 @@ class _ProfilePageState extends State<ProfilePage> {
   bool _obscurePassword = true;
   String? _passwordError;
 
+  // Controllers for address fields
+  late TextEditingController _addressController;
+  late TextEditingController _streetController;
+  late TextEditingController _cityController;
+  late TextEditingController _stateProvinceController;
+  late TextEditingController _postalCodeController;
+  late TextEditingController _countryController;
+
   @override
   void initState() {
     super.initState();
     _birthdate = profileNotifier.value.birthdate;
     _imageFile = profileNotifier.value.imageFile;
     _passwordController.text = profileNotifier.value.password ?? '';
+
+    // Initialize address controllers
+    _addressController = TextEditingController(
+      text: profileNotifier.value.address ?? '',
+    );
+    _streetController = TextEditingController(
+      text: profileNotifier.value.street ?? '',
+    );
+    _cityController = TextEditingController(
+      text: profileNotifier.value.city ?? '',
+    );
+    _stateProvinceController = TextEditingController(
+      text: profileNotifier.value.stateProvince ?? '',
+    );
+    _postalCodeController = TextEditingController(
+      text: profileNotifier.value.postalCode ?? '',
+    );
+    _countryController = TextEditingController(
+      text: profileNotifier.value.country ?? '',
+    );
+
     _firstNameListener = () => setState(() {});
     _middleNameListener = () => setState(() {});
     _lastNameListener = () => setState(() {});
@@ -72,6 +101,13 @@ class _ProfilePageState extends State<ProfilePage> {
     _emailController.dispose();
     _noteController.dispose();
     _passwordController.dispose();
+    // Dispose of address controllers
+    _addressController.dispose();
+    _streetController.dispose();
+    _cityController.dispose();
+    _stateProvinceController.dispose();
+    _postalCodeController.dispose();
+    _countryController.dispose();
     super.dispose();
   }
 
@@ -239,6 +275,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
               ),
               SizedBox(height: 28),
+
               TextField(
                 controller: _passwordController,
                 obscureText: _obscurePassword,
@@ -260,6 +297,72 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 readOnly: true,
               ),
+              SizedBox(height: 40),
+
+              // Address Information Section (Moved)
+              Text(
+                'Address Information',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey[800],
+                ),
+              ),
+              SizedBox(height: 20),
+              TextField(
+                controller: _addressController,
+                decoration: InputDecoration(
+                  labelText: 'Address',
+                  border: OutlineInputBorder(),
+                ),
+                readOnly: true,
+              ),
+              SizedBox(height: 20),
+              TextField(
+                controller: _streetController,
+                decoration: InputDecoration(
+                  labelText: 'Street',
+                  border: OutlineInputBorder(),
+                ),
+                readOnly: true,
+              ),
+              SizedBox(height: 20),
+              TextField(
+                controller: _cityController,
+                decoration: InputDecoration(
+                  labelText: 'City',
+                  border: OutlineInputBorder(),
+                ),
+                readOnly: true,
+              ),
+              SizedBox(height: 20),
+              TextField(
+                controller: _stateProvinceController,
+                decoration: InputDecoration(
+                  labelText: 'State / Province',
+                  border: OutlineInputBorder(),
+                ),
+                readOnly: true,
+              ),
+              SizedBox(height: 20),
+              TextField(
+                controller: _postalCodeController,
+                decoration: InputDecoration(
+                  labelText: 'Postal Code',
+                  border: OutlineInputBorder(),
+                ),
+                readOnly: true,
+              ),
+              SizedBox(height: 20),
+              TextField(
+                controller: _countryController,
+                decoration: InputDecoration(
+                  labelText: 'Country',
+                  border: OutlineInputBorder(),
+                ),
+                readOnly: true,
+              ),
+
               SizedBox(height: 40),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,

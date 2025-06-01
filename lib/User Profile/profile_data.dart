@@ -14,6 +14,12 @@ class ProfileData {
   final String? emergencyContactName;
   final String? emergencyContactPhone;
   final String? password;
+  final String? address;
+  final String? street;
+  final String? city;
+  final String? stateProvince;
+  final String? postalCode;
+  final String? country;
 
   ProfileData({
     this.imageFile,
@@ -27,6 +33,12 @@ class ProfileData {
     this.emergencyContactName,
     this.emergencyContactPhone,
     this.password,
+    this.address,
+    this.street,
+    this.city,
+    this.stateProvince,
+    this.postalCode,
+    this.country,
   });
 }
 
