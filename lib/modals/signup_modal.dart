@@ -289,7 +289,7 @@ class _SignUpModalState extends State<SignUpModal>
                                 ],
                               ),
 
-                              const SizedBox(height: 14),
+                              const SizedBox(height: 1),
                               Container(
                                 margin: const EdgeInsets.only(bottom: 10),
                                 child: Divider(
@@ -305,7 +305,7 @@ class _SignUpModalState extends State<SignUpModal>
                               if (_currentStep == 0) ...[
                                 Column(
                                   children: [
-                                    const SizedBox(height: 5),
+                                    const SizedBox(height: 1.5),
                                     const Text(
                                       'Information \n',
                                       style: TextStyle(
@@ -468,7 +468,7 @@ class _SignUpModalState extends State<SignUpModal>
                                       padding: const EdgeInsets.symmetric(
                                         vertical: 10,
                                       ),
-                                      backgroundColor: const Color(0xFF1976D2),
+                                      backgroundColor: Colors.white,
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(14),
                                       ),
@@ -481,14 +481,14 @@ class _SignUpModalState extends State<SignUpModal>
                                     icon: const Icon(
                                       Icons.arrow_forward,
                                       size: 18,
-                                      color: Colors.white,
+                                      color: Colors.black,
                                     ),
                                     label: const Text(
                                       'Next',
                                       style: TextStyle(
                                         fontWeight: FontWeight.w500,
                                         fontSize: 15,
-                                        color: Colors.white,
+                                        color: Colors.black,
                                       ),
                                     ),
                                   ),
@@ -561,9 +561,7 @@ class _SignUpModalState extends State<SignUpModal>
                                             padding: const EdgeInsets.symmetric(
                                               vertical: 10,
                                             ),
-                                            backgroundColor: const Color(
-                                              0xFF1976D2,
-                                            ),
+                                            backgroundColor: Colors.white,
                                             shape: RoundedRectangleBorder(
                                               borderRadius:
                                                   BorderRadius.circular(14),
@@ -577,14 +575,14 @@ class _SignUpModalState extends State<SignUpModal>
                                           icon: const Icon(
                                             Icons.arrow_back,
                                             size: 18,
-                                            color: Colors.white,
+                                            color: Colors.black,
                                           ),
                                           label: const Text(
                                             'Back',
                                             style: TextStyle(
                                               fontWeight: FontWeight.w500,
                                               fontSize: 15,
-                                              color: Colors.white,
+                                              color: Colors.black,
                                             ),
                                           ),
                                         ),
@@ -599,9 +597,7 @@ class _SignUpModalState extends State<SignUpModal>
                                             padding: const EdgeInsets.symmetric(
                                               vertical: 10,
                                             ),
-                                            backgroundColor: const Color(
-                                              0xFF1976D2,
-                                            ),
+                                            backgroundColor: Colors.white,
                                             shape: RoundedRectangleBorder(
                                               borderRadius:
                                                   BorderRadius.circular(14),
@@ -617,7 +613,7 @@ class _SignUpModalState extends State<SignUpModal>
                                             style: TextStyle(
                                               fontWeight: FontWeight.w500,
                                               fontSize: 15,
-                                              color: Colors.white,
+                                              color: Colors.black,
                                             ),
                                           ),
                                         ),
@@ -715,9 +711,7 @@ class _SignUpModalState extends State<SignUpModal>
                                             padding: const EdgeInsets.symmetric(
                                               vertical: 10,
                                             ),
-                                            backgroundColor: const Color(
-                                              0xFF1976D2,
-                                            ),
+                                            backgroundColor: Colors.white,
                                             shape: RoundedRectangleBorder(
                                               borderRadius:
                                                   BorderRadius.circular(14),
@@ -735,7 +729,7 @@ class _SignUpModalState extends State<SignUpModal>
                                               Icon(
                                                 Icons.arrow_back,
                                                 size: 18,
-                                                color: Colors.white,
+                                                color: Colors.black,
                                               ),
                                               SizedBox(width: 8),
                                               Text(
@@ -743,7 +737,7 @@ class _SignUpModalState extends State<SignUpModal>
                                                 style: TextStyle(
                                                   fontWeight: FontWeight.w500,
                                                   fontSize: 15,
-                                                  color: Colors.white,
+                                                  color: Colors.black,
                                                 ),
                                               ),
                                             ],
@@ -760,9 +754,7 @@ class _SignUpModalState extends State<SignUpModal>
                                             padding: const EdgeInsets.symmetric(
                                               vertical: 10,
                                             ),
-                                            backgroundColor: const Color(
-                                              0xFF1976D2,
-                                            ),
+                                            backgroundColor: Colors.white,
                                             shape: RoundedRectangleBorder(
                                               borderRadius:
                                                   BorderRadius.circular(14),
@@ -878,7 +870,7 @@ class _SignUpModalState extends State<SignUpModal>
                                             style: TextStyle(
                                               fontWeight: FontWeight.w500,
                                               fontSize: 15,
-                                              color: Colors.white,
+                                              color: Colors.black,
                                             ),
                                           ),
                                         ),

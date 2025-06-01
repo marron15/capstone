@@ -27,15 +27,25 @@ class _LandingPageState extends State<LandingPage> {
   final GlobalKey _trainersKey = GlobalKey();
 
   void _scrollToSection(int index) {
+    if (index == 0) {
+      _scrollController.animateTo(
+        0.0,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
+      return;
+    }
     final contextList = [
-      _equipmentImagesKey.currentContext,
-      _servicesKey.currentContext,
-      _productsKey.currentContext,
-      _plansKey.currentContext,
-      _trainersKey.currentContext,
+      _equipmentImagesKey.currentContext, // index 1
+      _servicesKey.currentContext, // index 2
+      _productsKey.currentContext, // index 3
+      _plansKey.currentContext, // index 4
+      _trainersKey.currentContext, // index 5
     ];
-    if (index >= 0 && index < contextList.length) {
-      final ctx = contextList[index];
+    // Adjust index for the new list starting from 1
+    final adjustedIndex = index - 1;
+    if (adjustedIndex >= 0 && adjustedIndex < contextList.length) {
+      final ctx = contextList[adjustedIndex];
       if (ctx != null) {
         Scrollable.ensureVisible(
           ctx,
@@ -129,7 +139,7 @@ class _LandingPageState extends State<LandingPage> {
               label: 'Programs',
               onTap: () {
                 Navigator.pop(context);
-                _scrollToSection(0);
+                _scrollToSection(1);
               },
             ),
             _DrawerNavItem(
@@ -137,7 +147,7 @@ class _LandingPageState extends State<LandingPage> {
               label: 'Services',
               onTap: () {
                 Navigator.pop(context);
-                _scrollToSection(3);
+                _scrollToSection(2);
               },
             ),
             _DrawerNavItem(
@@ -145,7 +155,7 @@ class _LandingPageState extends State<LandingPage> {
               label: 'Products',
               onTap: () {
                 Navigator.pop(context);
-                _scrollToSection(2);
+                _scrollToSection(3);
               },
             ),
             _DrawerNavItem(
@@ -153,7 +163,7 @@ class _LandingPageState extends State<LandingPage> {
               label: 'Trainers',
               onTap: () {
                 Navigator.pop(context);
-                _scrollToSection(4);
+                _scrollToSection(5);
               },
             ),
             _DrawerNavItem(
@@ -161,7 +171,7 @@ class _LandingPageState extends State<LandingPage> {
               label: 'About Us',
               onTap: () {
                 Navigator.pop(context);
-                _scrollToSection(4);
+                _scrollToSection(5);
               },
             ),
           ],
@@ -171,7 +181,17 @@ class _LandingPageState extends State<LandingPage> {
         children: [
           Container(
             color: Colors.black,
-            child: SafeArea(child: BlackHeader(onNavTap: _scrollToSection)),
+            child: SafeArea(
+              child: BlackHeader(
+                onNavTap: _scrollToSection,
+                onProfileTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => ProfilePage()),
+                  );
+                },
+              ),
+            ),
           ),
           Expanded(
             child: Stack(

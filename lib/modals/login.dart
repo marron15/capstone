@@ -69,10 +69,10 @@ class _LoginModalState extends State<LoginModal> with TickerProviderStateMixin {
       labelText: label,
       labelStyle: const TextStyle(color: Colors.white),
       hintText: hintText,
-      hintStyle: const TextStyle(color: Colors.white),
+      hintStyle: const TextStyle(color: Colors.white54),
       prefixIcon: Icon(icon, color: Colors.white),
       filled: true,
-      fillColor: Colors.white.withAlpha((0.08 * 255).toInt()),
+      fillColor: Colors.black.withAlpha((0.3 * 255).toInt()),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
@@ -112,14 +112,7 @@ class _LoginModalState extends State<LoginModal> with TickerProviderStateMixin {
                               : 440,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(22),
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.white.withAlpha((0.13 * 255).toInt()),
-                            Colors.blueGrey.withAlpha((0.10 * 255).toInt()),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
+                        color: Colors.black.withAlpha((0.7 * 255).toInt()),
                         border: Border.all(
                           color: Colors.white.withAlpha((0.25 * 255).toInt()),
                           width: 1.5,
@@ -453,14 +446,10 @@ class _AnimatedGradientButtonState extends State<_AnimatedGradientButton>
               padding: const EdgeInsets.symmetric(vertical: 16),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(14),
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF1976D2), Color(0xFF42A5F5)],
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                ),
+                color: Colors.white,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.blueAccent.withAlpha((0.28 * 255).toInt()),
+                    color: Colors.black.withAlpha((0.28 * 255).toInt()),
                     blurRadius: 16,
                     offset: const Offset(0, 6),
                   ),
@@ -469,7 +458,7 @@ class _AnimatedGradientButtonState extends State<_AnimatedGradientButton>
               alignment: Alignment.center,
               child: DefaultTextStyle.merge(
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: Colors.black,
                   fontWeight: FontWeight.bold,
                   fontSize: 18,
                 ),

@@ -4,8 +4,10 @@ import '../modals/login.dart';
 
 class BlackHeader extends StatelessWidget {
   final Function(int) onNavTap;
+  final VoidCallback? onProfileTap;
 
-  const BlackHeader({Key? key, required this.onNavTap}) : super(key: key);
+  const BlackHeader({Key? key, required this.onNavTap, this.onProfileTap})
+    : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -31,32 +33,55 @@ class BlackHeader extends StatelessWidget {
                     },
                   ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 30),
           ],
           const Spacer(),
           // Navigation Buttons - Only show on larger screens
           if (!isSmallScreen) ...[
-            _HeaderNavButton(
-              icon: Icons.home,
-              label: 'Home',
-              onTap: () => onNavTap(0),
+            const Spacer(),
+            Center(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _HeaderNavButton(
+                    icon: Icons.home,
+                    label: 'Home',
+                    onTap: () => onNavTap(0),
+                  ),
+                  _HeaderNavButton(
+                    icon: Icons.school,
+                    label: 'Programs',
+                    onTap: () => onNavTap(1),
+                  ),
+                  _HeaderNavButton(
+                    icon: Icons.shopping_cart,
+                    label: 'Products',
+                    onTap: () => onNavTap(2),
+                  ),
+                  _HeaderNavButton(
+                    icon: Icons.person,
+                    label: 'Trainers',
+                    onTap: () => onNavTap(4),
+                  ),
+                  _HeaderNavButton(
+                    icon: Icons.info_outline,
+                    label: 'About Us',
+                    onTap: () => onNavTap(5),
+                  ),
+                ],
+              ),
             ),
-            _HeaderNavButton(
-              icon: Icons.school,
-              label: 'Programs',
-              onTap: () => onNavTap(1),
-            ),
-            _HeaderNavButton(
-              icon: Icons.card_membership,
-              label: 'Membership',
-              onTap: () => onNavTap(3),
-            ),
-            _HeaderNavButton(
-              icon: Icons.info_outline,
-              label: 'About Us',
-              onTap: () => onNavTap(4),
-            ),
-            const SizedBox(width: 12),
+            // Profile Button - Only show on larger screens
+            if (!isSmallScreen && onProfileTap != null) ...[
+              _HeaderNavButton(
+                icon: Icons.person,
+                label: 'Profile',
+                onTap: onProfileTap!,
+              ),
+              const SizedBox(width: 12),
+            ],
+            const Spacer(),
+            const SizedBox(width: 50),
           ],
           // Login Button
           ElevatedButton(
