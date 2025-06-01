@@ -61,7 +61,7 @@ class BlackHeader extends StatelessWidget {
                   _HeaderNavButton(
                     icon: Icons.person,
                     label: 'Trainers',
-                    onTap: () => onNavTap(4),
+                    onTap: () => onNavTap(5),
                   ),
                   _HeaderNavButton(
                     icon: Icons.info_outline,
@@ -71,7 +71,9 @@ class BlackHeader extends StatelessWidget {
                 ],
               ),
             ),
-            // Profile Button - Only show on larger screens
+            const Spacer(),
+            const SizedBox(width: 24),
+            // Profile Button
             if (!isSmallScreen && onProfileTap != null) ...[
               _HeaderNavButton(
                 icon: Icons.person,
@@ -80,8 +82,6 @@ class BlackHeader extends StatelessWidget {
               ),
               const SizedBox(width: 12),
             ],
-            const Spacer(),
-            const SizedBox(width: 50),
           ],
           // Login Button
           ElevatedButton(
