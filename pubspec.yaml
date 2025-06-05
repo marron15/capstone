@@ -69,7 +69,7 @@ flutter:
     - assets/images/RNR.png
     - assets/images/RNR1.png
     - assets/images/gym_equipments/
-    - assets/images/gym_view/BACK VIEW OF GYM.jpg
+    - assets/images/gym_view/
     - assets/images/services&products/
 
   # An image asset can refer to one or more resolution-specific "variants", see

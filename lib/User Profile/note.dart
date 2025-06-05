@@ -12,15 +12,10 @@ class NoteWidget extends StatelessWidget {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       decoration: BoxDecoration(
-        color: Colors.black.withAlpha(100),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white10, width: 1),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black26,
-            blurRadius: 12,
-            offset: Offset(0, 4),
-          ),
+          BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 2)),
         ],
       ),
       child: Column(
@@ -32,7 +27,7 @@ class NoteWidget extends StatelessWidget {
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: Colors.black87,
               ),
             ),
           ),
@@ -40,40 +35,28 @@ class NoteWidget extends StatelessWidget {
           TextField(
             controller: controller,
             maxLines: 6,
-            style: TextStyle(color: Colors.white),
             decoration: InputDecoration(
               hintText: 'Write your note here...',
-              hintStyle: TextStyle(color: Colors.white54),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide(color: Colors.white30),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide(color: Colors.white30),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide(color: Colors.lightBlueAccent, width: 2),
-              ),
-              filled: true,
-              fillColor: Colors.white.withAlpha(20),
+              border: OutlineInputBorder(),
             ),
           ),
           SizedBox(height: 24),
           Center(
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
+                backgroundColor: const Color.fromARGB(255, 10, 141, 248),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(24),
                 ),
                 padding: EdgeInsets.symmetric(horizontal: 40, vertical: 16),
               ),
               onPressed: onSave,
               child: Text(
                 'Save Note',
-                style: TextStyle(fontSize: 16, color: Colors.black),
+                style: TextStyle(
+                  fontSize: 16,
+                  color: const Color.fromARGB(255, 255, 255, 255),
+                ),
               ),
             ),
           ),
