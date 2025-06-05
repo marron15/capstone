@@ -561,7 +561,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           fontWeight: FontWeight.bold, // Bold text
                         ),
                       ),
-                      onPressed: _saveProfile,
+                      onPressed: _hasChanges() ? _saveProfile : null,
                       child: Text(
                         'Save',
                         style: TextStyle(color: Colors.black),
