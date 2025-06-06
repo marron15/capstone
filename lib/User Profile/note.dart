@@ -12,7 +12,7 @@ class NoteWidget extends StatelessWidget {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.black,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 2)),
@@ -27,7 +27,7 @@ class NoteWidget extends StatelessWidget {
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: Colors.black87,
+                color: Colors.white,
               ),
             ),
           ),
@@ -37,14 +37,23 @@ class NoteWidget extends StatelessWidget {
             maxLines: 6,
             decoration: InputDecoration(
               hintText: 'Write your note here...',
-              border: OutlineInputBorder(),
+              hintStyle: TextStyle(color: Colors.white54),
+              enabledBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: Colors.white54),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: Colors.lightBlueAccent, width: 2),
+              ),
+              fillColor: Colors.white10,
+              filled: true,
             ),
+            style: TextStyle(color: Colors.white),
           ),
           SizedBox(height: 24),
           Center(
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromARGB(255, 10, 141, 248),
+                backgroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(24),
                 ),
@@ -53,10 +62,7 @@ class NoteWidget extends StatelessWidget {
               onPressed: onSave,
               child: Text(
                 'Save Note',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: const Color.fromARGB(255, 255, 255, 255),
-                ),
+                style: TextStyle(fontSize: 16, color: Colors.black),
               ),
             ),
           ),

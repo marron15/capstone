@@ -48,14 +48,14 @@ class _EmergencyContactWidgetState extends State<EmergencyContactWidget> {
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
           'Emergency Contact',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Colors.grey[800],
+            color: Colors.white,
           ),
         ),
         SizedBox(height: 20),
@@ -87,8 +87,19 @@ class _EmergencyContactWidgetState extends State<EmergencyContactWidget> {
           controller: _emergencyNameController,
           decoration: InputDecoration(
             labelText: 'Emergency Contact Name',
+            labelStyle: TextStyle(color: Colors.white),
             border: OutlineInputBorder(),
+            enabledBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.white54),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.lightBlueAccent, width: 2),
+            ),
+            hintStyle: TextStyle(color: Colors.white54),
+            fillColor: Colors.white10,
+            filled: true,
           ),
+          style: TextStyle(color: Colors.white),
         ),
         SizedBox(height: 20),
         TextField(
@@ -96,8 +107,19 @@ class _EmergencyContactWidgetState extends State<EmergencyContactWidget> {
           keyboardType: TextInputType.phone,
           decoration: InputDecoration(
             labelText: 'Emergency Contact Number',
+            labelStyle: TextStyle(color: Colors.white),
             border: OutlineInputBorder(),
+            enabledBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.white54),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.lightBlueAccent, width: 2),
+            ),
+            hintStyle: TextStyle(color: Colors.white54),
+            fillColor: Colors.white10,
+            filled: true,
           ),
+          style: TextStyle(color: Colors.white),
         ),
         SizedBox(height: 20),
         SizedBox(
