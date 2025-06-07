@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import 'dart:typed_data';
 import 'profile_data.dart';
+import 'package:flutter/foundation.dart';
 
 class EmergencyContactWidget extends StatefulWidget {
   @override
@@ -32,10 +32,20 @@ class _EmergencyContactWidgetState extends State<EmergencyContactWidget> {
   Future<void> _pickEmergencyImage() async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-    setState(() {
-      _emergencyImageFile =
-          pickedFile != null ? File(pickedFile.path) : _emergencyImageFile;
-    });
+    if (pickedFile != null) {
+      if (kIsWeb) {
+        final bytes = await pickedFile.readAsBytes();
+        setState(() {
+          _webImageBytes = bytes;
+          _emergencyImageFile = null;
+        });
+      } else {
+        setState(() {
+          _emergencyImageFile = File(pickedFile.path);
+          _webImageBytes = null;
+        });
+      }
+    }
   }
 
   @override
@@ -66,13 +76,17 @@ class _EmergencyContactWidgetState extends State<EmergencyContactWidget> {
               radius: 48,
               backgroundColor: Colors.grey[300],
               backgroundImage:
-                  _emergencyImageFile != null
-                      ? FileImage(_emergencyImageFile!)
-                      : (_webImageBytes != null
+                  kIsWeb
+                      ? (_webImageBytes != null
                           ? MemoryImage(_webImageBytes!)
+                          : null)
+                      : (_emergencyImageFile != null
+                          ? FileImage(_emergencyImageFile!)
                           : null),
               child:
-                  _emergencyImageFile == null
+                  (kIsWeb
+                          ? _webImageBytes == null
+                          : _emergencyImageFile == null)
                       ? Icon(
                         Icons.camera_alt,
                         size: 32,

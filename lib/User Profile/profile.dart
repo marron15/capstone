@@ -6,6 +6,8 @@ import 'note.dart';
 import 'transaction.dart';
 import 'emergency_contact.dart';
 import '../landing_page_components/landing_page.dart';
+import 'membership_duration.dart';
+import 'package:flutter/foundation.dart';
 
 class ProfilePage extends StatefulWidget {
   @override
@@ -35,10 +37,12 @@ class _ProfilePageState extends State<ProfilePage> {
   late VoidCallback _contactListener;
   late VoidCallback _emailListener;
   File? _imageFile;
+  File? _pendingImageFile;
   DateTime? _birthdate;
   TextEditingController _passwordController = TextEditingController();
   bool _obscurePassword = true;
   String? _passwordError;
+  Uint8List? _pendingWebImageBytes;
 
   // Controllers for address fields
   late TextEditingController _addressController;
@@ -149,10 +153,79 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-    if (!mounted) return;
+    if (kIsWeb) {
+      final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+      if (pickedFile != null) {
+        final bytes = await pickedFile.readAsBytes();
+        setState(() {
+          _pendingWebImageBytes = bytes;
+          _pendingImageFile = null;
+        });
+      }
+    } else {
+      final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+      if (pickedFile != null) {
+        setState(() {
+          _pendingImageFile = File(pickedFile.path);
+          _pendingWebImageBytes = null;
+        });
+      }
+    }
+  }
+
+  void _cancelPendingImage() {
     setState(() {
-      _imageFile = pickedFile != null ? File(pickedFile.path) : _imageFile;
+      _pendingImageFile = null;
+      _pendingWebImageBytes = null;
+    });
+  }
+
+  void _savePendingImage() {
+    setState(() {
+      if (kIsWeb) {
+        profileNotifier.value = ProfileData(
+          imageFile: null,
+          webImageBytes: _pendingWebImageBytes,
+          firstName: profileNotifier.value.firstName,
+          middleName: profileNotifier.value.middleName,
+          lastName: profileNotifier.value.lastName,
+          contactNumber: profileNotifier.value.contactNumber,
+          email: profileNotifier.value.email,
+          birthdate: profileNotifier.value.birthdate,
+          password: profileNotifier.value.password,
+          address: profileNotifier.value.address,
+          street: profileNotifier.value.street,
+          city: profileNotifier.value.city,
+          stateProvince: profileNotifier.value.stateProvince,
+          postalCode: profileNotifier.value.postalCode,
+          country: profileNotifier.value.country,
+          emergencyContactName: profileNotifier.value.emergencyContactName,
+          emergencyContactPhone: profileNotifier.value.emergencyContactPhone,
+        );
+      } else {
+        _imageFile = _pendingImageFile;
+        profileNotifier.value = ProfileData(
+          imageFile: _imageFile,
+          webImageBytes: null,
+          firstName: profileNotifier.value.firstName,
+          middleName: profileNotifier.value.middleName,
+          lastName: profileNotifier.value.lastName,
+          contactNumber: profileNotifier.value.contactNumber,
+          email: profileNotifier.value.email,
+          birthdate: profileNotifier.value.birthdate,
+          password: profileNotifier.value.password,
+          address: profileNotifier.value.address,
+          street: profileNotifier.value.street,
+          city: profileNotifier.value.city,
+          stateProvince: profileNotifier.value.stateProvince,
+          postalCode: profileNotifier.value.postalCode,
+          country: profileNotifier.value.country,
+          emergencyContactName: profileNotifier.value.emergencyContactName,
+          emergencyContactPhone: profileNotifier.value.emergencyContactPhone,
+        );
+      }
+      _pendingImageFile = null;
+      _pendingWebImageBytes = null;
     });
   }
 
@@ -401,7 +474,7 @@ class _ProfilePageState extends State<ProfilePage> {
       children: [
         Center(
           child: Text(
-            'User Information',
+            'Profile',
             style: TextStyle(
               fontSize: titleFontSize,
               fontWeight: FontWeight.w800,
@@ -410,12 +483,6 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ),
         SizedBox(height: 8),
-        Center(
-          child: Text(
-            'Please fill out your personal details below',
-            style: TextStyle(fontSize: subtitleFontSize, color: Colors.white70),
-          ),
-        ),
         SizedBox(height: 24),
         Center(
           child: GestureDetector(
@@ -424,9 +491,24 @@ class _ProfilePageState extends State<ProfilePage> {
               radius: avatarRadius,
               backgroundColor: Colors.white24,
               backgroundImage:
-                  _imageFile != null ? FileImage(_imageFile!) : null,
+                  kIsWeb
+                      ? (_pendingWebImageBytes != null
+                          ? MemoryImage(_pendingWebImageBytes!)
+                          : (profileNotifier.value.webImageBytes != null
+                              ? MemoryImage(
+                                profileNotifier.value.webImageBytes!,
+                              )
+                              : null))
+                      : (_pendingImageFile != null
+                          ? FileImage(_pendingImageFile!)
+                          : (_imageFile != null
+                              ? FileImage(_imageFile!)
+                              : null)),
               child:
-                  _imageFile == null
+                  (kIsWeb
+                          ? (_pendingWebImageBytes == null &&
+                              profileNotifier.value.webImageBytes == null)
+                          : (_pendingImageFile == null && _imageFile == null))
                       ? Icon(
                         Icons.camera_alt,
                         size: iconSize,
@@ -436,6 +518,36 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           ),
         ),
+        if (_pendingImageFile != null || _pendingWebImageBytes != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 12.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                  onPressed: _cancelPendingImage,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.grey[300],
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Text('Cancel', style: TextStyle(color: Colors.black)),
+                ),
+                SizedBox(width: 16),
+                ElevatedButton(
+                  onPressed: _savePendingImage,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Text('Save', style: TextStyle(color: Colors.white)),
+                ),
+              ],
+            ),
+          ),
         SizedBox(height: 32),
       ],
     );
@@ -663,7 +775,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             children: [
                               Center(
                                 child: Text(
-                                  'User Information',
+                                  'Profile',
                                   style: TextStyle(
                                     fontSize: titleFontSize,
                                     fontWeight: FontWeight.w800,
@@ -672,15 +784,6 @@ class _ProfilePageState extends State<ProfilePage> {
                                 ),
                               ),
                               SizedBox(height: 8),
-                              Center(
-                                child: Text(
-                                  'Please fill out your personal details below',
-                                  style: TextStyle(
-                                    fontSize: subtitleFontSize,
-                                    color: Colors.white70,
-                                  ),
-                                ),
-                              ),
                               SizedBox(height: 24),
                               Center(
                                 child: GestureDetector(
@@ -689,11 +792,36 @@ class _ProfilePageState extends State<ProfilePage> {
                                     radius: avatarRadius,
                                     backgroundColor: Colors.white24,
                                     backgroundImage:
-                                        _imageFile != null
-                                            ? FileImage(_imageFile!)
-                                            : null,
+                                        kIsWeb
+                                            ? (_pendingWebImageBytes != null
+                                                ? MemoryImage(
+                                                  _pendingWebImageBytes!,
+                                                )
+                                                : (profileNotifier
+                                                            .value
+                                                            .webImageBytes !=
+                                                        null
+                                                    ? MemoryImage(
+                                                      profileNotifier
+                                                          .value
+                                                          .webImageBytes!,
+                                                    )
+                                                    : null))
+                                            : (_pendingImageFile != null
+                                                ? FileImage(_pendingImageFile!)
+                                                : (_imageFile != null
+                                                    ? FileImage(_imageFile!)
+                                                    : null)),
                                     child:
-                                        _imageFile == null
+                                        (kIsWeb
+                                                ? (_pendingWebImageBytes ==
+                                                        null &&
+                                                    profileNotifier
+                                                            .value
+                                                            .webImageBytes ==
+                                                        null)
+                                                : (_pendingImageFile == null &&
+                                                    _imageFile == null))
                                             ? Icon(
                                               Icons.camera_alt,
                                               size: iconSize,
@@ -838,28 +966,6 @@ class _ProfilePageState extends State<ProfilePage> {
                                   ],
                                 ),
                               SizedBox(height: 32),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    'Membership Expiration: ',
-                                    style: TextStyle(
-                                      fontSize: isMobile ? 13 : 16,
-                                      fontWeight: FontWeight.w500,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                  Text(
-                                    '--:--:--',
-                                    style: TextStyle(
-                                      fontSize: isMobile ? 15 : 18,
-                                      letterSpacing: 2,
-                                      color: Colors.redAccent,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: 24),
                               NoteWidget(
                                 controller: _noteController,
                                 onSave: () {
@@ -892,7 +998,9 @@ class _ProfilePageState extends State<ProfilePage> {
             );
           },
         ),
-        title: Text('Profile', style: TextStyle(color: Colors.white)),
+        title: membershipExpirationText(
+          profileNotifier.value.membershipExpiration,
+        ),
         centerTitle: true,
       ),
     );

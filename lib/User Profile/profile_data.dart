@@ -20,6 +20,7 @@ class ProfileData {
   final String? stateProvince;
   final String? postalCode;
   final String? country;
+  final DateTime? membershipExpiration;
 
   ProfileData({
     this.imageFile,
@@ -39,6 +40,7 @@ class ProfileData {
     this.stateProvince,
     this.postalCode,
     this.country,
+    this.membershipExpiration,
   });
 }
 

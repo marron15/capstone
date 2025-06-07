@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 
 class TransactionProofWidget extends StatefulWidget {
@@ -12,44 +11,42 @@ class TransactionProofWidget extends StatefulWidget {
 }
 
 class _TransactionProofWidgetState extends State<TransactionProofWidget> {
-  List<File> _imageFiles = [];
-  List<Uint8List> _webImageBytesList = [];
+  File? _imageFile;
+  Uint8List? _webImageBytes;
 
   Future<void> _pickImages() async {
     final picker = ImagePicker();
     if (kIsWeb) {
-      final pickedFiles = await picker.pickMultiImage();
-      if (pickedFiles.isNotEmpty) {
-        final bytesList = await Future.wait(
-          pickedFiles.map((f) => f.readAsBytes()),
-        );
+      final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+      if (pickedFile != null) {
+        final bytes = await pickedFile.readAsBytes();
         setState(() {
-          _webImageBytesList.addAll(bytesList);
+          _webImageBytes = bytes;
         });
       }
     } else {
-      final pickedFiles = await picker.pickMultiImage();
-      if (pickedFiles.isNotEmpty) {
+      final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+      if (pickedFile != null) {
         setState(() {
-          _imageFiles.addAll(pickedFiles.map((f) => File(f.path)));
+          _imageFile = File(pickedFile.path);
         });
       }
     }
   }
 
-  void _removeImage(int index) {
+  void _removeImage() {
     setState(() {
       if (kIsWeb) {
-        _webImageBytesList.removeAt(index);
+        _webImageBytes = null;
       } else {
-        _imageFiles.removeAt(index);
+        _imageFile = null;
       }
     });
   }
 
   void _submitProof() {
     // TODO: Implement backend upload logic here
-    if (_imageFiles.isNotEmpty || _webImageBytesList.isNotEmpty) {
+    if (_imageFile != null || _webImageBytes != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Proof submitted! (backend logic goes here)')),
       );
@@ -58,7 +55,7 @@ class _TransactionProofWidgetState extends State<TransactionProofWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final images = kIsWeb ? _webImageBytesList : _imageFiles;
+    final image = kIsWeb ? _webImageBytes : _imageFile;
     return Container(
       margin: EdgeInsets.only(top: 16),
       padding: EdgeInsets.symmetric(horizontal: 20, vertical: 24),
@@ -109,7 +106,7 @@ class _TransactionProofWidgetState extends State<TransactionProofWidget> {
                 borderRadius: BorderRadius.circular(12),
               ),
               child:
-                  images.isEmpty
+                  image == null
                       ? Center(
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -121,7 +118,7 @@ class _TransactionProofWidgetState extends State<TransactionProofWidget> {
                             ),
                             SizedBox(width: 12),
                             Text(
-                              'Click or drag & drop image(s) here',
+                              'Click or drag & drop image here',
                               style: TextStyle(
                                 color: Color(0xFF2196F3),
                                 fontSize: 16,
@@ -130,53 +127,72 @@ class _TransactionProofWidgetState extends State<TransactionProofWidget> {
                           ],
                         ),
                       )
-                      : SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          children: List.generate(images.length, (index) {
-                            return Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Stack(
-                                children: [
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(10),
-                                    child:
-                                        kIsWeb
-                                            ? Image.memory(
-                                              images[index] as Uint8List,
-                                              fit: BoxFit.cover,
-                                              width: 120,
-                                              height: 120,
-                                            )
-                                            : Image.file(
-                                              images[index] as File,
-                                              fit: BoxFit.cover,
-                                              width: 120,
-                                              height: 120,
-                                            ),
-                                  ),
-                                  Positioned(
-                                    top: 2,
-                                    right: 2,
-                                    child: GestureDetector(
-                                      onTap: () => _removeImage(index),
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          color: Colors.black54,
-                                          shape: BoxShape.circle,
+                      : Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Stack(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: GestureDetector(
+                                onTap: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) {
+                                      return Dialog(
+                                        backgroundColor: Colors.transparent,
+                                        child: InteractiveViewer(
+                                          child:
+                                              kIsWeb
+                                                  ? Image.memory(
+                                                    image as Uint8List,
+                                                    fit: BoxFit.contain,
+                                                  )
+                                                  : Image.file(
+                                                    image as File,
+                                                    fit: BoxFit.contain,
+                                                  ),
                                         ),
-                                        child: Icon(
-                                          Icons.close,
-                                          color: Colors.white,
-                                          size: 20,
+                                      );
+                                    },
+                                  );
+                                },
+                                child:
+                                    kIsWeb
+                                        ? Center(
+                                          child: Image.memory(
+                                            image as Uint8List,
+                                            fit: BoxFit.contain,
+                                            width: 400,
+                                            height: 400,
+                                          ),
+                                        )
+                                        : Image.file(
+                                          image as File,
+                                          fit: BoxFit.contain,
+                                          width: 220,
+                                          height: 220,
                                         ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
                               ),
-                            );
-                          }),
+                            ),
+                            Positioned(
+                              top: 2,
+                              right: 2,
+                              child: GestureDetector(
+                                onTap: _removeImage,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.black54,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    Icons.close,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
             ),
@@ -185,10 +201,10 @@ class _TransactionProofWidgetState extends State<TransactionProofWidget> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: images.isNotEmpty ? _submitProof : null,
+              onPressed: image != null ? _submitProof : null,
               style: ElevatedButton.styleFrom(
                 backgroundColor:
-                    images.isNotEmpty ? Colors.blue : Colors.blueGrey[200],
+                    image != null ? Colors.blue : Colors.blueGrey[200],
                 padding: EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
