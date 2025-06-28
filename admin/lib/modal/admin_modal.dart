@@ -140,4 +140,146 @@ class AdminModal {
       },
     );
   }
+
+  // Show the modal dialog for editing an admin
+  static void showEditAdminModal(BuildContext context,
+      Map<String, dynamic> admin, Function(Map<String, dynamic>) onEdit) {
+    // Controllers for edit admin form
+    final TextEditingController firstNameController =
+        TextEditingController(text: admin['firstName']);
+    final TextEditingController lastNameController =
+        TextEditingController(text: admin['lastName']);
+    final TextEditingController emailController =
+        TextEditingController(text: admin['email']);
+    final TextEditingController contactNumberController =
+        TextEditingController(text: admin['contactNumber']);
+    final TextEditingController passwordController =
+        TextEditingController(text: '********');
+
+    // Validate the form fields
+    bool validateForm() {
+      if (firstNameController.text.isEmpty ||
+          lastNameController.text.isEmpty ||
+          emailController.text.isEmpty ||
+          contactNumberController.text.isEmpty) {
+        return false;
+      }
+      return true;
+    }
+
+    Widget buildFormField(String label, TextEditingController controller,
+        {bool isPassword = false}) {
+      return Row(
+        children: [
+          SizedBox(
+            width: 150,
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 16,
+                color: Colors.black87,
+              ),
+            ),
+          ),
+          Expanded(
+            child: TextField(
+              controller: controller,
+              obscureText: isPassword,
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: Colors.grey[200],
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Container(
+            width: 500,
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                buildFormField("First name:", firstNameController),
+                const SizedBox(height: 16),
+                buildFormField("Last name:", lastNameController),
+                const SizedBox(height: 16),
+                buildFormField("Email:", emailController),
+                const SizedBox(height: 16),
+                buildFormField("Contact Number:", contactNumberController),
+                const SizedBox(height: 16),
+                buildFormField("Password:", passwordController,
+                    isPassword: true),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      style: TextButton.styleFrom(
+                        backgroundColor: Colors.red[400],
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 12),
+                      ),
+                      child: const Text("Cancel"),
+                    ),
+                    const SizedBox(width: 16),
+                    TextButton(
+                      onPressed: () {
+                        if (validateForm()) {
+                          onEdit({
+                            'firstName': firstNameController.text,
+                            'lastName': lastNameController.text,
+                            'email': emailController.text,
+                            'contactNumber': contactNumberController.text,
+                            'password':
+                                (passwordController.text != '********' &&
+                                        passwordController.text.isNotEmpty)
+                                    ? '********'
+                                    : admin['password'],
+                          });
+                          Navigator.of(context).pop();
+                        }
+                      },
+                      style: TextButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 12),
+                      ),
+                      child: const Text("Save"),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 }

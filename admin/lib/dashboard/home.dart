@@ -34,7 +34,7 @@ class StatisticPage extends StatelessWidget {
             Expanded(
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  int crossAxisCount = constraints.maxWidth < 1000 ? 1 : 2;
+                  int crossAxisCount = constraints.maxWidth < 500 ? 1 : 4;
                   return GridView.count(
                     crossAxisCount: crossAxisCount,
                     crossAxisSpacing: 24,
@@ -44,7 +44,7 @@ class StatisticPage extends StatelessWidget {
                       // Week Paid Members (Pie Chart)
                       _StatCard(
                         title: 'Week Paid Members',
-                        subtitle: 'Sales',
+                        subtitle: '',
                         child: WeekPaidMembers(),
                       ),
                       // New Members this Week (Bar Graph)

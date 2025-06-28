@@ -10,34 +10,55 @@ class TrainersPage extends StatefulWidget {
 }
 
 class _TrainersPageState extends State<TrainersPage> {
-  // Sample data for trainers
-  List<Map<String, String>> _trainers = [
-    {
-      'firstName': 'John',
-      'lastName': 'Doe',
-      'contactNumber': '+1 123-456-7890'
-    },
-    {
-      'firstName': 'Jane',
-      'lastName': 'Smith',
-      'contactNumber': '+1 234-567-8901'
-    },
-    {
-      'firstName': 'Michael',
-      'lastName': 'Johnson',
-      'contactNumber': '+1 345-678-9012'
-    },
-    {
-      'firstName': 'Emily',
-      'lastName': 'Williams',
-      'contactNumber': '+1 456-789-0123'
-    },
-    {
-      'firstName': 'Robert',
-      'lastName': 'Brown',
-      'contactNumber': '+1 567-890-1234'
-    },
-  ];
+  // Trainers data
+  List<Map<String, String>> _trainers = [];
+
+  List<Map<String, String>> _filteredTrainers = [];
+  TextEditingController searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _filteredTrainers = List.from(_trainers);
+  }
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
+
+  void _addTrainer(Map<String, String> trainer) {
+    setState(() {
+      _trainers.add(trainer);
+      _filterTrainers(searchController.text);
+    });
+  }
+
+  void _editTrainer(int index, Map<String, String> updatedTrainer) {
+    setState(() {
+      _trainers[index] = updatedTrainer;
+      _filterTrainers(searchController.text);
+    });
+  }
+
+  void _removeTrainer(int index) {
+    setState(() {
+      _trainers.removeAt(index);
+      _filterTrainers(searchController.text);
+    });
+  }
+
+  void _filterTrainers(String query) {
+    setState(() {
+      final lowerQuery = query.toLowerCase();
+      _filteredTrainers = _trainers.where((trainer) {
+        return trainer['firstName']!.toLowerCase().contains(lowerQuery) ||
+            trainer['lastName']!.toLowerCase().contains(lowerQuery) ||
+            trainer['contactNumber']!.toLowerCase().contains(lowerQuery);
+      }).toList();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -60,11 +81,7 @@ class _TrainersPageState extends State<TrainersPage> {
               children: [
                 ElevatedButton(
                   onPressed: () {
-                    TrainerModal.showAddTrainerModal(context, (newTrainer) {
-                      setState(() {
-                        _trainers.add(newTrainer);
-                      });
-                    });
+                    TrainerModal.showAddTrainerModal(context, _addTrainer);
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
@@ -93,8 +110,10 @@ class _TrainersPageState extends State<TrainersPage> {
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(18),
                   ),
-                  child: const TextField(
-                    decoration: InputDecoration(
+                  child: TextField(
+                    controller: searchController,
+                    onChanged: _filterTrainers,
+                    decoration: const InputDecoration(
                       hintText: 'Search',
                       prefixIcon:
                           Icon(Icons.search, color: Colors.grey, size: 20),
@@ -107,122 +126,97 @@ class _TrainersPageState extends State<TrainersPage> {
               ],
             ),
           ),
-          Container(
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              border: Border(
-                bottom: BorderSide(color: Colors.black12, width: 1),
-              ),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-            child: Row(
-              children: [
-                _buildHeaderCell('First Name', flex: 3),
-                _buildHeaderCell('Last Name', flex: 3),
-                _buildHeaderCell('Contact Number', flex: 4),
-                _buildHeaderCell('Actions', flex: 2),
-              ],
-            ),
-          ),
           Expanded(
-            child: ListView.separated(
-              padding: const EdgeInsets.only(bottom: 16),
-              itemCount: _trainers.length,
-              separatorBuilder: (context, index) =>
-                  const Divider(height: 1, thickness: 1, color: Colors.black12),
-              itemBuilder: (context, index) {
-                return Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                  ),
-                  child: Row(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Card(
+                elevation: 3,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
                     children: [
-                      _buildCell(_trainers[index]['firstName'] ?? '', flex: 3),
-                      _buildCell(_trainers[index]['lastName'] ?? '', flex: 3),
-                      _buildCell(_trainers[index]['contactNumber'] ?? '',
-                          flex: 4),
-                      Expanded(
-                        flex: 2,
-                        child: Row(
+                      // Header Row
+                      Container(
+                        color: Colors.blue[50],
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: const Row(
                           children: [
-                            IconButton(
-                              icon: const Icon(Icons.edit,
-                                  size: 18, color: Colors.blue),
-                              onPressed: () {
-                                // Edit trainer modal
-                                final trainer = _trainers[index];
-                                TextEditingController firstNameController =
-                                    TextEditingController(
-                                        text: trainer['firstName']);
-                                TextEditingController lastNameController =
-                                    TextEditingController(
-                                        text: trainer['lastName']);
-                                TextEditingController contactNumberController =
-                                    TextEditingController(
-                                        text: trainer['contactNumber']);
-                                final formKey = GlobalKey<FormState>();
-                                showDialog(
-                                  context: context,
-                                  builder: (BuildContext context) {
-                                    return Dialog(
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
+                            Expanded(
+                                flex: 3,
+                                child: Text('First Name',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold))),
+                            Expanded(
+                                flex: 3,
+                                child: Text('Last Name',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold))),
+                            Expanded(
+                                flex: 4,
+                                child: Text('Contact Number',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold))),
+                            SizedBox(
+                                width: 80,
+                                child: Text('Actions',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold))),
+                          ],
+                        ),
+                      ),
+                      const Divider(height: 1, color: Colors.black26),
+                      // Data Rows
+                      ..._filteredTrainers.asMap().entries.map((entry) {
+                        int index = entry.key;
+                        var trainer = entry.value;
+                        return Column(
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                    flex: 3,
+                                    child: Text(trainer['firstName'] ?? '')),
+                                Expanded(
+                                    flex: 3,
+                                    child: Text(trainer['lastName'] ?? '')),
+                                Expanded(
+                                    flex: 4,
+                                    child:
+                                        Text(trainer['contactNumber'] ?? '')),
+                                SizedBox(
+                                  width: 80,
+                                  child: Row(
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.edit,
+                                            color: Colors.blue),
+                                        onPressed: () {
+                                          TrainerModal.showEditTrainerModal(
+                                            context,
+                                            trainer,
+                                            (updatedTrainer) {
+                                              _editTrainer(
+                                                  index, updatedTrainer);
+                                            },
+                                          );
+                                        },
                                       ),
-                                      child: Container(
-                                        width: 400,
-                                        padding: const EdgeInsets.all(20),
-                                        child: Form(
-                                          key: formKey,
-                                          child: Column(
-                                            mainAxisSize: MainAxisSize.min,
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              TextFormField(
-                                                controller: firstNameController,
-                                                decoration:
-                                                    const InputDecoration(
-                                                        labelText:
-                                                            'First Name'),
-                                                validator: (value) => value ==
-                                                            null ||
-                                                        value.isEmpty
-                                                    ? 'Please enter first name'
-                                                    : null,
-                                              ),
-                                              const SizedBox(height: 16),
-                                              TextFormField(
-                                                controller: lastNameController,
-                                                decoration:
-                                                    const InputDecoration(
-                                                        labelText: 'Last Name'),
-                                                validator: (value) => value ==
-                                                            null ||
-                                                        value.isEmpty
-                                                    ? 'Please enter last name'
-                                                    : null,
-                                              ),
-                                              const SizedBox(height: 16),
-                                              TextFormField(
-                                                controller:
-                                                    contactNumberController,
-                                                decoration:
-                                                    const InputDecoration(
-                                                        labelText:
-                                                            'Contact Number'),
-                                                validator: (value) => value ==
-                                                            null ||
-                                                        value.isEmpty
-                                                    ? 'Please enter contact number'
-                                                    : null,
-                                              ),
-                                              const SizedBox(height: 24),
-                                              Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.end,
-                                                children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.delete,
+                                            color: Colors.red),
+                                        onPressed: () {
+                                          showDialog(
+                                            context: context,
+                                            builder: (BuildContext context) {
+                                              return AlertDialog(
+                                                title: const Text(
+                                                    'Delete Trainer'),
+                                                content: const Text(
+                                                    'Are you sure you want to delete this trainer?'),
+                                                actions: [
                                                   TextButton(
                                                     onPressed: () {
                                                       Navigator.of(context)
@@ -230,92 +224,38 @@ class _TrainersPageState extends State<TrainersPage> {
                                                     },
                                                     child: const Text('Cancel'),
                                                   ),
-                                                  const SizedBox(width: 12),
-                                                  ElevatedButton(
+                                                  TextButton(
                                                     onPressed: () {
-                                                      if (formKey.currentState!
-                                                          .validate()) {
-                                                        setState(() {
-                                                          _trainers[index] = {
-                                                            'firstName':
-                                                                firstNameController
-                                                                    .text,
-                                                            'lastName':
-                                                                lastNameController
-                                                                    .text,
-                                                            'contactNumber':
-                                                                contactNumberController
-                                                                    .text,
-                                                          };
-                                                        });
-                                                        Navigator.of(context)
-                                                            .pop();
-                                                      }
+                                                      _removeTrainer(index);
+                                                      Navigator.of(context)
+                                                          .pop();
                                                     },
-                                                    child: const Text('Save'),
+                                                    child: const Text('Delete',
+                                                        style: TextStyle(
+                                                            color: Colors.red)),
                                                   ),
                                                 ],
-                                              ),
-                                            ],
-                                          ),
-                                        ),
+                                              );
+                                            },
+                                          );
+                                        },
                                       ),
-                                    );
-                                  },
-                                );
-                              },
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(width: 8),
-                            IconButton(
-                              icon: const Icon(Icons.delete,
-                                  size: 18, color: Colors.red),
-                              onPressed: () {
-                                setState(() {
-                                  _trainers.removeAt(index);
-                                });
-                              },
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
-                            ),
+                            const Divider(height: 1, color: Colors.black12),
                           ],
-                        ),
-                      ),
+                        );
+                      }).toList(),
                     ],
                   ),
-                );
-              },
+                ),
+              ),
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildHeaderCell(String text, {int flex = 1}) {
-    return Expanded(
-      flex: flex,
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontWeight: FontWeight.w600,
-          fontSize: 14,
-          color: Colors.black87,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCell(String text, {int flex = 1}) {
-    return Expanded(
-      flex: flex,
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontSize: 14,
-          color: Colors.black87,
-        ),
       ),
     );
   }

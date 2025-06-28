@@ -11,81 +11,9 @@ class AdminProfilePage extends StatefulWidget {
 
 class _AdminProfilePageState extends State<AdminProfilePage> {
   // Pre-filled data for the admin profiles table
-  List<Map<String, dynamic>> _admins = [
-    {
-      'firstName': 'John',
-      'lastName': 'Doe',
-      'email': 'john.doe@example.com',
-      'contactNumber': '+1 123-456-7890',
-      'password': '********'
-    },
-    {
-      'firstName': 'Jane',
-      'lastName': 'Smith',
-      'email': 'jane.smith@example.com',
-      'contactNumber': '+1 234-567-8901',
-      'password': '********'
-    },
-    {
-      'firstName': 'Michael',
-      'lastName': 'Johnson',
-      'email': 'michael.j@example.com',
-      'contactNumber': '+1 345-678-9012',
-      'password': '********'
-    },
-    {
-      'firstName': 'Emily',
-      'lastName': 'Williams',
-      'email': 'emily.w@example.com',
-      'contactNumber': '+1 456-789-0123',
-      'password': '********'
-    },
-    {
-      'firstName': 'Robert',
-      'lastName': 'Brown',
-      'email': 'robert.b@example.com',
-      'contactNumber': '+1 567-890-1234',
-      'password': '********'
-    },
-    {
-      'firstName': 'Sarah',
-      'lastName': 'Davis',
-      'email': 'sarah.d@example.com',
-      'contactNumber': '+1 678-901-2345',
-      'password': '********'
-    },
-    {
-      'firstName': 'David',
-      'lastName': 'Miller',
-      'email': 'david.m@example.com',
-      'contactNumber': '+1 789-012-3456',
-      'password': '********'
-    },
-    {
-      'firstName': 'Jennifer',
-      'lastName': 'Wilson',
-      'email': 'jennifer.w@example.com',
-      'contactNumber': '+1 890-123-4567',
-      'password': '********'
-    },
-    {
-      'firstName': 'James',
-      'lastName': 'Taylor',
-      'email': 'james.t@example.com',
-      'contactNumber': '+1 901-234-5678',
-      'password': '********'
-    },
-    {
-      'firstName': 'Lisa',
-      'lastName': 'Anderson',
-      'email': 'lisa.a@example.com',
-      'contactNumber': '+1 012-345-6789',
-      'password': '********'
-    },
-  ];
+  final List<Map<String, dynamic>> _admins = [];
 
-  // Index of highlighted rows
-  final List<int> _highlightedRows = [2, 4, 6]; // Michael, Robert, David
+  List<Map<String, dynamic>> _filteredAdmins = [];
 
   TextEditingController searchController = TextEditingController();
 
@@ -93,6 +21,18 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
   void _addAdmin(Map<String, dynamic> admin) {
     setState(() {
       _admins.add(admin);
+      // Update _filteredAdmins to reflect the new admin and current search
+      final query = searchController.text.toLowerCase();
+      if (query.isEmpty) {
+        _filteredAdmins = List.from(_admins);
+      } else {
+        _filteredAdmins = _admins.where((admin) {
+          return admin['firstName'].toLowerCase().contains(query) ||
+              admin['lastName'].toLowerCase().contains(query) ||
+              admin['email'].toLowerCase().contains(query) ||
+              admin['contactNumber'].toLowerCase().contains(query);
+        }).toList();
+      }
     });
   }
 
@@ -103,6 +43,24 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
         _admins.removeAt(index);
       });
     }
+  }
+
+  void _filterAdmins(String query) {
+    setState(() {
+      _filteredAdmins = _admins.where((admin) {
+        final lowerQuery = query.toLowerCase();
+        return admin['firstName'].toLowerCase().contains(lowerQuery) ||
+            admin['lastName'].toLowerCase().contains(lowerQuery) ||
+            admin['email'].toLowerCase().contains(lowerQuery) ||
+            admin['contactNumber'].toLowerCase().contains(lowerQuery);
+      }).toList();
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _filteredAdmins = List.from(_admins);
   }
 
   @override
@@ -163,6 +121,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                   ),
                   child: TextField(
                     controller: searchController,
+                    onChanged: _filterAdmins,
                     decoration: const InputDecoration(
                       hintText: 'Search',
                       prefixIcon:
@@ -176,159 +135,138 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
               ],
             ),
           ),
-          Container(
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              border: Border(
-                bottom: BorderSide(color: Colors.black12, width: 1),
-              ),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-            child: Row(
-              children: [
-                _buildHeaderCell('First Name', flex: 3),
-                _buildHeaderCell('Last Name', flex: 3),
-                _buildHeaderCell('Email', flex: 5),
-                _buildHeaderCell('Contact Number', flex: 3),
-                _buildHeaderCell('Password', flex: 2),
-                _buildHeaderCell('Actions', flex: 2),
-              ],
-            ),
-          ),
           Expanded(
-            child: ListView.separated(
-              padding: const EdgeInsets.only(bottom: 16),
-              itemCount: _admins.length,
-              separatorBuilder: (context, index) =>
-                  const Divider(height: 1, thickness: 1, color: Colors.black12),
-              itemBuilder: (context, index) {
-                bool isHighlighted = _highlightedRows.contains(index);
-                return Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                  ),
-                  child: Row(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Card(
+                elevation: 3,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
                     children: [
-                      _buildCell(_admins[index]['firstName'],
-                          flex: 3, isHighlighted: isHighlighted),
-                      _buildCell(_admins[index]['lastName'],
-                          flex: 3, isHighlighted: isHighlighted),
-                      _buildEmailCell(_admins[index]['email'], flex: 5),
-                      _buildCell(_admins[index]['contactNumber'],
-                          flex: 3, isHighlighted: isHighlighted),
-                      _buildPasswordCell(_admins[index]['password'], flex: 2),
-                      Expanded(
-                        flex: 2,
-                        child: Row(
+                      // Header Row
+                      Container(
+                        color: Colors.blue[50],
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: const Row(
                           children: [
-                            IconButton(
-                              icon: const Icon(Icons.edit,
-                                  size: 18, color: Colors.blue),
-                              onPressed: () {
-                                // Edit admin modal
-                                final admin = _admins[index];
-                                TextEditingController firstNameController =
-                                    TextEditingController(
-                                        text: admin['firstName']);
-                                TextEditingController lastNameController =
-                                    TextEditingController(
-                                        text: admin['lastName']);
-                                TextEditingController emailController =
-                                    TextEditingController(text: admin['email']);
-                                TextEditingController contactNumberController =
-                                    TextEditingController(
-                                        text: admin['contactNumber']);
-                                TextEditingController passwordController =
-                                    TextEditingController(
-                                        text: admin['password']);
-                                final formKey = GlobalKey<FormState>();
-                                showDialog(
-                                  context: context,
-                                  builder: (BuildContext context) {
-                                    return Dialog(
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
+                            Expanded(
+                                flex: 2,
+                                child: Text('First Name',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold))),
+                            Expanded(
+                                flex: 2,
+                                child: Text('Last Name',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold))),
+                            Expanded(
+                                flex: 3,
+                                child: Text('Email',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold))),
+                            Expanded(
+                                flex: 3,
+                                child: Text('Contact Number',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold))),
+                            Expanded(
+                                flex: 2,
+                                child: Text('Password',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold))),
+                            SizedBox(
+                                width: 80,
+                                child: Text('Actions',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold))),
+                          ],
+                        ),
+                      ),
+                      const Divider(height: 1, color: Colors.black26),
+                      // Data Rows
+                      ..._filteredAdmins.asMap().entries.map((entry) {
+                        int index = entry.key;
+                        var admin = entry.value;
+                        return Column(
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                    flex: 2, child: Text(admin['firstName'])),
+                                Expanded(
+                                    flex: 2, child: Text(admin['lastName'])),
+                                Expanded(
+                                  flex: 3,
+                                  child: Text(
+                                    admin['email'],
+                                    style: const TextStyle(color: Colors.blue),
+                                  ),
+                                ),
+                                Expanded(
+                                    flex: 3,
+                                    child: Text(admin['contactNumber'])),
+                                Expanded(
+                                    flex: 2, child: Text(admin['password'])),
+                                SizedBox(
+                                  width: 80,
+                                  child: Row(
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.edit,
+                                            color: Colors.blue),
+                                        onPressed: () {
+                                          AdminModal.showEditAdminModal(
+                                            context,
+                                            admin,
+                                            (updatedAdmin) {
+                                              setState(() {
+                                                _admins[index] = updatedAdmin;
+                                                // Also update _filteredAdmins to reflect the change
+                                                final query = searchController
+                                                    .text
+                                                    .toLowerCase();
+                                                if (query.isEmpty) {
+                                                  _filteredAdmins =
+                                                      List.from(_admins);
+                                                } else {
+                                                  _filteredAdmins =
+                                                      _admins.where((admin) {
+                                                    return admin['firstName']
+                                                            .toLowerCase()
+                                                            .contains(query) ||
+                                                        admin['lastName']
+                                                            .toLowerCase()
+                                                            .contains(query) ||
+                                                        admin['email']
+                                                            .toLowerCase()
+                                                            .contains(query) ||
+                                                        admin['contactNumber']
+                                                            .toLowerCase()
+                                                            .contains(query);
+                                                  }).toList();
+                                                }
+                                              });
+                                            },
+                                          );
+                                        },
                                       ),
-                                      child: Container(
-                                        width: 500,
-                                        padding: const EdgeInsets.all(20),
-                                        child: Form(
-                                          key: formKey,
-                                          child: Column(
-                                            mainAxisSize: MainAxisSize.min,
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              TextFormField(
-                                                controller: firstNameController,
-                                                decoration:
-                                                    const InputDecoration(
-                                                        labelText:
-                                                            'First Name'),
-                                                validator: (value) => value ==
-                                                            null ||
-                                                        value.isEmpty
-                                                    ? 'Please enter first name'
-                                                    : null,
-                                              ),
-                                              const SizedBox(height: 16),
-                                              TextFormField(
-                                                controller: lastNameController,
-                                                decoration:
-                                                    const InputDecoration(
-                                                        labelText: 'Last Name'),
-                                                validator: (value) => value ==
-                                                            null ||
-                                                        value.isEmpty
-                                                    ? 'Please enter last name'
-                                                    : null,
-                                              ),
-                                              const SizedBox(height: 16),
-                                              TextFormField(
-                                                controller: emailController,
-                                                decoration:
-                                                    const InputDecoration(
-                                                        labelText: 'Email'),
-                                                validator: (value) =>
-                                                    value == null ||
-                                                            value.isEmpty
-                                                        ? 'Please enter email'
-                                                        : null,
-                                              ),
-                                              const SizedBox(height: 16),
-                                              TextFormField(
-                                                controller:
-                                                    contactNumberController,
-                                                decoration:
-                                                    const InputDecoration(
-                                                        labelText:
-                                                            'Contact Number'),
-                                                validator: (value) => value ==
-                                                            null ||
-                                                        value.isEmpty
-                                                    ? 'Please enter contact number'
-                                                    : null,
-                                              ),
-                                              const SizedBox(height: 16),
-                                              TextFormField(
-                                                controller: passwordController,
-                                                decoration:
-                                                    const InputDecoration(
-                                                        labelText: 'Password'),
-                                                obscureText: true,
-                                                validator: (value) => value ==
-                                                            null ||
-                                                        value.isEmpty
-                                                    ? 'Please enter password'
-                                                    : null,
-                                              ),
-                                              const SizedBox(height: 24),
-                                              Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.end,
-                                                children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.delete,
+                                            color: Colors.red),
+                                        onPressed: () {
+                                          showDialog(
+                                            context: context,
+                                            builder: (BuildContext context) {
+                                              return AlertDialog(
+                                                title:
+                                                    const Text('Delete Admin'),
+                                                content: const Text(
+                                                    'Are you sure you want to delete this admin?'),
+                                                actions: [
                                                   TextButton(
                                                     onPressed: () {
                                                       Navigator.of(context)
@@ -336,126 +274,72 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                                                     },
                                                     child: const Text('Cancel'),
                                                   ),
-                                                  const SizedBox(width: 12),
-                                                  ElevatedButton(
+                                                  TextButton(
                                                     onPressed: () {
-                                                      if (formKey.currentState!
-                                                          .validate()) {
-                                                        setState(() {
-                                                          _admins[index] = {
-                                                            'firstName':
-                                                                firstNameController
-                                                                    .text,
-                                                            'lastName':
-                                                                lastNameController
-                                                                    .text,
-                                                            'email':
-                                                                emailController
-                                                                    .text,
-                                                            'contactNumber':
-                                                                contactNumberController
-                                                                    .text,
-                                                            'password': passwordController
-                                                                    .text
-                                                                    .isNotEmpty
-                                                                ? '********'
-                                                                : _admins[index]
-                                                                    [
-                                                                    'password'],
-                                                          };
-                                                        });
-                                                        Navigator.of(context)
-                                                            .pop();
-                                                      }
+                                                      setState(() {
+                                                        _admins.removeAt(index);
+                                                        // Update _filteredAdmins to reflect the change
+                                                        final query =
+                                                            searchController
+                                                                .text
+                                                                .toLowerCase();
+                                                        if (query.isEmpty) {
+                                                          _filteredAdmins =
+                                                              List.from(
+                                                                  _admins);
+                                                        } else {
+                                                          _filteredAdmins =
+                                                              _admins.where(
+                                                                  (admin) {
+                                                            return admin[
+                                                                        'firstName']
+                                                                    .toLowerCase()
+                                                                    .contains(
+                                                                        query) ||
+                                                                admin['lastName']
+                                                                    .toLowerCase()
+                                                                    .contains(
+                                                                        query) ||
+                                                                admin['email']
+                                                                    .toLowerCase()
+                                                                    .contains(
+                                                                        query) ||
+                                                                admin['contactNumber']
+                                                                    .toLowerCase()
+                                                                    .contains(
+                                                                        query);
+                                                          }).toList();
+                                                        }
+                                                      });
+                                                      Navigator.of(context)
+                                                          .pop();
                                                     },
-                                                    child: const Text('Save'),
+                                                    child: const Text('Delete',
+                                                        style: TextStyle(
+                                                            color: Colors.red)),
                                                   ),
                                                 ],
-                                              ),
-                                            ],
-                                          ),
-                                        ),
+                                              );
+                                            },
+                                          );
+                                        },
                                       ),
-                                    );
-                                  },
-                                );
-                              },
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(width: 8),
-                            IconButton(
-                              icon: const Icon(Icons.delete,
-                                  size: 18, color: Colors.red),
-                              onPressed: () {
-                                _removeAdmin(index);
-                              },
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
-                            ),
+                            const Divider(height: 1, color: Colors.black12),
                           ],
-                        ),
-                      ),
+                        );
+                      }).toList(),
                     ],
                   ),
-                );
-              },
+                ),
+              ),
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildHeaderCell(String text, {int flex = 1}) {
-    return Expanded(
-      flex: flex,
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontWeight: FontWeight.w600,
-          fontSize: 14,
-          color: Colors.black87,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCell(String text, {int flex = 1, bool isHighlighted = false}) {
-    return Expanded(
-      flex: flex,
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 14,
-          color: isHighlighted ? Colors.black87 : Colors.black87,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmailCell(String email, {int flex = 1}) {
-    return Expanded(
-      flex: flex,
-      child: Text(
-        email,
-        style: const TextStyle(
-          fontSize: 14,
-          color: Colors.blue,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPasswordCell(String password, {int flex = 1}) {
-    return Expanded(
-      flex: flex,
-      child: Text(
-        password,
-        style: const TextStyle(
-          fontSize: 14,
-          letterSpacing: 1.5,
-        ),
       ),
     );
   }
