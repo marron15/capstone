@@ -19,6 +19,8 @@ class AuthService {
           success: true,
           message: responseData['message'],
           userData: UserData.fromJson(responseData['data']),
+          accessToken: responseData['access_token'],
+          refreshToken: responseData['refresh_token'],
         );
       } else {
         return LoginResult(
@@ -52,6 +54,8 @@ class AuthService {
           success: true,
           message: responseData['message'],
           userData: UserData.fromJson(responseData['data']),
+          accessToken: responseData['access_token'],
+          refreshToken: responseData['refresh_token'],
         );
       } else {
         return SignupResult(
@@ -94,22 +98,108 @@ class AuthService {
       );
     }
   }
+
+  static Future<TokenValidationResult> validateToken(String token) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/ValidateToken.php'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'token': token}),
+      );
+
+      final Map<String, dynamic> responseData = json.decode(response.body);
+
+      if (response.statusCode == 200 && responseData['success'] == true) {
+        return TokenValidationResult(
+          success: true,
+          message: responseData['message'],
+          userData: UserData.fromJson(responseData['data']),
+        );
+      } else {
+        return TokenValidationResult(
+          success: false,
+          message: responseData['message'] ?? 'Token validation failed',
+          userData: null,
+        );
+      }
+    } catch (e) {
+      return TokenValidationResult(
+        success: false,
+        message: 'Network error: ${e.toString()}',
+        userData: null,
+      );
+    }
+  }
+
+  static Future<RefreshTokenResult> refreshToken(String refreshToken) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/RefreshToken.php'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'refresh_token': refreshToken}),
+      );
+
+      final Map<String, dynamic> responseData = json.decode(response.body);
+
+      if (response.statusCode == 200 && responseData['success'] == true) {
+        return RefreshTokenResult(
+          success: true,
+          message: responseData['message'],
+          accessToken: responseData['access_token'],
+          refreshToken: responseData['refresh_token'],
+          userData: UserData.fromJson(responseData['data']),
+        );
+      } else {
+        return RefreshTokenResult(
+          success: false,
+          message: responseData['message'] ?? 'Token refresh failed',
+          accessToken: null,
+          refreshToken: null,
+          userData: null,
+        );
+      }
+    } catch (e) {
+      return RefreshTokenResult(
+        success: false,
+        message: 'Network error: ${e.toString()}',
+        accessToken: null,
+        refreshToken: null,
+        userData: null,
+      );
+    }
+  }
 }
 
 class LoginResult {
   final bool success;
   final String message;
   final UserData? userData;
+  final String? accessToken;
+  final String? refreshToken;
 
-  LoginResult({required this.success, required this.message, this.userData});
+  LoginResult({
+    required this.success,
+    required this.message,
+    this.userData,
+    this.accessToken,
+    this.refreshToken,
+  });
 }
 
 class SignupResult {
   final bool success;
   final String message;
   final UserData? userData;
+  final String? accessToken;
+  final String? refreshToken;
 
-  SignupResult({required this.success, required this.message, this.userData});
+  SignupResult({
+    required this.success,
+    required this.message,
+    this.userData,
+    this.accessToken,
+    this.refreshToken,
+  });
 }
 
 class LogoutResult {
@@ -117,6 +207,34 @@ class LogoutResult {
   final String message;
 
   LogoutResult({required this.success, required this.message});
+}
+
+class TokenValidationResult {
+  final bool success;
+  final String message;
+  final UserData? userData;
+
+  TokenValidationResult({
+    required this.success,
+    required this.message,
+    this.userData,
+  });
+}
+
+class RefreshTokenResult {
+  final bool success;
+  final String message;
+  final String? accessToken;
+  final String? refreshToken;
+  final UserData? userData;
+
+  RefreshTokenResult({
+    required this.success,
+    required this.message,
+    this.accessToken,
+    this.refreshToken,
+    this.userData,
+  });
 }
 
 class UserData {

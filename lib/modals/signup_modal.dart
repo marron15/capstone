@@ -299,11 +299,13 @@ class _SignUpModalState extends State<SignUpModal>
       final result = await AuthService.signup(signupData);
 
       if (result.success && result.userData != null) {
-        // Signup successful - update auth state
-        authState.login(
+        // Signup successful - update auth state with JWT tokens
+        await authState.login(
           userId: result.userData!.userId,
           email: result.userData!.email,
           fullName: result.userData!.fullName,
+          accessToken: result.accessToken,
+          refreshToken: result.refreshToken,
         );
 
         // Also save to profile notifier for local use

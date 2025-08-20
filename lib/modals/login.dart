@@ -97,11 +97,13 @@ class _LoginModalState extends State<LoginModal> with TickerProviderStateMixin {
       final result = await AuthService.login(contactOrEmail, password);
 
       if (result.success && result.userData != null) {
-        // Login successful - update auth state
-        authState.login(
+        // Login successful - update auth state with JWT tokens
+        await authState.login(
           userId: result.userData!.userId,
           email: result.userData!.email,
           fullName: result.userData!.fullName,
+          accessToken: result.accessToken,
+          refreshToken: result.refreshToken,
         );
 
         if (mounted) {

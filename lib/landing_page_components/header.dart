@@ -130,7 +130,7 @@ class BlackHeader extends StatelessWidget {
                             final result = await AuthService.logout();
 
                             // Clear auth state
-                            authState.logout();
+                            await authState.logout();
 
                             // Show success message
                             if (context.mounted) {
@@ -147,7 +147,7 @@ class BlackHeader extends StatelessWidget {
                             }
                           } catch (e) {
                             // Even if API call fails, clear auth state
-                            authState.logout();
+                            await authState.logout();
 
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(

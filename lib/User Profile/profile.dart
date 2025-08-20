@@ -289,7 +289,7 @@ class _ProfilePageState extends State<ProfilePage> {
       final result = await AuthService.logout();
 
       // Clear auth state and local profile data
-      authState.logout();
+      await authState.logout();
       profileNotifier.value = ProfileData();
 
       if (mounted) {
@@ -313,7 +313,7 @@ class _ProfilePageState extends State<ProfilePage> {
       }
     } catch (e) {
       // Even if API call fails, clear auth state and local data and navigate
-      authState.logout();
+      await authState.logout();
       profileNotifier.value = ProfileData();
 
       if (mounted) {
