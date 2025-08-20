@@ -14,6 +14,10 @@ class AuthService {
 
       final Map<String, dynamic> responseData = json.decode(response.body);
 
+      // Debug logging
+      print('🔍 Login API Response: $responseData');
+      print('🔍 User data: ${responseData['data']}');
+
       if (response.statusCode == 200 && responseData['success'] == true) {
         return LoginResult(
           success: true,
@@ -242,24 +246,69 @@ class UserData {
   final String email;
   final String firstName;
   final String lastName;
+  final String? middleName;
   final String fullName;
+  final String? phoneNumber;
+  final String? birthdate;
+  final String? address;
+  final String? emergencyContactName;
+  final String? emergencyContactNumber;
+  final String? img;
+  final String? createdAt;
 
   UserData({
     required this.userId,
     required this.email,
     required this.firstName,
     required this.lastName,
+    this.middleName,
     required this.fullName,
+    this.phoneNumber,
+    this.birthdate,
+    this.address,
+    this.emergencyContactName,
+    this.emergencyContactNumber,
+    this.img,
+    this.createdAt,
   });
 
   factory UserData.fromJson(Map<String, dynamic> json) {
+    // Debug: Print the exact types we're receiving
+    print('🔍 UserData.fromJson received: $json');
+    json.forEach((key, value) {
+      print('🔍 $key: ${value.runtimeType} = $value');
+    });
+
     return UserData(
-      userId: json['user_id'],
-      email: json['email'],
-      firstName: json['first_name'],
-      lastName: json['last_name'],
-      fullName: json['full_name'],
+      userId: _safeInt(json['user_id']),
+      email: _safeString(json['email']) ?? '',
+      firstName: _safeString(json['first_name']) ?? '',
+      lastName: _safeString(json['last_name']) ?? '',
+      middleName: _safeString(json['middle_name']),
+      fullName: _safeString(json['full_name']) ?? '',
+      phoneNumber: _safeString(json['phone_number']),
+      birthdate: _safeString(json['birthdate']),
+      address: _safeString(json['address']),
+      emergencyContactName: _safeString(json['emergency_contact_name']),
+      emergencyContactNumber: _safeString(json['emergency_contact_number']),
+      img: _safeString(json['img']),
+      createdAt: _safeString(json['created_at']),
     );
+  }
+
+  // Helper method to safely convert to int
+  static int _safeInt(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is String) return int.tryParse(value) ?? 0;
+    return 0;
+  }
+
+  // Helper method to safely convert to String
+  static String? _safeString(dynamic value) {
+    if (value == null) return null;
+    if (value is String) return value.isEmpty ? null : value;
+    return value.toString();
   }
 
   Map<String, dynamic> toJson() {
@@ -268,7 +317,15 @@ class UserData {
       'email': email,
       'first_name': firstName,
       'last_name': lastName,
+      'middle_name': middleName,
       'full_name': fullName,
+      'phone_number': phoneNumber,
+      'birthdate': birthdate,
+      'address': address,
+      'emergency_contact_name': emergencyContactName,
+      'emergency_contact_number': emergencyContactNumber,
+      'img': img,
+      'created_at': createdAt,
     };
   }
 }
@@ -282,6 +339,8 @@ class SignupData {
   final String? birthdate;
   final String? address;
   final String? phoneNumber;
+  final String? emergencyContactName;
+  final String? emergencyContactNumber;
 
   SignupData({
     required this.firstName,
@@ -292,6 +351,8 @@ class SignupData {
     this.birthdate,
     this.address,
     this.phoneNumber,
+    this.emergencyContactName,
+    this.emergencyContactNumber,
   });
 
   Map<String, dynamic> toJson() {
@@ -304,6 +365,8 @@ class SignupData {
       'birthdate': birthdate,
       'address': address,
       'phone_number': phoneNumber,
+      'emergency_contact_name': emergencyContactName,
+      'emergency_contact_number': emergencyContactNumber,
     };
   }
 }

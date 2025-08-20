@@ -140,7 +140,33 @@ class _EmergencyContactWidgetState extends State<EmergencyContactWidget> {
           width: double.infinity,
           child: ElevatedButton(
             onPressed: () {
-              // TODO: Save emergency contact information
+              // Save emergency contact information to profile (Mobile version)
+              profileNotifier.value = ProfileData(
+                imageFile: profileNotifier.value.imageFile,
+                webImageBytes: profileNotifier.value.webImageBytes,
+                firstName: profileNotifier.value.firstName,
+                middleName: profileNotifier.value.middleName,
+                lastName: profileNotifier.value.lastName,
+                contactNumber: profileNotifier.value.contactNumber,
+                email: profileNotifier.value.email,
+                birthdate: profileNotifier.value.birthdate,
+                password: profileNotifier.value.password,
+                address: profileNotifier.value.address,
+                street: profileNotifier.value.street,
+                city: profileNotifier.value.city,
+                stateProvince: profileNotifier.value.stateProvince,
+                postalCode: profileNotifier.value.postalCode,
+                country: profileNotifier.value.country,
+                emergencyContactName:
+                    _emergencyNameController.text.trim().isEmpty
+                        ? null
+                        : _emergencyNameController.text.trim(),
+                emergencyContactPhone:
+                    _emergencyPhoneController.text.trim().isEmpty
+                        ? null
+                        : _emergencyPhoneController.text.trim(),
+              );
+
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('Emergency contact information saved!')),
               );

@@ -198,15 +198,18 @@ class _MembershipCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                price,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: (isSmallScreen
-                          ? screenWidth * 0.09
-                          : screenWidth * 0.04)
-                      .clamp(22.0, 38.0),
+              Flexible(
+                child: Text(
+                  price,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: (isSmallScreen
+                            ? screenWidth * 0.09
+                            : screenWidth * 0.04)
+                        .clamp(22.0, 38.0),
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
               SizedBox(width: 6),

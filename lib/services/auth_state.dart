@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'auth_service.dart';
+import '../User Profile/profile_data.dart';
 
 class AuthState extends ChangeNotifier {
   bool _isLoggedIn = false;
@@ -201,6 +202,31 @@ class AuthState extends ChangeNotifier {
     try {
       final result = await AuthService.validateToken(token);
       if (result.success) {
+        // Also populate profile data when token is validated
+        if (result.userData != null) {
+          DateTime? birthdateObj;
+          if (result.userData!.birthdate != null &&
+              result.userData!.birthdate!.isNotEmpty) {
+            try {
+              birthdateObj = DateTime.parse(result.userData!.birthdate!);
+            } catch (e) {
+              print('Error parsing birthdate: $e');
+            }
+          }
+
+          profileNotifier.value = ProfileData(
+            firstName: result.userData!.firstName,
+            middleName: result.userData!.middleName ?? '',
+            lastName: result.userData!.lastName,
+            contactNumber: result.userData!.phoneNumber ?? '',
+            email: result.userData!.email,
+            birthdate: birthdateObj,
+            emergencyContactName: result.userData!.emergencyContactName,
+            emergencyContactPhone: result.userData!.emergencyContactNumber,
+            address: result.userData!.address ?? '',
+          );
+        }
+
         return {
           'success': true,
           'data': {

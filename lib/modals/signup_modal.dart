@@ -293,6 +293,14 @@ class _SignUpModalState extends State<SignUpModal>
         birthdate: birthdate,
         address: fullAddress,
         phoneNumber: contact.isEmpty ? null : contact,
+        emergencyContactName:
+            _emergencyNameController.text.isEmpty
+                ? null
+                : _emergencyNameController.text.trim(),
+        emergencyContactNumber:
+            _emergencyPhoneController.text.isEmpty
+                ? null
+                : _emergencyPhoneController.text.trim(),
       );
 
       // Call API

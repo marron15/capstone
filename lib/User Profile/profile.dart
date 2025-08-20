@@ -4,7 +4,7 @@ import 'dart:io';
 import 'profile_data.dart';
 import 'note.dart';
 import 'transaction.dart';
-import 'emergency_contact.dart';
+
 import '../landing_page_components/landing_page.dart';
 import 'membership_duration.dart';
 import 'package:flutter/foundation.dart';
@@ -54,6 +54,10 @@ class _ProfilePageState extends State<ProfilePage> {
   late TextEditingController _postalCodeController;
   late TextEditingController _countryController;
 
+  // Controllers for emergency contact
+  late TextEditingController _emergencyNameController;
+  late TextEditingController _emergencyPhoneController;
+
   @override
   void initState() {
     super.initState();
@@ -79,6 +83,14 @@ class _ProfilePageState extends State<ProfilePage> {
     );
     _countryController = TextEditingController(
       text: profileNotifier.value.country ?? '',
+    );
+
+    // Initialize emergency contact controllers
+    _emergencyNameController = TextEditingController(
+      text: profileNotifier.value.emergencyContactName ?? '',
+    );
+    _emergencyPhoneController = TextEditingController(
+      text: profileNotifier.value.emergencyContactPhone ?? '',
     );
 
     _firstNameListener = () => setState(() {});
@@ -128,6 +140,9 @@ class _ProfilePageState extends State<ProfilePage> {
     _stateProvinceController.dispose();
     _postalCodeController.dispose();
     _countryController.dispose();
+    // Dispose of emergency contact controllers
+    _emergencyNameController.dispose();
+    _emergencyPhoneController.dispose();
     super.dispose();
   }
 
@@ -151,6 +166,14 @@ class _ProfilePageState extends State<ProfilePage> {
         _postalCodeController.text !=
             (profileNotifier.value.postalCode ?? '') ||
         _countryController.text != (profileNotifier.value.country ?? '');
+  }
+
+  // Check if emergency contact fields have changed (for desktop view)
+  bool _hasEmergencyContactChanges() {
+    return _emergencyNameController.text !=
+            (profileNotifier.value.emergencyContactName ?? '') ||
+        _emergencyPhoneController.text !=
+            (profileNotifier.value.emergencyContactPhone ?? '');
   }
 
   Future<void> _pickImage() async {
@@ -246,12 +269,29 @@ class _ProfilePageState extends State<ProfilePage> {
     }
     profileNotifier.value = ProfileData(
       imageFile: _imageFile,
+      webImageBytes:
+          _pendingWebImageBytes ?? profileNotifier.value.webImageBytes,
       firstName: _firstNameController.text,
       middleName: _middleNameController.text,
       lastName: _lastNameController.text,
       contactNumber: _contactController.text,
       email: _emailController.text,
       birthdate: _birthdate,
+      password: profileNotifier.value.password,
+      address: profileNotifier.value.address,
+      street: profileNotifier.value.street,
+      city: profileNotifier.value.city,
+      stateProvince: profileNotifier.value.stateProvince,
+      postalCode: profileNotifier.value.postalCode,
+      country: profileNotifier.value.country,
+      emergencyContactName:
+          _emergencyNameController.text.isNotEmpty
+              ? _emergencyNameController.text
+              : profileNotifier.value.emergencyContactName,
+      emergencyContactPhone:
+          _emergencyPhoneController.text.isNotEmpty
+              ? _emergencyPhoneController.text
+              : profileNotifier.value.emergencyContactPhone,
     );
     ScaffoldMessenger.of(
       context,
@@ -470,6 +510,10 @@ class _ProfilePageState extends State<ProfilePage> {
                     _imageFile = profileNotifier.value.imageFile;
                     _passwordController.text =
                         profileNotifier.value.password ?? '';
+                    _emergencyNameController.text =
+                        profileNotifier.value.emergencyContactName ?? '';
+                    _emergencyPhoneController.text =
+                        profileNotifier.value.emergencyContactPhone ?? '';
                   });
                 },
                 child: Text(
@@ -628,6 +672,118 @@ class _ProfilePageState extends State<ProfilePage> {
       ],
     );
 
+    Widget wideEmergencyContact = Padding(
+      padding: const EdgeInsets.only(top: 32.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Emergency Contact',
+            style: TextStyle(
+              fontSize: sectionTitleFontSize,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+          ),
+          SizedBox(height: 16),
+          _buildLabel('Emergency Contact Name', labelFontSize),
+          _buildTextField(
+            _emergencyNameController,
+            'Emergency Contact Name',
+            fontSize: textFieldFontSize,
+          ),
+          SizedBox(height: 14),
+          _buildLabel('Emergency Contact Phone', labelFontSize),
+          _buildTextField(
+            _emergencyPhoneController,
+            'Emergency Contact Phone',
+            keyboardType: TextInputType.phone,
+            fontSize: textFieldFontSize,
+          ),
+          SizedBox(height: 18),
+          if (_hasEmergencyContactChanges())
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.grey[300],
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: buttonPadding,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _emergencyNameController.text =
+                            profileNotifier.value.emergencyContactName ?? '';
+                        _emergencyPhoneController.text =
+                            profileNotifier.value.emergencyContactPhone ?? '';
+                      });
+                    },
+                    child: Text(
+                      'Cancel',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 16),
+                Expanded(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: buttonPadding,
+                    ),
+                    onPressed: () {
+                      profileNotifier.value = ProfileData(
+                        imageFile: profileNotifier.value.imageFile,
+                        webImageBytes: profileNotifier.value.webImageBytes,
+                        firstName: profileNotifier.value.firstName,
+                        middleName: profileNotifier.value.middleName,
+                        lastName: profileNotifier.value.lastName,
+                        contactNumber: profileNotifier.value.contactNumber,
+                        email: profileNotifier.value.email,
+                        birthdate: profileNotifier.value.birthdate,
+                        password: profileNotifier.value.password,
+                        address: profileNotifier.value.address,
+                        street: profileNotifier.value.street,
+                        city: profileNotifier.value.city,
+                        stateProvince: profileNotifier.value.stateProvince,
+                        postalCode: profileNotifier.value.postalCode,
+                        country: profileNotifier.value.country,
+                        emergencyContactName: _emergencyNameController.text,
+                        emergencyContactPhone: _emergencyPhoneController.text,
+                      );
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Emergency contact information saved!'),
+                        ),
+                      );
+                      setState(() {});
+                    },
+                    child: Text(
+                      'Save',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+        ],
+      ),
+    );
+
     Widget wideFormRow = Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -757,7 +913,7 @@ class _ProfilePageState extends State<ProfilePage> {
               padding: const EdgeInsets.only(left: 16.0),
               child: Align(
                 alignment: Alignment.topCenter,
-                child: EmergencyContactWidget(),
+                child: wideEmergencyContact,
               ),
             ),
           ),
@@ -803,9 +959,123 @@ class _ProfilePageState extends State<ProfilePage> {
       ],
     );
 
-    Widget wideEmergencyContact = Padding(
-      padding: const EdgeInsets.only(top: 32.0),
-      child: Center(child: SizedBox.shrink()),
+    // Emergency contact widget for mobile layout
+    Widget mobileEmergencyContact = Padding(
+      padding: const EdgeInsets.only(top: 24.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Emergency Contact',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+          ),
+          SizedBox(height: 16),
+          _buildLabel('Emergency Contact Name', 16),
+          _buildTextField(
+            _emergencyNameController,
+            'Emergency Contact Name',
+            fontSize: 16,
+          ),
+          SizedBox(height: 14),
+          _buildLabel('Emergency Contact Phone', 16),
+          _buildTextField(
+            _emergencyPhoneController,
+            'Emergency Contact Phone',
+            keyboardType: TextInputType.phone,
+            fontSize: 16,
+          ),
+          SizedBox(height: 18),
+          if (_hasEmergencyContactChanges())
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.grey[300],
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _emergencyNameController.text =
+                            profileNotifier.value.emergencyContactName ?? '';
+                        _emergencyPhoneController.text =
+                            profileNotifier.value.emergencyContactPhone ?? '';
+                      });
+                    },
+                    child: Text(
+                      'Cancel',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 16),
+                Expanded(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    onPressed: () {
+                      profileNotifier.value = ProfileData(
+                        imageFile: profileNotifier.value.imageFile,
+                        webImageBytes: profileNotifier.value.webImageBytes,
+                        firstName: profileNotifier.value.firstName,
+                        middleName: profileNotifier.value.middleName,
+                        lastName: profileNotifier.value.lastName,
+                        contactNumber: profileNotifier.value.contactNumber,
+                        email: profileNotifier.value.email,
+                        birthdate: profileNotifier.value.birthdate,
+                        password: profileNotifier.value.password,
+                        address: profileNotifier.value.address,
+                        street: profileNotifier.value.street,
+                        city: profileNotifier.value.city,
+                        stateProvince: profileNotifier.value.stateProvince,
+                        postalCode: profileNotifier.value.postalCode,
+                        country: profileNotifier.value.country,
+                        emergencyContactName:
+                            _emergencyNameController.text.trim().isEmpty
+                                ? null
+                                : _emergencyNameController.text.trim(),
+                        emergencyContactPhone:
+                            _emergencyPhoneController.text.trim().isEmpty
+                                ? null
+                                : _emergencyPhoneController.text.trim(),
+                      );
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Emergency contact information saved!'),
+                        ),
+                      );
+                      setState(() {});
+                    },
+                    child: Text(
+                      'Save Emergency Contact',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+        ],
+      ),
     );
 
     return Scaffold(
@@ -843,7 +1113,7 @@ class _ProfilePageState extends State<ProfilePage> {
                               wideHeader,
                               wideFormRow,
                               wideWidgetsRow,
-                              wideEmergencyContact,
+                              // wideEmergencyContact already included in wideFormRow
                             ],
                           )
                           : Column(
@@ -1053,7 +1323,7 @@ class _ProfilePageState extends State<ProfilePage> {
                               SizedBox(height: 32),
                               TransactionProofWidget(),
                               SizedBox(height: 32),
-                              EmergencyContactWidget(),
+                              mobileEmergencyContact,
                             ],
                           ),
                 ),

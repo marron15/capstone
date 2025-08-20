@@ -4,6 +4,7 @@ import 'forgot_password.dart';
 import 'signup_modal.dart';
 import '../services/auth_service.dart';
 import '../services/auth_state.dart';
+import '../User Profile/profile_data.dart';
 
 class LoginModal extends StatefulWidget {
   const LoginModal({Key? key}) : super(key: key);
@@ -104,6 +105,31 @@ class _LoginModalState extends State<LoginModal> with TickerProviderStateMixin {
           fullName: result.userData!.fullName,
           accessToken: result.accessToken,
           refreshToken: result.refreshToken,
+        );
+
+        // Populate profile data with login information
+        DateTime? birthdateObj;
+        if (result.userData!.birthdate != null &&
+            result.userData!.birthdate!.isNotEmpty) {
+          try {
+            birthdateObj = DateTime.parse(result.userData!.birthdate!);
+          } catch (e) {
+            print('Error parsing birthdate: $e');
+          }
+        }
+
+        profileNotifier.value = ProfileData(
+          firstName: result.userData!.firstName,
+          middleName: result.userData!.middleName ?? '',
+          lastName: result.userData!.lastName,
+          contactNumber: result.userData!.phoneNumber ?? '',
+          email: result.userData!.email,
+          birthdate: birthdateObj,
+          emergencyContactName: result.userData!.emergencyContactName,
+          emergencyContactPhone: result.userData!.emergencyContactNumber,
+          address: result.userData!.address ?? '',
+          // Note: Image and detailed address fields would need separate handling
+          // since they're not stored in the basic user table
         );
 
         if (mounted) {
