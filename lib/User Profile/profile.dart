@@ -8,6 +8,8 @@ import 'emergency_contact.dart';
 import '../landing_page_components/landing_page.dart';
 import 'membership_duration.dart';
 import 'package:flutter/foundation.dart';
+import '../services/auth_service.dart';
+import '../services/auth_state.dart';
 
 class ProfilePage extends StatefulWidget {
   @override
@@ -254,6 +256,80 @@ class _ProfilePageState extends State<ProfilePage> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text('Profile saved!')));
+  }
+
+  Future<void> _handleLogout() async {
+    // Show confirmation dialog
+    final bool shouldLogout =
+        await showDialog<bool>(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('Logout'),
+              content: const Text('Are you sure you want to logout?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Logout'),
+                ),
+              ],
+            );
+          },
+        ) ??
+        false;
+
+    if (!shouldLogout) return;
+
+    try {
+      // Call logout API (optional - mainly for logging purposes)
+      final result = await AuthService.logout();
+
+      // Clear auth state and local profile data
+      authState.logout();
+      profileNotifier.value = ProfileData();
+
+      if (mounted) {
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              result.success
+                  ? 'Logged out successfully!'
+                  : 'Logged out locally',
+            ),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // Navigate to landing page
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => LandingPage()),
+          (Route<dynamic> route) => false,
+        );
+      }
+    } catch (e) {
+      // Even if API call fails, clear auth state and local data and navigate
+      authState.logout();
+      profileNotifier.value = ProfileData();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Logged out locally'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => LandingPage()),
+          (Route<dynamic> route) => false,
+        );
+      }
+    }
   }
 
   Future<void> _pickBirthdate() async {
@@ -1002,6 +1078,13 @@ class _ProfilePageState extends State<ProfilePage> {
           profileNotifier.value.membershipExpiration,
         ),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout, color: Colors.white),
+            tooltip: 'Logout',
+            onPressed: _handleLogout,
+          ),
+        ],
       ),
     );
   }

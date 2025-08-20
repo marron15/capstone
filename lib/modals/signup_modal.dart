@@ -6,6 +6,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import '../User Profile/profile.dart';
 import '../User Profile/profile_data.dart';
+import '../services/auth_service.dart';
+import '../services/auth_state.dart';
 
 class SignUpModal extends StatefulWidget {
   const SignUpModal({Key? key}) : super(key: key);
@@ -18,6 +20,8 @@ class _SignUpModalState extends State<SignUpModal>
     with TickerProviderStateMixin {
   bool _obscurePassword = true;
   bool _obscureRePassword = true;
+  bool _isLoading = false;
+  String? _signupError;
   late AnimationController _controller;
   Animation<double>? _scaleAnim;
   Animation<double>? _fadeAnim;
@@ -218,6 +222,179 @@ class _SignUpModalState extends State<SignUpModal>
       setState(() {
         _rePasswordError = null;
       });
+    }
+  }
+
+  Future<void> _handleSignup() async {
+    // Clear previous error
+    setState(() {
+      _signupError = null;
+      _isLoading = true;
+    });
+
+    try {
+      // Collect all the data
+      String firstName = _firstNameController.text.trim();
+      String middleName = _middleNameController.text.trim();
+      String lastName = _lastNameController.text.trim();
+      String email = _emailController.text.trim();
+      String password = _passwordController.text;
+      String contact = _contactController.text.trim();
+
+      // Format birthdate
+      String? birthdate;
+      if (_selectedYear != null &&
+          _selectedMonth != null &&
+          _selectedDay != null) {
+        final monthIndex =
+            [
+              'January',
+              'February',
+              'March',
+              'April',
+              'May',
+              'June',
+              'July',
+              'August',
+              'September',
+              'October',
+              'November',
+              'December',
+            ].indexOf(_selectedMonth!) +
+            1;
+
+        birthdate =
+            '${_selectedYear!}-${monthIndex.toString().padLeft(2, '0')}-${_selectedDay!.toString().padLeft(2, '0')}';
+      }
+
+      // Combine address fields
+      String? fullAddress;
+      if (_addressController.text.trim().isNotEmpty) {
+        List<String> addressParts =
+            [
+              _addressController.text.trim(),
+              _streetController.text.trim(),
+              _cityController.text.trim(),
+              _stateProvinceController.text.trim(),
+              _postalCodeController.text.trim(),
+              _countryController.text.trim(),
+            ].where((part) => part.isNotEmpty).toList();
+
+        fullAddress = addressParts.join(', ');
+      }
+
+      // Create signup data
+      final signupData = SignupData(
+        firstName: firstName,
+        lastName: lastName,
+        middleName: middleName.isEmpty ? null : middleName,
+        email: email,
+        password: password,
+        birthdate: birthdate,
+        address: fullAddress,
+        phoneNumber: contact.isEmpty ? null : contact,
+      );
+
+      // Call API
+      final result = await AuthService.signup(signupData);
+
+      if (result.success && result.userData != null) {
+        // Signup successful - update auth state
+        authState.login(
+          userId: result.userData!.userId,
+          email: result.userData!.email,
+          fullName: result.userData!.fullName,
+        );
+
+        // Also save to profile notifier for local use
+        DateTime? birthdateObj;
+        if (_selectedYear != null &&
+            _selectedMonth != null &&
+            _selectedDay != null) {
+          final monthIndex =
+              [
+                'January',
+                'February',
+                'March',
+                'April',
+                'May',
+                'June',
+                'July',
+                'August',
+                'September',
+                'October',
+                'November',
+                'December',
+              ].indexOf(_selectedMonth!) +
+              1;
+          birthdateObj = DateTime(_selectedYear!, monthIndex, _selectedDay!);
+        }
+
+        profileNotifier.value = ProfileData(
+          imageFile: _selectedImage,
+          webImageBytes: _webImageBytes,
+          firstName: firstName,
+          middleName: middleName,
+          lastName: lastName,
+          contactNumber: contact,
+          email: email,
+          birthdate: birthdateObj,
+          emergencyContactName: _emergencyNameController.text.trim(),
+          emergencyContactPhone: _emergencyPhoneController.text.trim(),
+          password: password,
+          address: _addressController.text.trim(),
+          street: _streetController.text.trim(),
+          city: _cityController.text.trim(),
+          stateProvince: _stateProvinceController.text.trim(),
+          postalCode: _postalCodeController.text.trim(),
+          country: _countryController.text.trim(),
+        );
+
+        if (mounted) {
+          Navigator.of(context).pop(); // Close signup modal
+
+          // Show success dialog
+          showDialog(
+            context: context,
+            builder:
+                (context) => AlertDialog(
+                  title: const Text('Signup Successful!'),
+                  content: Text(
+                    'Welcome ${result.userData!.fullName}! Your account has been created successfully.',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ProfilePage(),
+                          ),
+                        );
+                      },
+                      child: const Text('Continue'),
+                    ),
+                  ],
+                ),
+          );
+        }
+      } else {
+        // Signup failed
+        setState(() {
+          _signupError = result.message;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _signupError = 'An unexpected error occurred. Please try again.';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -1056,7 +1233,45 @@ class _SignUpModalState extends State<SignUpModal>
                                     ),
                                   ).copyWith(errorText: _rePasswordError),
                                 ),
-                                const SizedBox(height: 32),
+                                const SizedBox(height: 16),
+                                // Error message display
+                                if (_signupError != null)
+                                  Container(
+                                    margin: const EdgeInsets.only(bottom: 16),
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red.withAlpha(
+                                        (0.2 * 255).toInt(),
+                                      ),
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(
+                                        color: Colors.red.withAlpha(
+                                          (0.5 * 255).toInt(),
+                                        ),
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.error_outline,
+                                          color: Colors.red,
+                                          size: 20,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            _signupError!,
+                                            style: const TextStyle(
+                                              color: Colors.red,
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                const SizedBox(height: 16),
                                 Row(
                                   children: [
                                     Expanded(
@@ -1073,205 +1288,108 @@ class _SignUpModalState extends State<SignUpModal>
                                                   BorderRadius.circular(14),
                                             ),
                                           ),
-                                          onPressed: () {
-                                            setState(() {
-                                              _contactError = null;
-                                              _emailError = null;
-                                              _passwordError = null;
-                                            });
+                                          onPressed:
+                                              _isLoading
+                                                  ? null
+                                                  : () async {
+                                                    setState(() {
+                                                      _contactError = null;
+                                                      _emailError = null;
+                                                      _passwordError = null;
+                                                    });
 
-                                            bool hasError = false;
-                                            if (_contactController.text
-                                                .trim()
-                                                .isEmpty) {
-                                              setState(() {
-                                                _contactError =
-                                                    'Contact number is required.';
-                                              });
-                                              hasError = true;
-                                            }
-                                            if (_emailController.text
-                                                .trim()
-                                                .isEmpty) {
-                                              setState(() {
-                                                _emailError =
-                                                    'Email is required.';
-                                              });
-                                              hasError = true;
-                                            }
-                                            if (_passwordController
-                                                .text
-                                                .isEmpty) {
-                                              setState(() {
-                                                _passwordError =
-                                                    'Password is required.';
-                                              });
-                                              hasError = true;
-                                            }
-
-                                            if (_rePasswordError != null) {
-                                              hasError = true;
-                                            }
-
-                                            if (!hasError) {
-                                              String firstName =
-                                                  _firstNameController.text
-                                                      .trim();
-                                              String middleName =
-                                                  _middleNameController.text
-                                                      .trim();
-                                              String lastName =
-                                                  _lastNameController.text
-                                                      .trim();
-                                              String contact =
-                                                  _contactController.text
-                                                      .trim();
-                                              String email =
-                                                  _emailController.text.trim();
-                                              String password =
-                                                  _passwordController.text;
-                                              String rePassword =
-                                                  _rePasswordController.text;
-                                              String emergencyName =
-                                                  _emergencyNameController.text
-                                                      .trim();
-                                              String emergencyPhone =
-                                                  _emergencyPhoneController.text
-                                                      .trim();
-
-                                              DateTime? birthdate;
-                                              if (_selectedYear != null &&
-                                                  _selectedMonth != null &&
-                                                  _selectedDay != null) {
-                                                final monthIndex =
-                                                    [
-                                                      'January',
-                                                      'February',
-                                                      'March',
-                                                      'April',
-                                                      'May',
-                                                      'June',
-                                                      'July',
-                                                      'August',
-                                                      'September',
-                                                      'October',
-                                                      'November',
-                                                      'December',
-                                                    ].indexOf(_selectedMonth!) +
-                                                    1;
-                                                birthdate = DateTime(
-                                                  _selectedYear!,
-                                                  monthIndex,
-                                                  _selectedDay!,
-                                                );
-                                              }
-
-                                              profileNotifier
-                                                  .value = ProfileData(
-                                                imageFile: _selectedImage,
-                                                webImageBytes: _webImageBytes,
-                                                firstName: firstName,
-                                                middleName: middleName,
-                                                lastName: lastName,
-                                                contactNumber: contact,
-                                                email: email,
-                                                birthdate: birthdate,
-                                                emergencyContactName:
-                                                    emergencyName,
-                                                emergencyContactPhone:
-                                                    emergencyPhone,
-                                                password: password,
-                                                address:
-                                                    _addressController.text
-                                                        .trim(),
-                                                street:
-                                                    _streetController.text
-                                                        .trim(),
-                                                city:
-                                                    _cityController.text.trim(),
-                                                stateProvince:
-                                                    _stateProvinceController
+                                                    bool hasError = false;
+                                                    if (_contactController.text
+                                                        .trim()
+                                                        .isEmpty) {
+                                                      setState(() {
+                                                        _contactError =
+                                                            'Contact number is required.';
+                                                      });
+                                                      hasError = true;
+                                                    }
+                                                    if (_emailController.text
+                                                        .trim()
+                                                        .isEmpty) {
+                                                      setState(() {
+                                                        _emailError =
+                                                            'Email is required.';
+                                                      });
+                                                      hasError = true;
+                                                    }
+                                                    if (_passwordController
                                                         .text
-                                                        .trim(),
-                                                postalCode:
-                                                    _postalCodeController.text
-                                                        .trim(),
-                                                country:
-                                                    _countryController.text
-                                                        .trim(),
-                                              );
+                                                        .isEmpty) {
+                                                      setState(() {
+                                                        _passwordError =
+                                                            'Password is required.';
+                                                      });
+                                                      hasError = true;
+                                                    }
 
-                                              final userData = {
-                                                "firstName": firstName,
-                                                "middleName": middleName,
-                                                "lastName": lastName,
-                                                "contactNumber": contact,
-                                                "email": email,
-                                                "birthdate":
-                                                    birthdate
-                                                        ?.toIso8601String(),
-                                                "emergencyContactName":
-                                                    emergencyName,
-                                                "emergencyContactPhone":
-                                                    emergencyPhone,
-                                                "address":
-                                                    _addressController.text
-                                                        .trim(),
-                                                "street":
-                                                    _streetController.text
-                                                        .trim(),
-                                                "city":
-                                                    _cityController.text.trim(),
-                                                "stateProvince":
-                                                    _stateProvinceController
-                                                        .text
-                                                        .trim(),
-                                                "postalCode":
-                                                    _postalCodeController.text
-                                                        .trim(),
-                                                "country":
-                                                    _countryController.text
-                                                        .trim(),
-                                              };
-                                              // TODO: Send userData to backend here
+                                                    // Additional email validation
+                                                    if (_emailController.text
+                                                            .trim()
+                                                            .isNotEmpty &&
+                                                        !RegExp(
+                                                          r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                                                        ).hasMatch(
+                                                          _emailController.text
+                                                              .trim(),
+                                                        )) {
+                                                      setState(() {
+                                                        _emailError =
+                                                            'Please enter a valid email address';
+                                                      });
+                                                      hasError = true;
+                                                    }
 
-                                              showDialog(
-                                                context: context,
-                                                builder:
-                                                    (context) => AlertDialog(
-                                                      title: Text(
-                                                        'Sign in Successful',
-                                                      ),
-                                                      actions: [
-                                                        TextButton(
-                                                          onPressed: () {
-                                                            Navigator.of(
-                                                              context,
-                                                            ).pop();
-                                                            Navigator.push(
-                                                              context,
-                                                              MaterialPageRoute(
-                                                                builder:
-                                                                    (context) =>
-                                                                        ProfilePage(),
-                                                              ),
-                                                            );
-                                                          },
-                                                          child: Text('OK'),
-                                                        ),
-                                                      ],
+                                                    // Password length validation
+                                                    if (_passwordController
+                                                            .text
+                                                            .isNotEmpty &&
+                                                        _passwordController
+                                                                .text
+                                                                .length <
+                                                            6) {
+                                                      setState(() {
+                                                        _passwordError =
+                                                            'Password must be at least 6 characters long';
+                                                      });
+                                                      hasError = true;
+                                                    }
+
+                                                    if (_rePasswordError !=
+                                                        null) {
+                                                      hasError = true;
+                                                    }
+
+                                                    if (!hasError) {
+                                                      await _handleSignup();
+                                                    }
+                                                  },
+                                          child:
+                                              _isLoading
+                                                  ? const SizedBox(
+                                                    width: 20,
+                                                    height: 20,
+                                                    child: CircularProgressIndicator(
+                                                      strokeWidth: 2,
+                                                      valueColor:
+                                                          AlwaysStoppedAnimation<
+                                                            Color
+                                                          >(Colors.black),
                                                     ),
-                                              );
-                                            }
-                                          },
-                                          child: const Text(
-                                            'Sign Up',
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.w500,
-                                              fontSize: 15,
-                                              color: Colors.black,
-                                            ),
-                                          ),
+                                                  )
+                                                  : const Text(
+                                                    'Sign Up',
+                                                    style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                      fontSize: 15,
+                                                      color: Colors.black,
+                                                    ),
+                                                  ),
                                         ),
                                       ),
                                     ),

@@ -2,6 +2,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'forgot_password.dart';
 import 'signup_modal.dart';
+import '../services/auth_service.dart';
+import '../services/auth_state.dart';
 
 class LoginModal extends StatefulWidget {
   const LoginModal({Key? key}) : super(key: key);
@@ -12,6 +14,8 @@ class LoginModal extends StatefulWidget {
 
 class _LoginModalState extends State<LoginModal> with TickerProviderStateMixin {
   bool _obscurePassword = true;
+  bool _isLoading = false;
+  String? _errorMessage;
   late AnimationController _controller;
   Animation<double>? _scaleAnim;
   Animation<double>? _fadeAnim;
@@ -56,6 +60,82 @@ class _LoginModalState extends State<LoginModal> with TickerProviderStateMixin {
     _contactOrEmailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  Future<void> _handleLogin() async {
+    final contactOrEmail = _contactOrEmailController.text.trim();
+    final password = _passwordController.text;
+
+    // Clear previous error
+    setState(() {
+      _errorMessage = null;
+    });
+
+    // Validate input
+    if (contactOrEmail.isEmpty || password.isEmpty) {
+      setState(() {
+        _errorMessage = 'Email and password are required';
+      });
+      return;
+    }
+
+    // Check if input is email format (since API expects email)
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    if (!emailRegex.hasMatch(contactOrEmail)) {
+      setState(() {
+        _errorMessage = 'Please enter a valid email address';
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final result = await AuthService.login(contactOrEmail, password);
+
+      if (result.success && result.userData != null) {
+        // Login successful - update auth state
+        authState.login(
+          userId: result.userData!.userId,
+          email: result.userData!.email,
+          fullName: result.userData!.fullName,
+        );
+
+        if (mounted) {
+          Navigator.of(context).pop(); // Close login modal
+
+          // Show success message
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Welcome back, ${result.userData!.fullName}!'),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+
+          // TODO: Navigate to dashboard or main app screen
+          // You can add navigation logic here based on your app structure
+        }
+      } else {
+        // Login failed
+        setState(() {
+          _errorMessage = result.message;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'An unexpected error occurred. Please try again.';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   InputDecoration _inputDecoration({
@@ -245,13 +325,12 @@ class _LoginModalState extends State<LoginModal> with TickerProviderStateMixin {
                                 focusNode: _contactFocus,
                                 style: const TextStyle(color: Colors.white),
                                 decoration: _inputDecoration(
-                                  label: 'Contact Number or Email',
-                                  icon: Icons.person_outline,
+                                  label: 'Email Address',
+                                  icon: Icons.email_outlined,
                                   focusNode: _contactFocus,
-                                  hintText:
-                                      '09XX XXX XXXX or email@example.com',
+                                  hintText: 'email@example.com',
                                 ),
-                                keyboardType: TextInputType.text,
+                                keyboardType: TextInputType.emailAddress,
                               ),
                               const SizedBox(height: 35),
                               TextField(
@@ -280,6 +359,43 @@ class _LoginModalState extends State<LoginModal> with TickerProviderStateMixin {
                                 ),
                               ),
                               const SizedBox(height: 8),
+                              // Error message display
+                              if (_errorMessage != null)
+                                Container(
+                                  margin: const EdgeInsets.only(bottom: 16),
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red.withAlpha(
+                                      (0.2 * 255).toInt(),
+                                    ),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: Colors.red.withAlpha(
+                                        (0.5 * 255).toInt(),
+                                      ),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.error_outline,
+                                        color: Colors.red,
+                                        size: 20,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          _errorMessage!,
+                                          style: const TextStyle(
+                                            color: Colors.red,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
@@ -350,20 +466,28 @@ class _LoginModalState extends State<LoginModal> with TickerProviderStateMixin {
                               ),
                               const SizedBox(height: 24),
                               _AnimatedGradientButton(
-                                onPressed: () {
-                                  final contactOrEmail =
-                                      _contactOrEmailController.text.trim();
-                                  final password = _passwordController.text;
-                                  // Handle login logic here
-                                },
-                                child: const Text(
-                                  'Log In',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 18,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
+                                onPressed: _isLoading ? null : _handleLogin,
+                                child:
+                                    _isLoading
+                                        ? const SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor:
+                                                AlwaysStoppedAnimation<Color>(
+                                                  Colors.black,
+                                                ),
+                                          ),
+                                        )
+                                        : const Text(
+                                          'Log In',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 18,
+                                            letterSpacing: 0.5,
+                                          ),
+                                        ),
                               ),
                             ],
                           ),
@@ -382,7 +506,7 @@ class _LoginModalState extends State<LoginModal> with TickerProviderStateMixin {
 }
 
 class _AnimatedGradientButton extends StatefulWidget {
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final Widget child;
   const _AnimatedGradientButton({required this.onPressed, required this.child});
 
@@ -431,10 +555,12 @@ class _AnimatedGradientButtonState extends State<_AnimatedGradientButton>
 
   @override
   Widget build(BuildContext context) {
+    final isEnabled = widget.onPressed != null;
+
     return GestureDetector(
-      onTapDown: _onTapDown,
-      onTapUp: _onTapUp,
-      onTapCancel: _onTapCancel,
+      onTapDown: isEnabled ? _onTapDown : null,
+      onTapUp: isEnabled ? _onTapUp : null,
+      onTapCancel: isEnabled ? _onTapCancel : null,
       onTap: widget.onPressed,
       child: AnimatedBuilder(
         animation: _scaleAnim,
@@ -446,7 +572,10 @@ class _AnimatedGradientButtonState extends State<_AnimatedGradientButton>
               padding: const EdgeInsets.symmetric(vertical: 16),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(14),
-                color: Colors.white,
+                color:
+                    isEnabled
+                        ? Colors.white
+                        : Colors.grey.withAlpha((0.6 * 255).toInt()),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withAlpha((0.28 * 255).toInt()),
@@ -457,8 +586,8 @@ class _AnimatedGradientButtonState extends State<_AnimatedGradientButton>
               ),
               alignment: Alignment.center,
               child: DefaultTextStyle.merge(
-                style: const TextStyle(
-                  color: Colors.black,
+                style: TextStyle(
+                  color: isEnabled ? Colors.black : Colors.grey[600],
                   fontWeight: FontWeight.bold,
                   fontSize: 18,
                 ),

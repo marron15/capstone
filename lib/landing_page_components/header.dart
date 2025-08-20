@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../modals/signup_modal.dart';
 import '../modals/login.dart';
+import '../services/auth_state.dart';
+import '../services/auth_service.dart';
 
 class BlackHeader extends StatelessWidget {
   final Function(int) onNavTap;
@@ -73,66 +75,169 @@ class BlackHeader extends StatelessWidget {
             ),
             const Spacer(),
             const SizedBox(width: 24),
-            // Profile Button
-            if (!isSmallScreen && onProfileTap != null) ...[
-              _HeaderNavButton(
-                icon: Icons.person,
-                label: 'Profile',
-                onTap: onProfileTap!,
-              ),
-              const SizedBox(width: 12),
-            ],
           ],
-          // Login Button
-          ElevatedButton(
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) => const LoginModal(),
-              );
+          // Conditional rendering based on authentication state
+          AnimatedBuilder(
+            animation: authState,
+            builder: (context, child) {
+              if (authState.isLoggedIn) {
+                // Show Profile and Logout buttons when logged in
+                return Row(
+                  children: [
+                    // Profile Button
+                    if (!isSmallScreen) ...[
+                      _HeaderNavButton(
+                        icon: Icons.person,
+                        label: 'Profile',
+                        onTap: onProfileTap ?? () {},
+                      ),
+                      const SizedBox(width: 12),
+                    ],
+                    // Logout Button
+                    ElevatedButton(
+                      onPressed: () async {
+                        // Show confirmation dialog
+                        final bool shouldLogout =
+                            await showDialog<bool>(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return AlertDialog(
+                                  title: const Text('Logout'),
+                                  content: const Text(
+                                    'Are you sure you want to logout?',
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed:
+                                          () =>
+                                              Navigator.of(context).pop(false),
+                                      child: const Text('Cancel'),
+                                    ),
+                                    TextButton(
+                                      onPressed:
+                                          () => Navigator.of(context).pop(true),
+                                      child: const Text('Logout'),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ) ??
+                            false;
+
+                        if (shouldLogout) {
+                          try {
+                            // Call logout API
+                            final result = await AuthService.logout();
+
+                            // Clear auth state
+                            authState.logout();
+
+                            // Show success message
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    result.success
+                                        ? 'Logged out successfully!'
+                                        : 'Logged out locally',
+                                  ),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            // Even if API call fails, clear auth state
+                            authState.logout();
+
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Logged out locally'),
+                                  backgroundColor: Colors.orange,
+                                ),
+                              );
+                            }
+                          }
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isSmallScreen ? 14 : 18,
+                          vertical: isSmallScreen ? 8 : 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: Text(
+                        'Logout',
+                        style: TextStyle(fontSize: isSmallScreen ? 14 : 16),
+                      ),
+                    ),
+                  ],
+                );
+              } else {
+                // Show Login and Sign Up buttons when logged out
+                return Row(
+                  children: [
+                    // Login Button
+                    ElevatedButton(
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (context) => const LoginModal(),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.black,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isSmallScreen ? 14 : 18,
+                          vertical: isSmallScreen ? 8 : 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: Text(
+                        'Login',
+                        style: TextStyle(fontSize: isSmallScreen ? 14 : 16),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    // Sign Up Button
+                    ElevatedButton(
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (context) => const SignUpModal(),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isSmallScreen ? 16 : 20,
+                          vertical: isSmallScreen ? 8 : 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: Text(
+                        'Sign Up',
+                        style: TextStyle(fontSize: isSmallScreen ? 14 : 16),
+                      ),
+                    ),
+                  ],
+                );
+              }
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: Colors.black,
-              padding: EdgeInsets.symmetric(
-                horizontal: isSmallScreen ? 14 : 18,
-                vertical: isSmallScreen ? 8 : 12,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              elevation: 0,
-            ),
-            child: Text(
-              'Login',
-              style: TextStyle(fontSize: isSmallScreen ? 14 : 16),
-            ),
-          ),
-          const SizedBox(width: 10),
-          // Sign Up Button
-          ElevatedButton(
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) => const SignUpModal(),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue,
-              foregroundColor: Colors.white,
-              padding: EdgeInsets.symmetric(
-                horizontal: isSmallScreen ? 16 : 20,
-                vertical: isSmallScreen ? 8 : 12,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              elevation: 0,
-            ),
-            child: Text(
-              'Sign Up',
-              style: TextStyle(fontSize: isSmallScreen ? 14 : 16),
-            ),
           ),
         ],
       ),
