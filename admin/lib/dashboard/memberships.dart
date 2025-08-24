@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../sidenav.dart';
+import '../modal/membership_signup_modal.dart';
 
 class MembershipsPage extends StatefulWidget {
   const MembershipsPage({super.key});
@@ -79,6 +80,21 @@ class _MembershipsPageState extends State<MembershipsPage> {
     }
   }
 
+  void _showAddMemberModal() {
+    showDialog(
+      context: context,
+      builder: (context) => const AdminSignUpModal(),
+    ).then((result) {
+      if (result != null && result['success'] == true) {
+        // Add the new member to the list
+        setState(() {
+          _memberships.add(result['memberData']);
+          _sortMembershipsByExpiration();
+        });
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -88,103 +104,150 @@ class _MembershipsPageState extends State<MembershipsPage> {
         title: const Text('Membership Management'),
         backgroundColor: Colors.blue,
         elevation: 0,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: ElevatedButton.icon(
+              onPressed: _showAddMemberModal,
+              icon: const Icon(Icons.person_add, size: 18),
+              label: const Text('Add Member'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.blue,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              ),
+            ),
+          ),
+        ],
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
           if (constraints.maxWidth < 600) {
             // Mobile layout: vertical cards for each membership
-            return ListView(
-              padding: const EdgeInsets.all(16),
+            return Column(
               children: [
-                ..._memberships.map((membership) {
-                  final expirationDate =
-                      membership['expirationDate'] as DateTime;
-                  final remainingTime = _getRemainingTime(expirationDate);
-                  final membershipType = membership['membershipType'] as String;
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 2,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 18),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                membership['name'] ?? '',
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 16),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  // TODO: Implement view profile functionality
-                                },
-                                style: TextButton.styleFrom(
-                                  backgroundColor: Colors.blue.shade50,
-                                  foregroundColor: Colors.blue,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 12, vertical: 8),
-                                ),
-                                child: const Text('View'),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            membership['contactNumber'] ?? '',
-                            style: const TextStyle(
-                                fontSize: 14, color: Colors.black87),
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              const Text('Membership: ',
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.w500,
-                                      fontSize: 13)),
-                              Text(
-                                membershipType,
-                                style: TextStyle(
-                                    color:
-                                        _getMembershipTypeColor(membershipType),
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              const Text('Time left: ',
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.w500,
-                                      fontSize: 13)),
-                              Text(
-                                remainingTime,
-                                style: TextStyle(
-                                  color: remainingTime == 'Expired'
-                                      ? Colors.red
-                                      : Colors.black87,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+                // Add Member button for mobile
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.all(16),
+                  child: ElevatedButton.icon(
+                    onPressed: _showAddMemberModal,
+                    icon: const Icon(Icons.person_add, size: 20),
+                    label: const Text('Add New Member'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
-                  );
-                }).toList(),
+                  ),
+                ),
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    children: [
+                      ..._memberships.map((membership) {
+                        final expirationDate =
+                            membership['expirationDate'] as DateTime;
+                        final remainingTime = _getRemainingTime(expirationDate);
+                        final membershipType =
+                            membership['membershipType'] as String;
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 2,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 18),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      membership['name'] ?? '',
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        // TODO: Implement view profile functionality
+                                      },
+                                      style: TextButton.styleFrom(
+                                        backgroundColor: Colors.blue.shade50,
+                                        foregroundColor: Colors.blue,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(16),
+                                        ),
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 12, vertical: 8),
+                                      ),
+                                      child: const Text('View'),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  membership['contactNumber'] ?? '',
+                                  style: const TextStyle(
+                                      fontSize: 14, color: Colors.black87),
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    const Text('Membership: ',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.w500,
+                                            fontSize: 13)),
+                                    Text(
+                                      membershipType,
+                                      style: TextStyle(
+                                          color: _getMembershipTypeColor(
+                                              membershipType),
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    const Text('Time left: ',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.w500,
+                                            fontSize: 13)),
+                                    Text(
+                                      remainingTime,
+                                      style: TextStyle(
+                                        color: remainingTime == 'Expired'
+                                            ? Colors.red
+                                            : Colors.black87,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ],
+                  ),
+                ),
               ],
             );
           } else {
@@ -192,9 +255,40 @@ class _MembershipsPageState extends State<MembershipsPage> {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Add Member button for desktop
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Members List',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      ElevatedButton.icon(
+                        onPressed: _showAddMemberModal,
+                        icon: const Icon(Icons.person_add, size: 18),
+                        label: const Text('Add New Member'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 12),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Card(
                       elevation: 3,
                       shape: RoundedRectangleBorder(
