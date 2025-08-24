@@ -1,7 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'forgot_password.dart';
-import 'signup_modal.dart';
 import '../services/auth_service.dart';
 import '../services/auth_state.dart';
 import '../User Profile/profile_data.dart';
@@ -97,39 +96,39 @@ class _LoginModalState extends State<LoginModal> with TickerProviderStateMixin {
     try {
       final result = await AuthService.login(contactOrEmail, password);
 
-      if (result.success && result.userData != null) {
+      if (result.success && result.customerData != null) {
         // Login successful - update auth state with JWT tokens
         await authState.login(
-          userId: result.userData!.userId,
-          email: result.userData!.email,
-          fullName: result.userData!.fullName,
+          customerId: result.customerData!.customerId,
+          email: result.customerData!.email,
+          fullName: result.customerData!.fullName,
           accessToken: result.accessToken,
           refreshToken: result.refreshToken,
         );
 
         // Populate profile data with login information
         DateTime? birthdateObj;
-        if (result.userData!.birthdate != null &&
-            result.userData!.birthdate!.isNotEmpty) {
+        if (result.customerData!.birthdate != null &&
+            result.customerData!.birthdate!.isNotEmpty) {
           try {
-            birthdateObj = DateTime.parse(result.userData!.birthdate!);
+            birthdateObj = DateTime.parse(result.customerData!.birthdate!);
           } catch (e) {
             print('Error parsing birthdate: $e');
           }
         }
 
         profileNotifier.value = ProfileData(
-          firstName: result.userData!.firstName,
-          middleName: result.userData!.middleName ?? '',
-          lastName: result.userData!.lastName,
-          contactNumber: result.userData!.phoneNumber ?? '',
-          email: result.userData!.email,
+          firstName: result.customerData!.firstName,
+          middleName: result.customerData!.middleName ?? '',
+          lastName: result.customerData!.lastName,
+          contactNumber: result.customerData!.phoneNumber ?? '',
+          email: result.customerData!.email,
           birthdate: birthdateObj,
-          emergencyContactName: result.userData!.emergencyContactName,
-          emergencyContactPhone: result.userData!.emergencyContactNumber,
-          address: result.userData!.address ?? '',
+          emergencyContactName: result.customerData!.emergencyContactName,
+          emergencyContactPhone: result.customerData!.emergencyContactNumber,
+          address: result.customerData!.address ?? '',
           // Note: Image and detailed address fields would need separate handling
-          // since they're not stored in the basic user table
+          // since they're not stored in the basic customer table
         );
 
         if (mounted) {
@@ -138,7 +137,9 @@ class _LoginModalState extends State<LoginModal> with TickerProviderStateMixin {
           // Show success message
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Welcome back, ${result.userData!.fullName}!'),
+              content: Text(
+                'Welcome back, ${result.customerData!.firstName} ${result.customerData!.lastName}!',
+              ),
               backgroundColor: Colors.green,
               duration: const Duration(seconds: 3),
             ),
@@ -454,44 +455,7 @@ class _LoginModalState extends State<LoginModal> with TickerProviderStateMixin {
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 50),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Text(
-                                    "Don't have an Account? ",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 15,
-                                    ),
-                                  ),
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.of(context).pop();
-                                      showDialog(
-                                        context: context,
-                                        builder:
-                                            (context) => const SignUpModal(),
-                                      );
-                                    },
-                                    child: const Text(
-                                      'Sign Up Here!',
-                                      style: TextStyle(
-                                        color: Colors.red,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 15,
-                                      ),
-                                    ),
-                                    style: TextButton.styleFrom(
-                                      foregroundColor: Colors.red,
-                                      padding: EdgeInsets.zero,
-                                      minimumSize: Size(0, 0),
-                                      tapTargetSize:
-                                          MaterialTapTargetSize.shrinkWrap,
-                                    ),
-                                  ),
-                                ],
-                              ),
+
                               const SizedBox(height: 24),
                               _AnimatedGradientButton(
                                 onPressed: _isLoading ? null : _handleLogin,

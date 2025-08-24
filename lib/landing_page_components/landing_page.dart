@@ -5,7 +5,8 @@ import 'add_ons.dart';
 import 'products.dart';
 import 'plans.dart';
 import 'trainers.dart';
-import '../modals/signup_modal.dart';
+import '../modals/login.dart';
+
 import 'footer.dart';
 import '../User Profile/profile.dart';
 import '../User Profile/profile_data.dart';
@@ -243,7 +244,7 @@ class _LandingPageState extends State<LandingPage> {
                               ),
                               SizedBox(height: screenSize.height * 0.03),
                               Text(
-                                'Do you want to get Gym Membership?\nClick Get Started now!',
+                                'Do you want to get Gym Membership?\nLogin to access your account!',
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize:
@@ -271,7 +272,7 @@ class _LandingPageState extends State<LandingPage> {
                                   onPressed: () {
                                     showDialog(
                                       context: context,
-                                      builder: (context) => const SignUpModal(),
+                                      builder: (context) => const LoginModal(),
                                     );
                                   },
                                   style: ElevatedButton.styleFrom(
@@ -295,7 +296,7 @@ class _LandingPageState extends State<LandingPage> {
                                     ),
                                     elevation: 4,
                                   ),
-                                  child: const Text('Get Started'),
+                                  child: const Text('Login'),
                                 ),
                               ),
                             ],

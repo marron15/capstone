@@ -6,10 +6,11 @@ class ApiService {
   static const String baseUrl = 'http://localhost/sample_api';
 
   // API endpoints
-  static const String signupEndpoint = '$baseUrl/users/Signup.php';
-  static const String getAllUsersEndpoint = '$baseUrl/users/getAllUsers.php';
+  static const String signupEndpoint = '$baseUrl/customers/Signup.php';
+  static const String getAllCustomersEndpoint =
+      '$baseUrl/customers/getAllCustomers.php';
 
-  static Future<Map<String, dynamic>> signupUser({
+  static Future<Map<String, dynamic>> signupCustomer({
     required String firstName,
     required String lastName,
     String? middleName,
@@ -25,6 +26,8 @@ class ApiService {
     String? postalCode,
     String? country,
     String? img,
+    String? membershipType,
+    String? expirationDate,
   }) async {
     try {
       // Prepare address string from components
@@ -41,12 +44,13 @@ class ApiService {
         address = addressParts.join(', ');
       }
 
-      // Prepare request body
+      // Prepare request body - match the expected format in Signup.php
       final Map<String, dynamic> requestBody = {
         'first_name': firstName,
         'last_name': lastName,
         'email': email,
         'password': password,
+        'created_by': 'admin', // Mark as admin-created customer
       };
 
       // Add optional fields if they exist
@@ -74,8 +78,13 @@ class ApiService {
         requestBody['img'] = img;
       }
 
-      // Set created_by for admin signup
-      requestBody['created_by'] = 'admin';
+      // Add membership data if provided
+      if (membershipType != null && membershipType.isNotEmpty) {
+        requestBody['membership_type'] = membershipType;
+      }
+      if (expirationDate != null && expirationDate.isNotEmpty) {
+        requestBody['expiration_date'] = expirationDate;
+      }
 
       print('Sending signup request to: $signupEndpoint');
       print('Request body: ${jsonEncode(requestBody)}');
@@ -94,7 +103,29 @@ class ApiService {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
-        return responseData;
+
+        // Check if the response has the expected structure
+        if (responseData['success'] == true) {
+          // Return the response with customer ID for membership creation
+          return {
+            'success': true,
+            'message':
+                responseData['message'] ?? 'Customer created successfully',
+            'user': {
+              'id': responseData['data']?['customer_id'] ??
+                  responseData['data']?['id'],
+              'email': responseData['data']?['email'],
+              'first_name': responseData['data']?['first_name'],
+              'last_name': responseData['data']?['last_name'],
+            },
+            'membership_created': responseData['membership_created'] ?? false,
+          };
+        } else {
+          return {
+            'success': false,
+            'message': responseData['message'] ?? 'Failed to create customer',
+          };
+        }
       } else {
         // Try to parse error response
         try {
@@ -111,7 +142,7 @@ class ApiService {
         }
       }
     } catch (e) {
-      print('Error in signupUser: $e');
+      print('Error in signupCustomer: $e');
       return {
         'success': false,
         'message': 'Network error: $e',
@@ -119,13 +150,13 @@ class ApiService {
     }
   }
 
-  // Fetch all users from the database
-  static Future<Map<String, dynamic>> getAllUsers() async {
+  // Fetch all customers from the database
+  static Future<Map<String, dynamic>> getAllCustomers() async {
     try {
-      print('Fetching users from: $getAllUsersEndpoint');
+      print('Fetching customers from: $getAllCustomersEndpoint');
 
       final response = await http.get(
-        Uri.parse(getAllUsersEndpoint),
+        Uri.parse(getAllCustomersEndpoint),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -154,7 +185,7 @@ class ApiService {
         }
       }
     } catch (e) {
-      print('Error in getAllUsers: $e');
+      print('Error in getAllCustomers: $e');
       return {
         'success': false,
         'message': 'Network error: $e',
@@ -166,7 +197,7 @@ class ApiService {
   static Future<bool> checkApiConnection() async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/users/getAllUsers.php'),
+        Uri.parse('$baseUrl/customers/getAllCustomers.php'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',

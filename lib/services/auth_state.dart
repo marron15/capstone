@@ -6,33 +6,33 @@ import '../User Profile/profile_data.dart';
 class AuthState extends ChangeNotifier {
   bool _isLoggedIn = false;
   bool _isInitialized = false;
-  String? _userEmail;
-  String? _userName;
-  int? _userId;
+  String? _customerEmail;
+  String? _customerName;
+  int? _customerId;
   String? _accessToken;
   String? _refreshToken;
 
   // Getters
   bool get isLoggedIn => _isLoggedIn;
   bool get isInitialized => _isInitialized;
-  String? get userEmail => _userEmail;
-  String? get userName => _userName;
-  int? get userId => _userId;
+  String? get customerEmail => _customerEmail;
+  String? get customerName => _customerName;
+  int? get customerId => _customerId;
   String? get accessToken => _accessToken;
   String? get refreshToken => _refreshToken;
 
   // Login method
   Future<void> login({
-    required int userId,
+    required int customerId,
     required String email,
     required String fullName,
     String? accessToken,
     String? refreshToken,
   }) async {
     _isLoggedIn = true;
-    _userId = userId;
-    _userEmail = email;
-    _userName = fullName;
+    _customerId = customerId;
+    _customerEmail = email;
+    _customerName = fullName;
     _accessToken = accessToken;
     _refreshToken = refreshToken;
 
@@ -45,9 +45,9 @@ class AuthState extends ChangeNotifier {
   // Logout method
   Future<void> logout() async {
     _isLoggedIn = false;
-    _userId = null;
-    _userEmail = null;
-    _userName = null;
+    _customerId = null;
+    _customerEmail = null;
+    _customerName = null;
     _accessToken = null;
     _refreshToken = null;
 
@@ -57,7 +57,7 @@ class AuthState extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Check if user is authenticated
+  // Check if customer is authenticated
   bool get isAuthenticated => _isLoggedIn;
 
   // Initialize auth state from stored tokens
@@ -105,12 +105,12 @@ class AuthState extends ChangeNotifier {
       print('🔍 Validation result: $validationResult');
 
       if (validationResult != null && validationResult['success'] == true) {
-        final userData = validationResult['data'];
-        print('✅ Token valid! Restoring user: ${userData['email']}');
+        final customerData = validationResult['data'];
+        print('✅ Token valid! Restoring customer: ${customerData['email']}');
         _isLoggedIn = true;
-        _userId = userData['user_id'];
-        _userEmail = userData['email'];
-        _userName = userData['full_name'];
+        _customerId = customerData['customer_id'];
+        _customerEmail = customerData['email'];
+        _customerName = customerData['full_name'];
         _accessToken = accessToken;
         _refreshToken = refreshToken;
         notifyListeners();
@@ -136,11 +136,11 @@ class AuthState extends ChangeNotifier {
       final refreshResult = await _refreshTokenWithBackend(refreshToken);
 
       if (refreshResult != null && refreshResult['success'] == true) {
-        final userData = refreshResult['data'];
+        final customerData = refreshResult['data'];
         _isLoggedIn = true;
-        _userId = userData['user_id'];
-        _userEmail = userData['email'];
-        _userName = userData['full_name'];
+        _customerId = customerData['customer_id'];
+        _customerEmail = customerData['email'];
+        _customerName = customerData['full_name'];
         _accessToken = refreshResult['access_token'];
         _refreshToken = refreshResult['refresh_token'];
 
@@ -168,16 +168,16 @@ class AuthState extends ChangeNotifier {
         await prefs.setString('refresh_token', _refreshToken!);
         print('💾 Refresh token saved');
       }
-      if (_userId != null) {
-        await prefs.setInt('user_id', _userId!);
+      if (_customerId != null) {
+        await prefs.setInt('customer_id', _customerId!);
       }
-      if (_userEmail != null) {
-        await prefs.setString('user_email', _userEmail!);
+      if (_customerEmail != null) {
+        await prefs.setString('customer_email', _customerEmail!);
       }
-      if (_userName != null) {
-        await prefs.setString('user_name', _userName!);
+      if (_customerName != null) {
+        await prefs.setString('customer_name', _customerName!);
       }
-      print('💾 All tokens and user data saved successfully');
+      print('💾 All tokens and customer data saved successfully');
     } catch (e) {
       print('❌ Failed to save tokens: $e');
     }
@@ -189,9 +189,9 @@ class AuthState extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('access_token');
       await prefs.remove('refresh_token');
-      await prefs.remove('user_id');
-      await prefs.remove('user_email');
-      await prefs.remove('user_name');
+      await prefs.remove('customer_id');
+      await prefs.remove('customer_email');
+      await prefs.remove('customer_name');
     } catch (e) {
       print('Failed to clear tokens: $e');
     }
@@ -203,36 +203,36 @@ class AuthState extends ChangeNotifier {
       final result = await AuthService.validateToken(token);
       if (result.success) {
         // Also populate profile data when token is validated
-        if (result.userData != null) {
+        if (result.customerData != null) {
           DateTime? birthdateObj;
-          if (result.userData!.birthdate != null &&
-              result.userData!.birthdate!.isNotEmpty) {
+          if (result.customerData!.birthdate != null &&
+              result.customerData!.birthdate!.isNotEmpty) {
             try {
-              birthdateObj = DateTime.parse(result.userData!.birthdate!);
+              birthdateObj = DateTime.parse(result.customerData!.birthdate!);
             } catch (e) {
               print('Error parsing birthdate: $e');
             }
           }
 
           profileNotifier.value = ProfileData(
-            firstName: result.userData!.firstName,
-            middleName: result.userData!.middleName ?? '',
-            lastName: result.userData!.lastName,
-            contactNumber: result.userData!.phoneNumber ?? '',
-            email: result.userData!.email,
+            firstName: result.customerData!.firstName,
+            middleName: result.customerData!.middleName ?? '',
+            lastName: result.customerData!.lastName,
+            contactNumber: result.customerData!.phoneNumber ?? '',
+            email: result.customerData!.email,
             birthdate: birthdateObj,
-            emergencyContactName: result.userData!.emergencyContactName,
-            emergencyContactPhone: result.userData!.emergencyContactNumber,
-            address: result.userData!.address ?? '',
+            emergencyContactName: result.customerData!.emergencyContactName,
+            emergencyContactPhone: result.customerData!.emergencyContactNumber,
+            address: result.customerData!.address ?? '',
           );
         }
 
         return {
           'success': true,
           'data': {
-            'user_id': result.userData?.userId,
-            'email': result.userData?.email,
-            'full_name': result.userData?.fullName,
+            'customer_id': result.customerData?.customerId,
+            'email': result.customerData?.email,
+            'full_name': result.customerData?.fullName,
           },
         };
       }
@@ -253,9 +253,9 @@ class AuthState extends ChangeNotifier {
           'access_token': result.accessToken,
           'refresh_token': result.refreshToken,
           'data': {
-            'user_id': result.userData?.userId,
-            'email': result.userData?.email,
-            'full_name': result.userData?.fullName,
+            'customer_id': result.customerData?.customerId,
+            'email': result.customerData?.email,
+            'full_name': result.customerData?.fullName,
           },
         };
       }

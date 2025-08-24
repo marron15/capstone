@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../modals/signup_modal.dart';
 import '../modals/login.dart';
 import '../services/auth_state.dart';
 import '../services/auth_service.dart';
@@ -205,32 +204,6 @@ class BlackHeader extends StatelessWidget {
                       ),
                       child: Text(
                         'Login',
-                        style: TextStyle(fontSize: isSmallScreen ? 14 : 16),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    // Sign Up Button
-                    ElevatedButton(
-                      onPressed: () {
-                        showDialog(
-                          context: context,
-                          builder: (context) => const SignUpModal(),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(
-                          horizontal: isSmallScreen ? 16 : 20,
-                          vertical: isSmallScreen ? 8 : 12,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: Text(
-                        'Sign Up',
                         style: TextStyle(fontSize: isSmallScreen ? 14 : 16),
                       ),
                     ),

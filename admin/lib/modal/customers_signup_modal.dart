@@ -292,10 +292,11 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
           expirationDate = DateTime.now().add(const Duration(days: 30));
       }
 
-      // Call the API to create user
+      // Call the API to create customer
       String password = _passwordController.text;
 
-      final result = await ApiService.signupUser(
+      print('🔄 Creating customer account...');
+      final result = await ApiService.signupCustomer(
         firstName: firstName,
         lastName: lastName,
         middleName: middleName.isNotEmpty ? middleName : null,
@@ -324,12 +325,25 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
         country: _countryController.text.trim().isNotEmpty
             ? _countryController.text.trim()
             : null,
+        membershipType: _selectedMembershipType,
+        expirationDate: expirationDate
+            .toIso8601String()
+            .split('T')[0], // Format as YYYY-MM-DD
       );
 
+      print('📡 API Response: $result');
+
       if (result['success'] == true && mounted) {
+        // Get customer ID from response
+        final customerId = result['customer']?['id'];
+        final membershipCreated = result['membership_created'] ?? false;
+
+        print('✅ Customer created successfully with ID: $customerId');
+        print('🎫 Membership created: $membershipCreated');
+
         Navigator.of(context).pop({
           'success': true,
-          'memberData': {
+          'customerData': {
             'name': '$firstName $lastName',
             'contactNumber': contact,
             'membershipType': _selectedMembershipType,
@@ -341,8 +355,7 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
             'address': fullAddress,
             'emergencyContactName': _emergencyNameController.text.trim(),
             'emergencyContactPhone': _emergencyPhoneController.text.trim(),
-            'userId': result['user']
-                ?['id'], // Store the user ID from API response
+            'customerId': customerId, // Store the customer ID from API response
           }
         });
 
@@ -350,9 +363,43 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text('Member Added Successfully!'),
-            content: Text(
-              'Member "$firstName $lastName" has been registered in the database with ${_selectedMembershipType} membership.',
+            title: const Text('Customer Added Successfully!'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Customer "$firstName $lastName" has been registered in the database with ${_selectedMembershipType} membership.',
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  '✅ The customer can now log in using their email and password.',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '📧 Email: $email',
+                  style: const TextStyle(fontSize: 12),
+                ),
+                const Text(
+                  '🔑 Password: [As set during registration]',
+                  style: TextStyle(fontSize: 12),
+                ),
+                if (membershipCreated) ...[
+                  const SizedBox(height: 8),
+                  const Text(
+                    '🎫 Membership has been created and is active.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.blue,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ],
             ),
             actions: [
               TextButton(
@@ -364,11 +411,16 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
         );
       } else {
         // API call failed
+        final errorMessage =
+            result['message'] ?? 'Failed to create customer account.';
+        print('❌ Signup failed: $errorMessage');
+
         setState(() {
-          _signupError = result['message'] ?? 'Failed to create user account.';
+          _signupError = errorMessage;
         });
       }
     } catch (e) {
+      print('❌ Unexpected error during signup: $e');
       setState(() {
         _signupError = 'An unexpected error occurred. Please try again.';
       });
@@ -477,7 +529,7 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
                                         const SizedBox(width: 12),
                                         Flexible(
                                           child: Text(
-                                            'Add New Member',
+                                            'Add New Customer',
                                             style: TextStyle(
                                               fontWeight: FontWeight.bold,
                                               fontSize: 20,
@@ -1398,7 +1450,7 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
                                                   ),
                                                 )
                                               : const Text(
-                                                  'Add Member',
+                                                  'Add Customer',
                                                   style: TextStyle(
                                                     fontWeight: FontWeight.w500,
                                                     fontSize: 15,

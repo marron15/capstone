@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class AuthService {
-  static const String baseUrl = 'http://localhost/sample_api/users';
+  static const String baseUrl = 'http://localhost/sample_api/customers';
 
   static Future<LoginResult> login(String email, String password) async {
     try {
@@ -16,13 +16,13 @@ class AuthService {
 
       // Debug logging
       print('🔍 Login API Response: $responseData');
-      print('🔍 User data: ${responseData['data']}');
+      print('🔍 Customer data: ${responseData['data']}');
 
       if (response.statusCode == 200 && responseData['success'] == true) {
         return LoginResult(
           success: true,
           message: responseData['message'],
-          userData: UserData.fromJson(responseData['data']),
+          customerData: CustomerData.fromJson(responseData['data']),
           accessToken: responseData['access_token'],
           refreshToken: responseData['refresh_token'],
         );
@@ -30,14 +30,14 @@ class AuthService {
         return LoginResult(
           success: false,
           message: responseData['message'] ?? 'Login failed',
-          userData: null,
+          customerData: null,
         );
       }
     } catch (e) {
       return LoginResult(
         success: false,
         message: 'Network error: ${e.toString()}',
-        userData: null,
+        customerData: null,
       );
     }
   }
@@ -57,7 +57,7 @@ class AuthService {
         return SignupResult(
           success: true,
           message: responseData['message'],
-          userData: UserData.fromJson(responseData['data']),
+          customerData: CustomerData.fromJson(responseData['data']),
           accessToken: responseData['access_token'],
           refreshToken: responseData['refresh_token'],
         );
@@ -65,24 +65,24 @@ class AuthService {
         return SignupResult(
           success: false,
           message: responseData['message'] ?? 'Signup failed',
-          userData: null,
+          customerData: null,
         );
       }
     } catch (e) {
       return SignupResult(
         success: false,
         message: 'Network error: ${e.toString()}',
-        userData: null,
+        customerData: null,
       );
     }
   }
 
-  static Future<LogoutResult> logout({int? userId}) async {
+  static Future<LogoutResult> logout({int? customerId}) async {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/Logout.php'),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({if (userId != null) 'user_id': userId}),
+        body: json.encode({if (customerId != null) 'customer_id': customerId}),
       );
 
       final Map<String, dynamic> responseData = json.decode(response.body);
@@ -117,20 +117,20 @@ class AuthService {
         return TokenValidationResult(
           success: true,
           message: responseData['message'],
-          userData: UserData.fromJson(responseData['data']),
+          customerData: CustomerData.fromJson(responseData['data']),
         );
       } else {
         return TokenValidationResult(
           success: false,
           message: responseData['message'] ?? 'Token validation failed',
-          userData: null,
+          customerData: null,
         );
       }
     } catch (e) {
       return TokenValidationResult(
         success: false,
         message: 'Network error: ${e.toString()}',
-        userData: null,
+        customerData: null,
       );
     }
   }
@@ -151,7 +151,7 @@ class AuthService {
           message: responseData['message'],
           accessToken: responseData['access_token'],
           refreshToken: responseData['refresh_token'],
-          userData: UserData.fromJson(responseData['data']),
+          customerData: CustomerData.fromJson(responseData['data']),
         );
       } else {
         return RefreshTokenResult(
@@ -159,7 +159,7 @@ class AuthService {
           message: responseData['message'] ?? 'Token refresh failed',
           accessToken: null,
           refreshToken: null,
-          userData: null,
+          customerData: null,
         );
       }
     } catch (e) {
@@ -168,7 +168,7 @@ class AuthService {
         message: 'Network error: ${e.toString()}',
         accessToken: null,
         refreshToken: null,
-        userData: null,
+        customerData: null,
       );
     }
   }
@@ -177,14 +177,14 @@ class AuthService {
 class LoginResult {
   final bool success;
   final String message;
-  final UserData? userData;
+  final CustomerData? customerData;
   final String? accessToken;
   final String? refreshToken;
 
   LoginResult({
     required this.success,
     required this.message,
-    this.userData,
+    this.customerData,
     this.accessToken,
     this.refreshToken,
   });
@@ -193,14 +193,14 @@ class LoginResult {
 class SignupResult {
   final bool success;
   final String message;
-  final UserData? userData;
+  final CustomerData? customerData;
   final String? accessToken;
   final String? refreshToken;
 
   SignupResult({
     required this.success,
     required this.message,
-    this.userData,
+    this.customerData,
     this.accessToken,
     this.refreshToken,
   });
@@ -216,12 +216,12 @@ class LogoutResult {
 class TokenValidationResult {
   final bool success;
   final String message;
-  final UserData? userData;
+  final CustomerData? customerData;
 
   TokenValidationResult({
     required this.success,
     required this.message,
-    this.userData,
+    this.customerData,
   });
 }
 
@@ -230,19 +230,19 @@ class RefreshTokenResult {
   final String message;
   final String? accessToken;
   final String? refreshToken;
-  final UserData? userData;
+  final CustomerData? customerData;
 
   RefreshTokenResult({
     required this.success,
     required this.message,
     this.accessToken,
     this.refreshToken,
-    this.userData,
+    this.customerData,
   });
 }
 
-class UserData {
-  final int userId;
+class CustomerData {
+  final int customerId;
   final String email;
   final String firstName;
   final String lastName;
@@ -256,8 +256,8 @@ class UserData {
   final String? img;
   final String? createdAt;
 
-  UserData({
-    required this.userId,
+  CustomerData({
+    required this.customerId,
     required this.email,
     required this.firstName,
     required this.lastName,
@@ -272,15 +272,15 @@ class UserData {
     this.createdAt,
   });
 
-  factory UserData.fromJson(Map<String, dynamic> json) {
+  factory CustomerData.fromJson(Map<String, dynamic> json) {
     // Debug: Print the exact types we're receiving
-    print('🔍 UserData.fromJson received: $json');
+    print('🔍 CustomerData.fromJson received: $json');
     json.forEach((key, value) {
       print('🔍 $key: ${value.runtimeType} = $value');
     });
 
-    return UserData(
-      userId: _safeInt(json['user_id']),
+    return CustomerData(
+      customerId: _safeInt(json['customer_id'] ?? json['id']),
       email: _safeString(json['email']) ?? '',
       firstName: _safeString(json['first_name']) ?? '',
       lastName: _safeString(json['last_name']) ?? '',
@@ -313,7 +313,7 @@ class UserData {
 
   Map<String, dynamic> toJson() {
     return {
-      'user_id': userId,
+      'customer_id': customerId,
       'email': email,
       'first_name': firstName,
       'last_name': lastName,

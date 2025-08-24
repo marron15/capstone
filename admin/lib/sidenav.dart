@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'dashboard/admin_profile.dart';
 import 'dashboard/trainers.dart';
 import 'dashboard/home.dart';
-import 'dashboard/memberships.dart';
+import 'dashboard/customers.dart';
 import 'dashboard/admin_products.dart';
 
 class SideNav extends StatelessWidget {
@@ -68,14 +68,14 @@ class SideNav extends StatelessWidget {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.card_membership),
-              title: const Text('Membership'),
+              leading: const Icon(Icons.people),
+              title: const Text('Customers'),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const MembershipsPage(),
+                    builder: (context) => const CustomersPage(),
                   ),
                 );
               },
