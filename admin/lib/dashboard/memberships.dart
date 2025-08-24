@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../sidenav.dart';
 import '../modal/membership_signup_modal.dart';
+import '../debug/api_test_page.dart';
 
 class MembershipsPage extends StatefulWidget {
   const MembershipsPage({super.key});
@@ -105,6 +107,23 @@ class _MembershipsPageState extends State<MembershipsPage> {
         backgroundColor: Colors.blue,
         elevation: 0,
         actions: [
+          // Debug button - only visible in debug mode
+          if (kDebugMode)
+            Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: IconButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ApiTestPage(),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.bug_report),
+                tooltip: 'API Tests',
+              ),
+            ),
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: ElevatedButton.icon(

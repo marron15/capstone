@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
+import '../services/api_service.dart';
 
 class AdminSignUpModal extends StatefulWidget {
   const AdminSignUpModal({Key? key}) : super(key: key);
@@ -291,10 +292,41 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
           expirationDate = DateTime.now().add(const Duration(days: 30));
       }
 
-      // For admin signup, we would typically save to database here
-      // For now, we'll just simulate success and add to local list
+      // Call the API to create user
+      String password = _passwordController.text;
 
-      if (mounted) {
+      final result = await ApiService.signupUser(
+        firstName: firstName,
+        lastName: lastName,
+        middleName: middleName.isNotEmpty ? middleName : null,
+        email: email,
+        password: password,
+        birthdate: birthdate,
+        phoneNumber: contact.isNotEmpty ? contact : null,
+        emergencyContactName: _emergencyNameController.text.trim().isNotEmpty
+            ? _emergencyNameController.text.trim()
+            : null,
+        emergencyContactNumber: _emergencyPhoneController.text.trim().isNotEmpty
+            ? _emergencyPhoneController.text.trim()
+            : null,
+        street: _streetController.text.trim().isNotEmpty
+            ? _streetController.text.trim()
+            : null,
+        city: _cityController.text.trim().isNotEmpty
+            ? _cityController.text.trim()
+            : null,
+        state: _stateProvinceController.text.trim().isNotEmpty
+            ? _stateProvinceController.text.trim()
+            : null,
+        postalCode: _postalCodeController.text.trim().isNotEmpty
+            ? _postalCodeController.text.trim()
+            : null,
+        country: _countryController.text.trim().isNotEmpty
+            ? _countryController.text.trim()
+            : null,
+      );
+
+      if (result['success'] == true && mounted) {
         Navigator.of(context).pop({
           'success': true,
           'memberData': {
@@ -309,6 +341,8 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
             'address': fullAddress,
             'emergencyContactName': _emergencyNameController.text.trim(),
             'emergencyContactPhone': _emergencyPhoneController.text.trim(),
+            'userId': result['user']
+                ?['id'], // Store the user ID from API response
           }
         });
 
@@ -318,7 +352,7 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
           builder: (context) => AlertDialog(
             title: const Text('Member Added Successfully!'),
             content: Text(
-              'Member "$firstName $lastName" has been added with ${_selectedMembershipType} membership.',
+              'Member "$firstName $lastName" has been registered in the database with ${_selectedMembershipType} membership.',
             ),
             actions: [
               TextButton(
@@ -328,6 +362,11 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
             ],
           ),
         );
+      } else {
+        // API call failed
+        setState(() {
+          _signupError = result['message'] ?? 'Failed to create user account.';
+        });
       }
     } catch (e) {
       setState(() {
