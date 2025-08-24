@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../sidenav.dart';
 import '../modal/membership_signup_modal.dart';
 import '../debug/api_test_page.dart';
+import '../services/api_service.dart';
 
 class MembershipsPage extends StatefulWidget {
   const MembershipsPage({super.key});
@@ -12,46 +13,98 @@ class MembershipsPage extends StatefulWidget {
 }
 
 class _MembershipsPageState extends State<MembershipsPage> {
-  // Sample data for memberships with expiration dates
-  List<Map<String, dynamic>> _memberships = [
-    {
-      'name': 'Alice Johnson',
-      'contactNumber': '+1 123-456-7890',
-      'membershipType': 'Monthly',
-      'expirationDate': DateTime.now().add(const Duration(days: 30)),
-    },
-    {
-      'name': 'Bob Smith',
-      'contactNumber': '+1 234-567-8901',
-      'membershipType': 'Half Month',
-      'expirationDate': DateTime.now().add(const Duration(days: 15)),
-    },
-    {
-      'name': 'Charlie Brown',
-      'contactNumber': '+1 345-678-9012',
-      'membershipType': 'Daily',
-      'expirationDate': DateTime.now().add(const Duration(days: 1)),
-    },
-    {
-      'name': 'Diana Prince',
-      'contactNumber': '+1 456-789-0123',
-      'membershipType': 'Monthly',
-      'expirationDate': DateTime.now().add(const Duration(days: 30)),
-    },
-  ];
+  // Data loaded from database
+  List<Map<String, dynamic>> _memberships = [];
+  bool _isLoading = true;
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
-    _sortMembershipsByExpiration();
+    _loadMemberships();
+  }
+
+  Future<void> _loadMemberships() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final result = await ApiService.getAllUsers();
+
+      if (result['success'] == true && result['data'] != null) {
+        List<Map<String, dynamic>> loadedMemberships = [];
+
+        for (var userData in result['data']) {
+          // Convert API user data to membership format
+          final membership = _convertUserToMembership(userData);
+          loadedMemberships.add(membership);
+        }
+
+        setState(() {
+          _memberships = loadedMemberships;
+          _isLoading = false;
+        });
+
+        _sortMembershipsByExpiration();
+      } else {
+        setState(() {
+          _errorMessage = result['message'] ?? 'Failed to load members';
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Error loading members: $e';
+        _isLoading = false;
+      });
+    }
+  }
+
+  Map<String, dynamic> _convertUserToMembership(Map<String, dynamic> userData) {
+    // Generate a default membership type and expiration date
+    // In a real app, this would come from a membership table
+    String membershipType = 'Monthly'; // Default
+    DateTime expirationDate = DateTime.now().add(const Duration(days: 30));
+
+    // Try to extract from user data if available
+    if (userData['membership_type'] != null) {
+      membershipType = userData['membership_type'];
+    }
+    if (userData['expiration_date'] != null) {
+      try {
+        expirationDate = DateTime.parse(userData['expiration_date']);
+      } catch (e) {
+        // Keep default if parsing fails
+      }
+    }
+
+    return {
+      'name': userData['full_name'] ??
+          '${userData['first_name'] ?? ''} ${userData['last_name'] ?? ''}',
+      'contactNumber': userData['phone_number'] ?? 'Not provided',
+      'membershipType': membershipType,
+      'expirationDate': expirationDate,
+      'email': userData['email'] ?? '',
+      'fullName': userData['full_name'] ??
+          '${userData['first_name'] ?? ''} ${userData['last_name'] ?? ''}',
+      'birthdate': userData['birthdate'],
+      'emergencyContactName': userData['emergency_contact_name'] ?? '',
+      'emergencyContactPhone': userData['emergency_contact_number'] ?? '',
+      'userId': userData['user_id'],
+      'createdAt': userData['created_at'],
+    };
   }
 
   void _sortMembershipsByExpiration() {
-    _memberships.sort((a, b) {
-      final DateTime dateA = a['expirationDate'] as DateTime;
-      final DateTime dateB = b['expirationDate'] as DateTime;
-      return dateA.compareTo(dateB);
-    });
+    if (_memberships.isNotEmpty) {
+      _memberships.sort((a, b) {
+        final DateTime dateA = a['expirationDate'] as DateTime;
+        final DateTime dateB = b['expirationDate'] as DateTime;
+        return dateA.compareTo(dateB);
+      });
+    }
   }
 
   String _getRemainingTime(DateTime expirationDate) {
@@ -88,11 +141,8 @@ class _MembershipsPageState extends State<MembershipsPage> {
       builder: (context) => const AdminSignUpModal(),
     ).then((result) {
       if (result != null && result['success'] == true) {
-        // Add the new member to the list
-        setState(() {
-          _memberships.add(result['memberData']);
-          _sortMembershipsByExpiration();
-        });
+        // Reload the entire list from the database to ensure consistency
+        _loadMemberships();
       }
     });
   }
@@ -107,6 +157,12 @@ class _MembershipsPageState extends State<MembershipsPage> {
         backgroundColor: Colors.blue,
         elevation: 0,
         actions: [
+          // Refresh button
+          IconButton(
+            onPressed: _isLoading ? null : _loadMemberships,
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Refresh',
+          ),
           // Debug button - only visible in debug mode
           if (kDebugMode)
             Padding(
@@ -143,31 +199,114 @@ class _MembershipsPageState extends State<MembershipsPage> {
           ),
         ],
       ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          if (constraints.maxWidth < 600) {
-            // Mobile layout: vertical cards for each membership
-            return Column(
-              children: [
-                // Add Member button for mobile
-                Container(
-                  width: double.infinity,
-                  margin: const EdgeInsets.all(16),
-                  child: ElevatedButton.icon(
-                    onPressed: _showAddMemberModal,
-                    icon: const Icon(Icons.person_add, size: 20),
-                    label: const Text('Add New Member'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+      body: _buildBody(),
+    );
+  }
+
+  Widget _buildBody() {
+    if (_isLoading) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('Loading members...'),
+          ],
+        ),
+      );
+    }
+
+    if (_errorMessage != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 64,
+              color: Colors.red[300],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Error loading members',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _errorMessage!,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.grey),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: _loadMemberships,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_memberships.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.people_outline,
+              size: 64,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No members found',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Add your first member to get started',
+              style: TextStyle(color: Colors.grey),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: _showAddMemberModal,
+              icon: const Icon(Icons.person_add),
+              label: const Text('Add First Member'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 600) {
+          // Mobile layout: vertical cards for each membership
+          return Column(
+            children: [
+              // Add Member button for mobile
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.all(16),
+                child: ElevatedButton.icon(
+                  onPressed: _showAddMemberModal,
+                  icon: const Icon(Icons.person_add, size: 20),
+                  label: const Text('Add New Member'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
                 ),
-                Expanded(
+              ),
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: _loadMemberships,
                   child: ListView(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     children: [
@@ -267,47 +406,51 @@ class _MembershipsPageState extends State<MembershipsPage> {
                     ],
                   ),
                 ),
-              ],
-            );
-          } else {
-            // Desktop/tablet layout: table
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Add Member button for desktop
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Members List',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        ),
+              ),
+            ],
+          );
+        } else {
+          // Desktop/tablet layout: table
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Add Member button for desktop
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Members List',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
                       ),
-                      ElevatedButton.icon(
-                        onPressed: _showAddMemberModal,
-                        icon: const Icon(Icons.person_add, size: 18),
-                        label: const Text('Add New Member'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 12),
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: _showAddMemberModal,
+                      icon: const Icon(Icons.person_add, size: 18),
+                      label: const Text('Add New Member'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 12),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                Expanded(
+              ),
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: _loadMemberships,
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
+                    physics: const AlwaysScrollableScrollPhysics(),
                     child: Card(
                       elevation: 3,
                       shape: RoundedRectangleBorder(
@@ -443,11 +586,11 @@ class _MembershipsPageState extends State<MembershipsPage> {
                     ),
                   ),
                 ),
-              ],
-            );
-          }
-        },
-      ),
+              ),
+            ],
+          );
+        }
+      },
     );
   }
 }

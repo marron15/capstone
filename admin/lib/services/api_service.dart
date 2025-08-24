@@ -5,8 +5,9 @@ class ApiService {
   // Base URL for your API - adjust this to match your XAMPP setup
   static const String baseUrl = 'http://localhost/sample_api';
 
-  // Signup endpoint
+  // API endpoints
   static const String signupEndpoint = '$baseUrl/users/Signup.php';
+  static const String getAllUsersEndpoint = '$baseUrl/users/getAllUsers.php';
 
   static Future<Map<String, dynamic>> signupUser({
     required String firstName,
@@ -111,6 +112,49 @@ class ApiService {
       }
     } catch (e) {
       print('Error in signupUser: $e');
+      return {
+        'success': false,
+        'message': 'Network error: $e',
+      };
+    }
+  }
+
+  // Fetch all users from the database
+  static Future<Map<String, dynamic>> getAllUsers() async {
+    try {
+      print('Fetching users from: $getAllUsersEndpoint');
+
+      final response = await http.get(
+        Uri.parse(getAllUsersEndpoint),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      );
+
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = jsonDecode(response.body);
+        return responseData;
+      } else {
+        // Try to parse error response
+        try {
+          final Map<String, dynamic> errorData = jsonDecode(response.body);
+          return {
+            'success': false,
+            'message': errorData['message'] ?? 'Unknown error occurred',
+          };
+        } catch (e) {
+          return {
+            'success': false,
+            'message': 'Server error: ${response.statusCode}',
+          };
+        }
+      }
+    } catch (e) {
+      print('Error in getAllUsers: $e');
       return {
         'success': false,
         'message': 'Network error: $e',

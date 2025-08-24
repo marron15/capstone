@@ -107,6 +107,36 @@ ${result['access_token'] != null ? 'Token Generated: YES' : 'Token Generated: NO
     }
   }
 
+  Future<void> _testGetAllUsers() async {
+    setState(() {
+      _isLoading = true;
+      _testResult = 'Testing get all users...';
+    });
+
+    try {
+      final result = await ApiService.getAllUsers();
+
+      setState(() {
+        _testResult = '''
+👥 GET ALL USERS TEST
+Success: ${result['success']}
+Message: ${result['message']}
+${result['data'] != null ? 'Users Found: ${result['data'].length}' : ''}
+${result['data'] != null && result['data'].isNotEmpty ? 'First User: ${result['data'][0]['full_name']} (${result['data'][0]['email']})' : ''}
+        '''
+            .trim();
+      });
+    } catch (e) {
+      setState(() {
+        _testResult = '❌ Get All Users: ERROR\n$e';
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -140,6 +170,11 @@ ${result['access_token'] != null ? 'Token Generated: YES' : 'Token Generated: NO
             ElevatedButton(
               onPressed: _isLoading ? null : _testActualSignup,
               child: const Text('Test Actual Signup'),
+            ),
+            const SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: _isLoading ? null : _testGetAllUsers,
+              child: const Text('Test Get All Users'),
             ),
             const SizedBox(height: 20),
             if (_isLoading)
