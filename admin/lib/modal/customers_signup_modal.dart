@@ -389,55 +389,57 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
         }
 
         // Show success dialog
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Customer Added Successfully!'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Customer "$firstName $lastName" has been registered in the database with ${_selectedMembershipType} membership.',
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  '✅ The customer can now log in using their email and password.',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green,
+        if (mounted) {
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Customer Added Successfully!'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Customer "$firstName $lastName" has been registered in the database with $_selectedMembershipType membership.',
                   ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '📧 Email: $email',
-                  style: const TextStyle(fontSize: 12),
-                ),
-                const Text(
-                  '🔑 Password: [As set during registration]',
-                  style: TextStyle(fontSize: 12),
-                ),
-                if (membershipCreated) ...[
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 16),
                   const Text(
-                    '🎫 Membership has been created and is active.',
+                    '✅ The customer can now log in using their email and password.',
                     style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.blue,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green,
                     ),
                   ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '📧 Email: $email',
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                  const Text(
+                    '🔑 Password: [As set during registration]',
+                    style: TextStyle(fontSize: 12),
+                  ),
+                  if (membershipCreated) ...[
+                    const SizedBox(height: 8),
+                    const Text(
+                      '🎫 Membership has been created and is active.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.blue,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('OK'),
+                ),
               ],
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('OK'),
-              ),
-            ],
-          ),
-        );
+          );
+        }
       } else {
         // API call failed
         final errorMessage =

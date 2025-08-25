@@ -713,9 +713,9 @@ class CustomerViewEditModal {
                                           children: [
                                             Row(
                                               children: [
-                                                Text(
+                                                const Text(
                                                   "New Password",
-                                                  style: const TextStyle(
+                                                  style: TextStyle(
                                                     fontSize: 16,
                                                     fontWeight: FontWeight.w600,
                                                     color: Colors.white,
@@ -792,7 +792,7 @@ class CustomerViewEditModal {
                                                           : Colors.green,
                                                       size: 16,
                                                     ),
-                                                    SizedBox(width: 8),
+                                                    const SizedBox(width: 8),
                                                     Expanded(
                                                       child: Text(
                                                         (customer['password'] ??
@@ -805,7 +805,7 @@ class CustomerViewEditModal {
                                                                     50
                                                             ? "Current password is encrypted (enter new password to update)"
                                                             : "Current password: ${customer['password'] ?? 'Not set'}",
-                                                        style: TextStyle(
+                                                        style: const TextStyle(
                                                           color: Colors.white70,
                                                           fontSize: 12,
                                                         ),
@@ -835,7 +835,7 @@ class CustomerViewEditModal {
                                                         ? "Enter new password (current is encrypted)"
                                                         : "Enter new password or leave blank")
                                                     : "",
-                                                hintStyle: TextStyle(
+                                                hintStyle: const TextStyle(
                                                     color: Colors.white54),
                                                 filled: true,
                                                 fillColor: Colors.black
@@ -902,10 +902,10 @@ class CustomerViewEditModal {
                                             ),
                                             child: Row(
                                               children: [
-                                                Icon(Icons.info_outline,
+                                                const Icon(Icons.info_outline,
                                                     color: Colors.blue,
                                                     size: 16),
-                                                SizedBox(width: 8),
+                                                const SizedBox(width: 8),
                                                 Expanded(
                                                   child: Text(
                                                     (customer['password'] ?? '')
@@ -917,7 +917,7 @@ class CustomerViewEditModal {
                                                                 50
                                                         ? "Current password is encrypted. Enter a new password to replace it. New passwords will be stored as plain text."
                                                         : "Enter a new password to change it, or leave blank to keep the current password. Passwords are stored as plain text.",
-                                                    style: TextStyle(
+                                                    style: const TextStyle(
                                                       color: Colors.blue,
                                                       fontSize: 12,
                                                       fontWeight:

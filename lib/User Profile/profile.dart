@@ -217,7 +217,8 @@ class _ProfilePageState extends State<ProfilePage> {
         _lastNameController.text != profileNotifier.value.lastName ||
         _contactController.text != profileNotifier.value.contactNumber ||
         _emailController.text != (profileNotifier.value.email ?? '') ||
-        _birthdate != profileNotifier.value.birthdate;
+        _birthdate != profileNotifier.value.birthdate ||
+        _passwordController.text.isNotEmpty; // Include password changes
   }
 
   // Add this method to check if address fields have changed
@@ -543,6 +544,33 @@ class _ProfilePageState extends State<ProfilePage> {
     final textFieldFontSize = isMobile ? 14.0 : 16.0;
 
     final List<Widget> leftColumnFields = [
+      // Main Profile Information Section Header
+      Container(
+        padding: const EdgeInsets.all(16),
+        margin: const EdgeInsets.only(bottom: 20),
+        decoration: BoxDecoration(
+          color: Colors.lightBlueAccent.withAlpha((0.1 * 255).toInt()),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: Colors.lightBlueAccent.withAlpha((0.3 * 255).toInt()),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.person, color: Colors.lightBlueAccent, size: 20),
+            const SizedBox(width: 8),
+            Text(
+              'Personal Information',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.lightBlueAccent,
+              ),
+            ),
+          ],
+        ),
+      ),
       _buildLabel('First Name', labelFontSize),
       _buildTextField(
         _firstNameController,
@@ -599,87 +627,145 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
       SizedBox(height: 18),
       _buildLabel('New Password (leave blank to keep current)', labelFontSize),
-      _buildTextField(
-        _passwordController,
-        'Enter new password to change',
+      TextField(
+        controller: _passwordController,
         obscureText: _obscurePassword,
-        readOnly: false,
-        suffixIcon: IconButton(
-          icon: Icon(
-            _obscurePassword ? Icons.visibility_off : Icons.visibility,
+        style: TextStyle(fontSize: textFieldFontSize, color: Colors.black87),
+        decoration: InputDecoration(
+          hintText: 'Enter new password to change',
+          filled: true,
+          fillColor: Colors.grey[50],
+          contentPadding: EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(color: Colors.grey[300]!),
           ),
-          onPressed: () {
-            setState(() {
-              _obscurePassword = !_obscurePassword;
-            });
-          },
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(color: Colors.black87, width: 1.5),
+          ),
+          suffixIcon: IconButton(
+            icon: Icon(
+              _obscurePassword ? Icons.visibility_off : Icons.visibility,
+              color: Colors.grey[600],
+            ),
+            onPressed: () {
+              setState(() {
+                _obscurePassword = !_obscurePassword;
+              });
+            },
+          ),
         ),
-        fontSize: textFieldFontSize,
       ),
       SizedBox(height: 24),
-      if (_hasChanges())
-        Row(
+      // Main Profile Save/Cancel Section
+      Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white.withAlpha((0.1 * 255).toInt()),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: Colors.white.withAlpha((0.2 * 255).toInt()),
+            width: 1,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.grey[300],
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  padding: buttonPadding,
-                ),
-                onPressed: () {
-                  setState(() {
-                    _firstNameController.text = profileNotifier.value.firstName;
-                    _middleNameController.text =
-                        profileNotifier.value.middleName;
-                    _lastNameController.text = profileNotifier.value.lastName;
-                    _contactController.text =
-                        profileNotifier.value.contactNumber;
-                    _emailController.text = profileNotifier.value.email ?? '';
-                    _birthdate = profileNotifier.value.birthdate;
-                    _imageFile = profileNotifier.value.imageFile;
-                    _passwordController.text = '';
-                    _emergencyNameController.text =
-                        profileNotifier.value.emergencyContactName ?? '';
-                    _emergencyPhoneController.text =
-                        profileNotifier.value.emergencyContactPhone ?? '';
-                  });
-                },
-                child: Text(
-                  'Cancel',
+            Row(
+              children: [
+                Icon(Icons.save, color: Colors.lightBlueAccent, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  'Save Profile Changes',
                   style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.lightBlueAccent,
                   ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.grey[300],
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: buttonPadding,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _firstNameController.text =
+                            profileNotifier.value.firstName;
+                        _middleNameController.text =
+                            profileNotifier.value.middleName;
+                        _lastNameController.text =
+                            profileNotifier.value.lastName;
+                        _contactController.text =
+                            profileNotifier.value.contactNumber;
+                        _emailController.text =
+                            profileNotifier.value.email ?? '';
+                        _birthdate = profileNotifier.value.birthdate;
+                        _imageFile = profileNotifier.value.imageFile;
+                        _passwordController.text = '';
+                        _emergencyNameController.text =
+                            profileNotifier.value.emergencyContactName ?? '';
+                        _emergencyPhoneController.text =
+                            profileNotifier.value.emergencyContactPhone ?? '';
+                      });
+                    },
+                    child: Text(
+                      'Cancel',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.lightBlueAccent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: buttonPadding,
+                    ),
+                    onPressed: _hasChanges() ? _saveProfileToServer : null,
+                    child: Text(
+                      'Save Profile',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            if (!_hasChanges()) ...[
+              const SizedBox(height: 8),
+              Text(
+                'No changes to save',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.white70,
+                  fontStyle: FontStyle.italic,
                 ),
               ),
-            ),
-            SizedBox(width: 12),
-            Expanded(
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  padding: buttonPadding,
-                ),
-                onPressed: _saveProfileToServer,
-                child: Text(
-                  'Save',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                ),
-              ),
-            ),
+            ],
           ],
         ),
+      ),
     ];
 
     final List<Widget> rightColumnFields = [
@@ -983,43 +1069,8 @@ class _ProfilePageState extends State<ProfilePage> {
                             ),
                             padding: buttonPadding,
                           ),
-                          onPressed: () {
-                            profileNotifier.value = ProfileData(
-                              imageFile: profileNotifier.value.imageFile,
-                              firstName: profileNotifier.value.firstName,
-                              middleName: profileNotifier.value.middleName,
-                              lastName: profileNotifier.value.lastName,
-                              contactNumber:
-                                  profileNotifier.value.contactNumber,
-                              email: profileNotifier.value.email,
-                              birthdate: profileNotifier.value.birthdate,
-                              password: profileNotifier.value.password,
-                              address: [
-                                    _streetController.text,
-                                    _cityController.text,
-                                    _stateProvinceController.text,
-                                    _postalCodeController.text,
-                                    _countryController.text,
-                                  ]
-                                  .map((e) => e.trim())
-                                  .where((e) => e.isNotEmpty)
-                                  .join(', '),
-                              street: _streetController.text,
-                              city: _cityController.text,
-                              stateProvince: _stateProvinceController.text,
-                              postalCode: _postalCodeController.text,
-                              country: _countryController.text,
-                              emergencyContactName:
-                                  profileNotifier.value.emergencyContactName,
-                              emergencyContactPhone:
-                                  profileNotifier.value.emergencyContactPhone,
-                            );
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Address information saved!'),
-                              ),
-                            );
-                            setState(() {});
+                          onPressed: () async {
+                            await _saveProfileToServer();
                           },
                           child: Text(
                             'Save',
@@ -1383,54 +1434,8 @@ class _ProfilePageState extends State<ProfilePage> {
                                           ),
                                           padding: buttonPadding,
                                         ),
-                                        onPressed: () {
-                                          profileNotifier.value = ProfileData(
-                                            imageFile:
-                                                profileNotifier.value.imageFile,
-                                            firstName:
-                                                profileNotifier.value.firstName,
-                                            middleName:
-                                                profileNotifier
-                                                    .value
-                                                    .middleName,
-                                            lastName:
-                                                profileNotifier.value.lastName,
-                                            contactNumber:
-                                                profileNotifier
-                                                    .value
-                                                    .contactNumber,
-                                            email: profileNotifier.value.email,
-                                            birthdate:
-                                                profileNotifier.value.birthdate,
-                                            password:
-                                                profileNotifier.value.password,
-                                            address: _addressController.text,
-                                            street: _streetController.text,
-                                            city: _cityController.text,
-                                            stateProvince:
-                                                _stateProvinceController.text,
-                                            postalCode:
-                                                _postalCodeController.text,
-                                            country: _countryController.text,
-                                            emergencyContactName:
-                                                profileNotifier
-                                                    .value
-                                                    .emergencyContactName,
-                                            emergencyContactPhone:
-                                                profileNotifier
-                                                    .value
-                                                    .emergencyContactPhone,
-                                          );
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            SnackBar(
-                                              content: Text(
-                                                'Address information saved!',
-                                              ),
-                                            ),
-                                          );
-                                          setState(() {});
+                                        onPressed: () async {
+                                          await _saveProfileToServer();
                                         },
                                         child: Text(
                                           'Save',
