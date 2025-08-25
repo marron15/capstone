@@ -11,6 +11,8 @@ class ApiService {
       '$baseUrl/customers/getAllCustomers.php';
   static const String deleteCustomerEndpoint =
       '$baseUrl/customers/deleteCustomersByID.php';
+  static const String updateCustomerEndpoint =
+      '$baseUrl/customers/updateCustomersByID.php';
 
   static Future<Map<String, dynamic>> signupCustomer({
     required String firstName,
@@ -207,6 +209,42 @@ class ApiService {
           'Accept': 'application/json',
         },
         body: jsonEncode({'id': id}),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      }
+
+      // Try to parse error
+      try {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      } catch (_) {
+        return {
+          'success': false,
+          'message': 'Server error: ${response.statusCode}',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Network error: $e',
+      };
+    }
+  }
+
+  // Update a customer by ID
+  static Future<Map<String, dynamic>> updateCustomer({
+    required int id,
+    required Map<String, dynamic> data,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse(updateCustomerEndpoint),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode({'id': id, ...data}),
       );
 
       if (response.statusCode == 200) {

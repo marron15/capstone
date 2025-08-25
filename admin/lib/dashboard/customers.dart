@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import '../sidenav.dart';
 import '../modal/customers_signup_modal.dart';
+import '../modal/customer_view_edit_modal.dart';
 import '../services/api_service.dart';
 
 class CustomersPage extends StatefulWidget {
@@ -135,6 +136,16 @@ class _CustomersPageState extends State<CustomersPage> {
       'customerId': customerData['customer_id'] ?? customerData['id'],
       'createdAt':
           customerData['customer_created_at'] ?? customerData['created_at'],
+      // Include original API data for the modal
+      'first_name': customerData['first_name'],
+      'last_name': customerData['last_name'],
+      'middle_name': customerData['middle_name'],
+      'phone_number': customerData['phone_number'],
+      'emergency_contact_name': customerData['emergency_contact_name'],
+      'emergency_contact_number': customerData['emergency_contact_number'],
+      // Address information (if available)
+      'address_details': customerData['address_details'],
+      'address': customerData['address'],
     };
   }
 
@@ -365,8 +376,16 @@ class _CustomersPageState extends State<CustomersPage> {
                                           fontSize: 16),
                                     ),
                                     TextButton(
-                                      onPressed: () {
-                                        // TODO: Implement view profile functionality
+                                      onPressed: () async {
+                                        // Show customer view/edit modal
+                                        final result =
+                                            await CustomerViewEditModal
+                                                .showCustomerModal(
+                                                    context, customer);
+                                        if (result == true) {
+                                          // Refresh the list if customer was updated
+                                          _loadCustomers();
+                                        }
                                       },
                                       style: TextButton.styleFrom(
                                         backgroundColor: Colors.blue.shade50,
@@ -585,8 +604,16 @@ class _CustomersPageState extends State<CustomersPage> {
                                               MainAxisAlignment.end,
                                           children: [
                                             TextButton(
-                                              onPressed: () {
-                                                // TODO: Implement view profile functionality
+                                              onPressed: () async {
+                                                // Show customer view/edit modal
+                                                final result =
+                                                    await CustomerViewEditModal
+                                                        .showCustomerModal(
+                                                            context, customer);
+                                                if (result == true) {
+                                                  // Refresh the list if customer was updated
+                                                  _loadCustomers();
+                                                }
                                               },
                                               style: TextButton.styleFrom(
                                                 backgroundColor:
