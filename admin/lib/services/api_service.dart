@@ -14,6 +14,11 @@ class ApiService {
       '$baseUrl/customers/deleteCustomersByID.php';
   static const String updateCustomerEndpoint =
       '$baseUrl/customers/updateCustomersByID.php';
+  // Address endpoints (these PHP scripts read from $_POST)
+  static const String insertAddressEndpoint =
+      '$baseUrl/address/insertAddress.php';
+  static const String updateAddressByIdEndpoint =
+      '$baseUrl/address/updatedAddressByID.php';
 
   static Future<Map<String, dynamic>> signupCustomer({
     required String firstName,
@@ -112,7 +117,7 @@ class ApiService {
         // Check if the response has the expected structure
         if (responseData['success'] == true) {
           // Return the response with customer ID for membership creation
-          return {
+          final result = {
             'success': true,
             'message':
                 responseData['message'] ?? 'Customer created successfully',
@@ -125,6 +130,7 @@ class ApiService {
             },
             'membership_created': responseData['membership_created'] ?? false,
           };
+          return result;
         } else {
           return {
             'success': false,
@@ -266,6 +272,76 @@ class ApiService {
         'success': false,
         'message': 'Network error: $e',
       };
+    }
+  }
+
+  // Insert address for a customer (expects form-encoded POST)
+  static Future<bool> insertCustomerAddress({
+    required int customerId,
+    required String street,
+    required String city,
+    String? state,
+    required String postalCode,
+    required String country,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse(insertAddressEndpoint),
+        headers: {
+          'Accept': 'application/json',
+        },
+        body: {
+          'customer_id': customerId.toString(),
+          'street': street,
+          'city': city,
+          'state': state ?? '',
+          // Backend endpoint expects zip_code, while class may use postal_code
+          'zip_code': postalCode,
+          'country': country,
+        },
+      );
+      debugPrint(
+          'insertAddress status: ${response.statusCode} body: ${response.body}');
+      // Many PHP scripts echo true/false or JSON; treat 200 as success
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('insertCustomerAddress error: $e');
+      return false;
+    }
+  }
+
+  // Update address by address id
+  static Future<bool> updateCustomerAddressById({
+    required int addressId,
+    required int customerId,
+    required String street,
+    required String city,
+    String? state,
+    required String postalCode,
+    required String country,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse(updateAddressByIdEndpoint),
+        headers: {
+          'Accept': 'application/json',
+        },
+        body: {
+          'id': addressId.toString(),
+          'customer_id': customerId.toString(),
+          'street': street,
+          'city': city,
+          'state': state ?? '',
+          'zip_code': postalCode,
+          'country': country,
+        },
+      );
+      debugPrint(
+          'updateAddress status: ${response.statusCode} body: ${response.body}');
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('updateCustomerAddressById error: $e');
+      return false;
     }
   }
 

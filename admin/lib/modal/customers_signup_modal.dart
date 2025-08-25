@@ -334,11 +334,37 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
       debugPrint('📡 API Response: $result');
 
       if (result['success'] == true && mounted) {
-        // Get customer ID from response
-        final customerId = result['customer']?['id'];
+        // Get customer ID from response (support multiple shapes)
+        final dynamic rawId = result['user']?['id'] ??
+            result['customer']?['id'] ??
+            result['data']?['customer_id'] ??
+            result['data']?['id'];
+        final int? customerId =
+            rawId is int ? rawId : int.tryParse(rawId?.toString() ?? '');
         final membershipCreated = result['membership_created'] ?? false;
 
         debugPrint('✅ Customer created successfully with ID: $customerId');
+
+        // If we have a valid customer id and address fields, insert address record
+        if (customerId != null) {
+          final hasAnyAddress = (_streetController.text.trim().isNotEmpty ||
+              _cityController.text.trim().isNotEmpty ||
+              _stateProvinceController.text.trim().isNotEmpty ||
+              _postalCodeController.text.trim().isNotEmpty ||
+              _countryController.text.trim().isNotEmpty);
+          if (hasAnyAddress) {
+            await ApiService.insertCustomerAddress(
+              customerId: customerId,
+              street: _streetController.text.trim(),
+              city: _cityController.text.trim(),
+              state: _stateProvinceController.text.trim().isNotEmpty
+                  ? _stateProvinceController.text.trim()
+                  : null,
+              postalCode: _postalCodeController.text.trim(),
+              country: _countryController.text.trim(),
+            );
+          }
+        }
         debugPrint('🎫 Membership created: $membershipCreated');
 
         Navigator.of(context).pop({

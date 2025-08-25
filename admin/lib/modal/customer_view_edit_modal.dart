@@ -144,17 +144,7 @@ class CustomerViewEditModal {
       });
 
       try {
-        // Prepare address string
-        List<String> addressParts = [
-          streetController.text.trim(),
-          cityController.text.trim(),
-          stateController.text.trim(),
-          postalCodeController.text.trim(),
-          countryController.text.trim(),
-        ].where((part) => part.isNotEmpty).toList();
-
-        String? address =
-            addressParts.isNotEmpty ? addressParts.join(', ') : null;
+        // Address upsert handled below via dedicated API; no local address string needed
 
         // Prepare update data
         final updateData = {
@@ -181,6 +171,49 @@ class CustomerViewEditModal {
           );
 
           if (result['success'] == true) {
+            // Upsert address using dedicated endpoints when customer id is known
+            final int? customerIdForAddress = customerId is int
+                ? customerId
+                : int.tryParse(customerId.toString());
+            if (customerIdForAddress != null) {
+              final hasAnyAddress = streetController.text.trim().isNotEmpty ||
+                  cityController.text.trim().isNotEmpty ||
+                  stateController.text.trim().isNotEmpty ||
+                  postalCodeController.text.trim().isNotEmpty ||
+                  countryController.text.trim().isNotEmpty;
+
+              if (hasAnyAddress) {
+                // If we have an existing address id on the customer object, update; else insert
+                final dynamic addressIdRaw = customer['address_details']?['id'];
+                final int? addressId = addressIdRaw is int
+                    ? addressIdRaw
+                    : int.tryParse(addressIdRaw?.toString() ?? '');
+                if (addressId != null) {
+                  await ApiService.updateCustomerAddressById(
+                    addressId: addressId,
+                    customerId: customerIdForAddress,
+                    street: streetController.text.trim(),
+                    city: cityController.text.trim(),
+                    state: stateController.text.trim().isNotEmpty
+                        ? stateController.text.trim()
+                        : null,
+                    postalCode: postalCodeController.text.trim(),
+                    country: countryController.text.trim(),
+                  );
+                } else {
+                  await ApiService.insertCustomerAddress(
+                    customerId: customerIdForAddress,
+                    street: streetController.text.trim(),
+                    city: cityController.text.trim(),
+                    state: stateController.text.trim().isNotEmpty
+                        ? stateController.text.trim()
+                        : null,
+                    postalCode: postalCodeController.text.trim(),
+                    country: countryController.text.trim(),
+                  );
+                }
+              }
+            }
             setModalState(() {
               isEditing = false;
               isLoading = false;
