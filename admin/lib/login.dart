@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dashboard/admin_profile.dart';
+import 'services/admin_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -9,15 +11,92 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-  final _accountController = TextEditingController();
+  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkLoginStatus();
+  }
+
+  // Check if admin is already logged in
+  Future<void> _checkLoginStatus() async {
+    try {
+      final isLoggedIn = await AdminService.isAdminLoggedIn();
+      if (isLoggedIn && mounted) {
+        _navigateToDashboard();
+      }
+    } catch (e) {
+      debugPrint('Error checking login status: $e');
+    }
+  }
 
   @override
   void dispose() {
-    _accountController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  // Handle login
+  Future<void> _handleLogin() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final result = await AdminService.loginAdmin(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
+
+      if (result['success'] == true && mounted) {
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                'Welcome back, ${result['admin']['first_name'] ?? 'Admin'}!'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+
+        // Navigate to dashboard
+        _navigateToDashboard();
+      } else {
+        setState(() {
+          _errorMessage = result['message'] ?? 'Login failed';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'An error occurred: $e';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  // Navigate to admin dashboard
+  void _navigateToDashboard() {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (context) => const AdminProfilePage(),
+      ),
+    );
   }
 
   @override
@@ -85,13 +164,13 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         const SizedBox(height: 32),
                         TextFormField(
-                          controller: _accountController,
+                          controller: _emailController,
                           style: const TextStyle(color: Colors.white),
                           decoration: InputDecoration(
-                            labelText: 'Account',
+                            labelText: 'Email',
                             labelStyle:
                                 TextStyle(color: Colors.greenAccent.shade100),
-                            prefixIcon: Icon(Icons.person,
+                            prefixIcon: Icon(Icons.email,
                                 color: Colors.greenAccent.shade100),
                             filled: true,
                             fillColor: const Color(0xFF232526),
@@ -106,7 +185,13 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Please enter your account';
+                              return 'Please enter your email';
+                            }
+                            // Email validation
+                            final emailRegex =
+                                RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                            if (!emailRegex.hasMatch(value.trim())) {
+                              return 'Please enter a valid email address';
                             }
                             return null;
                           },
@@ -150,6 +235,9 @@ class _LoginPageState extends State<LoginPage> {
                             if (value == null || value.isEmpty) {
                               return 'Please enter your password';
                             }
+                            if (value.length < 6) {
+                              return 'Password must be at least 6 characters';
+                            }
                             return null;
                           },
                         ),
@@ -165,15 +253,45 @@ class _LoginPageState extends State<LoginPage> {
                                     color: Colors.greenAccent.shade200)),
                           ),
                         ),
+                        // Error message display
+                        if (_errorMessage != null) ...[
+                          const SizedBox(height: 16),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.red.withAlpha(50),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: Colors.red.withAlpha(100),
+                                width: 1,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.error_outline,
+                                  color: Colors.red,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    _errorMessage!,
+                                    style: const TextStyle(
+                                      color: Colors.red,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: 24),
                         SizedBox(
                           height: 48,
                           child: ElevatedButton(
-                            onPressed: () {
-                              if (_formKey.currentState!.validate()) {
-                                // TODO: Implement login functionality
-                              }
-                            },
+                            onPressed: _isLoading ? null : _handleLogin,
                             style: ElevatedButton.styleFrom(
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(16),
@@ -182,13 +300,23 @@ class _LoginPageState extends State<LoginPage> {
                               foregroundColor: Colors.black,
                               elevation: 6,
                             ),
-                            child: const Text(
-                              'Login',
-                              style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 1),
-                            ),
+                            child: _isLoading
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                          Colors.black),
+                                    ),
+                                  )
+                                : const Text(
+                                    'Login',
+                                    style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        letterSpacing: 1),
+                                  ),
                           ),
                         ),
                       ],

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:io';
 import '../modal/admin_modal.dart';
+import '../services/admin_service.dart';
 
 class AdminProfileCard extends StatelessWidget {
   final Map<String, dynamic> admin;
@@ -138,7 +139,7 @@ class AdminProfileCard extends StatelessWidget {
               ],
             ),
           ),
-          child: _buildProfileImage(admin['profileImage']),
+          child: _buildProfileImage(admin['img'] ?? admin['profileImage']),
         ),
       ),
     );
@@ -149,22 +150,22 @@ class AdminProfileCard extends StatelessWidget {
     // Build full name with proper handling of missing parts
     List<String> nameParts = [];
 
-    // Add first name (required)
-    if (admin['firstName'] != null &&
-        admin['firstName'].toString().trim().isNotEmpty) {
-      nameParts.add(admin['firstName'].toString().trim());
+    // Add first name (required) - handle both API and local field names
+    final firstName = admin['first_name'] ?? admin['firstName'];
+    if (firstName != null && firstName.toString().trim().isNotEmpty) {
+      nameParts.add(firstName.toString().trim());
     }
 
-    // Add middle name (optional)
-    if (admin['middleName'] != null &&
-        admin['middleName'].toString().trim().isNotEmpty) {
-      nameParts.add(admin['middleName'].toString().trim());
+    // Add middle name (optional) - handle both API and local field names
+    final middleName = admin['middle_name'] ?? admin['middleName'];
+    if (middleName != null && middleName.toString().trim().isNotEmpty) {
+      nameParts.add(middleName.toString().trim());
     }
 
-    // Add last name (required)
-    if (admin['lastName'] != null &&
-        admin['lastName'].toString().trim().isNotEmpty) {
-      nameParts.add(admin['lastName'].toString().trim());
+    // Add last name (required) - handle both API and local field names
+    final lastName = admin['last_name'] ?? admin['lastName'];
+    if (lastName != null && lastName.toString().trim().isNotEmpty) {
+      nameParts.add(lastName.toString().trim());
     }
 
     // Join all parts with spaces
@@ -240,8 +241,9 @@ class AdminProfileCard extends StatelessWidget {
   // Enhanced contact information section
   Widget _buildContactInformation(bool isMobile, bool isDesktopGrid) {
     // Check if we have date of birth to limit the number of fields shown
-    final hasDateOfBirth = admin['dateOfBirth'] != null &&
-        admin['dateOfBirth'].toString().isNotEmpty;
+    final hasDateOfBirth = (admin['date_of_birth'] ?? admin['dateOfBirth']) !=
+            null &&
+        (admin['date_of_birth'] ?? admin['dateOfBirth']).toString().isNotEmpty;
 
     return Container(
       padding: EdgeInsets.all(isMobile ? 8 : 10),
@@ -257,7 +259,7 @@ class AdminProfileCard extends StatelessWidget {
           _buildEnhancedInfoRow(
             Icons.email_outlined,
             'Email',
-            admin['email'],
+            admin['email_address'] ?? admin['email'],
             Colors.blue,
             isMobile: isMobile,
             isCompact: isDesktopGrid,
@@ -266,7 +268,7 @@ class AdminProfileCard extends StatelessWidget {
           _buildEnhancedInfoRow(
             Icons.phone_outlined,
             'Contact',
-            admin['contactNumber'],
+            admin['phone_number'] ?? admin['contactNumber'],
             Colors.green,
             isMobile: isMobile,
             isCompact: isDesktopGrid,
@@ -277,7 +279,7 @@ class AdminProfileCard extends StatelessWidget {
             _buildEnhancedInfoRow(
               Icons.cake_outlined,
               'DOB',
-              admin['dateOfBirth'],
+              admin['date_of_birth'] ?? admin['dateOfBirth'],
               Colors.purple,
               isMobile: isMobile,
               isCompact: true,
@@ -287,7 +289,7 @@ class AdminProfileCard extends StatelessWidget {
           _buildEnhancedInfoRow(
             Icons.lock_outline,
             'Password',
-            admin['password'],
+            admin['password'] ?? '********',
             Colors.orange,
             isMobile: isMobile,
             isCompact: isDesktopGrid,
@@ -385,17 +387,35 @@ class AdminProfileCard extends StatelessWidget {
       admin,
       (updatedAdmin) {
         // Update the admin in the main list
-        admins[index] = updatedAdmin;
+        final adminIndex = admins.indexWhere((a) => a['id'] == admin['id']);
+        if (adminIndex != -1) {
+          admins[adminIndex] = updatedAdmin;
+        }
+
+        // Call the callback
         onEdit(updatedAdmin);
 
         // Update filtered admins list
         _updateFilteredList();
+
+        // Show success message
+        final firstName =
+            updatedAdmin['first_name'] ?? updatedAdmin['firstName'] ?? 'Admin';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$firstName updated successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
       },
     );
   }
 
   // Handle delete functionality
   void _handleDelete(BuildContext context) {
+    final firstName = admin['first_name'] ?? admin['firstName'] ?? 'Unknown';
+    final lastName = admin['last_name'] ?? admin['lastName'] ?? 'Admin';
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -411,7 +431,7 @@ class AdminProfileCard extends StatelessWidget {
             ],
           ),
           content: Text(
-            'Are you sure you want to delete ${admin['firstName']} ${admin['lastName']}? This action cannot be undone.',
+            'Are you sure you want to delete $firstName $lastName? This action cannot be undone.',
             style: const TextStyle(fontSize: 16),
           ),
           actions: [
@@ -425,10 +445,72 @@ class AdminProfileCard extends StatelessWidget {
               child: const Text('Cancel'),
             ),
             ElevatedButton(
-              onPressed: () {
-                onDelete(index);
-                _updateFilteredList();
+              onPressed: () async {
+                // Close the confirmation dialog
                 Navigator.of(context).pop();
+
+                // Show loading indicator
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Row(
+                      children: [
+                        SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                        SizedBox(width: 16),
+                        Text('Deleting admin...'),
+                      ],
+                    ),
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+
+                try {
+                  // Call the delete service
+                  final adminId = admin['id'];
+                  final success = await AdminService.deleteAdmin(adminId);
+
+                  // Check if widget is still mounted before using context
+                  if (!context.mounted) return;
+
+                  if (success) {
+                    // Show success message
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content:
+                            Text('$firstName $lastName deleted successfully!'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+
+                    // Call the callback to remove from the list
+                    onDelete(index);
+
+                    // Update filtered admins list
+                    _updateFilteredList();
+                  } else {
+                    // Show error message
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Failed to delete admin'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  // Check if widget is still mounted before using context
+                  if (!context.mounted) return;
+
+                  // Show error message
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error deleting admin: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red.shade600,
@@ -456,14 +538,32 @@ class AdminProfileCard extends StatelessWidget {
       filteredList = List.from(admins);
     } else {
       filteredList = admins.where((admin) {
-        return admin['firstName'].toLowerCase().contains(query) ||
-            (admin['middleName'] != null &&
-                admin['middleName'].toLowerCase().contains(query)) ||
-            admin['lastName'].toLowerCase().contains(query) ||
-            admin['email'].toLowerCase().contains(query) ||
-            admin['contactNumber'].toLowerCase().contains(query) ||
-            (admin['dateOfBirth'] != null &&
-                admin['dateOfBirth'].toLowerCase().contains(query));
+        final firstName = (admin['first_name'] ?? admin['firstName'] ?? '')
+            .toString()
+            .toLowerCase();
+        final middleName = (admin['middle_name'] ?? admin['middleName'] ?? '')
+            .toString()
+            .toLowerCase();
+        final lastName = (admin['last_name'] ?? admin['lastName'] ?? '')
+            .toString()
+            .toLowerCase();
+        final email = (admin['email_address'] ?? admin['email'] ?? '')
+            .toString()
+            .toLowerCase();
+        final phone = (admin['phone_number'] ?? admin['contactNumber'] ?? '')
+            .toString()
+            .toLowerCase();
+        final dateOfBirth =
+            (admin['date_of_birth'] ?? admin['dateOfBirth'] ?? '')
+                .toString()
+                .toLowerCase();
+
+        return firstName.contains(query) ||
+            middleName.contains(query) ||
+            lastName.contains(query) ||
+            email.contains(query) ||
+            phone.contains(query) ||
+            dateOfBirth.contains(query);
       }).toList();
     }
 

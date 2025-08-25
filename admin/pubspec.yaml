@@ -22,6 +22,9 @@ dependencies:
   # HTTP Client for API calls
   http: ^1.1.0                         # For making API requests
   
+  # Local Storage
+  shared_preferences: ^2.2.2           # For storing data locally
+  
   # Utilities
   jiffy: ^6.2.1                        # For date manipulation
   decimal: ^2.3.3                      # For precise decimal calculations

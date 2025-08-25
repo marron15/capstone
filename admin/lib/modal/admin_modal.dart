@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'dart:ui';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
+import '../services/admin_service.dart';
 
 class AdminModal {
   // Show the modal dialog for adding a new admin
@@ -23,6 +25,7 @@ class AdminModal {
     File? selectedImage;
     Uint8List? webImageBytes;
     DateTime? selectedDate;
+    bool isLoading = false;
 
     // Function to pick date
     Future<void> pickDate(StateSetter setModalState) async {
@@ -51,7 +54,7 @@ class AdminModal {
         setModalState(() {
           selectedDate = picked;
           dateOfBirthController.text =
-              "${picked.day}/${picked.month}/${picked.year}";
+              "${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}";
         });
       }
     }
@@ -93,16 +96,113 @@ class AdminModal {
     // Validate the form fields
     bool validateForm() {
       // Basic validation - check for empty fields
-      if (firstNameController.text.isEmpty ||
-          lastNameController.text.isEmpty ||
-          emailController.text.isEmpty ||
-          contactNumberController.text.isEmpty ||
+      if (firstNameController.text.trim().isEmpty ||
+          lastNameController.text.trim().isEmpty ||
+          emailController.text.trim().isEmpty ||
+          contactNumberController.text.trim().isEmpty ||
           passwordController.text.isEmpty ||
           dateOfBirthController.text.isEmpty) {
-        // Show error message or handle validation
         return false;
       }
+
+      // Email validation
+      final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+      if (!emailRegex.hasMatch(emailController.text.trim())) {
+        return false;
+      }
+
+      // Password validation
+      if (passwordController.text.length < 6) {
+        return false;
+      }
+
+      // Phone number validation (basic)
+      if (contactNumberController.text.trim().length < 10) {
+        return false;
+      }
+
       return true;
+    }
+
+    // Handle admin creation
+    Future<void> handleAdminCreation(StateSetter setModalState) async {
+      if (!validateForm()) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please fill all required fields correctly'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      setModalState(() {
+        isLoading = true;
+      });
+
+      try {
+        // Format date for API (DD/MM/YYYY to YYYY-MM-DD)
+        String? formattedDate;
+        if (dateOfBirthController.text.isNotEmpty) {
+          List<String> dateParts = dateOfBirthController.text.split('/');
+          if (dateParts.length == 3) {
+            formattedDate =
+                '${dateParts[2]}-${dateParts[1].padLeft(2, '0')}-${dateParts[0].padLeft(2, '0')}';
+          }
+        }
+
+        final result = await AdminService.signupAdmin(
+          firstName: firstNameController.text.trim(),
+          middleName: middleNameController.text.trim(),
+          lastName: lastNameController.text.trim(),
+          email: emailController.text.trim(),
+          password: passwordController.text,
+          dateOfBirth: formattedDate,
+          phoneNumber: contactNumberController.text.trim(),
+          profileImage: kIsWeb ? webImageBytes : selectedImage,
+        );
+
+        // Use setModalState to safely update UI after async operation
+        setModalState(() {
+          if (result['success'] == true) {
+            // Show success message
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                    'Admin ${firstNameController.text} created successfully!'),
+                backgroundColor: Colors.green,
+              ),
+            );
+
+            // Call the callback with the new admin data
+            onAdd(result['admin']);
+
+            // Close the modal
+            Navigator.of(context).pop();
+          } else {
+            // Show error message
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(result['message'] ?? 'Failed to create admin'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        });
+      } catch (e) {
+        setModalState(() {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        });
+      } finally {
+        setModalState(() {
+          isLoading = false;
+        });
+      }
     }
 
     // Build a form field with label
@@ -364,9 +464,11 @@ class AdminModal {
                                     children: [
                                       Expanded(
                                         child: ElevatedButton(
-                                          onPressed: () {
-                                            Navigator.of(context).pop();
-                                          },
+                                          onPressed: isLoading
+                                              ? null
+                                              : () {
+                                                  Navigator.of(context).pop();
+                                                },
                                           style: ElevatedButton.styleFrom(
                                             backgroundColor: Colors.red[400],
                                             foregroundColor: Colors.white,
@@ -383,31 +485,12 @@ class AdminModal {
                                       const SizedBox(width: 16),
                                       Expanded(
                                         child: ElevatedButton(
-                                          onPressed: () {
-                                            // Validate and add new admin
-                                            if (validateForm()) {
-                                              onAdd({
-                                                'firstName':
-                                                    firstNameController.text,
-                                                'middleName':
-                                                    middleNameController.text,
-                                                'lastName':
-                                                    lastNameController.text,
-                                                'dateOfBirth':
-                                                    dateOfBirthController.text,
-                                                'email': emailController.text,
-                                                'contactNumber':
-                                                    contactNumberController
-                                                        .text,
-                                                'password':
-                                                    '********', // Store actual hash in real app
-                                                'profileImage': kIsWeb
-                                                    ? webImageBytes
-                                                    : selectedImage,
-                                              });
-                                              Navigator.of(context).pop();
-                                            }
-                                          },
+                                          onPressed: isLoading
+                                              ? null
+                                              : () {
+                                                  handleAdminCreation(
+                                                      setModalState);
+                                                },
                                           style: ElevatedButton.styleFrom(
                                             backgroundColor: Colors.white,
                                             foregroundColor: Colors.black,
@@ -418,7 +501,20 @@ class AdminModal {
                                             padding: const EdgeInsets.symmetric(
                                                 vertical: 12),
                                           ),
-                                          child: const Text("Submit"),
+                                          child: isLoading
+                                              ? const SizedBox(
+                                                  width: 20,
+                                                  height: 20,
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                    strokeWidth: 2,
+                                                    valueColor:
+                                                        AlwaysStoppedAnimation<
+                                                                Color>(
+                                                            Colors.black),
+                                                  ),
+                                                )
+                                              : const Text("Submit"),
                                         ),
                                       ),
                                     ],
@@ -445,26 +541,25 @@ class AdminModal {
       Map<String, dynamic> admin, Function(Map<String, dynamic>) onEdit) {
     // Controllers for edit admin form
     final TextEditingController firstNameController =
-        TextEditingController(text: admin['firstName']);
-    final TextEditingController middleNameController =
-        TextEditingController(text: admin['middleName'] ?? '');
+        TextEditingController(text: admin['first_name'] ?? admin['firstName']);
+    final TextEditingController middleNameController = TextEditingController(
+        text: admin['middle_name'] ?? admin['middleName'] ?? '');
     final TextEditingController lastNameController =
-        TextEditingController(text: admin['lastName']);
+        TextEditingController(text: admin['last_name'] ?? admin['lastName']);
     final TextEditingController emailController =
-        TextEditingController(text: admin['email']);
-    final TextEditingController contactNumberController =
-        TextEditingController(text: admin['contactNumber']);
+        TextEditingController(text: admin['email_address'] ?? admin['email']);
+    final TextEditingController contactNumberController = TextEditingController(
+        text: admin['phone_number'] ?? admin['contactNumber']);
     final TextEditingController passwordController =
         TextEditingController(text: '********');
-    final TextEditingController dateOfBirthController =
-        TextEditingController(text: admin['dateOfBirth'] ?? '');
+    final TextEditingController dateOfBirthController = TextEditingController(
+        text: admin['date_of_birth'] ?? admin['dateOfBirth'] ?? '');
 
     // Image variables
-    File? selectedImage =
-        admin['profileImage'] is File ? admin['profileImage'] : null;
-    Uint8List? webImageBytes =
-        admin['profileImage'] is Uint8List ? admin['profileImage'] : null;
+    File? selectedImage = admin['img'] is File ? admin['img'] : null;
+    Uint8List? webImageBytes = admin['img'] is Uint8List ? admin['img'] : null;
     DateTime? selectedDate;
+    bool isLoading = false;
 
     // Function to pick date
     Future<void> pickDate(StateSetter setModalState) async {
@@ -492,7 +587,7 @@ class AdminModal {
         setModalState(() {
           selectedDate = picked;
           dateOfBirthController.text =
-              "${picked.day}/${picked.month}/${picked.year}";
+              "${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}";
         });
       }
     }
@@ -536,14 +631,143 @@ class AdminModal {
 
     // Validate the form fields
     bool validateForm() {
-      if (firstNameController.text.isEmpty ||
-          lastNameController.text.isEmpty ||
-          emailController.text.isEmpty ||
-          contactNumberController.text.isEmpty ||
+      if (firstNameController.text.trim().isEmpty ||
+          lastNameController.text.trim().isEmpty ||
+          emailController.text.trim().isEmpty ||
+          contactNumberController.text.trim().isEmpty ||
           dateOfBirthController.text.isEmpty) {
         return false;
       }
+
+      // Email validation
+      final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+      if (!emailRegex.hasMatch(emailController.text.trim())) {
+        return false;
+      }
+
+      // Phone number validation (basic)
+      if (contactNumberController.text.trim().length < 10) {
+        return false;
+      }
+
       return true;
+    }
+
+    // Handle admin update
+    Future<void> handleAdminUpdate(StateSetter setModalState) async {
+      if (!validateForm()) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please fill all required fields correctly'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      setModalState(() {
+        isLoading = true;
+      });
+
+      try {
+        // Convert date format if provided
+        String? formattedDate;
+        if (dateOfBirthController.text.isNotEmpty) {
+          List<String> dateParts = dateOfBirthController.text.split('/');
+          if (dateParts.length == 3) {
+            formattedDate =
+                '${dateParts[2]}-${dateParts[1].padLeft(2, '0')}-${dateParts[0].padLeft(2, '0')}';
+          }
+        }
+
+        // Prepare update data with proper field mapping
+        Map<String, dynamic> updateData = {
+          'firstName': firstNameController.text.trim(),
+          'middleName': middleNameController.text.trim(),
+          'lastName': lastNameController.text.trim(),
+          'dateOfBirth': formattedDate,
+          'emailAddress': emailController.text.trim(),
+          'phoneNumber': contactNumberController.text.trim(),
+          'updatedBy': 'system',
+          'updatedAt': DateTime.now().toIso8601String(),
+        };
+
+        // Handle profile image
+        if (webImageBytes != null || selectedImage != null) {
+          if (kIsWeb && webImageBytes != null) {
+            String base64Image = base64Encode(webImageBytes!);
+            updateData['img'] = 'data:image/jpeg;base64,$base64Image';
+          } else if (selectedImage != null) {
+            List<int> imageBytes = await selectedImage!.readAsBytes();
+            String base64Image = base64Encode(imageBytes);
+            updateData['img'] = 'data:image/jpeg;base64,$base64Image';
+          }
+        }
+
+        // Handle password update if changed
+        if (passwordController.text != '********' &&
+            passwordController.text.isNotEmpty) {
+          updateData['password'] = passwordController.text;
+        }
+
+        final adminId = admin['id'];
+        final success = await AdminService.updateAdmin(adminId, updateData);
+
+        // Use setModalState to safely update UI after async operation
+        setModalState(() {
+          if (success) {
+            // Show success message
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                    'Admin ${firstNameController.text} updated successfully!'),
+                backgroundColor: Colors.green,
+              ),
+            );
+
+            // Prepare updated admin data for callback
+            Map<String, dynamic> updatedAdmin = Map.from(admin);
+
+            // Map the updated fields back to the expected format
+            updatedAdmin['first_name'] = updateData['firstName'];
+            updatedAdmin['middle_name'] = updateData['middleName'];
+            updatedAdmin['last_name'] = updateData['lastName'];
+            updatedAdmin['date_of_birth'] = updateData['dateOfBirth'];
+            updatedAdmin['email_address'] = updateData['emailAddress'];
+            updatedAdmin['phone_number'] = updateData['phoneNumber'];
+            if (updateData['img'] != null) {
+              updatedAdmin['img'] = updateData['img'];
+            }
+
+            // Call the callback with the updated admin data
+            onEdit(updatedAdmin);
+
+            // Close the modal
+            Navigator.of(context).pop();
+          } else {
+            // Show error message
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Failed to update admin'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        });
+      } catch (e) {
+        setModalState(() {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        });
+      } finally {
+        setModalState(() {
+          isLoading = false;
+        });
+      }
     }
 
     Widget buildFormField(String label, TextEditingController controller,
@@ -804,9 +1028,11 @@ class AdminModal {
                                     children: [
                                       Expanded(
                                         child: ElevatedButton(
-                                          onPressed: () {
-                                            Navigator.of(context).pop();
-                                          },
+                                          onPressed: isLoading
+                                              ? null
+                                              : () {
+                                                  Navigator.of(context).pop();
+                                                },
                                           style: ElevatedButton.styleFrom(
                                             backgroundColor: Colors.red[400],
                                             foregroundColor: Colors.white,
@@ -823,36 +1049,12 @@ class AdminModal {
                                       const SizedBox(width: 16),
                                       Expanded(
                                         child: ElevatedButton(
-                                          onPressed: () {
-                                            if (validateForm()) {
-                                              onEdit({
-                                                'firstName':
-                                                    firstNameController.text,
-                                                'middleName':
-                                                    middleNameController.text,
-                                                'lastName':
-                                                    lastNameController.text,
-                                                'dateOfBirth':
-                                                    dateOfBirthController.text,
-                                                'email': emailController.text,
-                                                'contactNumber':
-                                                    contactNumberController
-                                                        .text,
-                                                'password':
-                                                    (passwordController.text !=
-                                                                '********' &&
-                                                            passwordController
-                                                                .text
-                                                                .isNotEmpty)
-                                                        ? '********'
-                                                        : admin['password'],
-                                                'profileImage': webImageBytes ??
-                                                    selectedImage ??
-                                                    admin['profileImage'],
-                                              });
-                                              Navigator.of(context).pop();
-                                            }
-                                          },
+                                          onPressed: isLoading
+                                              ? null
+                                              : () {
+                                                  handleAdminUpdate(
+                                                      setModalState);
+                                                },
                                           style: ElevatedButton.styleFrom(
                                             backgroundColor: Colors.white,
                                             foregroundColor: Colors.black,
@@ -863,7 +1065,20 @@ class AdminModal {
                                             padding: const EdgeInsets.symmetric(
                                                 vertical: 12),
                                           ),
-                                          child: const Text("Save"),
+                                          child: isLoading
+                                              ? const SizedBox(
+                                                  width: 20,
+                                                  height: 20,
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                    strokeWidth: 2,
+                                                    valueColor:
+                                                        AlwaysStoppedAnimation<
+                                                                Color>(
+                                                            Colors.black),
+                                                  ),
+                                                )
+                                              : const Text("Save"),
                                         ),
                                       ),
                                     ],
