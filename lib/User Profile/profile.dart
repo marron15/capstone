@@ -553,13 +553,6 @@ class _ProfilePageState extends State<ProfilePage> {
     final List<Widget> rightColumnFields = [
       _buildLabel('Address Information', sectionTitleFontSize),
       SizedBox(height: 8),
-      _buildLabel('Address', labelFontSize),
-      _buildTextField(
-        _addressController,
-        'Address',
-        fontSize: textFieldFontSize,
-      ),
-      SizedBox(height: 14),
       _buildLabel('Street', labelFontSize),
       _buildTextField(_streetController, 'Street', fontSize: textFieldFontSize),
       SizedBox(height: 14),
@@ -869,7 +862,16 @@ class _ProfilePageState extends State<ProfilePage> {
                               email: profileNotifier.value.email,
                               birthdate: profileNotifier.value.birthdate,
                               password: profileNotifier.value.password,
-                              address: _addressController.text,
+                              address: [
+                                    _streetController.text,
+                                    _cityController.text,
+                                    _stateProvinceController.text,
+                                    _postalCodeController.text,
+                                    _countryController.text,
+                                  ]
+                                  .map((e) => e.trim())
+                                  .where((e) => e.isNotEmpty)
+                                  .join(', '),
                               street: _streetController.text,
                               city: _cityController.text,
                               stateProvince: _stateProvinceController.text,

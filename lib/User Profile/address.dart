@@ -24,7 +24,6 @@ class AddressWidget extends StatefulWidget {
 }
 
 class _AddressWidgetState extends State<AddressWidget> {
-  late TextEditingController _addressController;
   late TextEditingController _streetController;
   late TextEditingController _cityController;
   late TextEditingController _stateProvinceController;
@@ -34,9 +33,7 @@ class _AddressWidgetState extends State<AddressWidget> {
   @override
   void initState() {
     super.initState();
-    _addressController = TextEditingController(
-      text: widget.profileData.address ?? '',
-    );
+
     _streetController = TextEditingController(
       text: widget.profileData.street ?? '',
     );
@@ -54,9 +51,23 @@ class _AddressWidgetState extends State<AddressWidget> {
     );
   }
 
+  @override
+  void didUpdateWidget(covariant AddressWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // When profile data is refreshed (e.g., after login), reflect new values
+    if (oldWidget.profileData != widget.profileData) {
+      _streetController.text = widget.profileData.street ?? '';
+      _cityController.text = widget.profileData.city ?? '';
+      _stateProvinceController.text = widget.profileData.stateProvince ?? '';
+      _postalCodeController.text = widget.profileData.postalCode ?? '';
+      _countryController.text = widget.profileData.country ?? '';
+
+      setState(() {});
+    }
+  }
+
   bool get _hasAddressChanges {
-    return _addressController.text != (widget.profileData.address ?? '') ||
-        _streetController.text != (widget.profileData.street ?? '') ||
+    return _streetController.text != (widget.profileData.street ?? '') ||
         _cityController.text != (widget.profileData.city ?? '') ||
         _stateProvinceController.text !=
             (widget.profileData.stateProvince ?? '') ||
@@ -66,7 +77,6 @@ class _AddressWidgetState extends State<AddressWidget> {
 
   void _cancel() {
     setState(() {
-      _addressController.text = widget.profileData.address ?? '';
       _streetController.text = widget.profileData.street ?? '';
       _cityController.text = widget.profileData.city ?? '';
       _stateProvinceController.text = widget.profileData.stateProvince ?? '';
@@ -77,7 +87,13 @@ class _AddressWidgetState extends State<AddressWidget> {
 
   void _save() {
     widget.onSave(
-      address: _addressController.text,
+      address: [
+        _streetController.text,
+        _cityController.text,
+        _stateProvinceController.text,
+        _postalCodeController.text,
+        _countryController.text,
+      ].map((e) => e.trim()).where((e) => e.isNotEmpty).join(', '),
       street: _streetController.text,
       city: _cityController.text,
       stateProvince: _stateProvinceController.text,
@@ -89,7 +105,6 @@ class _AddressWidgetState extends State<AddressWidget> {
 
   @override
   void dispose() {
-    _addressController.dispose();
     _streetController.dispose();
     _cityController.dispose();
     _stateProvinceController.dispose();
@@ -147,13 +162,7 @@ class _AddressWidgetState extends State<AddressWidget> {
       children: [
         _buildLabel('Address Information', 18.0),
         SizedBox(height: 8),
-        _buildLabel('Address', labelFontSize),
-        _buildTextField(
-          _addressController,
-          'Address',
-          fontSize: textFieldFontSize,
-        ),
-        SizedBox(height: 14),
+        // Removed single-line Address field
         _buildLabel('Street', labelFontSize),
         _buildTextField(
           _streetController,

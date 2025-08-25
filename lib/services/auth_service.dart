@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
 
 class AuthService {
   static const String baseUrl = 'http://localhost/sample_api/customers';
@@ -15,14 +16,20 @@ class AuthService {
       final Map<String, dynamic> responseData = json.decode(response.body);
 
       // Debug logging
-      print('🔍 Login API Response: $responseData');
-      print('🔍 Customer data: ${responseData['data']}');
+      debugPrint('🔍 Login API Response: $responseData');
+      debugPrint('🔍 Customer data: ${responseData['data']}');
 
       if (response.statusCode == 200 && responseData['success'] == true) {
+        // Enrich address if backend doesn't include it in `data.address`
+        CustomerData customer = CustomerData.fromJson(responseData['data']);
+        if (customer.address == null || customer.address!.isEmpty) {
+          final addr = await _fetchAddressForCustomer(customer.customerId);
+          if (addr != null) customer = customer.copyWith(address: addr);
+        }
         return LoginResult(
           success: true,
           message: responseData['message'],
-          customerData: CustomerData.fromJson(responseData['data']),
+          customerData: customer,
           accessToken: responseData['access_token'],
           refreshToken: responseData['refresh_token'],
         );
@@ -54,10 +61,15 @@ class AuthService {
 
       if ((response.statusCode == 200 || response.statusCode == 201) &&
           responseData['success'] == true) {
+        CustomerData customer = CustomerData.fromJson(responseData['data']);
+        if (customer.address == null || customer.address!.isEmpty) {
+          final addr = await _fetchAddressForCustomer(customer.customerId);
+          if (addr != null) customer = customer.copyWith(address: addr);
+        }
         return SignupResult(
           success: true,
           message: responseData['message'],
-          customerData: CustomerData.fromJson(responseData['data']),
+          customerData: customer,
           accessToken: responseData['access_token'],
           refreshToken: responseData['refresh_token'],
         );
@@ -114,10 +126,15 @@ class AuthService {
       final Map<String, dynamic> responseData = json.decode(response.body);
 
       if (response.statusCode == 200 && responseData['success'] == true) {
+        CustomerData customer = CustomerData.fromJson(responseData['data']);
+        if (customer.address == null || customer.address!.isEmpty) {
+          final addr = await _fetchAddressForCustomer(customer.customerId);
+          if (addr != null) customer = customer.copyWith(address: addr);
+        }
         return TokenValidationResult(
           success: true,
           message: responseData['message'],
-          customerData: CustomerData.fromJson(responseData['data']),
+          customerData: customer,
         );
       } else {
         return TokenValidationResult(
@@ -146,12 +163,17 @@ class AuthService {
       final Map<String, dynamic> responseData = json.decode(response.body);
 
       if (response.statusCode == 200 && responseData['success'] == true) {
+        CustomerData customer = CustomerData.fromJson(responseData['data']);
+        if (customer.address == null || customer.address!.isEmpty) {
+          final addr = await _fetchAddressForCustomer(customer.customerId);
+          if (addr != null) customer = customer.copyWith(address: addr);
+        }
         return RefreshTokenResult(
           success: true,
           message: responseData['message'],
           accessToken: responseData['access_token'],
           refreshToken: responseData['refresh_token'],
-          customerData: CustomerData.fromJson(responseData['data']),
+          customerData: customer,
         );
       } else {
         return RefreshTokenResult(
@@ -272,6 +294,39 @@ class CustomerData {
     this.createdAt,
   });
 
+  CustomerData copyWith({
+    int? customerId,
+    String? email,
+    String? firstName,
+    String? lastName,
+    String? middleName,
+    String? fullName,
+    String? phoneNumber,
+    String? birthdate,
+    String? address,
+    String? emergencyContactName,
+    String? emergencyContactNumber,
+    String? img,
+    String? createdAt,
+  }) {
+    return CustomerData(
+      customerId: customerId ?? this.customerId,
+      email: email ?? this.email,
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
+      middleName: middleName ?? this.middleName,
+      fullName: fullName ?? this.fullName,
+      phoneNumber: phoneNumber ?? this.phoneNumber,
+      birthdate: birthdate ?? this.birthdate,
+      address: address ?? this.address,
+      emergencyContactName: emergencyContactName ?? this.emergencyContactName,
+      emergencyContactNumber:
+          emergencyContactNumber ?? this.emergencyContactNumber,
+      img: img ?? this.img,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
   factory CustomerData.fromJson(Map<String, dynamic> json) {
     // Debug: Print the exact types we're receiving
     print('🔍 CustomerData.fromJson received: $json');
@@ -328,6 +383,42 @@ class CustomerData {
       'created_at': createdAt,
     };
   }
+}
+
+// Helper to fetch composed address for a customer from address table when not returned by login APIs
+Future<String?> _fetchAddressForCustomer(int customerId) async {
+  try {
+    final response = await http.get(
+      Uri.parse('http://localhost/sample_api/address/getAllAddress.php'),
+      headers: {'Accept': 'application/json'},
+    );
+    if (response.statusCode != 200) return null;
+    final dynamic data = json.decode(response.body);
+    if (data is List) {
+      final match = data.cast<Map>().firstWhere(
+        (e) => e['customer_id']?.toString() == customerId.toString(),
+        orElse: () => {},
+      );
+      if (match.isNotEmpty) {
+        final street = (match['street'] ?? '').toString().trim();
+        final city = (match['city'] ?? '').toString().trim();
+        final state = (match['state'] ?? '').toString().trim();
+        final zip =
+            (match['zip_code'] ?? match['postal_code'] ?? '').toString().trim();
+        final country = (match['country'] ?? '').toString().trim();
+        final parts =
+            [
+              street,
+              city,
+              state,
+              zip,
+              country,
+            ].where((p) => p.isNotEmpty).toList();
+        if (parts.isNotEmpty) return parts.join(', ');
+      }
+    }
+  } catch (_) {}
+  return null;
 }
 
 class SignupData {

@@ -117,6 +117,22 @@ class _LoginModalState extends State<LoginModal> with TickerProviderStateMixin {
           }
         }
 
+        // Parse composite address into parts for the profile form
+        String? fullAddress = result.customerData!.address;
+        String? street;
+        String? city;
+        String? stateProvince;
+        String? postalCode;
+        String? country;
+        if (fullAddress != null && fullAddress.trim().isNotEmpty) {
+          final parts = fullAddress.split(',').map((e) => e.trim()).toList();
+          if (parts.isNotEmpty) street = parts[0];
+          if (parts.length > 1) city = parts[1];
+          if (parts.length > 2) stateProvince = parts[2];
+          if (parts.length > 3) postalCode = parts[3];
+          if (parts.length > 4) country = parts[4];
+        }
+
         profileNotifier.value = ProfileData(
           firstName: result.customerData!.firstName,
           middleName: result.customerData!.middleName ?? '',
@@ -126,9 +142,12 @@ class _LoginModalState extends State<LoginModal> with TickerProviderStateMixin {
           birthdate: birthdateObj,
           emergencyContactName: result.customerData!.emergencyContactName,
           emergencyContactPhone: result.customerData!.emergencyContactNumber,
-          address: result.customerData!.address ?? '',
-          // Note: Image and detailed address fields would need separate handling
-          // since they're not stored in the basic customer table
+          address: fullAddress ?? '',
+          street: street,
+          city: city,
+          stateProvince: stateProvince,
+          postalCode: postalCode,
+          country: country,
         );
 
         if (mounted) {
