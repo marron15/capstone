@@ -36,8 +36,11 @@ class CustomerViewEditModal {
         TextEditingController(text: customer['emergency_contact_name'] ?? '');
     final TextEditingController emergencyPhoneController =
         TextEditingController(text: customer['emergency_contact_number'] ?? '');
+    // Handle password field - show hash as placeholder for existing customers, empty for new ones
+    // Note: We'll check this dynamically in the UI instead of storing it statically
+
     final TextEditingController passwordController =
-        TextEditingController(text: customer['password'] ?? '');
+        TextEditingController(text: '');
 
     // Handle address fields with fallbacks
     final TextEditingController streetController = TextEditingController(
@@ -186,6 +189,11 @@ class CustomerViewEditModal {
         debugPrint(
             'Using customer ID: $customerId (type: ${customerId.runtimeType})');
         debugPrint('Update data being sent: $updateData');
+        debugPrint('Password field value: "${passwordController.text}"');
+        debugPrint(
+            'Password field trimmed: "${passwordController.text.trim()}"');
+        debugPrint(
+            'Password field is empty: ${passwordController.text.trim().isEmpty}');
 
         // Add address details to update data
         final hasAnyAddress = streetController.text.trim().isNotEmpty ||
@@ -217,9 +225,44 @@ class CustomerViewEditModal {
         );
 
         debugPrint('Update customer API response: $result');
+        debugPrint('API response success: ${result['success']}');
+        debugPrint('API response message: ${result['message']}');
 
         if (result['success'] == true) {
-          // Success - reset state and close modal
+          // Success - update local customer data with new values
+          customer['first_name'] = firstNameController.text.trim();
+          customer['middle_name'] = middleNameController.text.trim();
+          customer['last_name'] = lastNameController.text.trim();
+          customer['email'] = emailController.text.trim();
+          customer['birthdate'] = birthdateController.text.trim();
+          customer['phone_number'] = contactController.text.trim();
+          customer['emergency_contact_name'] =
+              emergencyNameController.text.trim();
+          customer['emergency_contact_number'] =
+              emergencyPhoneController.text.trim();
+
+          // Update password if it was changed
+          if (passwordController.text.trim().isNotEmpty) {
+            customer['password'] = passwordController.text.trim();
+            debugPrint('Password updated to: ${customer['password']}');
+          }
+
+          // Update address details if they were changed
+          if (hasAnyAddress) {
+            customer['address_details'] = {
+              'street': streetController.text.trim(),
+              'city': cityController.text.trim(),
+              'state': stateController.text.trim(),
+              'postal_code': postalCodeController.text.trim(),
+              'country': countryController.text.trim(),
+            };
+          }
+
+          // Debug: Log updated customer data
+          debugPrint('Customer data after update: $customer');
+          debugPrint('Updated password: ${customer['password']}');
+
+          // Reset state
           setModalState(() {
             isEditing = false;
             isLoading = false;
@@ -671,7 +714,7 @@ class CustomerViewEditModal {
                                             Row(
                                               children: [
                                                 Text(
-                                                  "Password",
+                                                  "New Password",
                                                   style: const TextStyle(
                                                     fontSize: 16,
                                                     fontWeight: FontWeight.w600,
@@ -709,6 +752,70 @@ class CustomerViewEditModal {
                                               ],
                                             ),
                                             const SizedBox(height: 8),
+                                            // Show current password status
+                                            if (!isEditing) ...[
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.all(8),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.grey.withAlpha(
+                                                      (0.2 * 255).toInt()),
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                  border: Border.all(
+                                                      color: Colors.grey
+                                                          .withAlpha((0.4 * 255)
+                                                              .toInt())),
+                                                ),
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      (customer['password'] ??
+                                                                      '')
+                                                                  .startsWith(
+                                                                      '\$2y\$') &&
+                                                              (customer['password'] ??
+                                                                          '')
+                                                                      .length >
+                                                                  50
+                                                          ? Icons.lock
+                                                          : Icons.lock_open,
+                                                      color: (customer['password'] ??
+                                                                      '')
+                                                                  .startsWith(
+                                                                      '\$2y\$') &&
+                                                              (customer['password'] ??
+                                                                          '')
+                                                                      .length >
+                                                                  50
+                                                          ? Colors.orange
+                                                          : Colors.green,
+                                                      size: 16,
+                                                    ),
+                                                    SizedBox(width: 8),
+                                                    Expanded(
+                                                      child: Text(
+                                                        (customer['password'] ??
+                                                                        '')
+                                                                    .startsWith(
+                                                                        '\$2y\$') &&
+                                                                (customer['password'] ??
+                                                                            '')
+                                                                        .length >
+                                                                    50
+                                                            ? "Current password is encrypted (enter new password to update)"
+                                                            : "Current password: ${customer['password'] ?? 'Not set'}",
+                                                        style: TextStyle(
+                                                          color: Colors.white70,
+                                                          fontSize: 12,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                              const SizedBox(height: 8),
+                                            ],
                                             TextField(
                                               controller: passwordController,
                                               obscureText: !isPasswordVisible,
@@ -716,6 +823,20 @@ class CustomerViewEditModal {
                                               style: const TextStyle(
                                                   color: Colors.white),
                                               decoration: InputDecoration(
+                                                hintText: isEditing
+                                                    ? ((customer['password'] ??
+                                                                    '')
+                                                                .startsWith(
+                                                                    '\$2y\$') &&
+                                                            (customer['password'] ??
+                                                                        '')
+                                                                    .length >
+                                                                50
+                                                        ? "Enter new password (current is encrypted)"
+                                                        : "Enter new password or leave blank")
+                                                    : "",
+                                                hintStyle: TextStyle(
+                                                    color: Colors.white54),
                                                 filled: true,
                                                 fillColor: Colors.black
                                                     .withAlpha(
@@ -731,17 +852,6 @@ class CustomerViewEditModal {
                                                   borderSide: const BorderSide(
                                                     color:
                                                         Colors.lightBlueAccent,
-                                                    width: 2,
-                                                  ),
-                                                ),
-                                                enabledBorder:
-                                                    OutlineInputBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(14),
-                                                  borderSide: BorderSide(
-                                                    color: Colors.white
-                                                        .withAlpha((0.18 * 255)
-                                                            .toInt()),
                                                     width: 1.2,
                                                   ),
                                                 ),
@@ -776,6 +886,49 @@ class CustomerViewEditModal {
                                             ),
                                           ],
                                         ),
+                                        // Password instructions
+                                        if (isEditing) ...[
+                                          const SizedBox(height: 8),
+                                          Container(
+                                            padding: const EdgeInsets.all(12),
+                                            decoration: BoxDecoration(
+                                              color: Colors.blue.withAlpha(
+                                                  (0.1 * 255).toInt()),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              border: Border.all(
+                                                  color: Colors.blue.withAlpha(
+                                                      (0.3 * 255).toInt())),
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                Icon(Icons.info_outline,
+                                                    color: Colors.blue,
+                                                    size: 16),
+                                                SizedBox(width: 8),
+                                                Expanded(
+                                                  child: Text(
+                                                    (customer['password'] ?? '')
+                                                                .startsWith(
+                                                                    '\$2y\$') &&
+                                                            (customer['password'] ??
+                                                                        '')
+                                                                    .length >
+                                                                50
+                                                        ? "Current password is encrypted. Enter a new password to replace it. New passwords will be stored as plain text."
+                                                        : "Enter a new password to change it, or leave blank to keep the current password. Passwords are stored as plain text.",
+                                                    style: TextStyle(
+                                                      color: Colors.blue,
+                                                      fontSize: 12,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
                                         const SizedBox(height: 20),
                                         Row(
                                           children: [
@@ -915,8 +1068,7 @@ class CustomerViewEditModal {
                                                             'emergency_contact_number'] ??
                                                         '';
                                                     passwordController.text =
-                                                        customer['password'] ??
-                                                            '';
+                                                        ''; // Clear password field (don't show hash)
                                                     streetController
                                                         .text = customer[
                                                                 'address_details']
