@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
+import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
@@ -109,37 +110,49 @@ class AdminModal {
         {bool isPassword = false,
         bool isReadOnly = false,
         VoidCallback? onTap}) {
-      return Row(
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 150,
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.black87,
-              ),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 16,
+              color: Colors.white,
+              fontWeight: FontWeight.w500,
             ),
           ),
-          Expanded(
-            child: TextField(
-              controller: controller,
-              obscureText: isPassword,
-              readOnly: isReadOnly,
-              onTap: onTap,
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: Colors.grey[200],
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                suffixIcon: isReadOnly
-                    ? const Icon(Icons.calendar_today, size: 20)
-                    : null,
+          const SizedBox(height: 8),
+          TextField(
+            controller: controller,
+            obscureText: isPassword,
+            readOnly: isReadOnly,
+            onTap: onTap,
+            style: const TextStyle(color: Colors.white),
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: Colors.black.withAlpha((0.3 * 255).toInt()),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide.none,
               ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide:
+                    const BorderSide(color: Colors.lightBlueAccent, width: 2),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(
+                  color: Colors.white.withAlpha((0.18 * 255).toInt()),
+                  width: 1.2,
+                ),
+              ),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              suffixIcon: isReadOnly
+                  ? const Icon(Icons.calendar_today,
+                      size: 20, color: Colors.white70)
+                  : null,
             ),
           ),
         ],
@@ -148,65 +161,54 @@ class AdminModal {
 
     // Build image upload section
     Widget buildImageUploadSection(StateSetter setModalState) {
-      return Row(
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(
-            height: 180,
-            width: 150,
-            child: Text(
-              'Profile Image:',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.black87,
-              ),
+          const Text(
+            'Profile Image:',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.white,
+              fontWeight: FontWeight.w500,
             ),
           ),
-          Expanded(
-            child: Column(
-              children: [
-                Container(
-                  height: 180,
-                  width: 150,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey[400]!),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: (kIsWeb && webImageBytes != null)
-                        ? Image.memory(
-                            webImageBytes!,
-                            fit: BoxFit.cover,
-                          )
-                        : (selectedImage != null)
-                            ? Image.file(
-                                selectedImage!,
-                                fit: BoxFit.cover,
-                              )
-                            : const Icon(
-                                Icons.person,
-                                size: 50,
-                                color: Colors.grey,
-                              ),
-                  ),
+          const SizedBox(height: 12),
+          Center(
+            child: CircleAvatar(
+              radius: 60,
+              backgroundColor: Colors.white24,
+              backgroundImage: (kIsWeb && webImageBytes != null)
+                  ? MemoryImage(webImageBytes!)
+                  : (selectedImage != null)
+                      ? FileImage(selectedImage!) as ImageProvider
+                      : null,
+              child: (kIsWeb && webImageBytes == null && selectedImage == null)
+                  ? IconButton(
+                      icon: const Icon(
+                        Icons.camera_alt,
+                        color: Colors.white,
+                        size: 40,
+                      ),
+                      onPressed: () => pickImage(setModalState),
+                    )
+                  : null,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Center(
+            child: ElevatedButton.icon(
+              onPressed: () => pickImage(setModalState),
+              icon: const Icon(Icons.upload, size: 16),
+              label: const Text('Upload Image'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.black,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
                 ),
-                const SizedBox(height: 8),
-                ElevatedButton.icon(
-                  onPressed: () => pickImage(setModalState),
-                  icon: const Icon(Icons.upload, size: 16),
-                  label: const Text('Upload Image'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  ),
-                ),
-              ],
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              ),
             ),
           ),
         ],
@@ -219,94 +221,216 @@ class AdminModal {
         return StatefulBuilder(
           builder: (context, setModalState) {
             return Dialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Container(
-                width: 500,
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Add New Admin',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
+              backgroundColor: Colors.transparent,
+              insetPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+              child: Center(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(22),
+                  child: Stack(
+                    children: [
+                      // Glassmorphism effect
+                      BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                        child: Container(
+                          width: MediaQuery.of(context).size.width < 600
+                              ? MediaQuery.of(context).size.width * 0.99
+                              : 600,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(22),
+                            color: Colors.black.withAlpha((0.7 * 255).toInt()),
+                            border: Border.all(
+                              color:
+                                  Colors.white.withAlpha((0.25 * 255).toInt()),
+                              width: 1.5,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.blueAccent.withAlpha(
+                                  (0.18 * 255).toInt(),
+                                ),
+                                blurRadius: 32,
+                                spreadRadius: 2,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 38,
+                              vertical: 36,
+                            ),
+                            child: SingleChildScrollView(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Row(
+                                          children: [
+                                            Container(
+                                              width: 36,
+                                              height: 36,
+                                              decoration: BoxDecoration(
+                                                shape: BoxShape.circle,
+                                                gradient: LinearGradient(
+                                                  colors: [
+                                                    Colors.blueAccent.withAlpha(
+                                                      (0.25 * 255).toInt(),
+                                                    ),
+                                                    Colors.lightBlueAccent
+                                                        .withAlpha(
+                                                      (0.18 * 255).toInt(),
+                                                    ),
+                                                  ],
+                                                  begin: Alignment.topLeft,
+                                                  end: Alignment.bottomRight,
+                                                ),
+                                              ),
+                                              child: const Icon(
+                                                Icons.admin_panel_settings,
+                                                color: Colors.lightBlueAccent,
+                                                size: 24,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 12),
+                                            const Flexible(
+                                              child: Text(
+                                                'Add New Admin',
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 20,
+                                                  color: Colors.white,
+                                                  letterSpacing: 0.2,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(
+                                          Icons.close,
+                                          size: 26,
+                                          color: Colors.white,
+                                        ),
+                                        onPressed: () =>
+                                            Navigator.of(context).pop(),
+                                        tooltip: 'Close',
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 1),
+                                  Container(
+                                    margin: const EdgeInsets.only(bottom: 20),
+                                    child: Divider(
+                                      thickness: 1.5,
+                                      color: Colors.lightBlueAccent.withAlpha(
+                                        (0.22 * 255).toInt(),
+                                      ),
+                                      height: 24,
+                                      endIndent: 12,
+                                      indent: 2,
+                                    ),
+                                  ),
+                                  buildImageUploadSection(setModalState),
+                                  const SizedBox(height: 24),
+                                  buildFormField(
+                                      "First Name:", firstNameController),
+                                  const SizedBox(height: 16),
+                                  buildFormField(
+                                      "Middle Name:", middleNameController),
+                                  const SizedBox(height: 16),
+                                  buildFormField(
+                                      "Last Name:", lastNameController),
+                                  const SizedBox(height: 16),
+                                  buildFormField(
+                                      "Date of Birth:", dateOfBirthController,
+                                      isReadOnly: true,
+                                      onTap: () => pickDate(setModalState)),
+                                  const SizedBox(height: 16),
+                                  buildFormField("Email:", emailController),
+                                  const SizedBox(height: 16),
+                                  buildFormField("Contact Number:",
+                                      contactNumberController),
+                                  const SizedBox(height: 16),
+                                  buildFormField(
+                                      "Password:", passwordController,
+                                      isPassword: true),
+                                  const SizedBox(height: 24),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: ElevatedButton(
+                                          onPressed: () {
+                                            Navigator.of(context).pop();
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.red[400],
+                                            foregroundColor: Colors.white,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(14),
+                                            ),
+                                            padding: const EdgeInsets.symmetric(
+                                                vertical: 12),
+                                          ),
+                                          child: const Text("Cancel"),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 16),
+                                      Expanded(
+                                        child: ElevatedButton(
+                                          onPressed: () {
+                                            // Validate and add new admin
+                                            if (validateForm()) {
+                                              onAdd({
+                                                'firstName':
+                                                    firstNameController.text,
+                                                'middleName':
+                                                    middleNameController.text,
+                                                'lastName':
+                                                    lastNameController.text,
+                                                'dateOfBirth':
+                                                    dateOfBirthController.text,
+                                                'email': emailController.text,
+                                                'contactNumber':
+                                                    contactNumberController
+                                                        .text,
+                                                'password':
+                                                    '********', // Store actual hash in real app
+                                                'profileImage': kIsWeb
+                                                    ? webImageBytes
+                                                    : selectedImage,
+                                              });
+                                              Navigator.of(context).pop();
+                                            }
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.white,
+                                            foregroundColor: Colors.black,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(14),
+                                            ),
+                                            padding: const EdgeInsets.symmetric(
+                                                vertical: 12),
+                                          ),
+                                          child: const Text("Submit"),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    buildImageUploadSection(setModalState),
-                    const SizedBox(height: 12),
-                    buildFormField("First name:", firstNameController),
-                    const SizedBox(height: 12),
-                    buildFormField("Middle name:", middleNameController),
-                    const SizedBox(height: 12),
-                    buildFormField("Last name:", lastNameController),
-                    const SizedBox(height: 12),
-                    buildFormField("Date of Birth:", dateOfBirthController,
-                        isReadOnly: true, onTap: () => pickDate(setModalState)),
-                    const SizedBox(height: 12),
-                    buildFormField("Email:", emailController),
-                    const SizedBox(height: 12),
-                    buildFormField("Contact Number:", contactNumberController),
-                    const SizedBox(height: 12),
-                    buildFormField("Password:", passwordController,
-                        isPassword: true),
-                    const SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        TextButton(
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                          },
-                          style: TextButton.styleFrom(
-                            backgroundColor: Colors.red[400],
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 24, vertical: 12),
-                          ),
-                          child: const Text("Cancel"),
-                        ),
-                        const SizedBox(width: 16),
-                        TextButton(
-                          onPressed: () {
-                            // Validate and add new admin
-                            if (validateForm()) {
-                              onAdd({
-                                'firstName': firstNameController.text,
-                                'middleName': middleNameController.text,
-                                'lastName': lastNameController.text,
-                                'dateOfBirth': dateOfBirthController.text,
-                                'email': emailController.text,
-                                'contactNumber': contactNumberController.text,
-                                'password':
-                                    '********', // Store actual hash in real app
-                                'profileImage':
-                                    kIsWeb ? webImageBytes : selectedImage,
-                              });
-                              Navigator.of(context).pop();
-                            }
-                          },
-                          style: TextButton.styleFrom(
-                            backgroundColor: Colors.green,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 24, vertical: 12),
-                          ),
-                          child: const Text("Submit"),
-                        ),
-                      ],
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             );
@@ -426,37 +550,49 @@ class AdminModal {
         {bool isPassword = false,
         bool isReadOnly = false,
         VoidCallback? onTap}) {
-      return Row(
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 150,
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.black87,
-              ),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 16,
+              color: Colors.white,
+              fontWeight: FontWeight.w500,
             ),
           ),
-          Expanded(
-            child: TextField(
-              controller: controller,
-              obscureText: isPassword,
-              readOnly: isReadOnly,
-              onTap: onTap,
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: Colors.grey[200],
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                suffixIcon: isReadOnly
-                    ? const Icon(Icons.calendar_today, size: 20)
-                    : null,
+          const SizedBox(height: 8),
+          TextField(
+            controller: controller,
+            obscureText: isPassword,
+            readOnly: isReadOnly,
+            onTap: onTap,
+            style: const TextStyle(color: Colors.white),
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: Colors.black.withAlpha((0.3 * 255).toInt()),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide.none,
               ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide:
+                    const BorderSide(color: Colors.lightBlueAccent, width: 2),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(
+                  color: Colors.white.withAlpha((0.18 * 255).toInt()),
+                  width: 1.2,
+                ),
+              ),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              suffixIcon: isReadOnly
+                  ? const Icon(Icons.calendar_today,
+                      size: 20, color: Colors.white70)
+                  : null,
             ),
           ),
         ],
@@ -465,64 +601,54 @@ class AdminModal {
 
     // Build image upload section
     Widget buildImageUploadSection(StateSetter setModalState) {
-      return Row(
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(
-            width: 150,
-            child: Text(
-              'Profile Image:',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.black87,
-              ),
+          const Text(
+            'Profile Image:',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.white,
+              fontWeight: FontWeight.w500,
             ),
           ),
-          Expanded(
-            child: Column(
-              children: [
-                Container(
-                  height: 120,
-                  width: 120,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey[400]!),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: (kIsWeb && webImageBytes != null)
-                        ? Image.memory(
-                            webImageBytes!,
-                            fit: BoxFit.cover,
-                          )
-                        : (selectedImage != null)
-                            ? Image.file(
-                                selectedImage!,
-                                fit: BoxFit.cover,
-                              )
-                            : const Icon(
-                                Icons.person,
-                                size: 50,
-                                color: Colors.grey,
-                              ),
-                  ),
+          const SizedBox(height: 12),
+          Center(
+            child: CircleAvatar(
+              radius: 60,
+              backgroundColor: Colors.white24,
+              backgroundImage: (kIsWeb && webImageBytes != null)
+                  ? MemoryImage(webImageBytes!)
+                  : (selectedImage != null)
+                      ? FileImage(selectedImage!) as ImageProvider
+                      : null,
+              child: (kIsWeb && webImageBytes == null && selectedImage == null)
+                  ? IconButton(
+                      icon: const Icon(
+                        Icons.camera_alt,
+                        color: Colors.white,
+                        size: 40,
+                      ),
+                      onPressed: () => pickImage(setModalState),
+                    )
+                  : null,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Center(
+            child: ElevatedButton.icon(
+              onPressed: () => pickImage(setModalState),
+              icon: const Icon(Icons.upload, size: 16),
+              label: const Text('Change Image'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.black,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
                 ),
-                const SizedBox(height: 8),
-                ElevatedButton.icon(
-                  onPressed: () => pickImage(setModalState),
-                  icon: const Icon(Icons.upload, size: 16),
-                  label: const Text('Change Image'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  ),
-                ),
-              ],
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              ),
             ),
           ),
         ],
@@ -535,97 +661,221 @@ class AdminModal {
         return StatefulBuilder(
           builder: (context, setModalState) {
             return Dialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Container(
-                width: 500,
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Edit Admin',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
+              backgroundColor: Colors.transparent,
+              insetPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+              child: Center(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(22),
+                  child: Stack(
+                    children: [
+                      // Glassmorphism effect
+                      BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                        child: Container(
+                          width: MediaQuery.of(context).size.width < 600
+                              ? MediaQuery.of(context).size.width * 0.99
+                              : 600,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(22),
+                            color: Colors.black.withAlpha((0.7 * 255).toInt()),
+                            border: Border.all(
+                              color:
+                                  Colors.white.withAlpha((0.25 * 255).toInt()),
+                              width: 1.5,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.blueAccent.withAlpha(
+                                  (0.18 * 255).toInt(),
+                                ),
+                                blurRadius: 32,
+                                spreadRadius: 2,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 38,
+                              vertical: 36,
+                            ),
+                            child: SingleChildScrollView(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Row(
+                                          children: [
+                                            Container(
+                                              width: 36,
+                                              height: 36,
+                                              decoration: BoxDecoration(
+                                                shape: BoxShape.circle,
+                                                gradient: LinearGradient(
+                                                  colors: [
+                                                    Colors.blueAccent.withAlpha(
+                                                      (0.25 * 255).toInt(),
+                                                    ),
+                                                    Colors.lightBlueAccent
+                                                        .withAlpha(
+                                                      (0.18 * 255).toInt(),
+                                                    ),
+                                                  ],
+                                                  begin: Alignment.topLeft,
+                                                  end: Alignment.bottomRight,
+                                                ),
+                                              ),
+                                              child: const Icon(
+                                                Icons.edit,
+                                                color: Colors.lightBlueAccent,
+                                                size: 24,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 12),
+                                            const Flexible(
+                                              child: Text(
+                                                'Edit Admin',
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 20,
+                                                  color: Colors.white,
+                                                  letterSpacing: 0.2,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(
+                                          Icons.close,
+                                          size: 26,
+                                          color: Colors.white,
+                                        ),
+                                        onPressed: () =>
+                                            Navigator.of(context).pop(),
+                                        tooltip: 'Close',
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 1),
+                                  Container(
+                                    margin: const EdgeInsets.only(bottom: 20),
+                                    child: Divider(
+                                      thickness: 1.5,
+                                      color: Colors.lightBlueAccent.withAlpha(
+                                        (0.22 * 255).toInt(),
+                                      ),
+                                      height: 24,
+                                      endIndent: 12,
+                                      indent: 2,
+                                    ),
+                                  ),
+                                  buildImageUploadSection(setModalState),
+                                  const SizedBox(height: 24),
+                                  buildFormField(
+                                      "First Name:", firstNameController),
+                                  const SizedBox(height: 16),
+                                  buildFormField(
+                                      "Middle Name:", middleNameController),
+                                  const SizedBox(height: 16),
+                                  buildFormField(
+                                      "Last Name:", lastNameController),
+                                  const SizedBox(height: 16),
+                                  buildFormField(
+                                      "Date of Birth:", dateOfBirthController,
+                                      isReadOnly: true,
+                                      onTap: () => pickDate(setModalState)),
+                                  const SizedBox(height: 16),
+                                  buildFormField("Email:", emailController),
+                                  const SizedBox(height: 16),
+                                  buildFormField("Contact Number:",
+                                      contactNumberController),
+                                  const SizedBox(height: 16),
+                                  buildFormField(
+                                      "Password:", passwordController,
+                                      isPassword: true),
+                                  const SizedBox(height: 24),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: ElevatedButton(
+                                          onPressed: () {
+                                            Navigator.of(context).pop();
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.red[400],
+                                            foregroundColor: Colors.white,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(14),
+                                            ),
+                                            padding: const EdgeInsets.symmetric(
+                                                vertical: 12),
+                                          ),
+                                          child: const Text("Cancel"),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 16),
+                                      Expanded(
+                                        child: ElevatedButton(
+                                          onPressed: () {
+                                            if (validateForm()) {
+                                              onEdit({
+                                                'firstName':
+                                                    firstNameController.text,
+                                                'middleName':
+                                                    middleNameController.text,
+                                                'lastName':
+                                                    lastNameController.text,
+                                                'dateOfBirth':
+                                                    dateOfBirthController.text,
+                                                'email': emailController.text,
+                                                'contactNumber':
+                                                    contactNumberController
+                                                        .text,
+                                                'password':
+                                                    (passwordController.text !=
+                                                                '********' &&
+                                                            passwordController
+                                                                .text
+                                                                .isNotEmpty)
+                                                        ? '********'
+                                                        : admin['password'],
+                                                'profileImage': webImageBytes ??
+                                                    selectedImage ??
+                                                    admin['profileImage'],
+                                              });
+                                              Navigator.of(context).pop();
+                                            }
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.white,
+                                            foregroundColor: Colors.black,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(14),
+                                            ),
+                                            padding: const EdgeInsets.symmetric(
+                                                vertical: 12),
+                                          ),
+                                          child: const Text("Save"),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    buildImageUploadSection(setModalState),
-                    const SizedBox(height: 12),
-                    buildFormField("First name:", firstNameController),
-                    const SizedBox(height: 12),
-                    buildFormField("Middle name:", middleNameController),
-                    const SizedBox(height: 12),
-                    buildFormField("Last name:", lastNameController),
-                    const SizedBox(height: 12),
-                    buildFormField("Date of Birth:", dateOfBirthController,
-                        isReadOnly: true, onTap: () => pickDate(setModalState)),
-                    const SizedBox(height: 12),
-                    buildFormField("Email:", emailController),
-                    const SizedBox(height: 12),
-                    buildFormField("Contact Number:", contactNumberController),
-                    const SizedBox(height: 12),
-                    buildFormField("Password:", passwordController,
-                        isPassword: true),
-                    const SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        TextButton(
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                          },
-                          style: TextButton.styleFrom(
-                            backgroundColor: Colors.red[400],
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 24, vertical: 12),
-                          ),
-                          child: const Text("Cancel"),
-                        ),
-                        const SizedBox(width: 16),
-                        TextButton(
-                          onPressed: () {
-                            if (validateForm()) {
-                              onEdit({
-                                'firstName': firstNameController.text,
-                                'middleName': middleNameController.text,
-                                'lastName': lastNameController.text,
-                                'dateOfBirth': dateOfBirthController.text,
-                                'email': emailController.text,
-                                'contactNumber': contactNumberController.text,
-                                'password':
-                                    (passwordController.text != '********' &&
-                                            passwordController.text.isNotEmpty)
-                                        ? '********'
-                                        : admin['password'],
-                                'profileImage': webImageBytes ??
-                                    selectedImage ??
-                                    admin['profileImage'],
-                              });
-                              Navigator.of(context).pop();
-                            }
-                          },
-                          style: TextButton.styleFrom(
-                            backgroundColor: Colors.blue,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 24, vertical: 12),
-                          ),
-                          child: const Text("Save"),
-                        ),
-                      ],
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             );
