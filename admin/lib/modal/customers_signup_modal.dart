@@ -7,7 +7,7 @@ import 'package:file_picker/file_picker.dart';
 import '../services/api_service.dart';
 
 class AdminSignUpModal extends StatefulWidget {
-  const AdminSignUpModal({Key? key}) : super(key: key);
+  const AdminSignUpModal({super.key});
 
   @override
   State<AdminSignUpModal> createState() => _AdminSignUpModalState();
@@ -295,7 +295,7 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
       // Call the API to create customer
       String password = _passwordController.text;
 
-      print('🔄 Creating customer account...');
+      debugPrint('🔄 Creating customer account...');
       final result = await ApiService.signupCustomer(
         firstName: firstName,
         lastName: lastName,
@@ -331,15 +331,15 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
             .split('T')[0], // Format as YYYY-MM-DD
       );
 
-      print('📡 API Response: $result');
+      debugPrint('📡 API Response: $result');
 
       if (result['success'] == true && mounted) {
         // Get customer ID from response
         final customerId = result['customer']?['id'];
         final membershipCreated = result['membership_created'] ?? false;
 
-        print('✅ Customer created successfully with ID: $customerId');
-        print('🎫 Membership created: $membershipCreated');
+        debugPrint('✅ Customer created successfully with ID: $customerId');
+        debugPrint('🎫 Membership created: $membershipCreated');
 
         Navigator.of(context).pop({
           'success': true,
@@ -413,14 +413,14 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
         // API call failed
         final errorMessage =
             result['message'] ?? 'Failed to create customer account.';
-        print('❌ Signup failed: $errorMessage');
+        debugPrint('❌ Signup failed: $errorMessage');
 
         setState(() {
           _signupError = errorMessage;
         });
       }
     } catch (e) {
-      print('❌ Unexpected error during signup: $e');
+      debugPrint('❌ Unexpected error during signup: $e');
       setState(() {
         _signupError = 'An unexpected error occurred. Please try again.';
       });
@@ -527,7 +527,7 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
                                           },
                                         ),
                                         const SizedBox(width: 12),
-                                        Flexible(
+                                        const Flexible(
                                           child: Text(
                                             'Add New Customer',
                                             style: TextStyle(
@@ -630,7 +630,7 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
                                         fontSize: 16,
                                       ),
                                     ),
-                                    SizedBox(height: 10),
+                                    const SizedBox(height: 10),
                                     DropdownButtonFormField<String>(
                                       value: _selectedMonth,
                                       decoration: _inputDecoration(

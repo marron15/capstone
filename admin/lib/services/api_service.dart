@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
 
 class ApiService {
   // Base URL for your API - adjust this to match your XAMPP setup
@@ -90,8 +91,8 @@ class ApiService {
         requestBody['expiration_date'] = expirationDate;
       }
 
-      print('Sending signup request to: $signupEndpoint');
-      print('Request body: ${jsonEncode(requestBody)}');
+      debugPrint('Sending signup request to: $signupEndpoint');
+      debugPrint('Request body: ${jsonEncode(requestBody)}');
 
       final response = await http.post(
         Uri.parse(signupEndpoint),
@@ -102,8 +103,8 @@ class ApiService {
         body: jsonEncode(requestBody),
       );
 
-      print('Response status: ${response.statusCode}');
-      print('Response body: ${response.body}');
+      debugPrint('Response status: ${response.statusCode}');
+      debugPrint('Response body: ${response.body}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
@@ -146,7 +147,7 @@ class ApiService {
         }
       }
     } catch (e) {
-      print('Error in signupCustomer: $e');
+      debugPrint('Error in signupCustomer: $e');
       return {
         'success': false,
         'message': 'Network error: $e',
@@ -157,7 +158,7 @@ class ApiService {
   // Fetch all customers from the database
   static Future<Map<String, dynamic>> getAllCustomers() async {
     try {
-      print('Fetching customers from: $getAllCustomersEndpoint');
+      debugPrint('Fetching customers from: $getAllCustomersEndpoint');
 
       final response = await http.get(
         Uri.parse(getAllCustomersEndpoint),
@@ -167,8 +168,8 @@ class ApiService {
         },
       );
 
-      print('Response status: ${response.statusCode}');
-      print('Response body: ${response.body}');
+      debugPrint('Response status: ${response.statusCode}');
+      debugPrint('Response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
@@ -189,7 +190,7 @@ class ApiService {
         }
       }
     } catch (e) {
-      print('Error in getAllCustomers: $e');
+      debugPrint('Error in getAllCustomers: $e');
       return {
         'success': false,
         'message': 'Network error: $e',
@@ -280,7 +281,7 @@ class ApiService {
       );
       return response.statusCode == 200;
     } catch (e) {
-      print('API connection check failed: $e');
+      debugPrint('API connection check failed: $e');
       return false;
     }
   }

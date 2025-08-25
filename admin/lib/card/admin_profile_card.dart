@@ -13,7 +13,7 @@ class AdminProfileCard extends StatelessWidget {
   final Function(List<Map<String, dynamic>>) updateFilteredAdmins;
 
   const AdminProfileCard({
-    Key? key,
+    super.key,
     required this.admin,
     required this.index,
     required this.onEdit,
@@ -21,7 +21,7 @@ class AdminProfileCard extends StatelessWidget {
     required this.searchController,
     required this.admins,
     required this.updateFilteredAdmins,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +33,7 @@ class AdminProfileCard extends StatelessWidget {
       margin: EdgeInsets.only(bottom: isMobile ? 15 : 20),
       child: Card(
         elevation: 10,
-        shadowColor: Colors.black.withOpacity(0.15),
+        shadowColor: Colors.black.withValues(alpha: 0.15),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
@@ -119,7 +119,7 @@ class AdminProfileCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -309,7 +309,7 @@ class AdminProfileCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -546,7 +546,7 @@ class AdminProfileCard extends StatelessWidget {
         Container(
           padding: EdgeInsets.all(isMobile || isCompact ? 3 : 4),
           decoration: BoxDecoration(
-            color: iconColor.withOpacity(0.1),
+            color: iconColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(4),
           ),
           child: Icon(

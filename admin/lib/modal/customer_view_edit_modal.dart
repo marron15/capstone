@@ -10,8 +10,8 @@ class CustomerViewEditModal {
   // Show the modal dialog for viewing and editing a customer
   static Future<bool> showCustomerModal(
       BuildContext context, Map<String, dynamic> customer) async {
-    // Debug: Print customer data
-    print('Customer data passed to modal: $customer');
+    // Debug: Log customer data
+    debugPrint('Customer data passed to modal: $customer');
 
     // Controllers for customer form
     final TextEditingController firstNameController =
@@ -81,7 +81,7 @@ class CustomerViewEditModal {
         builder: (context, child) {
           return Theme(
             data: Theme.of(context).copyWith(
-              colorScheme: ColorScheme.light(
+              colorScheme: const ColorScheme.light(
                 primary: Colors.blue,
                 onPrimary: Colors.white,
                 surface: Colors.white,
@@ -186,16 +186,16 @@ class CustomerViewEditModal {
               isLoading = false;
             });
 
-            // Show success message
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Customer updated successfully'),
-                backgroundColor: Colors.green,
-              ),
-            );
-
-            // Close modal and refresh customer list
-            Navigator.of(context).pop(true);
+            // Show success message and close modal
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Customer updated successfully'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+              Navigator.of(context).pop(true);
+            }
           } else {
             setModalState(() {
               errorMessage = result['message'] ?? 'Failed to update customer';
@@ -551,15 +551,15 @@ class CustomerViewEditModal {
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        Row(
+                                        const Row(
                                           children: [
                                             Icon(
                                               Icons.person,
                                               color: Colors.lightBlueAccent,
                                               size: 24,
                                             ),
-                                            const SizedBox(width: 12),
-                                            const Text(
+                                            SizedBox(width: 12),
+                                            Text(
                                               'Personal Information',
                                               style: TextStyle(
                                                 fontSize: 18,
@@ -653,15 +653,15 @@ class CustomerViewEditModal {
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        Row(
+                                        const Row(
                                           children: [
                                             Icon(
                                               Icons.location_on,
                                               color: Colors.lightBlueAccent,
                                               size: 24,
                                             ),
-                                            const SizedBox(width: 12),
-                                            const Text(
+                                            SizedBox(width: 12),
+                                            Text(
                                               'Address Information',
                                               style: TextStyle(
                                                 fontSize: 18,

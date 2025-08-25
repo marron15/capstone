@@ -35,7 +35,7 @@ class AdminModal {
         builder: (context, child) {
           return Theme(
             data: Theme.of(context).copyWith(
-              colorScheme: ColorScheme.light(
+              colorScheme: const ColorScheme.light(
                 primary: Colors.blue,
                 onPrimary: Colors.white,
                 surface: Colors.white,
@@ -353,7 +353,7 @@ class AdminModal {
         builder: (context, child) {
           return Theme(
             data: Theme.of(context).copyWith(
-              colorScheme: ColorScheme.light(
+              colorScheme: const ColorScheme.light(
                 primary: Colors.blue,
                 onPrimary: Colors.white,
                 surface: Colors.white,

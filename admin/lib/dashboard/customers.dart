@@ -50,6 +50,7 @@ class _CustomersPageState extends State<CustomersPage> {
       final int id =
           idVal is int ? idVal : int.tryParse(idVal.toString()) ?? -1;
       if (id <= 0) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Invalid customer ID')),
         );
@@ -62,6 +63,7 @@ class _CustomersPageState extends State<CustomersPage> {
         await _loadCustomers();
       } else {
         setState(() => _isLoading = false);
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content: Text(res['message'] ?? 'Failed to delete customer')),
@@ -556,14 +558,14 @@ class _CustomersPageState extends State<CustomersPage> {
                                       Expanded(
                                           flex: 3,
                                           child: Padding(
-                                            padding: EdgeInsets.symmetric(
+                                            padding: const EdgeInsets.symmetric(
                                                 vertical: 14),
                                             child: Text(customer['name'] ?? ''),
                                           )),
                                       Expanded(
                                           flex: 3,
                                           child: Padding(
-                                            padding: EdgeInsets.symmetric(
+                                            padding: const EdgeInsets.symmetric(
                                                 vertical: 14),
                                             child: Text(
                                                 customer['contactNumber'] ??
@@ -572,7 +574,7 @@ class _CustomersPageState extends State<CustomersPage> {
                                       Expanded(
                                         flex: 3,
                                         child: Padding(
-                                          padding: EdgeInsets.symmetric(
+                                          padding: const EdgeInsets.symmetric(
                                               vertical: 14),
                                           child: Text(
                                             membershipType,
@@ -585,7 +587,7 @@ class _CustomersPageState extends State<CustomersPage> {
                                       Expanded(
                                         flex: 3,
                                         child: Padding(
-                                          padding: EdgeInsets.symmetric(
+                                          padding: const EdgeInsets.symmetric(
                                               vertical: 14),
                                           child: Text(
                                             remainingTime,

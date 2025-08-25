@@ -399,7 +399,6 @@ class _ProfilePageState extends State<ProfilePage> {
             ? const EdgeInsets.symmetric(horizontal: 12.0, vertical: 18.0)
             : const EdgeInsets.symmetric(horizontal: 32.0, vertical: 36.0);
     final titleFontSize = isMobile ? 26.0 : 36.0;
-    final subtitleFontSize = isMobile ? 14.0 : 16.0;
     final sectionTitleFontSize = isMobile ? 15.0 : 18.0;
     final buttonPadding =
         isMobile
