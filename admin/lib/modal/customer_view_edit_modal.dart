@@ -36,6 +36,8 @@ class CustomerViewEditModal {
         TextEditingController(text: customer['emergency_contact_name'] ?? '');
     final TextEditingController emergencyPhoneController =
         TextEditingController(text: customer['emergency_contact_number'] ?? '');
+    final TextEditingController passwordController =
+        TextEditingController(text: customer['password'] ?? '');
 
     // Handle address fields with fallbacks
     final TextEditingController streetController = TextEditingController(
@@ -71,6 +73,7 @@ class CustomerViewEditModal {
     // State variables
     bool isEditing = false;
     bool isLoading = false;
+    bool isPasswordVisible = false;
     String? errorMessage;
     DateTime? selectedDate;
     File? selectedImage;
@@ -151,7 +154,7 @@ class CustomerViewEditModal {
 
       try {
         // Prepare update data
-        final updateData = {
+        final Map<String, dynamic> updateData = {
           'first_name': firstNameController.text.trim(),
           'middle_name': middleNameController.text.trim(),
           'last_name': lastNameController.text.trim(),
@@ -160,6 +163,9 @@ class CustomerViewEditModal {
           'phone_number': contactController.text.trim(),
           'emergency_contact_name': emergencyNameController.text.trim(),
           'emergency_contact_number': emergencyPhoneController.text.trim(),
+          'password': passwordController.text.trim().isNotEmpty
+              ? passwordController.text.trim()
+              : null,
           'updated_by': 'admin',
           'updated_at': DateTime.now().toIso8601String(),
         };
@@ -181,7 +187,24 @@ class CustomerViewEditModal {
             'Using customer ID: $customerId (type: ${customerId.runtimeType})');
         debugPrint('Update data being sent: $updateData');
 
-        final result = await ApiService.updateCustomer(
+        // Add address details to update data
+        final hasAnyAddress = streetController.text.trim().isNotEmpty ||
+            cityController.text.trim().isNotEmpty ||
+            stateController.text.trim().isNotEmpty ||
+            postalCodeController.text.trim().isNotEmpty ||
+            countryController.text.trim().isNotEmpty;
+
+        if (hasAnyAddress) {
+          updateData['address_details'] = {
+            'street': streetController.text.trim(),
+            'city': cityController.text.trim(),
+            'state': stateController.text.trim(),
+            'postal_code': postalCodeController.text.trim(),
+            'country': countryController.text.trim(),
+          };
+        }
+
+        final result = await ApiService.updateCustomerByAdmin(
           id: customerId is int
               ? customerId
               : int.tryParse(customerId.toString()) ?? -1,
@@ -196,82 +219,6 @@ class CustomerViewEditModal {
         debugPrint('Update customer API response: $result');
 
         if (result['success'] == true) {
-          // Handle address update/insert with timeout
-          try {
-            final int? customerIdForAddress = customerId is int
-                ? customerId
-                : int.tryParse(customerId.toString());
-
-            if (customerIdForAddress != null) {
-              final hasAnyAddress = streetController.text.trim().isNotEmpty ||
-                  cityController.text.trim().isNotEmpty ||
-                  stateController.text.trim().isNotEmpty ||
-                  postalCodeController.text.trim().isNotEmpty ||
-                  countryController.text.trim().isNotEmpty;
-
-              if (hasAnyAddress) {
-                // If we have an existing address id on the customer object, update; else insert
-                final dynamic addressIdRaw = customer['address_details']?['id'];
-                final int? addressId = addressIdRaw is int
-                    ? addressIdRaw
-                    : int.tryParse(addressIdRaw?.toString() ?? '');
-
-                debugPrint(
-                    'Address operation - customerId: $customerIdForAddress, addressId: $addressId');
-                debugPrint(
-                    'Address data - street: ${streetController.text.trim()}, city: ${cityController.text.trim()}, state: ${stateController.text.trim()}, postalCode: ${postalCodeController.text.trim()}, country: ${countryController.text.trim()}');
-
-                if (addressId != null) {
-                  // Update existing address with timeout
-                  debugPrint('Updating existing address with ID: $addressId');
-                  await ApiService.updateCustomerAddressById(
-                    addressId: addressId,
-                    customerId: customerIdForAddress,
-                    street: streetController.text.trim(),
-                    city: cityController.text.trim(),
-                    state: stateController.text.trim().isNotEmpty
-                        ? stateController.text.trim()
-                        : null,
-                    postalCode: postalCodeController.text.trim(),
-                    country: countryController.text.trim(),
-                  ).timeout(
-                    const Duration(seconds: 15),
-                    onTimeout: () {
-                      throw TimeoutException(
-                          'Address update timed out after 15 seconds');
-                    },
-                  );
-                  debugPrint('Address updated successfully');
-                } else {
-                  // Insert new address with timeout
-                  debugPrint(
-                      'Inserting new address for customer: $customerIdForAddress');
-                  await ApiService.insertCustomerAddress(
-                    customerId: customerIdForAddress,
-                    street: streetController.text.trim(),
-                    city: cityController.text.trim(),
-                    state: stateController.text.trim().isNotEmpty
-                        ? stateController.text.trim()
-                        : null,
-                    postalCode: postalCodeController.text.trim(),
-                    country: countryController.text.trim(),
-                  ).timeout(
-                    const Duration(seconds: 15),
-                    onTimeout: () {
-                      throw TimeoutException(
-                          'Address insert timed out after 15 seconds');
-                    },
-                  );
-                  debugPrint('Address inserted successfully');
-                }
-              }
-            }
-          } catch (addressError) {
-            // Log address error but don't fail the entire operation
-            debugPrint('Address update error: $addressError');
-            // Continue with customer update success
-          }
-
           // Success - reset state and close modal
           setModalState(() {
             isEditing = false;
@@ -550,6 +497,8 @@ class CustomerViewEditModal {
                                           onPressed: () {
                                             setModalState(() {
                                               isEditing = true;
+                                              isPasswordVisible =
+                                                  false; // Reset password visibility when entering edit mode
                                             });
                                           },
                                           icon:
@@ -714,6 +663,120 @@ class CustomerViewEditModal {
                                           ],
                                         ),
                                         const SizedBox(height: 20),
+                                        // Password field with visibility toggle
+                                        Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Text(
+                                                  "Password",
+                                                  style: const TextStyle(
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: Colors.white,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 8),
+                                                // Password visibility toggle button
+                                                if (isEditing)
+                                                  IconButton(
+                                                    onPressed: () {
+                                                      setModalState(() {
+                                                        isPasswordVisible =
+                                                            !isPasswordVisible;
+                                                      });
+                                                    },
+                                                    icon: Icon(
+                                                      isPasswordVisible
+                                                          ? Icons.visibility_off
+                                                          : Icons.visibility,
+                                                      color: Colors
+                                                          .lightBlueAccent,
+                                                      size: 20,
+                                                    ),
+                                                    tooltip: isPasswordVisible
+                                                        ? 'Hide password'
+                                                        : 'Show password',
+                                                    padding: EdgeInsets.zero,
+                                                    constraints:
+                                                        const BoxConstraints(
+                                                      minWidth: 32,
+                                                      minHeight: 32,
+                                                    ),
+                                                  ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 8),
+                                            TextField(
+                                              controller: passwordController,
+                                              obscureText: !isPasswordVisible,
+                                              readOnly: !isEditing,
+                                              style: const TextStyle(
+                                                  color: Colors.white),
+                                              decoration: InputDecoration(
+                                                filled: true,
+                                                fillColor: Colors.black
+                                                    .withAlpha(
+                                                        (0.3 * 255).toInt()),
+                                                border: OutlineInputBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(14),
+                                                ),
+                                                focusedBorder:
+                                                    OutlineInputBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(14),
+                                                  borderSide: const BorderSide(
+                                                    color:
+                                                        Colors.lightBlueAccent,
+                                                    width: 2,
+                                                  ),
+                                                ),
+                                                enabledBorder:
+                                                    OutlineInputBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(14),
+                                                  borderSide: BorderSide(
+                                                    color: Colors.white
+                                                        .withAlpha((0.18 * 255)
+                                                            .toInt()),
+                                                    width: 1.2,
+                                                  ),
+                                                ),
+                                                contentPadding:
+                                                    const EdgeInsets.symmetric(
+                                                  horizontal: 16,
+                                                  vertical: 14,
+                                                ),
+                                                suffixIcon: isEditing
+                                                    ? IconButton(
+                                                        onPressed: () {
+                                                          setModalState(() {
+                                                            isPasswordVisible =
+                                                                !isPasswordVisible;
+                                                          });
+                                                        },
+                                                        icon: Icon(
+                                                          isPasswordVisible
+                                                              ? Icons
+                                                                  .visibility_off
+                                                              : Icons
+                                                                  .visibility,
+                                                          color: Colors.white70,
+                                                          size: 20,
+                                                        ),
+                                                        tooltip: isPasswordVisible
+                                                            ? 'Hide password'
+                                                            : 'Show password',
+                                                      )
+                                                    : null,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 20),
                                         Row(
                                           children: [
                                             Expanded(
@@ -820,6 +883,8 @@ class CustomerViewEditModal {
                                               : () {
                                                   setModalState(() {
                                                     isEditing = false;
+                                                    isPasswordVisible =
+                                                        false; // Reset password visibility
                                                     // Reset form to original values
                                                     firstNameController.text =
                                                         customer[
@@ -849,6 +914,9 @@ class CustomerViewEditModal {
                                                         .text = customer[
                                                             'emergency_contact_number'] ??
                                                         '';
+                                                    passwordController.text =
+                                                        customer['password'] ??
+                                                            '';
                                                     streetController
                                                         .text = customer[
                                                                 'address_details']

@@ -10,10 +10,14 @@ class ApiService {
   static const String signupEndpoint = '$baseUrl/customers/Signup.php';
   static const String getAllCustomersEndpoint =
       '$baseUrl/customers/getAllCustomers.php';
+  static const String getAllCustomersByAdminEndpoint =
+      '$baseUrl/customers/getAllCustomersByAdmin.php';
   static const String deleteCustomerEndpoint =
       '$baseUrl/customers/deleteCustomersByID.php';
   static const String updateCustomerEndpoint =
       '$baseUrl/customers/updateCustomersByID.php';
+  static const String updateCustomerByAdminEndpoint =
+      '$baseUrl/customers/updateCustomerByAdmin.php';
   // Address endpoints (these PHP scripts read from $_POST)
   static const String insertAddressEndpoint =
       '$baseUrl/address/insertAddress.php';
@@ -161,7 +165,7 @@ class ApiService {
     }
   }
 
-  // Fetch all customers from the database
+  // Fetch all customers from the database (without passwords)
   static Future<Map<String, dynamic>> getAllCustomers() async {
     try {
       debugPrint('Fetching customers from: $getAllCustomersEndpoint');
@@ -197,6 +201,50 @@ class ApiService {
       }
     } catch (e) {
       debugPrint('Error in getAllCustomers: $e');
+      return {
+        'success': false,
+        'message': 'Network error: $e',
+      };
+    }
+  }
+
+  // Fetch all customers with passwords (admin access)
+  static Future<Map<String, dynamic>> getAllCustomersWithPasswords() async {
+    try {
+      debugPrint(
+          'Fetching customers with passwords from: $getAllCustomersByAdminEndpoint');
+
+      final response = await http.get(
+        Uri.parse(getAllCustomersByAdminEndpoint),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      );
+
+      debugPrint('Response status: ${response.statusCode}');
+      debugPrint('Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = jsonDecode(response.body);
+        return responseData;
+      } else {
+        // Try to parse error response
+        try {
+          final Map<String, dynamic> errorData = jsonDecode(response.body);
+          return {
+            'success': false,
+            'message': errorData['message'] ?? 'Unknown error occurred',
+          };
+        } catch (e) {
+          return {
+            'success': false,
+            'message': 'Server error: ${response.statusCode}',
+          };
+        }
+      }
+    } catch (e) {
+      debugPrint('Error in getAllCustomersWithPasswords: $e');
       return {
         'success': false,
         'message': 'Network error: $e',
@@ -247,6 +295,42 @@ class ApiService {
     try {
       final response = await http.post(
         Uri.parse(updateCustomerEndpoint),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode({'id': id, ...data}),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      }
+
+      // Try to parse error
+      try {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      } catch (_) {
+        return {
+          'success': false,
+          'message': 'Server error: ${response.statusCode}',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Network error: $e',
+      };
+    }
+  }
+
+  // Update a customer by ID (admin version - can update password)
+  static Future<Map<String, dynamic>> updateCustomerByAdmin({
+    required int id,
+    required Map<String, dynamic> data,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse(updateCustomerByAdminEndpoint),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',

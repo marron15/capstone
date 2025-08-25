@@ -115,8 +115,9 @@ class _CustomersPageState extends State<CustomersPage> {
     });
 
     try {
-      debugPrint('_loadCustomers: Calling API to get all customers...');
-      final result = await ApiService.getAllCustomers();
+      debugPrint(
+          '_loadCustomers: Calling API to get all customers with passwords...');
+      final result = await ApiService.getAllCustomersWithPasswords();
       debugPrint('_loadCustomers: API result: $result');
 
       if (result['success'] == true && result['data'] != null) {
@@ -202,6 +203,8 @@ class _CustomersPageState extends State<CustomersPage> {
       // Address information (if available)
       'address_details': customerData['address_details'],
       'address': customerData['address'],
+      // Include password for admin editing
+      'password': customerData['password'],
     };
   }
 

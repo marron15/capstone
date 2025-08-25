@@ -244,6 +244,7 @@ class AuthState extends ChangeNotifier {
             stateProvince: stateProvince,
             postalCode: postalCode,
             country: country,
+            // Don't set password for security - it will be empty initially
           );
         }
 

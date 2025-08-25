@@ -194,6 +194,74 @@ class AuthService {
       );
     }
   }
+
+  // Get customer profile data for editing
+  static Future<ProfileDataResult> getProfileData(int customerId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/getProfile.php'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'customer_id': customerId}),
+      );
+
+      final Map<String, dynamic> responseData = json.decode(response.body);
+
+      if (response.statusCode == 200 && responseData['success'] == true) {
+        return ProfileDataResult(
+          success: true,
+          message: responseData['message'],
+          profileData: responseData['data'],
+        );
+      } else {
+        return ProfileDataResult(
+          success: false,
+          message: responseData['message'] ?? 'Failed to get profile data',
+          profileData: null,
+        );
+      }
+    } catch (e) {
+      return ProfileDataResult(
+        success: false,
+        message: 'Network error: ${e.toString()}',
+        profileData: null,
+      );
+    }
+  }
+
+  // Update customer profile
+  static Future<ProfileUpdateResult> updateProfile(
+    Map<String, dynamic> profileData,
+  ) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/updateProfile.php'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(profileData),
+      );
+
+      final Map<String, dynamic> responseData = json.decode(response.body);
+
+      if (response.statusCode == 200 && responseData['success'] == true) {
+        return ProfileUpdateResult(
+          success: true,
+          message: responseData['message'],
+          data: responseData['data'],
+        );
+      } else {
+        return ProfileUpdateResult(
+          success: false,
+          message: responseData['message'] ?? 'Failed to update profile',
+          data: null,
+        );
+      }
+    } catch (e) {
+      return ProfileUpdateResult(
+        success: false,
+        message: 'Network error: ${e.toString()}',
+        data: null,
+      );
+    }
+  }
 }
 
 class LoginResult {
@@ -460,4 +528,28 @@ class SignupData {
       'emergency_contact_number': emergencyContactNumber,
     };
   }
+}
+
+class ProfileDataResult {
+  final bool success;
+  final String message;
+  final Map<String, dynamic>? profileData;
+
+  ProfileDataResult({
+    required this.success,
+    required this.message,
+    this.profileData,
+  });
+}
+
+class ProfileUpdateResult {
+  final bool success;
+  final String message;
+  final Map<String, dynamic>? data;
+
+  ProfileUpdateResult({
+    required this.success,
+    required this.message,
+    this.data,
+  });
 }

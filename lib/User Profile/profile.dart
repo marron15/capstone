@@ -63,7 +63,8 @@ class _ProfilePageState extends State<ProfilePage> {
     super.initState();
     _birthdate = profileNotifier.value.birthdate;
     _imageFile = profileNotifier.value.imageFile;
-    _passwordController.text = profileNotifier.value.password ?? '';
+    // Don't populate password field for security - it will be empty initially
+    _passwordController.text = '';
 
     // Initialize address controllers
     _addressController = TextEditingController(
@@ -98,6 +99,9 @@ class _ProfilePageState extends State<ProfilePage> {
     _lastNameListener = () => setState(() {});
     _contactListener = () => setState(() {});
     _emailListener = () => setState(() {});
+
+    // Load fresh profile data from server
+    _loadProfileData();
     _firstNameController.addListener(_firstNameListener);
     _middleNameController.addListener(_middleNameListener);
     _lastNameController.addListener(_lastNameListener);
@@ -144,6 +148,66 @@ class _ProfilePageState extends State<ProfilePage> {
     _emergencyNameController.dispose();
     _emergencyPhoneController.dispose();
     super.dispose();
+  }
+
+  // Load fresh profile data from server
+  Future<void> _loadProfileData() async {
+    try {
+      // Get customer ID from auth state
+      final customerId = authState.customerId;
+      if (customerId == null) return;
+
+      final result = await AuthService.getProfileData(customerId);
+      if (result.success && result.profileData != null) {
+        final data = result.profileData!;
+
+        // Update profile notifier with fresh data
+        profileNotifier.value = ProfileData(
+          firstName: data['first_name'] ?? '',
+          middleName: data['middle_name'] ?? '',
+          lastName: data['last_name'] ?? '',
+          contactNumber: data['phone_number'] ?? '',
+          email: data['email'] ?? '',
+          birthdate:
+              data['birthdate'] != null
+                  ? DateTime.tryParse(data['birthdate'])
+                  : null,
+          emergencyContactName: data['emergency_contact_name'],
+          emergencyContactPhone: data['emergency_contact_number'],
+          address: data['address'] ?? '',
+          street: data['address_details']?['street'] ?? '',
+          city: data['address_details']?['city'] ?? '',
+          stateProvince: data['address_details']?['state'] ?? '',
+          postalCode: data['address_details']?['postal_code'] ?? '',
+          country: data['address_details']?['country'] ?? '',
+        );
+
+        // Update controllers with fresh data
+        setState(() {
+          _firstNameController.text = data['first_name'] ?? '';
+          _middleNameController.text = data['middle_name'] ?? '';
+          _lastNameController.text = data['last_name'] ?? '';
+          _contactController.text = data['phone_number'] ?? '';
+          _emailController.text = data['email'] ?? '';
+          if (data['birthdate'] != null) {
+            _birthdate = DateTime.tryParse(data['birthdate']);
+          }
+          _addressController.text = data['address'] ?? '';
+          _streetController.text = data['address_details']?['street'] ?? '';
+          _cityController.text = data['address_details']?['city'] ?? '';
+          _stateProvinceController.text =
+              data['address_details']?['state'] ?? '';
+          _postalCodeController.text =
+              data['address_details']?['postal_code'] ?? '';
+          _countryController.text = data['address_details']?['country'] ?? '';
+          _emergencyNameController.text = data['emergency_contact_name'] ?? '';
+          _emergencyPhoneController.text =
+              data['emergency_contact_number'] ?? '';
+        });
+      }
+    } catch (e) {
+      print('Error loading profile data: $e');
+    }
   }
 
   bool _hasChanges() {
@@ -296,6 +360,75 @@ class _ProfilePageState extends State<ProfilePage> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text('Profile saved!')));
+  }
+
+  // Save profile changes to server
+  Future<void> _saveProfileToServer() async {
+    try {
+      final customerId = authState.customerId;
+      if (customerId == null) return;
+
+      // Prepare profile data for update
+      final profileData = {
+        'customer_id': customerId,
+        'first_name': _firstNameController.text.trim(),
+        'last_name': _lastNameController.text.trim(),
+        'middle_name': _middleNameController.text.trim(),
+        'email': _emailController.text.trim(),
+        'birthdate': _birthdate?.toIso8601String(),
+        'phone_number': _contactController.text.trim(),
+        'emergency_contact_name': _emergencyNameController.text.trim(),
+        'emergency_contact_number': _emergencyPhoneController.text.trim(),
+        'address_details': {
+          'street': _streetController.text.trim(),
+          'city': _cityController.text.trim(),
+          'state': _stateProvinceController.text.trim(),
+          'postal_code': _postalCodeController.text.trim(),
+          'country': _countryController.text.trim(),
+        },
+      };
+
+      // Add password if changed
+      if (_passwordController.text.isNotEmpty) {
+        profileData['password'] = _passwordController.text;
+      }
+
+      final result = await AuthService.updateProfile(profileData);
+      if (result.success) {
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Profile updated successfully!'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 3),
+          ),
+        );
+
+        // Clear password field after successful update
+        _passwordController.clear();
+
+        // Reload profile data to get fresh data
+        await _loadProfileData();
+      } else {
+        // Show error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.message),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to update profile: $e'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   Future<void> _handleLogout() async {
@@ -465,12 +598,12 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
       ),
       SizedBox(height: 18),
-      _buildLabel('Password', labelFontSize),
+      _buildLabel('New Password (leave blank to keep current)', labelFontSize),
       _buildTextField(
         _passwordController,
-        'Password',
+        'Enter new password to change',
         obscureText: _obscurePassword,
-        readOnly: true,
+        readOnly: false,
         suffixIcon: IconButton(
           icon: Icon(
             _obscurePassword ? Icons.visibility_off : Icons.visibility,
@@ -507,8 +640,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     _emailController.text = profileNotifier.value.email ?? '';
                     _birthdate = profileNotifier.value.birthdate;
                     _imageFile = profileNotifier.value.imageFile;
-                    _passwordController.text =
-                        profileNotifier.value.password ?? '';
+                    _passwordController.text = '';
                     _emergencyNameController.text =
                         profileNotifier.value.emergencyContactName ?? '';
                     _emergencyPhoneController.text =
@@ -535,7 +667,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                   padding: buttonPadding,
                 ),
-                onPressed: _saveProfile,
+                onPressed: _saveProfileToServer,
                 child: Text(
                   'Save',
                   style: TextStyle(

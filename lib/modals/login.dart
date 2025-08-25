@@ -148,6 +148,7 @@ class _LoginModalState extends State<LoginModal> with TickerProviderStateMixin {
           stateProvince: stateProvince,
           postalCode: postalCode,
           country: country,
+          // Don't set password for security - it will be empty initially
         );
 
         if (mounted) {
