@@ -367,23 +367,26 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
         }
         debugPrint('🎫 Membership created: $membershipCreated');
 
-        Navigator.of(context).pop({
-          'success': true,
-          'customerData': {
-            'name': '$firstName $lastName',
-            'contactNumber': contact,
-            'membershipType': _selectedMembershipType,
-            'expirationDate': expirationDate,
-            'email': email,
-            'fullName':
-                '$firstName ${middleName.isNotEmpty ? '$middleName ' : ''}$lastName',
-            'birthdate': birthdate,
-            'address': fullAddress,
-            'emergencyContactName': _emergencyNameController.text.trim(),
-            'emergencyContactPhone': _emergencyPhoneController.text.trim(),
-            'customerId': customerId, // Store the customer ID from API response
-          }
-        });
+        if (mounted) {
+          Navigator.of(context).pop({
+            'success': true,
+            'customerData': {
+              'name': '$firstName $lastName',
+              'contactNumber': contact,
+              'membershipType': _selectedMembershipType,
+              'expirationDate': expirationDate,
+              'email': email,
+              'fullName':
+                  '$firstName ${middleName.isNotEmpty ? '$middleName ' : ''}$lastName',
+              'birthdate': birthdate,
+              'address': fullAddress,
+              'emergencyContactName': _emergencyNameController.text.trim(),
+              'emergencyContactPhone': _emergencyPhoneController.text.trim(),
+              'customerId':
+                  customerId, // Store the customer ID from API response
+            }
+          });
+        }
 
         // Show success dialog
         showDialog(

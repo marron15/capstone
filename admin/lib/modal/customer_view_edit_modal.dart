@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
@@ -12,6 +13,11 @@ class CustomerViewEditModal {
       BuildContext context, Map<String, dynamic> customer) async {
     // Debug: Log customer data
     debugPrint('Customer data passed to modal: $customer');
+    debugPrint('Customer keys: ${customer.keys.join(', ')}');
+    debugPrint('Customer ID field: ${customer['customer_id']}');
+    debugPrint('Customer ID field (id): ${customer['id']}');
+    debugPrint(
+        'Customer ID field type: ${customer['customer_id']?.runtimeType}');
 
     // Controllers for customer form
     final TextEditingController firstNameController =
@@ -144,8 +150,6 @@ class CustomerViewEditModal {
       });
 
       try {
-        // Address upsert handled below via dedicated API; no local address string needed
-
         // Prepare update data
         final updateData = {
           'first_name': firstNameController.text.trim(),
@@ -160,21 +164,44 @@ class CustomerViewEditModal {
           'updated_at': DateTime.now().toIso8601String(),
         };
 
-        // Call API to update customer
-        final customerId = customer['customer_id'] ?? customer['id'];
-        if (customerId != null) {
-          final result = await ApiService.updateCustomer(
-            id: customerId is int
-                ? customerId
-                : int.tryParse(customerId.toString()) ?? -1,
-            data: updateData,
-          );
+        // Call API to update customer with timeout
+        final customerId =
+            customer['customerId'] ?? customer['customer_id'] ?? customer['id'];
+        if (customerId == null) {
+          setModalState(() {
+            errorMessage =
+                'Customer ID not found. Available keys: ${customer.keys.join(', ')}';
+            isLoading = false;
+          });
+          return;
+        }
 
-          if (result['success'] == true) {
-            // Upsert address using dedicated endpoints when customer id is known
+        // Debug: Log the customer ID being used
+        debugPrint(
+            'Using customer ID: $customerId (type: ${customerId.runtimeType})');
+        debugPrint('Update data being sent: $updateData');
+
+        final result = await ApiService.updateCustomer(
+          id: customerId is int
+              ? customerId
+              : int.tryParse(customerId.toString()) ?? -1,
+          data: updateData,
+        ).timeout(
+          const Duration(seconds: 30),
+          onTimeout: () {
+            throw TimeoutException('Request timed out after 30 seconds');
+          },
+        );
+
+        debugPrint('Update customer API response: $result');
+
+        if (result['success'] == true) {
+          // Handle address update/insert with timeout
+          try {
             final int? customerIdForAddress = customerId is int
                 ? customerId
                 : int.tryParse(customerId.toString());
+
             if (customerIdForAddress != null) {
               final hasAnyAddress = streetController.text.trim().isNotEmpty ||
                   cityController.text.trim().isNotEmpty ||
@@ -188,7 +215,15 @@ class CustomerViewEditModal {
                 final int? addressId = addressIdRaw is int
                     ? addressIdRaw
                     : int.tryParse(addressIdRaw?.toString() ?? '');
+
+                debugPrint(
+                    'Address operation - customerId: $customerIdForAddress, addressId: $addressId');
+                debugPrint(
+                    'Address data - street: ${streetController.text.trim()}, city: ${cityController.text.trim()}, state: ${stateController.text.trim()}, postalCode: ${postalCodeController.text.trim()}, country: ${countryController.text.trim()}');
+
                 if (addressId != null) {
+                  // Update existing address with timeout
+                  debugPrint('Updating existing address with ID: $addressId');
                   await ApiService.updateCustomerAddressById(
                     addressId: addressId,
                     customerId: customerIdForAddress,
@@ -199,8 +234,18 @@ class CustomerViewEditModal {
                         : null,
                     postalCode: postalCodeController.text.trim(),
                     country: countryController.text.trim(),
+                  ).timeout(
+                    const Duration(seconds: 15),
+                    onTimeout: () {
+                      throw TimeoutException(
+                          'Address update timed out after 15 seconds');
+                    },
                   );
+                  debugPrint('Address updated successfully');
                 } else {
+                  // Insert new address with timeout
+                  debugPrint(
+                      'Inserting new address for customer: $customerIdForAddress');
                   await ApiService.insertCustomerAddress(
                     customerId: customerIdForAddress,
                     street: streetController.text.trim(),
@@ -210,37 +255,58 @@ class CustomerViewEditModal {
                         : null,
                     postalCode: postalCodeController.text.trim(),
                     country: countryController.text.trim(),
+                  ).timeout(
+                    const Duration(seconds: 15),
+                    onTimeout: () {
+                      throw TimeoutException(
+                          'Address insert timed out after 15 seconds');
+                    },
                   );
+                  debugPrint('Address inserted successfully');
                 }
               }
             }
-            setModalState(() {
-              isEditing = false;
-              isLoading = false;
-            });
-
-            // Show success message and close modal
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Customer updated successfully'),
-                  backgroundColor: Colors.green,
-                ),
-              );
-              Navigator.of(context).pop(true);
-            }
-          } else {
-            setModalState(() {
-              errorMessage = result['message'] ?? 'Failed to update customer';
-              isLoading = false;
-            });
+          } catch (addressError) {
+            // Log address error but don't fail the entire operation
+            debugPrint('Address update error: $addressError');
+            // Continue with customer update success
           }
+
+          // Success - reset state and close modal
+          setModalState(() {
+            isEditing = false;
+            isLoading = false;
+          });
+
+          // Show success message and close modal
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Customer updated successfully'),
+                backgroundColor: Colors.green,
+              ),
+            );
+            Navigator.of(context).pop(true);
+          }
+        } else {
+          setModalState(() {
+            errorMessage = result['message'] ?? 'Failed to update customer';
+            isLoading = false;
+          });
         }
       } catch (e) {
+        debugPrint('Error updating customer: $e');
         setModalState(() {
           errorMessage = 'Error updating customer: $e';
           isLoading = false;
         });
+      } finally {
+        // Safety mechanism: ensure loading state is always reset
+        if (isLoading) {
+          setModalState(() {
+            isLoading = false;
+          });
+        }
       }
     }
 

@@ -72,14 +72,52 @@ class _CustomersPageState extends State<CustomersPage> {
     }
   }
 
+  // Force refresh the customer list
+  Future<void> _refreshCustomerList() async {
+    debugPrint('_refreshCustomerList: Starting forced refresh...');
+
+    // Clear current data first
+    if (mounted) {
+      setState(() {
+        _customers = [];
+        _isLoading = true;
+      });
+    }
+
+    // Reload customers from API
+    await _loadCustomers();
+
+    // Force additional UI rebuild
+    if (mounted) {
+      setState(() {
+        debugPrint('_refreshCustomerList: Forcing UI rebuild...');
+      });
+    }
+    debugPrint('_refreshCustomerList: Refresh completed');
+  }
+
+  // Force complete UI rebuild
+  void _forceRebuild() {
+    if (mounted) {
+      setState(() {
+        debugPrint('_forceRebuild: Forcing complete UI rebuild...');
+      });
+    }
+  }
+
   Future<void> _loadCustomers() async {
+    debugPrint('_loadCustomers: Starting to load customers...');
+    debugPrint('_loadCustomers: Current customers count: ${_customers.length}');
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
     try {
+      debugPrint('_loadCustomers: Calling API to get all customers...');
       final result = await ApiService.getAllCustomers();
+      debugPrint('_loadCustomers: API result: $result');
 
       if (result['success'] == true && result['data'] != null) {
         List<Map<String, dynamic>> loadedCustomers = [];
@@ -90,23 +128,39 @@ class _CustomersPageState extends State<CustomersPage> {
           loadedCustomers.add(customer);
         }
 
-        setState(() {
-          _customers = loadedCustomers;
-          _isLoading = false;
-        });
+        debugPrint(
+            '_loadCustomers: Loaded ${loadedCustomers.length} customers');
+        debugPrint(
+            '_loadCustomers: First customer name: ${loadedCustomers.isNotEmpty ? loadedCustomers.first['name'] : 'No customers'}');
 
-        _sortCustomersByExpiration();
+        if (mounted) {
+          setState(() {
+            _customers = loadedCustomers;
+            _isLoading = false;
+          });
+
+          _sortCustomersByExpiration();
+          debugPrint('_loadCustomers: Customer list updated successfully');
+          debugPrint(
+              '_loadCustomers: Final customers count: ${_customers.length}');
+        }
       } else {
+        debugPrint('_loadCustomers: API failed: ${result['message']}');
+        if (mounted) {
+          setState(() {
+            _errorMessage = result['message'] ?? 'Failed to load customers';
+            _isLoading = false;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('_loadCustomers: Error: $e');
+      if (mounted) {
         setState(() {
-          _errorMessage = result['message'] ?? 'Failed to load customers';
+          _errorMessage = 'Error loading customers: $e';
           _isLoading = false;
         });
       }
-    } catch (e) {
-      setState(() {
-        _errorMessage = 'Error loading customers: $e';
-        _isLoading = false;
-      });
     }
   }
 
@@ -211,12 +265,6 @@ class _CustomersPageState extends State<CustomersPage> {
         backgroundColor: Colors.blue,
         elevation: 0,
         actions: [
-          // Refresh button
-          IconButton(
-            onPressed: _isLoading ? null : _loadCustomers,
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh',
-          ),
           // Debug button - only visible in debug mode
           if (kDebugMode)
             Padding(
@@ -278,11 +326,7 @@ class _CustomersPageState extends State<CustomersPage> {
               style: const TextStyle(color: Colors.grey),
             ),
             const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: _loadCustomers,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Retry'),
-            ),
+            // Removed retry button - no refresh functionality needed
           ],
         ),
       );
@@ -344,114 +388,155 @@ class _CustomersPageState extends State<CustomersPage> {
                 ),
               ),
               Expanded(
-                child: RefreshIndicator(
-                  onRefresh: _loadCustomers,
-                  child: ListView(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    children: [
-                      ..._customers.map((customer) {
-                        final expirationDate =
-                            customer['expirationDate'] as DateTime;
-                        final remainingTime = _getRemainingTime(expirationDate);
-                        final membershipType =
-                            customer['membershipType'] as String;
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 2,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 18),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      customer['name'] ?? '',
-                                      style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16),
-                                    ),
-                                    TextButton(
-                                      onPressed: () async {
-                                        // Show customer view/edit modal
-                                        final result =
-                                            await CustomerViewEditModal
-                                                .showCustomerModal(
-                                                    context, customer);
-                                        if (result == true) {
-                                          // Refresh the list if customer was updated
-                                          _loadCustomers();
-                                        }
-                                      },
-                                      style: TextButton.styleFrom(
-                                        backgroundColor: Colors.blue.shade50,
-                                        foregroundColor: Colors.blue,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(16),
-                                        ),
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 12, vertical: 8),
+                child: ListView(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  children: [
+                    ..._customers.map((customer) {
+                      final expirationDate =
+                          customer['expirationDate'] as DateTime;
+                      final remainingTime = _getRemainingTime(expirationDate);
+                      final membershipType =
+                          customer['membershipType'] as String;
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 2,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 18),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    customer['name'] ?? '',
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16),
+                                  ),
+                                  TextButton(
+                                    onPressed: () async {
+                                      // Show customer view/edit modal
+                                      final result = await CustomerViewEditModal
+                                          .showCustomerModal(context, customer);
+                                      if (result == true) {
+                                        // Refresh the list if customer was updated
+                                        await _refreshCustomerList();
+                                        _forceRebuild(); // Force additional UI rebuild
+                                      }
+                                    },
+                                    style: TextButton.styleFrom(
+                                      backgroundColor: Colors.blue.shade50,
+                                      foregroundColor: Colors.blue,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
                                       ),
-                                      child: const Text('View'),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 12, vertical: 8),
                                     ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  customer['contactNumber'] ?? '',
-                                  style: const TextStyle(
-                                      fontSize: 14, color: Colors.black87),
-                                ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  children: [
-                                    const Text('Membership: ',
-                                        style: TextStyle(
-                                            fontWeight: FontWeight.w500,
-                                            fontSize: 13)),
-                                    Text(
-                                      membershipType,
+                                    child: const Text('View'),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                customer['contactNumber'] ?? '',
+                                style: const TextStyle(
+                                    fontSize: 14, color: Colors.black87),
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  const Text('Membership: ',
                                       style: TextStyle(
-                                          color: _getMembershipTypeColor(
-                                              membershipType),
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w600),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 4),
-                                Row(
-                                  children: [
-                                    const Text('Time left: ',
-                                        style: TextStyle(
-                                            fontWeight: FontWeight.w500,
-                                            fontSize: 13)),
-                                    Text(
-                                      remainingTime,
-                                      style: TextStyle(
-                                        color: remainingTime == 'Expired'
-                                            ? Colors.red
-                                            : Colors.black87,
+                                          fontWeight: FontWeight.w500,
+                                          fontSize: 13)),
+                                  Text(
+                                    membershipType,
+                                    style: TextStyle(
+                                        color: _getMembershipTypeColor(
+                                            membershipType),
                                         fontSize: 13,
-                                        fontWeight: FontWeight.w600,
-                                      ),
+                                        fontWeight: FontWeight.w600),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  const Text('Time left: ',
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.w500,
+                                          fontSize: 13)),
+                                  Text(
+                                    remainingTime,
+                                    style: TextStyle(
+                                      color: remainingTime == 'Expired'
+                                          ? Colors.red
+                                          : Colors.black87,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
                                     ),
-                                  ],
-                                ),
-                              ],
-                            ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  TextButton(
+                                    onPressed: () async {
+                                      // Show customer view/edit modal
+                                      final result = await CustomerViewEditModal
+                                          .showCustomerModal(context, customer);
+                                      if (result == true) {
+                                        // Refresh the list if customer was updated
+                                        await _loadCustomers();
+                                        // Force UI refresh
+                                        if (mounted) {
+                                          setState(() {});
+                                        }
+                                      }
+                                    },
+                                    style: TextButton.styleFrom(
+                                      backgroundColor: Colors.blue.shade50,
+                                      foregroundColor: Colors.blue,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 12, vertical: 8),
+                                    ),
+                                    child: const Text('View'),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  TextButton(
+                                    onPressed: () =>
+                                        _confirmAndDelete(customer),
+                                    style: TextButton.styleFrom(
+                                      backgroundColor: Colors.red.shade50,
+                                      foregroundColor: Colors.red,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 12, vertical: 8),
+                                    ),
+                                    child: const Text('Delete'),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
-                        );
-                      }).toList(),
-                    ],
-                  ),
+                        ),
+                      );
+                    }).toList(),
+                  ],
                 ),
               ),
             ],
@@ -493,176 +578,184 @@ class _CustomersPageState extends State<CustomersPage> {
                 ),
               ),
               Expanded(
-                child: RefreshIndicator(
-                  onRefresh: _loadCustomers,
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    child: Card(
-                      elevation: 3,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 32, vertical: 28),
-                        child: Column(
-                          children: [
-                            // Header Row
-                            Container(
-                              color: Colors.blue[50],
-                              padding: const EdgeInsets.symmetric(vertical: 18),
-                              child: const Row(
-                                children: [
-                                  Expanded(
-                                      flex: 3,
-                                      child: Text('Name',
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.bold))),
-                                  Expanded(
-                                      flex: 3,
-                                      child: Text('Contact Number',
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.bold))),
-                                  Expanded(
-                                      flex: 3,
-                                      child: Text('Membership Type',
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.bold))),
-                                  Expanded(
-                                      flex: 3,
-                                      child: Text('Time Remaining',
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.bold))),
-                                  SizedBox(
-                                      width: 160,
-                                      child: Text('Actions',
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.bold))),
-                                ],
-                              ),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: Card(
+                    elevation: 3,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 32, vertical: 28),
+                      child: Column(
+                        children: [
+                          // Header Row
+                          Container(
+                            color: Colors.blue[50],
+                            padding: const EdgeInsets.symmetric(vertical: 18),
+                            child: const Row(
+                              children: [
+                                Expanded(
+                                    flex: 3,
+                                    child: Text('Name',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold))),
+                                Expanded(
+                                    flex: 3,
+                                    child: Text('Contact Number',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold))),
+                                Expanded(
+                                    flex: 3,
+                                    child: Text('Membership Type',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold))),
+                                Expanded(
+                                    flex: 3,
+                                    child: Text('Time Remaining',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold))),
+                                SizedBox(
+                                    width: 160,
+                                    child: Text('Actions',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold))),
+                              ],
                             ),
-                            const Divider(height: 24, color: Colors.black26),
-                            // Data Rows
-                            ..._customers.map((customer) {
-                              final expirationDate =
-                                  customer['expirationDate'] as DateTime;
-                              final remainingTime =
-                                  _getRemainingTime(expirationDate);
-                              final membershipType =
-                                  customer['membershipType'] as String;
-                              return Column(
-                                children: [
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                          flex: 3,
-                                          child: Padding(
-                                            padding: const EdgeInsets.symmetric(
-                                                vertical: 14),
-                                            child: Text(customer['name'] ?? ''),
-                                          )),
-                                      Expanded(
-                                          flex: 3,
-                                          child: Padding(
-                                            padding: const EdgeInsets.symmetric(
-                                                vertical: 14),
-                                            child: Text(
-                                                customer['contactNumber'] ??
-                                                    ''),
-                                          )),
-                                      Expanded(
+                          ),
+                          const Divider(height: 24, color: Colors.black26),
+                          // Data Rows
+                          ..._customers.map((customer) {
+                            final expirationDate =
+                                customer['expirationDate'] as DateTime;
+                            final remainingTime =
+                                _getRemainingTime(expirationDate);
+                            final membershipType =
+                                customer['membershipType'] as String;
+                            return Column(
+                              children: [
+                                Row(
+                                  children: [
+                                    Expanded(
+                                        flex: 3,
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              vertical: 14),
+                                          child: Text(customer['name'] ?? ''),
+                                        )),
+                                    Expanded(
                                         flex: 3,
                                         child: Padding(
                                           padding: const EdgeInsets.symmetric(
                                               vertical: 14),
                                           child: Text(
-                                            membershipType,
-                                            style: TextStyle(
-                                                color: _getMembershipTypeColor(
-                                                    membershipType)),
+                                              customer['contactNumber'] ?? ''),
+                                        )),
+                                    Expanded(
+                                      flex: 3,
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 14),
+                                        child: Text(
+                                          membershipType,
+                                          style: TextStyle(
+                                              color: _getMembershipTypeColor(
+                                                  membershipType)),
+                                        ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 3,
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 14),
+                                        child: Text(
+                                          remainingTime,
+                                          style: TextStyle(
+                                            color: remainingTime == 'Expired'
+                                                ? Colors.red
+                                                : Colors.black87,
                                           ),
                                         ),
                                       ),
-                                      Expanded(
-                                        flex: 3,
-                                        child: Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                              vertical: 14),
-                                          child: Text(
-                                            remainingTime,
-                                            style: TextStyle(
-                                              color: remainingTime == 'Expired'
-                                                  ? Colors.red
-                                                  : Colors.black87,
+                                    ),
+                                    SizedBox(
+                                      width: 160,
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.end,
+                                        children: [
+                                          TextButton(
+                                            onPressed: () async {
+                                              // Show customer view/edit modal
+                                              debugPrint(
+                                                  'Desktop: Opening customer modal for: ${customer['name']}');
+                                              final result =
+                                                  await CustomerViewEditModal
+                                                      .showCustomerModal(
+                                                          context, customer);
+                                              debugPrint(
+                                                  'Desktop: Modal result: $result');
+                                              if (result == true) {
+                                                // Refresh the list if customer was updated
+                                                debugPrint(
+                                                    'Desktop: Customer was updated, refreshing list...');
+                                                await _refreshCustomerList();
+                                                _forceRebuild(); // Force additional UI rebuild
+                                                debugPrint(
+                                                    'Desktop: Customer list refreshed successfully');
+                                              } else {
+                                                debugPrint(
+                                                    'Desktop: No changes made or modal was cancelled');
+                                              }
+                                            },
+                                            style: TextButton.styleFrom(
+                                              backgroundColor:
+                                                  Colors.blue.shade50,
+                                              foregroundColor: Colors.blue,
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(16),
+                                              ),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 12,
+                                                      vertical: 8),
                                             ),
+                                            child: const Text('View'),
                                           ),
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        width: 160,
-                                        child: Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.end,
-                                          children: [
-                                            TextButton(
-                                              onPressed: () async {
-                                                // Show customer view/edit modal
-                                                final result =
-                                                    await CustomerViewEditModal
-                                                        .showCustomerModal(
-                                                            context, customer);
-                                                if (result == true) {
-                                                  // Refresh the list if customer was updated
-                                                  _loadCustomers();
-                                                }
-                                              },
-                                              style: TextButton.styleFrom(
-                                                backgroundColor:
-                                                    Colors.blue.shade50,
-                                                foregroundColor: Colors.blue,
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(16),
-                                                ),
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                        horizontal: 12,
-                                                        vertical: 8),
+                                          const SizedBox(width: 8),
+                                          TextButton(
+                                            onPressed: () =>
+                                                _confirmAndDelete(customer),
+                                            style: TextButton.styleFrom(
+                                              backgroundColor:
+                                                  Colors.red.shade50,
+                                              foregroundColor: Colors.red,
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(16),
                                               ),
-                                              child: const Text('View'),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 12,
+                                                      vertical: 8),
                                             ),
-                                            const SizedBox(width: 8),
-                                            TextButton(
-                                              onPressed: () =>
-                                                  _confirmAndDelete(customer),
-                                              style: TextButton.styleFrom(
-                                                backgroundColor:
-                                                    Colors.red.shade50,
-                                                foregroundColor: Colors.red,
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(16),
-                                                ),
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                        horizontal: 12,
-                                                        vertical: 8),
-                                              ),
-                                              child: const Text('Delete'),
-                                            ),
-                                          ],
-                                        ),
+                                            child: const Text('Delete'),
+                                          ),
+                                        ],
                                       ),
-                                    ],
-                                  ),
-                                  const Divider(
-                                      height: 18, color: Colors.black12),
-                                ],
-                              );
-                            }).toList(),
-                          ],
-                        ),
+                                    ),
+                                  ],
+                                ),
+                                const Divider(
+                                    height: 18, color: Colors.black12),
+                              ],
+                            );
+                          }).toList(),
+                        ],
                       ),
                     ),
                   ),

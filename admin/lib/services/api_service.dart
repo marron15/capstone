@@ -295,15 +295,24 @@ class ApiService {
           'street': street,
           'city': city,
           'state': state ?? '',
-          // Backend endpoint expects zip_code, while class may use postal_code
+          // PHP endpoint expects zip_code
           'zip_code': postalCode,
           'country': country,
         },
       );
       debugPrint(
           'insertAddress status: ${response.statusCode} body: ${response.body}');
-      // Many PHP scripts echo true/false or JSON; treat 200 as success
-      return response.statusCode == 200;
+
+      if (response.statusCode == 200) {
+        try {
+          final responseData = jsonDecode(response.body);
+          return responseData['success'] == true;
+        } catch (e) {
+          // Fallback for non-JSON responses
+          return response.body.toLowerCase().contains('success');
+        }
+      }
+      return false;
     } catch (e) {
       debugPrint('insertCustomerAddress error: $e');
       return false;
@@ -338,7 +347,17 @@ class ApiService {
       );
       debugPrint(
           'updateAddress status: ${response.statusCode} body: ${response.body}');
-      return response.statusCode == 200;
+
+      if (response.statusCode == 200) {
+        try {
+          final responseData = jsonDecode(response.body);
+          return responseData['success'] == true;
+        } catch (e) {
+          // Fallback for non-JSON responses
+          return response.body.toLowerCase().contains('success');
+        }
+      }
+      return false;
     } catch (e) {
       debugPrint('updateCustomerAddressById error: $e');
       return false;
