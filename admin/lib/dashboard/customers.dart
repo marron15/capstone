@@ -23,6 +23,52 @@ class _CustomersPageState extends State<CustomersPage> {
     _loadCustomers();
   }
 
+  Future<void> _confirmAndDelete(Map<String, dynamic> customer) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete customer?'),
+        content: Text(
+            'This will permanently delete ${customer['name'] ?? 'this customer'}. This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      final dynamic idVal = customer['customerId'];
+      final int id =
+          idVal is int ? idVal : int.tryParse(idVal.toString()) ?? -1;
+      if (id <= 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Invalid customer ID')),
+        );
+        return;
+      }
+
+      setState(() => _isLoading = true);
+      final res = await ApiService.deleteCustomer(id: id);
+      if (res['success'] == true) {
+        await _loadCustomers();
+      } else {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(res['message'] ?? 'Failed to delete customer')),
+        );
+      }
+    }
+  }
+
   Future<void> _loadCustomers() async {
     setState(() {
       _isLoading = true;
@@ -468,8 +514,8 @@ class _CustomersPageState extends State<CustomersPage> {
                                           style: TextStyle(
                                               fontWeight: FontWeight.bold))),
                                   SizedBox(
-                                      width: 100,
-                                      child: Text('View Profile',
+                                      width: 160,
+                                      child: Text('Actions',
                                           style: TextStyle(
                                               fontWeight: FontWeight.bold))),
                                 ],
@@ -533,23 +579,50 @@ class _CustomersPageState extends State<CustomersPage> {
                                         ),
                                       ),
                                       SizedBox(
-                                        width: 100,
-                                        child: TextButton(
-                                          onPressed: () {
-                                            // TODO: Implement view profile functionality
-                                          },
-                                          style: TextButton.styleFrom(
-                                            backgroundColor:
-                                                Colors.blue.shade50,
-                                            foregroundColor: Colors.blue,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(16),
+                                        width: 160,
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.end,
+                                          children: [
+                                            TextButton(
+                                              onPressed: () {
+                                                // TODO: Implement view profile functionality
+                                              },
+                                              style: TextButton.styleFrom(
+                                                backgroundColor:
+                                                    Colors.blue.shade50,
+                                                foregroundColor: Colors.blue,
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(16),
+                                                ),
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 12,
+                                                        vertical: 8),
+                                              ),
+                                              child: const Text('View'),
                                             ),
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 12, vertical: 8),
-                                          ),
-                                          child: const Text('View'),
+                                            const SizedBox(width: 8),
+                                            TextButton(
+                                              onPressed: () =>
+                                                  _confirmAndDelete(customer),
+                                              style: TextButton.styleFrom(
+                                                backgroundColor:
+                                                    Colors.red.shade50,
+                                                foregroundColor: Colors.red,
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(16),
+                                                ),
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 12,
+                                                        vertical: 8),
+                                              ),
+                                              child: const Text('Delete'),
+                                            ),
+                                          ],
                                         ),
                                       ),
                                     ],

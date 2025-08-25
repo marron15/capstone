@@ -9,6 +9,8 @@ class ApiService {
   static const String signupEndpoint = '$baseUrl/customers/Signup.php';
   static const String getAllCustomersEndpoint =
       '$baseUrl/customers/getAllCustomers.php';
+  static const String deleteCustomerEndpoint =
+      '$baseUrl/customers/deleteCustomersByID.php';
 
   static Future<Map<String, dynamic>> signupCustomer({
     required String firstName,
@@ -186,6 +188,41 @@ class ApiService {
       }
     } catch (e) {
       print('Error in getAllCustomers: $e');
+      return {
+        'success': false,
+        'message': 'Network error: $e',
+      };
+    }
+  }
+
+  // Delete a customer by ID
+  static Future<Map<String, dynamic>> deleteCustomer({
+    required int id,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse(deleteCustomerEndpoint),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode({'id': id}),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      }
+
+      // Try to parse error
+      try {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      } catch (_) {
+        return {
+          'success': false,
+          'message': 'Server error: ${response.statusCode}',
+        };
+      }
+    } catch (e) {
       return {
         'success': false,
         'message': 'Network error: $e',
