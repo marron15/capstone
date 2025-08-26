@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:io';
-import 'dart:typed_data';
 import 'dart:convert';
 import '../modal/admin_modal.dart';
 import '../services/admin_service.dart';
@@ -575,9 +574,7 @@ class AdminProfileCard extends StatelessWidget {
 
   // Helper method to build profile image widget
   Widget _buildProfileImage(dynamic profileImage) {
-    if (profileImage == null ||
-        (profileImage is String && profileImage.trim().isEmpty) ||
-        (profileImage is String && profileImage.trim().toLowerCase() == 'null')) {
+    if (profileImage == null) {
       return Container(
         width: double.infinity,
         height: double.infinity,
@@ -628,7 +625,7 @@ class AdminProfileCard extends StatelessWidget {
 
     // Support plain base64 string (no data: prefix) stored in DB
     if (profileImage is String && profileImage.length > 100) {
-      final base64Pattern = RegExp(r'^[A-Za-z0-9+/=]+$');
+      final base64Pattern = RegExp(r'^[A-Za-z0-9+\/]+=*$');
       if (base64Pattern.hasMatch(profileImage)) {
         try {
           final bytes = base64Decode(profileImage);
@@ -640,51 +637,6 @@ class AdminProfileCard extends StatelessWidget {
           );
         } catch (_) {}
       }
-    }
-
-    // Support relative URLs or filenames saved in DB
-    if (profileImage is String) {
-      try {
-        // Normalize potential Windows-style backslashes
-        final normalized = profileImage.replaceAll('\\', '/');
-        final String apiBase = AdminService.baseUrl;
-        final Uri baseUri = Uri.parse(apiBase);
-        final String origin =
-            '${baseUri.scheme}://${baseUri.host}${baseUri.hasPort ? ':${baseUri.port}' : ''}';
-        // First path segment (e.g., sample_api)
-        final String apiRootSegment =
-            baseUri.pathSegments.isNotEmpty ? '/${baseUri.pathSegments.first}/' : '/';
-
-        // Build candidate absolute URLs based on common XAMPP layouts
-        final List<String> candidates = [];
-        if (normalized.startsWith('/')) {
-          candidates.add('$origin$normalized');
-        } else if (normalized.startsWith('uploads/')) {
-          // Try relative to module folder and also at API root
-          final String baseWithSlash = apiBase.endsWith('/') ? apiBase : '$apiBase/';
-          candidates.add(Uri.parse(baseWithSlash).resolve(normalized).toString());
-          candidates.add('$origin$apiRootSegment$normalized');
-        } else if (normalized.startsWith('admin_account/')) {
-          // Under the same module folder
-          candidates.add('$origin$apiRootSegment$normalized');
-        } else {
-          // Resolve relative to base (keeps current module path)
-          final String baseWithSlash = apiBase.endsWith('/') ? apiBase : '$apiBase/';
-          candidates.add(Uri.parse(baseWithSlash).resolve(normalized).toString());
-          // Also try under root segment (e.g., /sample_api/normalized)
-          candidates.add('$origin$apiRootSegment$normalized');
-        }
-
-        return Image.network(
-          candidates.first,
-          fit: BoxFit.cover,
-          width: double.infinity,
-          height: double.infinity,
-          errorBuilder: (context, error, stackTrace) {
-            return const Icon(Icons.person, size: 40, color: Colors.white);
-          },
-        );
-      } catch (_) {}
     }
 
     if (kIsWeb && profileImage is Uint8List) {
