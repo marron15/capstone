@@ -5,6 +5,22 @@ import 'dart:convert';
 import '../modal/admin_modal.dart';
 import '../services/admin_service.dart';
 
+/// AdminProfileCard widget for displaying admin information
+///
+/// Expected JSON format for admin data:
+/// {
+///   "success": true,
+///   "message": "Image found",
+///   "img": "data:image/jpeg;base64,iVBORw0KGgoAAAANSUhEUgAAAFoAAABUCAYAAAACoiByAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAADiySURBVHhe7b13d1zZeafbX2XWeOxuEjkXcs6RyLEAFAoVkAo550QSJAiQYM45gMhVSGxmAATA2NKMPJZsybKtJXs8nnW\/wXPvuw\/AZoMUW91Wj8O6f\/z"
+/// }
+///
+/// The widget automatically handles:
+/// - data:image base64 URIs (like the example above)
+/// - plain base64 strings
+/// - network URLs
+/// - File objects
+/// - Uint8List for web
+
 class AdminProfileCard extends StatelessWidget {
   final Map<String, dynamic> admin;
   final int index;
@@ -574,6 +590,17 @@ class AdminProfileCard extends StatelessWidget {
 
   // Helper method to build profile image widget
   Widget _buildProfileImage(dynamic profileImage) {
+    // Debug logging for troubleshooting
+    debugPrint('Building profile image with type: ${profileImage.runtimeType}');
+    if (profileImage is String) {
+      debugPrint('Image string length: ${profileImage.length}');
+      if (profileImage.startsWith('data:image')) {
+        debugPrint('Detected data URI format');
+      } else if (profileImage.length > 100) {
+        debugPrint('Detected potential base64 string');
+      }
+    }
+
     if (profileImage == null) {
       return Container(
         width: double.infinity,
@@ -619,8 +646,15 @@ class AdminProfileCard extends StatelessWidget {
           fit: BoxFit.cover,
           width: double.infinity,
           height: double.infinity,
+          errorBuilder: (context, error, stackTrace) {
+            debugPrint('Error loading base64 image: $error');
+            return _buildFallbackImage();
+          },
         );
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('Error decoding base64 image: $e');
+        return _buildFallbackImage();
+      }
     }
 
     // Support plain base64 string (no data: prefix) stored in DB
@@ -634,8 +668,15 @@ class AdminProfileCard extends StatelessWidget {
             fit: BoxFit.cover,
             width: double.infinity,
             height: double.infinity,
+            errorBuilder: (context, error, stackTrace) {
+              debugPrint('Error loading plain base64 image: $error');
+              return _buildFallbackImage();
+            },
           );
-        } catch (_) {}
+        } catch (e) {
+          debugPrint('Error decoding plain base64 image: $e');
+          return _buildFallbackImage();
+        }
       }
     }
 
@@ -655,6 +696,11 @@ class AdminProfileCard extends StatelessWidget {
       );
     }
 
+    return _buildFallbackImage();
+  }
+
+  // Fallback image widget
+  Widget _buildFallbackImage() {
     return Container(
       width: double.infinity,
       height: double.infinity,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../modals/payment.dart';
 
 class PlansSection extends StatelessWidget {
   final bool isSmallScreen;
@@ -257,7 +258,13 @@ class _MembershipCard extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () {},
+              onPressed: () {
+                PaymentModal.showGcash(
+                  context,
+                  planTitle: title,
+                  amountLabel: '$price $priceSuffix',
+                );
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
                 foregroundColor: Colors.black,

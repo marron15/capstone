@@ -92,6 +92,26 @@ class AdminService {
                 result['refresh_token'] ?? '');
           }
 
+          // Best-effort: enrich returned admin with image data immediately
+          try {
+            final admin = result['admin'];
+            final id = admin?['id'];
+            if (id != null) {
+              final adminId = id is int ? id : int.tryParse(id.toString());
+              if (adminId != null) {
+                final imageData = await _getAdminImageData(adminId);
+                debugPrint('🔄 Image data: $imageData');
+                if (imageData != null) {
+                  if (imageData.startsWith('http')) {
+                    result['admin']['img_url'] = imageData;
+                  } else {
+                    result['admin']['img'] = imageData;
+                  }
+                }
+              }
+            }
+          } catch (_) {}
+
           debugPrint('✅ Admin created successfully');
           return result;
         } else {
@@ -181,7 +201,31 @@ class AdminService {
       if (response.statusCode == 200) {
         final result = jsonDecode(response.body);
         if (result is List) {
-          return List<Map<String, dynamic>>.from(result);
+          // Normalize admins list
+          final admins = List<Map<String, dynamic>>.from(result);
+
+          // Fetch and attach image for each admin in parallel (best-effort)
+          final futures = admins.map((admin) async {
+            try {
+              final id = admin['id'];
+              if (id is int || (id is String && int.tryParse(id) != null)) {
+                final adminId = id is int ? id : int.parse(id);
+                final imageData = await _getAdminImageData(adminId);
+                if (imageData != null) {
+                  // Prefer full URL when available; fall back to base64/data URI
+                  if (imageData.startsWith('http')) {
+                    admin['img_url'] = imageData;
+                  } else {
+                    admin['img'] = imageData;
+                  }
+                }
+              }
+            } catch (_) {}
+            return admin;
+          }).toList();
+
+          final enriched = await Future.wait(futures);
+          return enriched;
         }
       }
 
@@ -294,6 +338,46 @@ class AdminService {
     } catch (e) {
       debugPrint('❌ Error deleting admin: $e');
       return false;
+    }
+  }
+
+  // --- Helpers ---
+  // Fetch admin image (URL or base64/data URI) by ID
+  static Future<String?> _getAdminImageData(int id) async {
+    try {
+      // make query params id=id
+      final response = await http.get(
+        Uri.parse('$baseUrl/getAdminImage.php?id=$id'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode != 200) return null;
+
+      final body = response.body;
+      // Try JSON first
+      try {
+        final decoded = jsonDecode(body);
+        if (decoded is Map<String, dynamic>) {
+          // Common keys from PHP APIs
+          final imgUrl =
+              decoded['img_url'] ?? decoded['image_url'] ?? decoded['url'];
+          if (imgUrl is String && imgUrl.isNotEmpty) return imgUrl;
+          final dataUri =
+              decoded['img'] ?? decoded['image'] ?? decoded['profileImage'];
+          if (dataUri is String && dataUri.isNotEmpty) return dataUri;
+        }
+      } catch (_) {
+        // Not JSON; could already be a direct URL or base64 string
+        final trimmed = body.trim();
+        if (trimmed.isNotEmpty) return trimmed;
+      }
+
+      return null;
+    } catch (e) {
+      debugPrint('❌ Error fetching admin image: $e');
+      return null;
     }
   }
 
