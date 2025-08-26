@@ -141,8 +141,7 @@ class AdminProfileCard extends StatelessWidget {
               ],
             ),
           ),
-          child: _buildProfileImage(
-              admin['img'] ?? admin['img_url'] ?? admin['profileImage']),
+          child: _buildProfileImage(admin),
         ),
       ),
     );
@@ -574,7 +573,29 @@ class AdminProfileCard extends StatelessWidget {
   }
 
   // Helper method to build profile image widget
-  Widget _buildProfileImage(dynamic profileImage) {
+  Widget _buildProfileImage(dynamic profileImageOrAdmin) {
+    dynamic profileImage = profileImageOrAdmin;
+    if (profileImageOrAdmin is Map<String, dynamic>) {
+      final List<String> possibleKeys = [
+        'img',
+        'img_url',
+        'image_url',
+        'image',
+        'imgPath',
+        'img_path',
+        'profileImage',
+        'profile_image',
+        'avatar',
+        'avatar_url',
+      ];
+      for (final key in possibleKeys) {
+        final value = profileImageOrAdmin[key];
+        if (value != null && value.toString().trim().isNotEmpty) {
+          profileImage = value;
+          break;
+        }
+      }
+    }
     if (profileImage == null ||
         (profileImage is String && profileImage.trim().isEmpty) ||
         (profileImage is String && profileImage.trim().toLowerCase() == 'null')) {
@@ -613,9 +634,9 @@ class AdminProfileCard extends StatelessWidget {
     }
 
     // Support data URI base64 string from backend
-    if (profileImage is String && profileImage.startsWith('data:image')) {
+    if (profileImage is String && profileImage.trim().startsWith('data:image')) {
       try {
-        final base64Part = profileImage.split(',').last;
+        final base64Part = profileImage.trim().split(',').last;
         final bytes = base64Decode(base64Part);
         return Image.memory(
           bytes,
@@ -627,18 +648,20 @@ class AdminProfileCard extends StatelessWidget {
     }
 
     // Support plain base64 string (no data: prefix) stored in DB
-    if (profileImage is String && profileImage.length > 100) {
-      final base64Pattern = RegExp(r'^[A-Za-z0-9+/=]+$');
-      if (base64Pattern.hasMatch(profileImage)) {
+    if (profileImage is String) {
+      final String cleaned = profileImage.replaceAll(RegExp(r'\s+'), '');
+      // If it looks like base64, try decoding regardless of length
+      final looksLikeBase64 = RegExp(r'^[A-Za-z0-9+/=]+$').hasMatch(cleaned);
+      if (looksLikeBase64 && !cleaned.startsWith('http') && !cleaned.contains('/')) {
         try {
-          final bytes = base64Decode(profileImage);
+          final bytes = base64Decode(cleaned);
           return Image.memory(
             bytes,
             fit: BoxFit.cover,
             width: double.infinity,
             height: double.infinity,
           );
-        } catch (_) {}
+        } catch (_) {/* fall through */}
       }
     }
 
@@ -646,7 +669,18 @@ class AdminProfileCard extends StatelessWidget {
     if (profileImage is String) {
       try {
         // Normalize potential Windows-style backslashes
-        final normalized = profileImage.replaceAll('\\', '/');
+        String normalized = profileImage.replaceAll('\\', '/');
+        final lower = normalized.toLowerCase();
+        // If it looks like a file name or relative asset path with common image extensions
+        if (RegExp(r'\.(png|jpe?g|gif|webp)
+$', caseSensitive: false, multiLine: true).hasMatch(lower)) {
+          // continue to URL resolution below
+        }
+        // If string is a local filesystem path containing the API root, derive a web path
+        final int apiIdx = normalized.indexOf('sample_api');
+        if (apiIdx != -1) {
+          normalized = '/' + normalized.substring(apiIdx);
+        }
         final String apiBase = AdminService.baseUrl;
         final Uri baseUri = Uri.parse(apiBase);
         final String origin =
