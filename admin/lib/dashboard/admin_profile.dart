@@ -251,12 +251,12 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
     final isMobile = screenWidth < 768;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.transparent,
       drawer: const SideNav(),
       appBar: AppBar(
-        title: const Text('Admin Profiles'),
-        backgroundColor: Colors.blue,
-        elevation: 0,
+        title: const Center(child: Text('Admin Profiles')),
+        foregroundColor: Colors.white,
+        backgroundColor: const Color(0xFF36454F),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -265,219 +265,229 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
           ),
         ],
       ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            height: isMobile ? 100 : 60,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            color: Colors.blue,
-            child: isMobile
-                ? Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Row(
-                        children: [
-                          ElevatedButton(
-                            onPressed: () {
-                              AdminModal.showAddAdminModal(context, _addAdmin);
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: Colors.blue,
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 8),
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.add, size: 16),
-                                SizedBox(width: 4),
-                                Text('new admin',
-                                    style: TextStyle(fontSize: 14)),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Container(
-                        width: double.infinity,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(18),
-                        ),
-                        child: TextField(
-                          controller: searchController,
-                          onChanged: _filterAdmins,
-                          decoration: const InputDecoration(
-                            hintText: 'Search admins...',
-                            prefixIcon: Icon(Icons.search,
-                                color: Colors.grey, size: 20),
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(vertical: 8),
-                            isDense: true,
-                          ),
-                        ),
-                      ),
-                    ],
-                  )
-                : Row(
-                    children: [
-                      ElevatedButton(
-                        onPressed: () {
-                          AdminModal.showAddAdminModal(context, _addAdmin);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: Colors.blue,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 8),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.add, size: 16),
-                            SizedBox(width: 4),
-                            Text('new admin', style: TextStyle(fontSize: 14)),
-                          ],
-                        ),
-                      ),
-                      const Spacer(),
-                      Container(
-                        width: 220,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(18),
-                        ),
-                        child: TextField(
-                          controller: searchController,
-                          onChanged: _filterAdmins,
-                          decoration: const InputDecoration(
-                            hintText: 'Search',
-                            prefixIcon: Icon(Icons.search,
-                                color: Colors.grey, size: 20),
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(vertical: 8),
-                            isDense: true,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF141E30), Color(0xFF232526)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-          Expanded(
-            child: _isLoading
-                ? const Center(
-                    child: CircularProgressIndicator(),
-                  )
-                : _errorMessage != null
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              height: isMobile ? 100 : 60,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              color: Colors.transparent,
+              child: isMobile
+                  ? Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Row(
                           children: [
-                            Icon(
-                              Icons.error_outline,
-                              size: 64,
-                              color: Colors.red[400],
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Error loading admins',
-                              style: TextStyle(
-                                fontSize: 18,
-                                color: Colors.red[600],
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              _errorMessage!,
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.red[500],
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 16),
                             ElevatedButton(
-                              onPressed: _refreshAdmins,
-                              child: const Text('Retry'),
+                              onPressed: () {
+                                AdminModal.showAddAdminModal(
+                                    context, _addAdmin);
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: Colors.blue,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 8),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.add, size: 16),
+                                  SizedBox(width: 4),
+                                  Text('new admin',
+                                      style: TextStyle(fontSize: 14)),
+                                ],
+                              ),
                             ),
                           ],
                         ),
-                      )
-                    : SingleChildScrollView(
-                        padding: const EdgeInsets.all(16),
-                        child: _filteredAdmins.isEmpty
-                            ? Card(
-                                child: Container(
-                                  width: double.infinity,
-                                  padding: const EdgeInsets.all(48),
-                                  child: Column(
-                                    children: [
-                                      Icon(
-                                        Icons.admin_panel_settings_outlined,
-                                        size: 64,
-                                        color: Colors.grey[400],
-                                      ),
-                                      const SizedBox(height: 16),
-                                      Text(
-                                        'No admins found',
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          color: Colors.grey[600],
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        searchController.text.isNotEmpty
-                                            ? 'Try adjusting your search criteria'
-                                            : 'Add your first admin to get started',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          color: Colors.grey[500],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                        const SizedBox(height: 8),
+                        Container(
+                          width: double.infinity,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                          child: TextField(
+                            controller: searchController,
+                            onChanged: _filterAdmins,
+                            decoration: const InputDecoration(
+                              hintText: 'Search admins...',
+                              prefixIcon: Icon(Icons.search,
+                                  color: Colors.grey, size: 20),
+                              border: InputBorder.none,
+                              contentPadding: EdgeInsets.symmetric(vertical: 8),
+                              isDense: true,
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  : Row(
+                      children: [
+                        ElevatedButton(
+                          onPressed: () {
+                            AdminModal.showAddAdminModal(context, _addAdmin);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: Colors.blue,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 8),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.add, size: 16),
+                              SizedBox(width: 4),
+                              Text('new admin', style: TextStyle(fontSize: 14)),
+                            ],
+                          ),
+                        ),
+                        const Spacer(),
+                        Container(
+                          width: 220,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                          child: TextField(
+                            controller: searchController,
+                            onChanged: _filterAdmins,
+                            decoration: const InputDecoration(
+                              hintText: 'Search',
+                              prefixIcon: Icon(Icons.search,
+                                  color: Colors.grey, size: 20),
+                              border: InputBorder.none,
+                              contentPadding: EdgeInsets.symmetric(vertical: 8),
+                              isDense: true,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
+            Expanded(
+              child: _isLoading
+                  ? const Center(
+                      child: CircularProgressIndicator(),
+                    )
+                  : _errorMessage != null
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.error_outline,
+                                size: 64,
+                                color: Colors.red[300],
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Error loading admins',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.red[300],
+                                  fontWeight: FontWeight.w500,
                                 ),
-                              )
-                            : isMobile
-                                ? Column(
-                                    children: _filteredAdmins
-                                        .asMap()
-                                        .entries
-                                        .map((entry) {
-                                      int index = entry.key;
-                                      var admin = entry.value;
-                                      return AdminProfileCard(
-                                        admin: admin,
-                                        index: index,
-                                        onEdit: _updateAdmin,
-                                        onDelete: _removeAdmin,
-                                        searchController: searchController,
-                                        admins: _admins,
-                                        updateFilteredAdmins:
-                                            _setFilteredAdmins,
-                                      );
-                                    }).toList(),
-                                  )
-                                : _buildDesktopGrid(),
-                      ),
-          ),
-        ],
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                _errorMessage!,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.white70,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 16),
+                              ElevatedButton(
+                                onPressed: _refreshAdmins,
+                                child: const Text('Retry'),
+                              ),
+                            ],
+                          ),
+                        )
+                      : SingleChildScrollView(
+                          padding: const EdgeInsets.all(16),
+                          child: _filteredAdmins.isEmpty
+                              ? Card(
+                                  child: Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.all(48),
+                                    child: Column(
+                                      children: [
+                                        Icon(
+                                          Icons.admin_panel_settings_outlined,
+                                          size: 64,
+                                          color: Colors.white70,
+                                        ),
+                                        const SizedBox(height: 16),
+                                        Text(
+                                          'No admins found',
+                                          style: TextStyle(
+                                            fontSize: 18,
+                                            color: Colors.white70,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          searchController.text.isNotEmpty
+                                              ? 'Try adjusting your search criteria'
+                                              : 'Add your first admin to get started',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.white60,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                )
+                              : isMobile
+                                  ? Column(
+                                      children: _filteredAdmins
+                                          .asMap()
+                                          .entries
+                                          .map((entry) {
+                                        int index = entry.key;
+                                        var admin = entry.value;
+                                        return AdminProfileCard(
+                                          admin: admin,
+                                          index: index,
+                                          onEdit: _updateAdmin,
+                                          onDelete: _removeAdmin,
+                                          searchController: searchController,
+                                          admins: _admins,
+                                          updateFilteredAdmins:
+                                              _setFilteredAdmins,
+                                        );
+                                      }).toList(),
+                                    )
+                                  : _buildDesktopGrid(),
+                        ),
+            ),
+          ],
+        ),
       ),
     );
   }

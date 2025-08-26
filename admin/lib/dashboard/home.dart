@@ -12,71 +12,77 @@ class StatisticPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFE5E5E5),
+      backgroundColor: Colors.transparent,
       drawer: const SideNav(),
       appBar: AppBar(
-        title: const Text('Dashboard'),
-        backgroundColor: Colors.blue,
+        title: const Center(child: Text('Dashboard')),
+        foregroundColor: Colors.white,
+        backgroundColor: const Color(0xFF36454F),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Statistics',
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF141E30), Color(0xFF232526)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Statistics',
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
-            Expanded(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  int crossAxisCount = constraints.maxWidth < 500 ? 1 : 4;
-                  return GridView.count(
-                    crossAxisCount: crossAxisCount,
-                    crossAxisSpacing: 24,
-                    mainAxisSpacing: 24,
-                    childAspectRatio: 1.2,
-                    children: const [
-                      // Week Paid Members (Pie Chart)
-                      _StatCard(
-                        title: 'Week Paid Members',
-                        subtitle: '',
-                        child: WeekPaidMembers(),
-                      ),
-                      // New Members this Week (Bar Graph)
-                      _StatCard(
-                        title: 'New Members this Week',
-                        subtitle: '',
-                        child: NewMembersBarGraph(),
-                      ),
-                      // Memberships Total (Bar Graph)
-                      _StatCard(
-                        title: 'Memberships Total',
-                        subtitle: '',
-                        child: MembershipsTotalBarGraph(),
-                      ),
-                      // New Members this Month (Bar Graph)
-                      _StatCard(
-                        title: 'New Members this Month',
-                        subtitle: '',
-                        child: NewMembersMonthBarGraph(),
-                      ),
-                      // Trainers Total (Pie Chart)
-                      _StatCard(
-                        title: 'Trainers Total',
-                        subtitle: '',
-                        child: TrainersTotalPieChart(),
-                      ),
-                    ],
-                  );
-                },
+              const SizedBox(height: 24),
+              Expanded(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    int crossAxisCount = constraints.maxWidth < 500 ? 1 : 4;
+                    return GridView.count(
+                      crossAxisCount: crossAxisCount,
+                      crossAxisSpacing: 24,
+                      mainAxisSpacing: 24,
+                      childAspectRatio: 1.2,
+                      children: const [
+                        _StatCard(
+                          title: 'Week Paid Members',
+                          subtitle: '',
+                          child: WeekPaidMembers(),
+                        ),
+                        _StatCard(
+                          title: 'New Members this Week',
+                          subtitle: '',
+                          child: NewMembersBarGraph(),
+                        ),
+                        _StatCard(
+                          title: 'Memberships Total',
+                          subtitle: '',
+                          child: MembershipsTotalBarGraph(),
+                        ),
+                        _StatCard(
+                          title: 'New Members this Month',
+                          subtitle: '',
+                          child: NewMembersMonthBarGraph(),
+                        ),
+                        _StatCard(
+                          title: 'Trainers Total',
+                          subtitle: '',
+                          child: TrainersTotalPieChart(),
+                        ),
+                      ],
+                    );
+                  },
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

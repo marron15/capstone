@@ -51,8 +51,8 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBar(
-        title: const Text('Products Management'),
-        backgroundColor: Colors.blue,
+        title: const Center(child: Text('Products Management')),
+        backgroundColor: const Color(0xFF36454F),
         foregroundColor: Colors.white,
         leading: IconButton(
           icon: const Icon(Icons.menu),
@@ -62,35 +62,44 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
         ),
       ),
       drawer: const SideNav(),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: products.isEmpty
-            ? const Center(
-                child: Text(
-                  'No products added yet',
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.grey,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF141E30), Color(0xFF232526)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: products.isEmpty
+              ? const Center(
+                  child: Text(
+                    'No products added yet',
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.white70,
+                    ),
                   ),
+                )
+              : GridView.builder(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    childAspectRatio: 1,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                  ),
+                  itemCount: products.length,
+                  itemBuilder: (context, index) {
+                    return ProductCard(
+                      product: products[index],
+                      onEdit: () => _showAddProductDialog(
+                          product: products[index], index: index),
+                      onDelete: () => _deleteProduct(index),
+                    );
+                  },
                 ),
-              )
-            : GridView.builder(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  childAspectRatio: 1,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                ),
-                itemCount: products.length,
-                itemBuilder: (context, index) {
-                  return ProductCard(
-                    product: products[index],
-                    onEdit: () => _showAddProductDialog(
-                        product: products[index], index: index),
-                    onDelete: () => _deleteProduct(index),
-                  );
-                },
-              ),
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddProductDialog(),

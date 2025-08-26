@@ -261,12 +261,12 @@ class _CustomersPageState extends State<CustomersPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.transparent,
       drawer: const SideNav(),
       appBar: AppBar(
-        title: const Text('Customer Management'),
-        backgroundColor: Colors.blue,
-        elevation: 0,
+        title: const Center(child: Text('Customer Management')),
+        foregroundColor: Colors.white,
+        backgroundColor: const Color(0xFF36454F),
         actions: [
           // Debug button - only visible in debug mode
           if (kDebugMode)
@@ -289,7 +289,16 @@ class _CustomersPageState extends State<CustomersPage> {
             ),
         ],
       ),
-      body: _buildBody(),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF141E30), Color(0xFF232526)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: _buildBody(),
+      ),
     );
   }
 
