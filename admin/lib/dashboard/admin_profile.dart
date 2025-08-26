@@ -412,7 +412,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                               const SizedBox(height: 8),
                               Text(
                                 _errorMessage!,
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontSize: 14,
                                   color: Colors.white70,
                                 ),
@@ -435,13 +435,13 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                                     padding: const EdgeInsets.all(48),
                                     child: Column(
                                       children: [
-                                        Icon(
+                                        const Icon(
                                           Icons.admin_panel_settings_outlined,
                                           size: 64,
                                           color: Colors.white70,
                                         ),
                                         const SizedBox(height: 16),
-                                        Text(
+                                        const Text(
                                           'No admins found',
                                           style: TextStyle(
                                             fontSize: 18,
@@ -454,7 +454,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                                           searchController.text.isNotEmpty
                                               ? 'Try adjusting your search criteria'
                                               : 'Add your first admin to get started',
-                                          style: TextStyle(
+                                          style: const TextStyle(
                                             fontSize: 14,
                                             color: Colors.white60,
                                           ),
