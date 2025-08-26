@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:io';
+import 'dart:convert';
 import '../modal/admin_modal.dart';
 import '../services/admin_service.dart';
 
@@ -139,7 +140,8 @@ class AdminProfileCard extends StatelessWidget {
               ],
             ),
           ),
-          child: _buildProfileImage(admin['img'] ?? admin['profileImage']),
+          child: _buildProfileImage(
+              admin['img'] ?? admin['img_url'] ?? admin['profileImage']),
         ),
       ),
     );
@@ -592,6 +594,49 @@ class AdminProfileCard extends StatelessWidget {
           color: Colors.white,
         ),
       );
+    }
+
+    // Support URL provided by backend (e.g., img_url)
+    if (profileImage is String && profileImage.startsWith('http')) {
+      return Image.network(
+        profileImage,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+        errorBuilder: (context, error, stackTrace) {
+          return const Icon(Icons.person, size: 40, color: Colors.white);
+        },
+      );
+    }
+
+    // Support data URI base64 string from backend
+    if (profileImage is String && profileImage.startsWith('data:image')) {
+      try {
+        final base64Part = profileImage.split(',').last;
+        final bytes = base64Decode(base64Part);
+        return Image.memory(
+          bytes,
+          fit: BoxFit.cover,
+          width: double.infinity,
+          height: double.infinity,
+        );
+      } catch (_) {}
+    }
+
+    // Support plain base64 string (no data: prefix) stored in DB
+    if (profileImage is String && profileImage.length > 100) {
+      final base64Pattern = RegExp(r'^[A-Za-z0-9+\/]+=*$');
+      if (base64Pattern.hasMatch(profileImage)) {
+        try {
+          final bytes = base64Decode(profileImage);
+          return Image.memory(
+            bytes,
+            fit: BoxFit.cover,
+            width: double.infinity,
+            height: double.infinity,
+          );
+        } catch (_) {}
+      }
     }
 
     if (kIsWeb && profileImage is Uint8List) {

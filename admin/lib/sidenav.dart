@@ -4,6 +4,8 @@ import 'dashboard/trainers.dart';
 import 'dashboard/home.dart';
 import 'dashboard/customers.dart';
 import 'dashboard/admin_products.dart';
+import 'services/admin_service.dart';
+import 'login.dart';
 
 class SideNav extends StatelessWidget {
   const SideNav({super.key});
@@ -108,9 +110,15 @@ class SideNav extends StatelessWidget {
                     ),
                     icon: const Icon(Icons.logout),
                     label: const Text('Logout'),
-                    onPressed: () {
-                      // TODO: Implement actual logout logic
-                      Navigator.of(context).popUntil((route) => route.isFirst);
+                    onPressed: () async {
+                      await AdminService.logoutAdmin();
+                      if (!context.mounted) return;
+                      Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(
+                          builder: (context) => const LoginPage(),
+                        ),
+                        (route) => false,
+                      );
                     }))
           ]))
         ]));

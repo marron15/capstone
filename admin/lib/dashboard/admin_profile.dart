@@ -50,21 +50,22 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
   }
 
   // Add a new admin to the list
-  void _addAdmin(Map<String, dynamic> admin) {
-    setState(() {
-      _admins.add(admin);
-      _updateFilteredAdmins();
-    });
-
-    // Show success message
+  Future<void> _addAdmin(Map<String, dynamic> admin) async {
+    // Show success first for instant feedback
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
             'Admin ${admin['first_name'] ?? admin['firstName']} added successfully!'),
         backgroundColor: Colors.green,
-        duration: const Duration(seconds: 3),
+        duration: const Duration(seconds: 2),
       ),
     );
+
+    // Immediately refresh from backend to reflect canonical data (e.g., img_url)
+    setState(() {
+      _isLoading = true;
+    });
+    await _loadAdmins();
   }
 
   // Remove an admin from the list
