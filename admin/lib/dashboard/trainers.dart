@@ -11,7 +11,7 @@ class TrainersPage extends StatefulWidget {
 
 class _TrainersPageState extends State<TrainersPage> {
   // Trainers data
-  List<Map<String, String>> _trainers = [];
+  final List<Map<String, String>> _trainers = [];
 
   List<Map<String, String>> _filteredTrainers = [];
   TextEditingController searchController = TextEditingController();

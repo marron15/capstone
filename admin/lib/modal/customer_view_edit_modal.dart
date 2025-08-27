@@ -26,6 +26,11 @@ class CustomerViewEditModal {
       [DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight],
     );
 
+    // After the async gap above, ensure the context is still mounted
+    if (!context.mounted) {
+      return false;
+    }
+
     // Controllers for customer form
     final TextEditingController firstNameController =
         TextEditingController(text: customer['first_name'] ?? '');
