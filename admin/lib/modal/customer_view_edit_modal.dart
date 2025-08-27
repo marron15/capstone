@@ -3,6 +3,8 @@ import 'dart:ui';
 import 'dart:io';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+import 'dart:math' as math;
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import '../services/api_service.dart';
@@ -18,6 +20,11 @@ class CustomerViewEditModal {
     debugPrint('Customer ID field (id): ${customer['id']}');
     debugPrint(
         'Customer ID field type: ${customer['customer_id']?.runtimeType}');
+
+    // Force landscape orientation while the modal is open
+    await SystemChrome.setPreferredOrientations(
+      [DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight],
+    );
 
     // Controllers for customer form
     final TextEditingController firstNameController =
@@ -39,8 +46,27 @@ class CustomerViewEditModal {
     // Handle password field - show hash as placeholder for existing customers, empty for new ones
     // Note: We'll check this dynamically in the UI instead of storing it statically
 
+    final String originalPasswordValue =
+        (customer['password'] ?? '').toString();
     final TextEditingController passwordController =
-        TextEditingController(text: '');
+        TextEditingController(text: originalPasswordValue);
+
+    // Transaction controllers and initial values
+    final TextEditingController paidAmountController = TextEditingController(
+        text:
+            (customer['transaction_details']?['paid_amount'] ?? '').toString());
+    final TextEditingController transactionDateController =
+        TextEditingController(
+            text: customer['transaction_details']?['transaction_date'] ?? '');
+    final TextEditingController referenceNumberController =
+        TextEditingController(
+            text: customer['transaction_details']?['reference_number'] ?? '');
+    String paymentMethod =
+        (customer['transaction_details']?['payment_method'] ?? 'GCash')
+            .toString();
+    String paymentStatus =
+        (customer['transaction_details']?['payment_status'] ?? 'Paid')
+            .toString();
 
     // Handle address fields with fallbacks
     final TextEditingController streetController = TextEditingController(
@@ -74,13 +100,19 @@ class CustomerViewEditModal {
                 : 'Philippines'));
 
     // State variables
-    bool isEditing = false;
+    bool isEditing = true;
     bool isLoading = false;
     bool isPasswordVisible = false;
     String? errorMessage;
     DateTime? selectedDate;
     File? selectedImage;
     Uint8List? webImageBytes;
+
+    // Transaction image/date state
+    DateTime? selectedTransactionDate;
+    File? transactionImageFile;
+    Uint8List? transactionImageBytes =
+        customer['transaction_details']?['reference_image_bytes'];
 
     // Function to pick date
     Future<void> pickDate(StateSetter setModalState) async {
@@ -148,6 +180,58 @@ class CustomerViewEditModal {
       }
     }
 
+    // Function to pick transaction date
+    Future<void> pickTransactionDate(StateSetter setModalState) async {
+      final DateTime? picked = await showDatePicker(
+        context: context,
+        initialDate: selectedTransactionDate ?? DateTime.now(),
+        firstDate: DateTime(2000),
+        lastDate: DateTime.now().add(const Duration(days: 3650)),
+      );
+      if (picked != null && picked != selectedTransactionDate) {
+        setModalState(() {
+          selectedTransactionDate = picked;
+          transactionDateController.text =
+              "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+        });
+      }
+    }
+
+    // Function to pick transaction proof image
+    Future<void> pickTransactionImage(StateSetter setModalState) async {
+      if (kIsWeb) {
+        FilePickerResult? result = await FilePicker.platform.pickFiles(
+          type: FileType.image,
+        );
+        if (result != null && result.files.single.bytes != null) {
+          setModalState(() {
+            transactionImageBytes = result.files.single.bytes;
+            transactionImageFile = null;
+          });
+        }
+      } else if (Platform.isAndroid || Platform.isIOS) {
+        final ImagePicker picker = ImagePicker();
+        final XFile? image =
+            await picker.pickImage(source: ImageSource.gallery);
+        if (image != null) {
+          setModalState(() {
+            transactionImageFile = File(image.path);
+            transactionImageBytes = null;
+          });
+        }
+      } else {
+        FilePickerResult? result = await FilePicker.platform.pickFiles(
+          type: FileType.image,
+        );
+        if (result != null && result.files.single.path != null) {
+          setModalState(() {
+            transactionImageFile = File(result.files.single.path!);
+            transactionImageBytes = null;
+          });
+        }
+      }
+    }
+
     // Function to save changes
     Future<void> saveChanges(StateSetter setModalState) async {
       setModalState(() {
@@ -166,9 +250,10 @@ class CustomerViewEditModal {
           'phone_number': contactController.text.trim(),
           'emergency_contact_name': emergencyNameController.text.trim(),
           'emergency_contact_number': emergencyPhoneController.text.trim(),
-          'password': passwordController.text.trim().isNotEmpty
-              ? passwordController.text.trim()
-              : null,
+          'password':
+              passwordController.text.trim() != originalPasswordValue.trim()
+                  ? passwordController.text.trim()
+                  : null,
           'updated_by': 'admin',
           'updated_at': DateTime.now().toIso8601String(),
         };
@@ -209,6 +294,22 @@ class CustomerViewEditModal {
             'state': stateController.text.trim(),
             'postal_code': postalCodeController.text.trim(),
             'country': countryController.text.trim(),
+          };
+        }
+
+        // Add transaction details if any provided
+        final bool hasAnyTransactionField =
+            paidAmountController.text.trim().isNotEmpty ||
+                transactionDateController.text.trim().isNotEmpty ||
+                referenceNumberController.text.trim().isNotEmpty ||
+                (transactionImageBytes != null || transactionImageFile != null);
+        if (hasAnyTransactionField) {
+          updateData['transaction_details'] = {
+            'paid_amount': paidAmountController.text.trim(),
+            'payment_method': paymentMethod,
+            'payment_status': paymentStatus,
+            'transaction_date': transactionDateController.text.trim(),
+            'reference_number': referenceNumberController.text.trim(),
           };
         }
 
@@ -255,6 +356,18 @@ class CustomerViewEditModal {
               'state': stateController.text.trim(),
               'postal_code': postalCodeController.text.trim(),
               'country': countryController.text.trim(),
+            };
+          }
+
+          // Update transaction details locally
+          if (hasAnyTransactionField) {
+            customer['transaction_details'] = {
+              'paid_amount': paidAmountController.text.trim(),
+              'payment_method': paymentMethod,
+              'payment_status': paymentStatus,
+              'transaction_date': transactionDateController.text.trim(),
+              'reference_number': referenceNumberController.text.trim(),
+              'reference_image_bytes': transactionImageBytes,
             };
           }
 
@@ -383,18 +496,18 @@ class CustomerViewEditModal {
             child: Column(
               children: [
                 Container(
-                  height: 120,
-                  width: 120,
+                  height: 96,
+                  width: 96,
                   decoration: BoxDecoration(
                     color: Colors.white24,
-                    borderRadius: BorderRadius.circular(60),
+                    borderRadius: BorderRadius.circular(48),
                     border: Border.all(
                       color: Colors.white.withAlpha((0.25 * 255).toInt()),
                       width: 2,
                     ),
                   ),
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(60),
+                    borderRadius: BorderRadius.circular(48),
                     child: (kIsWeb && webImageBytes != null)
                         ? Image.memory(
                             webImageBytes!,
@@ -436,7 +549,7 @@ class CustomerViewEditModal {
       );
     }
 
-    showDialog(
+    final bool? dialogResult = await showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
         return StatefulBuilder(
@@ -454,10 +567,12 @@ class CustomerViewEditModal {
                       BackdropFilter(
                         filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
                         child: Container(
-                          width: MediaQuery.of(context).size.width < 600
-                              ? MediaQuery.of(context).size.width * 0.99
-                              : 700,
-                          constraints: const BoxConstraints(maxHeight: 800),
+                          width: math.min(
+                              MediaQuery.of(context).size.width * 0.97, 1400),
+                          constraints: BoxConstraints(
+                            maxWidth: 1400,
+                            maxHeight: MediaQuery.of(context).size.height * 0.9,
+                          ),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(22),
                             color: Colors.black.withAlpha((0.7 * 255).toInt()),
@@ -479,8 +594,8 @@ class CustomerViewEditModal {
                           ),
                           child: Padding(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 38,
-                              vertical: 36,
+                              horizontal: 28,
+                              vertical: 24,
                             ),
                             child: SingleChildScrollView(
                               child: Column(
@@ -625,243 +740,115 @@ class CustomerViewEditModal {
                                       ),
                                     ),
 
-                                  // Personal Information Section
-                                  Container(
-                                    padding: const EdgeInsets.all(20),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white
-                                          .withAlpha((0.05 * 255).toInt()),
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(
-                                        color: Colors.white
-                                            .withAlpha((0.1 * 255).toInt()),
-                                        width: 1,
-                                      ),
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        const Row(
-                                          children: [
-                                            Icon(
-                                              Icons.person,
-                                              color: Colors.lightBlueAccent,
-                                              size: 24,
-                                            ),
-                                            SizedBox(width: 12),
-                                            Text(
-                                              'Personal Information',
-                                              style: TextStyle(
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.lightBlueAccent,
-                                              ),
-                                            ),
-                                          ],
+                                  // Personal and Address Sections side-by-side on wide screens
+                                  Builder(
+                                    builder: (context) {
+                                      final bool isWide =
+                                          MediaQuery.of(context).size.width >
+                                              900;
+
+                                      final Widget personalSection = Container(
+                                        padding: const EdgeInsets.all(20),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white
+                                              .withAlpha((0.05 * 255).toInt()),
+                                          borderRadius:
+                                              BorderRadius.circular(16),
+                                          border: Border.all(
+                                            color: Colors.white
+                                                .withAlpha((0.1 * 255).toInt()),
+                                            width: 1,
+                                          ),
                                         ),
-                                        const SizedBox(height: 20),
-                                        buildImageSection(setModalState),
-                                        const SizedBox(height: 24),
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: buildFormField(
-                                                  "First Name",
-                                                  firstNameController,
-                                                  isRequired: true),
-                                            ),
-                                            const SizedBox(width: 20),
-                                            Expanded(
-                                              child: buildFormField(
-                                                  "Middle Name",
-                                                  middleNameController),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 20),
-                                        buildFormField(
-                                            "Last Name", lastNameController,
-                                            isRequired: true),
-                                        const SizedBox(height: 20),
-                                        buildFormField("Date of Birth",
-                                            birthdateController,
-                                            isReadOnly: true,
-                                            onTap: () =>
-                                                pickDate(setModalState)),
-                                        const SizedBox(height: 20),
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: buildFormField(
-                                                  "Email", emailController,
-                                                  isRequired: true),
-                                            ),
-                                            const SizedBox(width: 20),
-                                            Expanded(
-                                              child: buildFormField(
-                                                  "Contact Number",
-                                                  contactController),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 20),
-                                        // Password field with visibility toggle
-                                        Column(
+                                        child: Column(
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
                                           children: [
-                                            Row(
+                                            const Row(
                                               children: [
-                                                const Text(
-                                                  "New Password",
+                                                Icon(
+                                                  Icons.person,
+                                                  color: Colors.lightBlueAccent,
+                                                  size: 24,
+                                                ),
+                                                SizedBox(width: 12),
+                                                Text(
+                                                  'Personal Information',
                                                   style: TextStyle(
-                                                    fontSize: 16,
-                                                    fontWeight: FontWeight.w600,
-                                                    color: Colors.white,
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 8),
-                                                // Password visibility toggle button
-                                                if (isEditing)
-                                                  IconButton(
-                                                    onPressed: () {
-                                                      setModalState(() {
-                                                        isPasswordVisible =
-                                                            !isPasswordVisible;
-                                                      });
-                                                    },
-                                                    icon: Icon(
-                                                      isPasswordVisible
-                                                          ? Icons.visibility_off
-                                                          : Icons.visibility,
-                                                      color: Colors
-                                                          .lightBlueAccent,
-                                                      size: 20,
-                                                    ),
-                                                    tooltip: isPasswordVisible
-                                                        ? 'Hide password'
-                                                        : 'Show password',
-                                                    padding: EdgeInsets.zero,
-                                                    constraints:
-                                                        const BoxConstraints(
-                                                      minWidth: 32,
-                                                      minHeight: 32,
-                                                    ),
-                                                  ),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 8),
-                                            // Show current password status
-                                            if (!isEditing) ...[
-                                              Container(
-                                                padding:
-                                                    const EdgeInsets.all(8),
-                                                decoration: BoxDecoration(
-                                                  color: Colors.grey.withAlpha(
-                                                      (0.2 * 255).toInt()),
-                                                  borderRadius:
-                                                      BorderRadius.circular(8),
-                                                  border: Border.all(
-                                                      color: Colors.grey
-                                                          .withAlpha((0.4 * 255)
-                                                              .toInt())),
-                                                ),
-                                                child: Row(
-                                                  children: [
-                                                    Icon(
-                                                      (customer['password'] ??
-                                                                      '')
-                                                                  .startsWith(
-                                                                      '\$2y\$') &&
-                                                              (customer['password'] ??
-                                                                          '')
-                                                                      .length >
-                                                                  50
-                                                          ? Icons.lock
-                                                          : Icons.lock_open,
-                                                      color: (customer['password'] ??
-                                                                      '')
-                                                                  .startsWith(
-                                                                      '\$2y\$') &&
-                                                              (customer['password'] ??
-                                                                          '')
-                                                                      .length >
-                                                                  50
-                                                          ? Colors.orange
-                                                          : Colors.green,
-                                                      size: 16,
-                                                    ),
-                                                    const SizedBox(width: 8),
-                                                    Expanded(
-                                                      child: Text(
-                                                        (customer['password'] ??
-                                                                        '')
-                                                                    .startsWith(
-                                                                        '\$2y\$') &&
-                                                                (customer['password'] ??
-                                                                            '')
-                                                                        .length >
-                                                                    50
-                                                            ? "Current password is encrypted (enter new password to update)"
-                                                            : "Current password: ${customer['password'] ?? 'Not set'}",
-                                                        style: const TextStyle(
-                                                          color: Colors.white70,
-                                                          fontSize: 12,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                              const SizedBox(height: 8),
-                                            ],
-                                            TextField(
-                                              controller: passwordController,
-                                              obscureText: !isPasswordVisible,
-                                              readOnly: !isEditing,
-                                              style: const TextStyle(
-                                                  color: Colors.white),
-                                              decoration: InputDecoration(
-                                                hintText: isEditing
-                                                    ? ((customer['password'] ??
-                                                                    '')
-                                                                .startsWith(
-                                                                    '\$2y\$') &&
-                                                            (customer['password'] ??
-                                                                        '')
-                                                                    .length >
-                                                                50
-                                                        ? "Enter new password (current is encrypted)"
-                                                        : "Enter new password or leave blank")
-                                                    : "",
-                                                hintStyle: const TextStyle(
-                                                    color: Colors.white54),
-                                                filled: true,
-                                                fillColor: Colors.black
-                                                    .withAlpha(
-                                                        (0.3 * 255).toInt()),
-                                                border: OutlineInputBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(14),
-                                                ),
-                                                focusedBorder:
-                                                    OutlineInputBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(14),
-                                                  borderSide: const BorderSide(
+                                                    fontSize: 18,
+                                                    fontWeight: FontWeight.bold,
                                                     color:
                                                         Colors.lightBlueAccent,
-                                                    width: 1.2,
                                                   ),
                                                 ),
-                                                contentPadding:
-                                                    const EdgeInsets.symmetric(
-                                                  horizontal: 16,
-                                                  vertical: 14,
+                                              ],
+                                            ),
+                                            const SizedBox(height: 20),
+                                            buildImageSection(setModalState),
+                                            const SizedBox(height: 24),
+                                            Row(
+                                              children: [
+                                                Expanded(
+                                                  child: buildFormField(
+                                                      "First Name",
+                                                      firstNameController,
+                                                      isRequired: true),
                                                 ),
-                                                suffixIcon: isEditing
-                                                    ? IconButton(
+                                                const SizedBox(width: 20),
+                                                Expanded(
+                                                  child: buildFormField(
+                                                      "Middle Name",
+                                                      middleNameController),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 20),
+                                            buildFormField(
+                                                "Last Name", lastNameController,
+                                                isRequired: true),
+                                            const SizedBox(height: 20),
+                                            buildFormField(
+                                              "Date of Birth",
+                                              birthdateController,
+                                              isReadOnly: true,
+                                              onTap: () =>
+                                                  pickDate(setModalState),
+                                            ),
+                                            const SizedBox(height: 20),
+                                            Row(
+                                              children: [
+                                                Expanded(
+                                                  child: buildFormField(
+                                                      "Email", emailController,
+                                                      isRequired: true),
+                                                ),
+                                                const SizedBox(width: 20),
+                                                Expanded(
+                                                  child: buildFormField(
+                                                      "Contact Number",
+                                                      contactController),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 20),
+                                            Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Row(
+                                                  children: [
+                                                    const Text(
+                                                      "New Password",
+                                                      style: TextStyle(
+                                                        fontSize: 16,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                        color: Colors.white,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 8),
+                                                    if (isEditing)
+                                                      IconButton(
                                                         onPressed: () {
                                                           setModalState(() {
                                                             isPasswordVisible =
@@ -874,84 +861,335 @@ class CustomerViewEditModal {
                                                                   .visibility_off
                                                               : Icons
                                                                   .visibility,
-                                                          color: Colors.white70,
+                                                          color: Colors
+                                                              .lightBlueAccent,
                                                           size: 20,
                                                         ),
                                                         tooltip: isPasswordVisible
                                                             ? 'Hide password'
                                                             : 'Show password',
-                                                      )
-                                                    : null,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        // Password instructions
-                                        if (isEditing) ...[
-                                          const SizedBox(height: 8),
-                                          Container(
-                                            padding: const EdgeInsets.all(12),
-                                            decoration: BoxDecoration(
-                                              color: Colors.blue.withAlpha(
-                                                  (0.1 * 255).toInt()),
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                              border: Border.all(
-                                                  color: Colors.blue.withAlpha(
-                                                      (0.3 * 255).toInt())),
-                                            ),
-                                            child: Row(
-                                              children: [
-                                                const Icon(Icons.info_outline,
-                                                    color: Colors.blue,
-                                                    size: 16),
-                                                const SizedBox(width: 8),
-                                                Expanded(
-                                                  child: Text(
-                                                    (customer['password'] ?? '')
-                                                                .startsWith(
-                                                                    '\$2y\$') &&
-                                                            (customer['password'] ??
-                                                                        '')
-                                                                    .length >
-                                                                50
-                                                        ? "Current password is encrypted. Enter a new password to replace it. New passwords will be stored as plain text."
-                                                        : "Enter a new password to change it, or leave blank to keep the current password. Passwords are stored as plain text.",
-                                                    style: const TextStyle(
-                                                      color: Colors.blue,
-                                                      fontSize: 12,
-                                                      fontWeight:
-                                                          FontWeight.w500,
+                                                        padding:
+                                                            EdgeInsets.zero,
+                                                        constraints:
+                                                            const BoxConstraints(
+                                                          minWidth: 32,
+                                                          minHeight: 32,
+                                                        ),
+                                                      ),
+                                                  ],
+                                                ),
+                                                const SizedBox(height: 8),
+                                                if (!isEditing) ...[
+                                                  Container(
+                                                    padding:
+                                                        const EdgeInsets.all(8),
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.grey
+                                                          .withAlpha((0.2 * 255)
+                                                              .toInt()),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              8),
+                                                      border: Border.all(
+                                                          color: Colors.grey
+                                                              .withAlpha((0.4 *
+                                                                      255)
+                                                                  .toInt())),
                                                     ),
+                                                    child: Row(
+                                                      children: [
+                                                        Icon(
+                                                          (customer['password'] ??
+                                                                          '')
+                                                                      .startsWith(
+                                                                          r'\$2y\$') &&
+                                                                  (customer['password'] ??
+                                                                              '')
+                                                                          .length >
+                                                                      50
+                                                              ? Icons.lock
+                                                              : Icons.lock_open,
+                                                          color: (customer['password'] ??
+                                                                          '')
+                                                                      .startsWith(
+                                                                          r'\$2y\$') &&
+                                                                  (customer['password'] ??
+                                                                              '')
+                                                                          .length >
+                                                                      50
+                                                              ? Colors.orange
+                                                              : Colors.green,
+                                                          size: 16,
+                                                        ),
+                                                        const SizedBox(
+                                                            width: 8),
+                                                        Expanded(
+                                                          child: Text(
+                                                            (customer['password'] ??
+                                                                            '')
+                                                                        .startsWith(
+                                                                            r'\$2y\$') &&
+                                                                    (customer['password'] ??
+                                                                                '')
+                                                                            .length >
+                                                                        50
+                                                                ? "Current password is encrypted (enter new password to update)"
+                                                                : "Current password: ${customer['password'] ?? 'Not set'}",
+                                                            style:
+                                                                const TextStyle(
+                                                              color: Colors
+                                                                  .white70,
+                                                              fontSize: 12,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 8),
+                                                ],
+                                                TextField(
+                                                  controller:
+                                                      passwordController,
+                                                  obscureText:
+                                                      !isPasswordVisible,
+                                                  readOnly: !isEditing,
+                                                  style: const TextStyle(
+                                                      color: Colors.white),
+                                                  decoration: InputDecoration(
+                                                    hintText: isEditing
+                                                        ? ((customer['password'] ??
+                                                                        '')
+                                                                    .startsWith(
+                                                                        r'\$2y\$') &&
+                                                                (customer['password'] ??
+                                                                            '')
+                                                                        .length >
+                                                                    50
+                                                            ? "Enter new password (current is encrypted)"
+                                                            : "Enter new password or leave blank")
+                                                        : "",
+                                                    hintStyle: const TextStyle(
+                                                        color: Colors.white54),
+                                                    filled: true,
+                                                    fillColor: Colors.black
+                                                        .withAlpha((0.3 * 255)
+                                                            .toInt()),
+                                                    border: OutlineInputBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              14),
+                                                    ),
+                                                    focusedBorder:
+                                                        OutlineInputBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              14),
+                                                      borderSide:
+                                                          const BorderSide(
+                                                        color: Colors
+                                                            .lightBlueAccent,
+                                                        width: 1.2,
+                                                      ),
+                                                    ),
+                                                    contentPadding:
+                                                        const EdgeInsets
+                                                            .symmetric(
+                                                      horizontal: 16,
+                                                      vertical: 14,
+                                                    ),
+                                                    suffixIcon: isEditing
+                                                        ? IconButton(
+                                                            onPressed: () {
+                                                              setModalState(() {
+                                                                isPasswordVisible =
+                                                                    !isPasswordVisible;
+                                                              });
+                                                            },
+                                                            icon: Icon(
+                                                              isPasswordVisible
+                                                                  ? Icons
+                                                                      .visibility_off
+                                                                  : Icons
+                                                                      .visibility,
+                                                              color: Colors
+                                                                  .white70,
+                                                              size: 20,
+                                                            ),
+                                                            tooltip: isPasswordVisible
+                                                                ? 'Hide password'
+                                                                : 'Show password',
+                                                          )
+                                                        : null,
                                                   ),
                                                 ),
                                               ],
                                             ),
-                                          ),
-                                        ],
-                                        const SizedBox(height: 20),
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: buildFormField(
-                                                  "Emergency Contact Name",
-                                                  emergencyNameController),
-                                            ),
-                                            const SizedBox(width: 20),
-                                            Expanded(
-                                              child: buildFormField(
-                                                  "Emergency Contact Phone",
-                                                  emergencyPhoneController),
+                                            if (isEditing) ...[
+                                              const SizedBox(height: 8),
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.all(12),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.blue.withAlpha(
+                                                      (0.1 * 255).toInt()),
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                  border: Border.all(
+                                                      color: Colors.blue
+                                                          .withAlpha((0.3 * 255)
+                                                              .toInt())),
+                                                ),
+                                                child: Row(
+                                                  children: [
+                                                    const Icon(
+                                                        Icons.info_outline,
+                                                        color: Colors.blue,
+                                                        size: 16),
+                                                    const SizedBox(width: 8),
+                                                    Expanded(
+                                                      child: Text(
+                                                        (customer['password'] ??
+                                                                        '')
+                                                                    .startsWith(
+                                                                        r'\$2y\$') &&
+                                                                (customer['password'] ??
+                                                                            '')
+                                                                        .length >
+                                                                    50
+                                                            ? "Current password is encrypted. Enter a new password to replace it. New passwords will be stored as plain text."
+                                                            : "Enter a new password to change it, or leave blank to keep the current password. Passwords are stored as plain text.",
+                                                        style: const TextStyle(
+                                                          color: Colors.blue,
+                                                          fontSize: 12,
+                                                          fontWeight:
+                                                              FontWeight.w500,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                            const SizedBox(height: 20),
+                                            Row(
+                                              children: [
+                                                Expanded(
+                                                  child: buildFormField(
+                                                      "Emergency Contact Name",
+                                                      emergencyNameController),
+                                                ),
+                                                const SizedBox(width: 20),
+                                                Expanded(
+                                                  child: buildFormField(
+                                                      "Emergency Contact Phone",
+                                                      emergencyPhoneController),
+                                                ),
+                                              ],
                                             ),
                                           ],
                                         ),
-                                      ],
-                                    ),
+                                      );
+
+                                      final Widget addressSection = Container(
+                                        padding: const EdgeInsets.all(20),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white
+                                              .withAlpha((0.05 * 255).toInt()),
+                                          borderRadius:
+                                              BorderRadius.circular(16),
+                                          border: Border.all(
+                                            color: Colors.white
+                                                .withAlpha((0.1 * 255).toInt()),
+                                            width: 1,
+                                          ),
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            const Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.location_on,
+                                                  color: Colors.lightBlueAccent,
+                                                  size: 24,
+                                                ),
+                                                SizedBox(width: 12),
+                                                Text(
+                                                  'Address Information',
+                                                  style: TextStyle(
+                                                    fontSize: 18,
+                                                    fontWeight: FontWeight.bold,
+                                                    color:
+                                                        Colors.lightBlueAccent,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 20),
+                                            buildFormField(
+                                                "Street", streetController),
+                                            const SizedBox(height: 20),
+                                            Row(
+                                              children: [
+                                                Expanded(
+                                                  child: buildFormField(
+                                                      "City", cityController),
+                                                ),
+                                                const SizedBox(width: 20),
+                                                Expanded(
+                                                  child: buildFormField(
+                                                      "State/Province",
+                                                      stateController),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 20),
+                                            Row(
+                                              children: [
+                                                Expanded(
+                                                  child: buildFormField(
+                                                      "Postal Code",
+                                                      postalCodeController),
+                                                ),
+                                                const SizedBox(width: 20),
+                                                Expanded(
+                                                  child: buildFormField(
+                                                      "Country",
+                                                      countryController),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      );
+
+                                      if (isWide) {
+                                        return Row(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Expanded(child: personalSection),
+                                            const SizedBox(width: 24),
+                                            Expanded(child: addressSection),
+                                          ],
+                                        );
+                                      }
+
+                                      return Column(
+                                        children: [
+                                          personalSection,
+                                          const SizedBox(height: 24),
+                                          addressSection,
+                                        ],
+                                      );
+                                    },
                                   ),
 
-                                  const SizedBox(height: 24),
+                                  const SizedBox(height: 32),
 
-                                  // Address Section
+                                  // Transaction Section
                                   Container(
                                     padding: const EdgeInsets.all(20),
                                     decoration: BoxDecoration(
@@ -971,13 +1209,13 @@ class CustomerViewEditModal {
                                         const Row(
                                           children: [
                                             Icon(
-                                              Icons.location_on,
+                                              Icons.receipt_long,
                                               color: Colors.lightBlueAccent,
                                               size: 24,
                                             ),
                                             SizedBox(width: 12),
                                             Text(
-                                              'Address Information',
+                                              'Transaction Information',
                                               style: TextStyle(
                                                 fontSize: 18,
                                                 fontWeight: FontWeight.bold,
@@ -987,20 +1225,69 @@ class CustomerViewEditModal {
                                           ],
                                         ),
                                         const SizedBox(height: 20),
-                                        buildFormField(
-                                            "Street", streetController),
-                                        const SizedBox(height: 20),
                                         Row(
                                           children: [
                                             Expanded(
                                               child: buildFormField(
-                                                  "City", cityController),
+                                                  "Paid Amount",
+                                                  paidAmountController),
                                             ),
                                             const SizedBox(width: 20),
                                             Expanded(
-                                              child: buildFormField(
-                                                  "State/Province",
-                                                  stateController),
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  const Text(
+                                                    'Payment Method',
+                                                    style: TextStyle(
+                                                      fontSize: 16,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      color: Colors.white,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 8),
+                                                  IgnorePointer(
+                                                    ignoring: !isEditing,
+                                                    child:
+                                                        DropdownButtonFormField<
+                                                            String>(
+                                                      value: paymentMethod,
+                                                      items: const [
+                                                        DropdownMenuItem(
+                                                          value: 'GCash',
+                                                          child: Text('GCash'),
+                                                        ),
+                                                        DropdownMenuItem(
+                                                          value: 'Cash',
+                                                          child: Text('Cash'),
+                                                        ),
+                                                      ],
+                                                      onChanged: (val) {
+                                                        if (val == null) return;
+                                                        setModalState(() {
+                                                          paymentMethod = val;
+                                                        });
+                                                      },
+                                                      decoration:
+                                                          InputDecoration(
+                                                        filled: true,
+                                                        fillColor: Colors.black
+                                                            .withAlpha(
+                                                                (0.3 * 255)
+                                                                    .toInt()),
+                                                        border:
+                                                            OutlineInputBorder(
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(14),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
                                             ),
                                           ],
                                         ),
@@ -1008,22 +1295,164 @@ class CustomerViewEditModal {
                                         Row(
                                           children: [
                                             Expanded(
-                                              child: buildFormField(
-                                                  "Postal Code",
-                                                  postalCodeController),
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  const Text(
+                                                    'Payment Status',
+                                                    style: TextStyle(
+                                                      fontSize: 16,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      color: Colors.white,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 8),
+                                                  IgnorePointer(
+                                                    ignoring: !isEditing,
+                                                    child:
+                                                        DropdownButtonFormField<
+                                                            String>(
+                                                      value: paymentStatus,
+                                                      items: const [
+                                                        DropdownMenuItem(
+                                                          value: 'Paid',
+                                                          child: Text('Paid'),
+                                                        ),
+                                                        DropdownMenuItem(
+                                                          value: 'Refund',
+                                                          child: Text('Refund'),
+                                                        ),
+                                                      ],
+                                                      onChanged: (val) {
+                                                        if (val == null) return;
+                                                        setModalState(() {
+                                                          paymentStatus = val;
+                                                        });
+                                                      },
+                                                      decoration:
+                                                          InputDecoration(
+                                                        filled: true,
+                                                        fillColor: Colors.black
+                                                            .withAlpha(
+                                                                (0.3 * 255)
+                                                                    .toInt()),
+                                                        border:
+                                                            OutlineInputBorder(
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(14),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
                                             ),
                                             const SizedBox(width: 20),
                                             Expanded(
                                               child: buildFormField(
-                                                  "Country", countryController),
+                                                'Transaction Date',
+                                                transactionDateController,
+                                                isReadOnly: true,
+                                                onTap: () =>
+                                                    pickTransactionDate(
+                                                        setModalState),
+                                              ),
                                             ),
                                           ],
+                                        ),
+                                        const SizedBox(height: 20),
+                                        buildFormField('Reference Number',
+                                            referenceNumberController),
+                                        const SizedBox(height: 20),
+                                        const Text(
+                                          'Reference Image',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 12),
+                                        Center(
+                                          child: Column(
+                                            children: [
+                                              Container(
+                                                height: 120,
+                                                width: 120,
+                                                decoration: BoxDecoration(
+                                                  color: Colors.white24,
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                  border: Border.all(
+                                                    color: Colors.white
+                                                        .withAlpha((0.25 * 255)
+                                                            .toInt()),
+                                                    width: 2,
+                                                  ),
+                                                ),
+                                                child: ClipRRect(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                  child: (kIsWeb &&
+                                                          transactionImageBytes !=
+                                                              null)
+                                                      ? Image.memory(
+                                                          transactionImageBytes!,
+                                                          fit: BoxFit.cover,
+                                                        )
+                                                      : (transactionImageFile !=
+                                                              null)
+                                                          ? Image.file(
+                                                              transactionImageFile!,
+                                                              fit: BoxFit.cover,
+                                                            )
+                                                          : const Icon(
+                                                              Icons.image,
+                                                              size: 60,
+                                                              color: Colors
+                                                                  .white70,
+                                                            ),
+                                                ),
+                                              ),
+                                              if (isEditing) ...[
+                                                const SizedBox(height: 12),
+                                                ElevatedButton.icon(
+                                                  onPressed: () =>
+                                                      pickTransactionImage(
+                                                          setModalState),
+                                                  icon: const Icon(
+                                                      Icons.camera_alt,
+                                                      size: 18),
+                                                  label: const Text(
+                                                      'Change Reference Image'),
+                                                  style:
+                                                      ElevatedButton.styleFrom(
+                                                    backgroundColor:
+                                                        Colors.lightBlueAccent,
+                                                    foregroundColor:
+                                                        Colors.black,
+                                                    shape:
+                                                        RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              20),
+                                                    ),
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
+                                                        horizontal: 20,
+                                                        vertical: 10),
+                                                  ),
+                                                ),
+                                              ],
+                                            ],
+                                          ),
                                         ),
                                       ],
                                     ),
                                   ),
-
-                                  const SizedBox(height: 32),
 
                                   // Action buttons
                                   if (isEditing)
@@ -1094,6 +1523,42 @@ class CustomerViewEditModal {
                                                                 'address_details']
                                                             ?['country'] ??
                                                         '';
+                                                    paidAmountController
+                                                        .text = (customer[
+                                                                    'transaction_details']
+                                                                ?[
+                                                                'paid_amount'] ??
+                                                            '')
+                                                        .toString();
+                                                    transactionDateController
+                                                        .text = customer[
+                                                                'transaction_details']
+                                                            ?[
+                                                            'transaction_date'] ??
+                                                        '';
+                                                    referenceNumberController
+                                                        .text = customer[
+                                                                'transaction_details']
+                                                            ?[
+                                                            'reference_number'] ??
+                                                        '';
+                                                    paymentMethod = (customer[
+                                                                    'transaction_details']
+                                                                ?[
+                                                                'payment_method'] ??
+                                                            'GCash')
+                                                        .toString();
+                                                    paymentStatus = (customer[
+                                                                    'transaction_details']
+                                                                ?[
+                                                                'payment_status'] ??
+                                                            'Paid')
+                                                        .toString();
+                                                    transactionImageFile = null;
+                                                    transactionImageBytes = customer[
+                                                            'transaction_details']
+                                                        ?[
+                                                        'reference_image_bytes'];
                                                     selectedImage = null;
                                                     webImageBytes = null;
                                                     errorMessage = null;
@@ -1160,6 +1625,13 @@ class CustomerViewEditModal {
         );
       },
     );
-    return false; // Return false if modal is closed without updating
+
+    // Restore portrait orientation after modal closes
+    await SystemChrome.setPreferredOrientations(
+      [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown],
+    );
+
+    return dialogResult ??
+        false; // Return false if modal is closed without updating
   }
 }

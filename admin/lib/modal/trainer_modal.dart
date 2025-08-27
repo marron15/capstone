@@ -1,9 +1,31 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
 
 class TrainerModal {
+  static InputDecoration _inputDecoration(String label) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: const TextStyle(color: Colors.white70),
+      filled: true,
+      fillColor: Colors.black.withAlpha((0.3 * 255).toInt()),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Colors.lightBlueAccent, width: 1.2),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide:
+            BorderSide(color: Colors.white.withAlpha((0.18 * 255).toInt())),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    );
+  }
+
   static void showAddTrainerModal(
       BuildContext context, Function(Map<String, String>) onAdd) {
     final TextEditingController firstNameController = TextEditingController();
+    final TextEditingController middleNameController = TextEditingController();
     final TextEditingController lastNameController = TextEditingController();
     final TextEditingController contactNumberController =
         TextEditingController();
@@ -13,67 +35,187 @@ class TrainerModal {
       context: context,
       builder: (BuildContext context) {
         return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Container(
-            width: 400,
-            padding: const EdgeInsets.all(20),
-            child: Form(
-              key: formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
+          backgroundColor: Colors.transparent,
+          insetPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          child: Center(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(22),
+              child: Stack(
                 children: [
-                  TextFormField(
-                    controller: firstNameController,
-                    decoration: const InputDecoration(labelText: 'First Name'),
-                    validator: (value) => value == null || value.isEmpty
-                        ? 'Please enter first name'
-                        : null,
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: lastNameController,
-                    decoration: const InputDecoration(labelText: 'Last Name'),
-                    validator: (value) => value == null || value.isEmpty
-                        ? 'Please enter last name'
-                        : null,
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: contactNumberController,
-                    decoration:
-                        const InputDecoration(labelText: 'Contact Number'),
-                    validator: (value) => value == null || value.isEmpty
-                        ? 'Please enter contact number'
-                        : null,
-                  ),
-                  const SizedBox(height: 24),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      TextButton(
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                        child: const Text('Cancel'),
+                  BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                    child: Container(
+                      width: 600,
+                      constraints: const BoxConstraints(maxWidth: 700),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(22),
+                        color: Colors.black.withAlpha((0.7 * 255).toInt()),
+                        border: Border.all(
+                          color: Colors.white.withAlpha((0.25 * 255).toInt()),
+                          width: 1.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.blueAccent
+                                .withAlpha((0.18 * 255).toInt()),
+                            blurRadius: 32,
+                            spreadRadius: 2,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 12),
-                      ElevatedButton(
-                        onPressed: () {
-                          if (formKey.currentState!.validate()) {
-                            onAdd({
-                              'firstName': firstNameController.text,
-                              'lastName': lastNameController.text,
-                              'contactNumber': contactNumberController.text,
-                            });
-                            Navigator.of(context).pop();
-                          }
-                        },
-                        child: const Text('Submit'),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 28,
+                          vertical: 24,
+                        ),
+                        child: Form(
+                          key: formKey,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 36,
+                                    height: 36,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          Colors.blueAccent
+                                              .withAlpha((0.25 * 255).toInt()),
+                                          Colors.lightBlueAccent
+                                              .withAlpha((0.18 * 255).toInt()),
+                                        ],
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                      ),
+                                    ),
+                                    child: const Icon(
+                                      Icons.person_add,
+                                      color: Colors.lightBlueAccent,
+                                      size: 24,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  const Text(
+                                    'Add Trainer',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 20,
+                                      color: Colors.white,
+                                      letterSpacing: 0.2,
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  IconButton(
+                                    onPressed: () =>
+                                        Navigator.of(context).pop(),
+                                    icon: const Icon(Icons.close,
+                                        size: 26, color: Colors.white),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 20),
+                              Divider(
+                                thickness: 1.5,
+                                color: Colors.lightBlueAccent
+                                    .withAlpha((0.22 * 255).toInt()),
+                                height: 24,
+                                endIndent: 12,
+                                indent: 2,
+                              ),
+                              const SizedBox(height: 16),
+                              TextFormField(
+                                controller: firstNameController,
+                                style: const TextStyle(color: Colors.white),
+                                decoration: _inputDecoration('First Name'),
+                                validator: (value) =>
+                                    value == null || value.isEmpty
+                                        ? 'Please enter first name'
+                                        : null,
+                              ),
+                              const SizedBox(height: 16),
+                              TextFormField(
+                                controller: middleNameController,
+                                style: const TextStyle(color: Colors.white),
+                                decoration:
+                                    _inputDecoration('Middle Name (optional)'),
+                              ),
+                              const SizedBox(height: 16),
+                              TextFormField(
+                                controller: lastNameController,
+                                style: const TextStyle(color: Colors.white),
+                                decoration: _inputDecoration('Last Name'),
+                                validator: (value) =>
+                                    value == null || value.isEmpty
+                                        ? 'Please enter last name'
+                                        : null,
+                              ),
+                              const SizedBox(height: 16),
+                              TextFormField(
+                                controller: contactNumberController,
+                                style: const TextStyle(color: Colors.white),
+                                decoration: _inputDecoration('Contact Number'),
+                                validator: (value) =>
+                                    value == null || value.isEmpty
+                                        ? 'Please enter contact number'
+                                        : null,
+                              ),
+                              const SizedBox(height: 24),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  ElevatedButton(
+                                    onPressed: () =>
+                                        Navigator.of(context).pop(),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.white,
+                                      foregroundColor: Colors.black,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(14),
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 24, vertical: 12),
+                                    ),
+                                    child: const Text('Cancel'),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      if (formKey.currentState!.validate()) {
+                                        onAdd({
+                                          'firstName': firstNameController.text,
+                                          'middleName':
+                                              middleNameController.text,
+                                          'lastName': lastNameController.text,
+                                          'contactNumber':
+                                              contactNumberController.text,
+                                        });
+                                        Navigator.of(context).pop();
+                                      }
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.lightBlueAccent,
+                                      foregroundColor: Colors.black,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(14),
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 24, vertical: 12),
+                                    ),
+                                    child: const Text('Submit'),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                    ],
+                    ),
                   ),
                 ],
               ),
@@ -88,6 +230,8 @@ class TrainerModal {
       Map<String, String> trainer, Function(Map<String, String>) onEdit) {
     final TextEditingController firstNameController =
         TextEditingController(text: trainer['firstName']);
+    final TextEditingController middleNameController =
+        TextEditingController(text: trainer['middleName']);
     final TextEditingController lastNameController =
         TextEditingController(text: trainer['lastName']);
     final TextEditingController contactNumberController =
@@ -98,67 +242,187 @@ class TrainerModal {
       context: context,
       builder: (BuildContext context) {
         return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Container(
-            width: 400,
-            padding: const EdgeInsets.all(20),
-            child: Form(
-              key: formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
+          backgroundColor: Colors.transparent,
+          insetPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          child: Center(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(22),
+              child: Stack(
                 children: [
-                  TextFormField(
-                    controller: firstNameController,
-                    decoration: const InputDecoration(labelText: 'First Name'),
-                    validator: (value) => value == null || value.isEmpty
-                        ? 'Please enter first name'
-                        : null,
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: lastNameController,
-                    decoration: const InputDecoration(labelText: 'Last Name'),
-                    validator: (value) => value == null || value.isEmpty
-                        ? 'Please enter last name'
-                        : null,
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: contactNumberController,
-                    decoration:
-                        const InputDecoration(labelText: 'Contact Number'),
-                    validator: (value) => value == null || value.isEmpty
-                        ? 'Please enter contact number'
-                        : null,
-                  ),
-                  const SizedBox(height: 24),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      TextButton(
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                        child: const Text('Cancel'),
+                  BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                    child: Container(
+                      width: 600,
+                      constraints: const BoxConstraints(maxWidth: 700),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(22),
+                        color: Colors.black.withAlpha((0.7 * 255).toInt()),
+                        border: Border.all(
+                          color: Colors.white.withAlpha((0.25 * 255).toInt()),
+                          width: 1.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.blueAccent
+                                .withAlpha((0.18 * 255).toInt()),
+                            blurRadius: 32,
+                            spreadRadius: 2,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 12),
-                      ElevatedButton(
-                        onPressed: () {
-                          if (formKey.currentState!.validate()) {
-                            onEdit({
-                              'firstName': firstNameController.text,
-                              'lastName': lastNameController.text,
-                              'contactNumber': contactNumberController.text,
-                            });
-                            Navigator.of(context).pop();
-                          }
-                        },
-                        child: const Text('Save'),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 28,
+                          vertical: 24,
+                        ),
+                        child: Form(
+                          key: formKey,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 36,
+                                    height: 36,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          Colors.blueAccent
+                                              .withAlpha((0.25 * 255).toInt()),
+                                          Colors.lightBlueAccent
+                                              .withAlpha((0.18 * 255).toInt()),
+                                        ],
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                      ),
+                                    ),
+                                    child: const Icon(
+                                      Icons.edit,
+                                      color: Colors.lightBlueAccent,
+                                      size: 24,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  const Text(
+                                    'Edit Trainer',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 20,
+                                      color: Colors.white,
+                                      letterSpacing: 0.2,
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  IconButton(
+                                    onPressed: () =>
+                                        Navigator.of(context).pop(),
+                                    icon: const Icon(Icons.close,
+                                        size: 26, color: Colors.white),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 20),
+                              Divider(
+                                thickness: 1.5,
+                                color: Colors.lightBlueAccent
+                                    .withAlpha((0.22 * 255).toInt()),
+                                height: 24,
+                                endIndent: 12,
+                                indent: 2,
+                              ),
+                              const SizedBox(height: 16),
+                              TextFormField(
+                                controller: firstNameController,
+                                style: const TextStyle(color: Colors.white),
+                                decoration: _inputDecoration('First Name'),
+                                validator: (value) =>
+                                    value == null || value.isEmpty
+                                        ? 'Please enter first name'
+                                        : null,
+                              ),
+                              const SizedBox(height: 16),
+                              TextFormField(
+                                controller: middleNameController,
+                                style: const TextStyle(color: Colors.white),
+                                decoration:
+                                    _inputDecoration('Middle Name (optional)'),
+                              ),
+                              const SizedBox(height: 16),
+                              TextFormField(
+                                controller: lastNameController,
+                                style: const TextStyle(color: Colors.white),
+                                decoration: _inputDecoration('Last Name'),
+                                validator: (value) =>
+                                    value == null || value.isEmpty
+                                        ? 'Please enter last name'
+                                        : null,
+                              ),
+                              const SizedBox(height: 16),
+                              TextFormField(
+                                controller: contactNumberController,
+                                style: const TextStyle(color: Colors.white),
+                                decoration: _inputDecoration('Contact Number'),
+                                validator: (value) =>
+                                    value == null || value.isEmpty
+                                        ? 'Please enter contact number'
+                                        : null,
+                              ),
+                              const SizedBox(height: 24),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  ElevatedButton(
+                                    onPressed: () =>
+                                        Navigator.of(context).pop(),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.white,
+                                      foregroundColor: Colors.black,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(14),
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 24, vertical: 12),
+                                    ),
+                                    child: const Text('Cancel'),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      if (formKey.currentState!.validate()) {
+                                        onEdit({
+                                          'firstName': firstNameController.text,
+                                          'middleName':
+                                              middleNameController.text,
+                                          'lastName': lastNameController.text,
+                                          'contactNumber':
+                                              contactNumberController.text,
+                                        });
+                                        Navigator.of(context).pop();
+                                      }
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.lightBlueAccent,
+                                      foregroundColor: Colors.black,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(14),
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 24, vertical: 12),
+                                    ),
+                                    child: const Text('Save'),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                    ],
+                    ),
                   ),
                 ],
               ),
