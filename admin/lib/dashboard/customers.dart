@@ -267,27 +267,7 @@ class _CustomersPageState extends State<CustomersPage> {
         title: const Center(child: Text('Customer Management')),
         foregroundColor: Colors.white,
         backgroundColor: const Color(0xFF36454F),
-        actions: [
-          // Debug button - only visible in debug mode
-          if (kDebugMode)
-            Padding(
-              padding: const EdgeInsets.only(right: 16.0),
-              child: ElevatedButton.icon(
-                onPressed: _showAddCustomerModal,
-                icon: const Icon(Icons.person_add, size: 18),
-                label: const Text('Add Customer'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.blue,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                ),
-              ),
-            ),
-        ],
+        actions: const [],
       ),
       body: Container(
         decoration: const BoxDecoration(
@@ -569,7 +549,7 @@ class _CustomersPageState extends State<CustomersPage> {
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                        color: Colors.white,
                       ),
                     ),
                     ElevatedButton.icon(
