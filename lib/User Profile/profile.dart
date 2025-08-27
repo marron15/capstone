@@ -43,7 +43,6 @@ class _ProfilePageState extends State<ProfilePage> {
   DateTime? _birthdate;
   TextEditingController _passwordController = TextEditingController();
   bool _obscurePassword = true;
-  String? _passwordError;
   Uint8List? _pendingWebImageBytes;
 
   // Controllers for address fields
@@ -317,50 +316,6 @@ class _ProfilePageState extends State<ProfilePage> {
       _pendingImageFile = null;
       _pendingWebImageBytes = null;
     });
-  }
-
-  void _saveProfile() {
-    FocusScope.of(context).unfocus();
-    setState(() {
-      _passwordError = null;
-    });
-    if (_passwordController.text.isNotEmpty) {
-      if (_passwordController.text != profileNotifier.value.password) {
-        setState(() {
-          _passwordError = 'Password does not match';
-        });
-        return;
-      }
-    }
-    profileNotifier.value = ProfileData(
-      imageFile: _imageFile,
-      webImageBytes:
-          _pendingWebImageBytes ?? profileNotifier.value.webImageBytes,
-      firstName: _firstNameController.text,
-      middleName: _middleNameController.text,
-      lastName: _lastNameController.text,
-      contactNumber: _contactController.text,
-      email: _emailController.text,
-      birthdate: _birthdate,
-      password: profileNotifier.value.password,
-      address: profileNotifier.value.address,
-      street: profileNotifier.value.street,
-      city: profileNotifier.value.city,
-      stateProvince: profileNotifier.value.stateProvince,
-      postalCode: profileNotifier.value.postalCode,
-      country: profileNotifier.value.country,
-      emergencyContactName:
-          _emergencyNameController.text.isNotEmpty
-              ? _emergencyNameController.text
-              : profileNotifier.value.emergencyContactName,
-      emergencyContactPhone:
-          _emergencyPhoneController.text.isNotEmpty
-              ? _emergencyPhoneController.text
-              : profileNotifier.value.emergencyContactPhone,
-    );
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('Profile saved!')));
   }
 
   // Save profile changes to server

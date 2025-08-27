@@ -179,7 +179,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
     final screenWidth = MediaQuery.of(context).size.width;
 
     // Calculate optimal card width and number of columns
-    const double minCardWidth = 300.0;
+    const double minCardWidth = 350.0;
     const double cardSpacing = 16.0;
     const double horizontalPadding = 32.0;
 
@@ -208,8 +208,15 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
     final maxColumns = (availableWidth / (minCardWidth + cardSpacing)).floor();
     final crossAxisCount = maxColumns.clamp(1, 3);
 
-    // Use a fixed aspect ratio that works well for most cases
-    const double aspectRatio = 2.8;
+    // Use responsive aspect ratio based on screen width
+    double aspectRatio;
+    if (screenWidth < 1200) {
+      aspectRatio = 1.6; // More height for smaller screens
+    } else if (screenWidth < 1600) {
+      aspectRatio = 1.8; // Balanced ratio for medium screens
+    } else {
+      aspectRatio = 2.0; // Wider ratio for large screens
+    }
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -427,7 +434,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                           ),
                         )
                       : SingleChildScrollView(
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(24),
                           child: _filteredAdmins.isEmpty
                               ? Card(
                                   child: Container(

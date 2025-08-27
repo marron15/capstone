@@ -45,7 +45,8 @@ class AdminProfileCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 768;
-    final isDesktopGrid = !isMobile;
+    final isTablet = screenWidth >= 768 && screenWidth < 1024;
+    final isDesktop = screenWidth >= 1024;
 
     return Container(
       margin: EdgeInsets.only(bottom: isMobile ? 15 : 20),
@@ -56,9 +57,10 @@ class AdminProfileCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
         ),
         child: Container(
+          width: double.infinity,
           constraints: BoxConstraints(
-            minHeight: isMobile ? 180 : (isDesktopGrid ? 200 : 230),
-            maxHeight: isMobile ? 240 : (isDesktopGrid ? 260 : 300),
+            minHeight: isMobile ? 160 : (isTablet ? 180 : 200),
+            maxHeight: isMobile ? 200 : (isTablet ? 220 : 240),
           ),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
@@ -76,47 +78,44 @@ class AdminProfileCard extends StatelessWidget {
             ),
           ),
           child: Padding(
-            padding: EdgeInsets.all(isMobile ? 14 : 16),
+            padding: EdgeInsets.all(isMobile ? 8 : (isTablet ? 10 : 12)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
                 // Header Section with Profile Image and Name
-                Flexible(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Enhanced Profile Image
-                      _buildEnhancedProfileImage(isMobile, isDesktopGrid),
-                      SizedBox(width: isMobile ? 10 : 12),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Enhanced Profile Image
+                    _buildEnhancedProfileImage(isMobile, isTablet, isDesktop),
+                    SizedBox(width: isMobile ? 6 : (isTablet ? 8 : 10)),
 
-                      // Admin Details Section
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            // Name with enhanced styling
-                            _buildNameSection(isMobile, isDesktopGrid),
-                            SizedBox(height: isMobile ? 4 : 6),
+                    // Admin Details Section
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Name with enhanced styling
+                          _buildNameSection(isMobile, isTablet, isDesktop),
+                          SizedBox(height: isMobile ? 3 : 4),
 
-                            // Status Badge
-                            _buildStatusBadge(),
-                            SizedBox(height: isMobile ? 6 : 8),
+                          // Status Badge
+                          _buildStatusBadge(),
+                          SizedBox(height: isMobile ? 4 : 6),
 
-                            // Contact Information
-                            Flexible(
-                              child: _buildContactInformation(
-                                  isMobile, isDesktopGrid),
-                            ),
-                          ],
-                        ),
+                          // Contact Information
+                          _buildContactInformation(
+                              isMobile, isTablet, isDesktop),
+                        ],
                       ),
+                    ),
 
-                      // Action Buttons
-                      _buildActionButtons(isMobile, isDesktopGrid, context),
-                    ],
-                  ),
+                    // Action Buttons
+                    SizedBox(width: isMobile ? 4 : 8),
+                    _buildActionButtons(isMobile, isTablet, isDesktop, context),
+                  ],
                 ),
               ],
             ),
@@ -127,8 +126,9 @@ class AdminProfileCard extends StatelessWidget {
   }
 
   // Enhanced profile image with better styling
-  Widget _buildEnhancedProfileImage(bool isMobile, bool isDesktopGrid) {
-    final size = isMobile ? 55.0 : (isDesktopGrid ? 65.0 : 75.0);
+  Widget _buildEnhancedProfileImage(
+      bool isMobile, bool isTablet, bool isDesktop) {
+    final size = isMobile ? 45.0 : (isTablet ? 55.0 : 65.0);
 
     return Container(
       width: size,
@@ -164,7 +164,7 @@ class AdminProfileCard extends StatelessWidget {
   }
 
   // Enhanced name section
-  Widget _buildNameSection(bool isMobile, bool isDesktopGrid) {
+  Widget _buildNameSection(bool isMobile, bool isTablet, bool isDesktop) {
     // Build full name with proper handling of missing parts
     List<String> nameParts = [];
 
@@ -200,7 +200,7 @@ class AdminProfileCard extends StatelessWidget {
         Text(
           fullName,
           style: TextStyle(
-            fontSize: isMobile ? 16 : (isDesktopGrid ? 15 : 18),
+            fontSize: isMobile ? 16 : (isTablet ? 15 : 18),
             fontWeight: FontWeight.bold,
             color: Colors.grey.shade800,
             letterSpacing: 0.3,
@@ -212,7 +212,7 @@ class AdminProfileCard extends StatelessWidget {
         Text(
           'Administrator',
           style: TextStyle(
-            fontSize: isMobile ? 10 : (isDesktopGrid ? 9 : 11),
+            fontSize: isMobile ? 10 : (isTablet ? 9 : 11),
             color: Colors.blue.shade600,
             fontWeight: FontWeight.w500,
             letterSpacing: 0.2,
@@ -257,17 +257,18 @@ class AdminProfileCard extends StatelessWidget {
   }
 
   // Enhanced contact information section
-  Widget _buildContactInformation(bool isMobile, bool isDesktopGrid) {
+  Widget _buildContactInformation(
+      bool isMobile, bool isTablet, bool isDesktop) {
     // Check if we have date of birth to limit the number of fields shown
     final hasDateOfBirth = (admin['date_of_birth'] ?? admin['dateOfBirth']) !=
             null &&
         (admin['date_of_birth'] ?? admin['dateOfBirth']).toString().isNotEmpty;
 
     return Container(
-      padding: EdgeInsets.all(isMobile ? 8 : 10),
+      padding: EdgeInsets.all(isMobile ? 6 : 8),
       decoration: BoxDecoration(
         color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Colors.grey.shade200),
       ),
       child: Column(
@@ -280,20 +281,20 @@ class AdminProfileCard extends StatelessWidget {
             admin['email_address'] ?? admin['email'],
             Colors.blue,
             isMobile: isMobile,
-            isCompact: isDesktopGrid,
+            isCompact: true,
           ),
-          SizedBox(height: isMobile ? 4 : 6),
+          SizedBox(height: isMobile ? 2 : 3),
           _buildEnhancedInfoRow(
             Icons.phone_outlined,
             'Contact',
             admin['phone_number'] ?? admin['contactNumber'],
             Colors.green,
             isMobile: isMobile,
-            isCompact: isDesktopGrid,
+            isCompact: true,
           ),
           // Only show date of birth if there's space and it exists
           if (hasDateOfBirth && !isMobile) ...[
-            SizedBox(height: isMobile ? 4 : 6),
+            SizedBox(height: isMobile ? 2 : 3),
             _buildEnhancedInfoRow(
               Icons.cake_outlined,
               'DOB',
@@ -303,14 +304,14 @@ class AdminProfileCard extends StatelessWidget {
               isCompact: true,
             ),
           ],
-          SizedBox(height: isMobile ? 4 : 6),
+          SizedBox(height: isMobile ? 2 : 3),
           _buildEnhancedInfoRow(
             Icons.lock_outline,
             'Password',
             admin['password'] ?? '********',
             Colors.orange,
             isMobile: isMobile,
-            isCompact: isDesktopGrid,
+            isCompact: true,
           ),
         ],
       ),
@@ -319,19 +320,19 @@ class AdminProfileCard extends StatelessWidget {
 
   // Enhanced action buttons
   Widget _buildActionButtons(
-      bool isMobile, bool isDesktopGrid, BuildContext context) {
+      bool isMobile, bool isTablet, bool isDesktop, BuildContext context) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(8),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
+                blurRadius: 4,
+                offset: const Offset(0, 1),
               ),
             ],
           ),
@@ -342,20 +343,20 @@ class AdminProfileCard extends StatelessWidget {
                 color: Colors.blue,
                 onPressed: () => _handleEdit(context),
                 isMobile: isMobile,
-                isDesktopGrid: isDesktopGrid,
+                isDesktopGrid: isTablet,
                 tooltip: 'Edit Admin',
               ),
               Container(
                 height: 1,
                 color: Colors.grey.shade200,
-                margin: const EdgeInsets.symmetric(horizontal: 8),
+                margin: const EdgeInsets.symmetric(horizontal: 4),
               ),
               _buildActionButton(
                 icon: Icons.delete_outline,
                 color: Colors.red,
                 onPressed: () => _handleDelete(context),
                 isMobile: isMobile,
-                isDesktopGrid: isDesktopGrid,
+                isDesktopGrid: isTablet,
                 tooltip: 'Delete Admin',
               ),
             ],
@@ -374,8 +375,8 @@ class AdminProfileCard extends StatelessWidget {
     required bool isDesktopGrid,
     required String tooltip,
   }) {
-    final size = isMobile ? 32.0 : (isDesktopGrid ? 36.0 : 40.0);
-    final iconSize = isMobile ? 16.0 : (isDesktopGrid ? 18.0 : 20.0);
+    final size = isMobile ? 28.0 : (isDesktopGrid ? 32.0 : 36.0);
+    final iconSize = isMobile ? 14.0 : (isDesktopGrid ? 16.0 : 18.0);
 
     return Tooltip(
       message: tooltip,
@@ -735,18 +736,18 @@ class AdminProfileCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          padding: EdgeInsets.all(isMobile || isCompact ? 3 : 4),
+          padding: EdgeInsets.all(isMobile || isCompact ? 2 : 3),
           decoration: BoxDecoration(
             color: iconColor.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: BorderRadius.circular(3),
           ),
           child: Icon(
             icon,
-            size: isMobile || isCompact ? 10 : 12,
+            size: isMobile || isCompact ? 8 : 10,
             color: iconColor,
           ),
         ),
-        SizedBox(width: isMobile ? 6 : 8),
+        SizedBox(width: isMobile ? 4 : 6),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -755,7 +756,7 @@ class AdminProfileCard extends StatelessWidget {
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: isMobile || isCompact ? 9 : 10,
+                  fontSize: isMobile || isCompact ? 8 : 9,
                   fontWeight: FontWeight.w600,
                   color: Colors.grey.shade600,
                   letterSpacing: 0.1,
@@ -765,7 +766,7 @@ class AdminProfileCard extends StatelessWidget {
               Text(
                 value,
                 style: TextStyle(
-                  fontSize: isMobile || isCompact ? 11 : 12,
+                  fontSize: isMobile || isCompact ? 10 : 11,
                   color: Colors.grey.shade800,
                   fontWeight: FontWeight.w500,
                 ),
