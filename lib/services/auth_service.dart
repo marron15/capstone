@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 
 class AuthService {
-  static const String baseUrl = 'http://localhost/sample_api/customers';
+  static const String baseUrl = 'http://localhost/gym_api/customers';
 
   static Future<LoginResult> login(String email, String password) async {
     try {
@@ -457,7 +457,7 @@ class CustomerData {
 Future<String?> _fetchAddressForCustomer(int customerId) async {
   try {
     final response = await http.get(
-      Uri.parse('http://localhost/sample_api/address/getAllAddress.php'),
+      Uri.parse('http://localhost/gym_api/address/getAllAddress.php'),
       headers: {'Accept': 'application/json'},
     );
     if (response.statusCode != 200) return null;

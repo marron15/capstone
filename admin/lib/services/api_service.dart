@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 
 class ApiService {
   // Base URL for your API - adjust this to match your XAMPP setup
-  static const String baseUrl = 'http://localhost/sample_api';
+  static const String baseUrl = 'http://localhost/gym_api';
 
   // API endpoints
   static const String signupEndpoint = '$baseUrl/customers/Signup.php';

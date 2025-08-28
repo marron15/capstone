@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AdminService {
-  static const String baseUrl = 'http://localhost/sample_api/admin_account';
+  static const String baseUrl = 'http://localhost/gym_api/admin_account';
 
   // Store admin data locally
   static const String _adminKey = 'admin_data';
