@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -21,7 +20,6 @@ class AdminService {
     required String password,
     String? dateOfBirth,
     String? phoneNumber,
-    dynamic profileImage,
   }) async {
     try {
       // Convert date format if provided
@@ -54,20 +52,6 @@ class AdminService {
         requestBody['phone_number'] = phoneNumber;
       }
 
-      // Handle profile image
-      if (profileImage != null) {
-        if (kIsWeb && profileImage is Uint8List) {
-          // Convert web image to base64
-          String base64Image = base64Encode(profileImage);
-          requestBody['img'] = 'data:image/jpeg;base64,$base64Image';
-        } else if (profileImage is File) {
-          // Convert file to base64
-          List<int> imageBytes = await profileImage.readAsBytes();
-          String base64Image = base64Encode(imageBytes);
-          requestBody['img'] = 'data:image/jpeg;base64,$base64Image';
-        }
-      }
-
       debugPrint('🔄 Creating admin account...');
       debugPrint('📡 Request body: $requestBody');
 
@@ -91,26 +75,6 @@ class AdminService {
             await _storeAdminData(result['admin'], result['access_token'],
                 result['refresh_token'] ?? '');
           }
-
-          // Best-effort: enrich returned admin with image data immediately
-          try {
-            final admin = result['admin'];
-            final id = admin?['id'];
-            if (id != null) {
-              final adminId = id is int ? id : int.tryParse(id.toString());
-              if (adminId != null) {
-                final imageData = await _getAdminImageData(adminId);
-                debugPrint('🔄 Image data: $imageData');
-                if (imageData != null) {
-                  if (imageData.startsWith('http')) {
-                    result['admin']['img_url'] = imageData;
-                  } else {
-                    result['admin']['img'] = imageData;
-                  }
-                }
-              }
-            }
-          } catch (_) {}
 
           debugPrint('✅ Admin created successfully');
           return result;
@@ -204,28 +168,7 @@ class AdminService {
           // Normalize admins list
           final admins = List<Map<String, dynamic>>.from(result);
 
-          // Fetch and attach image for each admin in parallel (best-effort)
-          final futures = admins.map((admin) async {
-            try {
-              final id = admin['id'];
-              if (id is int || (id is String && int.tryParse(id) != null)) {
-                final adminId = id is int ? id : int.parse(id);
-                final imageData = await _getAdminImageData(adminId);
-                if (imageData != null) {
-                  // Prefer full URL when available; fall back to base64/data URI
-                  if (imageData.startsWith('http')) {
-                    admin['img_url'] = imageData;
-                  } else {
-                    admin['img'] = imageData;
-                  }
-                }
-              }
-            } catch (_) {}
-            return admin;
-          }).toList();
-
-          final enriched = await Future.wait(futures);
-          return enriched;
+          return admins;
         }
       }
 
@@ -282,11 +225,6 @@ class AdminService {
         mappedData['password'] = data['password'];
       }
 
-      // Include image if provided
-      if (data['img'] != null) {
-        mappedData['img'] = data['img'];
-      }
-
       debugPrint('🔄 Updating admin with ID: $id');
       debugPrint('📡 Request data: $mappedData');
 
@@ -338,46 +276,6 @@ class AdminService {
     } catch (e) {
       debugPrint('❌ Error deleting admin: $e');
       return false;
-    }
-  }
-
-  // --- Helpers ---
-  // Fetch admin image (URL or base64/data URI) by ID
-  static Future<String?> _getAdminImageData(int id) async {
-    try {
-      // make query params id=id
-      final response = await http.get(
-        Uri.parse('$baseUrl/getAdminImage.php?id=$id'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      );
-
-      if (response.statusCode != 200) return null;
-
-      final body = response.body;
-      // Try JSON first
-      try {
-        final decoded = jsonDecode(body);
-        if (decoded is Map<String, dynamic>) {
-          // Common keys from PHP APIs
-          final imgUrl =
-              decoded['img_url'] ?? decoded['image_url'] ?? decoded['url'];
-          if (imgUrl is String && imgUrl.isNotEmpty) return imgUrl;
-          final dataUri =
-              decoded['img'] ?? decoded['image'] ?? decoded['profileImage'];
-          if (dataUri is String && dataUri.isNotEmpty) return dataUri;
-        }
-      } catch (_) {
-        // Not JSON; could already be a direct URL or base64 string
-        final trimmed = body.trim();
-        if (trimmed.isNotEmpty) return trimmed;
-      }
-
-      return null;
-    } catch (e) {
-      debugPrint('❌ Error fetching admin image: $e');
-      return null;
     }
   }
 

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../modal/admin_modal.dart';
 import '../sidenav.dart';
-import '../card/admin_profile_card.dart';
+import '../card/admin_profile_card.dart' show AdminProfileTable;
 import '../services/admin_service.dart';
 
 class AdminProfilePage extends StatefulWidget {
@@ -162,7 +162,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
     }
   }
 
-  // Update filtered admins from external source (like AdminProfileCard)
+  // Update filtered admins from external source (like AdminProfileTable)
   void _setFilteredAdmins(List<Map<String, dynamic>> filteredList) {
     setState(() {
       _filteredAdmins = filteredList;
@@ -174,65 +174,142 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
     await _loadAdmins();
   }
 
-  // Responsive grid layout for desktop
-  Widget _buildDesktopGrid() {
-    final screenWidth = MediaQuery.of(context).size.width;
-
-    // Calculate optimal card width and number of columns
-    const double minCardWidth = 350.0;
-    const double cardSpacing = 16.0;
-    const double horizontalPadding = 32.0;
-
-    final availableWidth = screenWidth - horizontalPadding;
-
-    // Ensure we don't divide by zero and have reasonable limits
-    if (availableWidth <= minCardWidth) {
-      // If screen is too narrow, use single column
-      return Column(
-        children: _filteredAdmins.asMap().entries.map((entry) {
-          int index = entry.key;
-          var admin = entry.value;
-          return AdminProfileCard(
-            admin: admin,
-            index: index,
-            onEdit: _updateAdmin,
-            onDelete: _removeAdmin,
-            searchController: searchController,
-            admins: _admins,
-            updateFilteredAdmins: _setFilteredAdmins,
-          );
-        }).toList(),
-      );
-    }
-
-    final maxColumns = (availableWidth / (minCardWidth + cardSpacing)).floor();
-    final crossAxisCount = maxColumns.clamp(1, 3);
-
-    // Use responsive aspect ratio based on screen width
-    double aspectRatio;
-    if (screenWidth < 1200) {
-      aspectRatio = 1.6; // More height for smaller screens
-    } else if (screenWidth < 1600) {
-      aspectRatio = 1.8; // Balanced ratio for medium screens
-    } else {
-      aspectRatio = 2.0; // Wider ratio for large screens
-    }
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: crossAxisCount,
-            childAspectRatio: aspectRatio,
-            crossAxisSpacing: cardSpacing,
-            mainAxisSpacing: cardSpacing,
+  // Table layout for desktop
+  Widget _buildDesktopTable() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
-          itemCount: _filteredAdmins.length,
-          itemBuilder: (context, index) {
-            return AdminProfileCard(
-              admin: _filteredAdmins[index],
+        ],
+      ),
+      child: Column(
+        children: [
+          // Table header
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(12),
+                topRight: Radius.circular(12),
+              ),
+              border: Border(
+                bottom: BorderSide(color: Colors.grey.shade300, width: 2),
+              ),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Text(
+                      'Name & Role',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.grey.shade800,
+                        letterSpacing: 0.5,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Text(
+                      'Email',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.grey.shade800,
+                        letterSpacing: 0.5,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: 1,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Text(
+                      'Contact',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.grey.shade800,
+                        letterSpacing: 0.5,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: 1,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Text(
+                      'Date of Birth',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.grey.shade800,
+                        letterSpacing: 0.5,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: 1,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Text(
+                      'Status',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.grey.shade800,
+                        letterSpacing: 0.5,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: 1,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Text(
+                      'Actions',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.grey.shade800,
+                        letterSpacing: 0.5,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Table rows
+          ..._filteredAdmins.asMap().entries.map((entry) {
+            int index = entry.key;
+            var admin = entry.value;
+            return AdminProfileTable(
+              admin: admin,
               index: index,
               onEdit: _updateAdmin,
               onDelete: _removeAdmin,
@@ -240,9 +317,9 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
               admins: _admins,
               updateFilteredAdmins: _setFilteredAdmins,
             );
-          },
-        );
-      },
+          }),
+        ],
+      ),
     );
   }
 
@@ -478,7 +555,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                                           .map((entry) {
                                         int index = entry.key;
                                         var admin = entry.value;
-                                        return AdminProfileCard(
+                                        return AdminProfileTable(
                                           admin: admin,
                                           index: index,
                                           onEdit: _updateAdmin,
@@ -490,7 +567,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                                         );
                                       }).toList(),
                                     )
-                                  : _buildDesktopGrid(),
+                                  : _buildDesktopTable(),
                         ),
             ),
           ],

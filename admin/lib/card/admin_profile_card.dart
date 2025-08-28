@@ -2,23 +2,8 @@ import 'package:flutter/material.dart';
 import '../modal/admin_modal.dart';
 import '../services/admin_service.dart';
 
-/// AdminProfileCard widget for displaying admin information
-///
-/// Expected JSON format for admin data:
-/// {
-///   "success": true,
-///   "message": "Image found",
-///   "img": "data:image/jpeg;base64,iVBORw0KGgoAAAANSUhEUgAAAFoAAABUCAYAAAACoiByAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAADiySURBVHhe7b13d1zZeafbX2XWeOxuEjkXcs6RyLEAFAoVkAo550QSJAiQYM45gMhVSGxmAATA2NKMPJZsybKtJXs8nnW\/wXPvuw\/AZoMUW91Wj8O6f\/z"
-/// }
-///
-/// The widget automatically handles:
-/// - data:image base64 URIs (like the example above)
-/// - plain base64 strings
-/// - network URLs
-/// - File objects
-/// - Uint8List for web
-
-class AdminProfileCard extends StatelessWidget {
+/// AdminProfileTable widget for displaying admin information in a table format
+class AdminProfileTable extends StatelessWidget {
   final Map<String, dynamic> admin;
   final int index;
   final Function(Map<String, dynamic>) onEdit;
@@ -27,7 +12,7 @@ class AdminProfileCard extends StatelessWidget {
   final List<Map<String, dynamic>> admins;
   final Function(List<Map<String, dynamic>>) updateFilteredAdmins;
 
-  const AdminProfileCard({
+  const AdminProfileTable({
     super.key,
     required this.admin,
     required this.index,
@@ -42,319 +27,387 @@ class AdminProfileCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 768;
-    final isTablet = screenWidth >= 768 && screenWidth < 1024;
-    final isDesktop = screenWidth >= 1024;
 
+    if (isMobile) {
+      return _buildMobileTableRow(context);
+    } else {
+      return _buildDesktopTableRow(context);
+    }
+  }
+
+  // Mobile table row (stacked layout)
+  Widget _buildMobileTableRow(BuildContext context) {
     return Container(
-      margin: EdgeInsets.only(bottom: isMobile ? 15 : 20),
-      child: Card(
-        elevation: 10,
-        shadowColor: Colors.black.withValues(alpha: 0.15),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Container(
-          width: double.infinity,
-          constraints: BoxConstraints(
-            minHeight: isMobile ? 160 : (isTablet ? 180 : 200),
-            maxHeight: isMobile ? 200 : (isTablet ? 220 : 240),
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
           ),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.white,
-                Colors.grey.shade50,
-              ],
-            ),
-            border: Border.all(
-              color: Colors.grey.shade200,
-              width: 1,
-            ),
-          ),
-          child: Padding(
-            padding: EdgeInsets.all(isMobile ? 8 : (isTablet ? 10 : 12)),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header row with name and actions
+            Row(
               children: [
-                // Header Section with Name and Details
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Admin Details Section
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Name with enhanced styling
-                          _buildNameSection(isMobile, isTablet, isDesktop),
-                          SizedBox(height: isMobile ? 3 : 4),
-
-                          // Status Badge
-                          _buildStatusBadge(),
-                          SizedBox(height: isMobile ? 4 : 6),
-
-                          // Contact Information
-                          _buildContactInformation(
-                              isMobile, isTablet, isDesktop),
-                        ],
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _getFullName(),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
                       ),
-                    ),
-
-                    // Action Buttons
-                    SizedBox(width: isMobile ? 4 : 8),
-                    _buildActionButtons(isMobile, isTablet, isDesktop, context),
-                  ],
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.blue.shade200),
+                        ),
+                        child: const Text(
+                          'Administrator',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.blue,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
+                _buildActionButtons(context, true),
               ],
             ),
-          ),
+            const SizedBox(height: 12),
+            // Info rows
+            _buildInfoRow(
+                'Email',
+                admin['email_address'] ?? admin['email'] ?? 'N/A',
+                Icons.email_outlined,
+                Colors.blue),
+            const SizedBox(height: 8),
+            _buildInfoRow(
+                'Contact',
+                admin['phone_number'] ?? admin['contactNumber'] ?? 'N/A',
+                Icons.phone_outlined,
+                Colors.green),
+            const SizedBox(height: 8),
+            _buildInfoRow(
+                'Date of Birth',
+                admin['date_of_birth'] ?? admin['dateOfBirth'] ?? 'N/A',
+                Icons.cake_outlined,
+                Colors.purple),
+            const SizedBox(height: 8),
+            _buildInfoRow(
+                'Status', 'Active', Icons.check_circle_outline, Colors.green),
+          ],
         ),
       ),
     );
   }
 
-  // Profile image removed for cleaner design
+  // Desktop table row
+  Widget _buildDesktopTableRow(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: index.isEven ? Colors.white : Colors.grey.shade50,
+        border: Border(
+          bottom: BorderSide(color: Colors.grey.shade200, width: 1),
+          right: BorderSide(color: Colors.grey.shade200, width: 0.5),
+          left: BorderSide(color: Colors.grey.shade200, width: 0.5),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Name column
+            Expanded(
+              flex: 2,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  CircleAvatar(
+                    radius: 18,
+                    backgroundColor: Colors.blue.shade100,
+                    child: Text(
+                      _getInitials(),
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue.shade700,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          _getFullName(),
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.shade50,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.blue.shade200),
+                          ),
+                          child: const Text(
+                            'Administrator',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Colors.blue,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Email column
+            Expanded(
+              flex: 2,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Text(
+                  admin['email_address'] ?? admin['email'] ?? 'N/A',
+                  style: const TextStyle(fontSize: 13, color: Colors.black87),
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+            // Contact column
+            Expanded(
+              flex: 1,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Text(
+                  admin['phone_number'] ?? admin['contactNumber'] ?? 'N/A',
+                  style: const TextStyle(fontSize: 13, color: Colors.black87),
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+            // Date of Birth column
+            Expanded(
+              flex: 1,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Text(
+                  admin['date_of_birth'] ?? admin['dateOfBirth'] ?? 'N/A',
+                  style: const TextStyle(fontSize: 13, color: Colors.black87),
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+            // Status column
+            Expanded(
+              flex: 1,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Center(
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.green.shade200),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 6,
+                          height: 6,
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade600,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        const Text(
+                          'Active',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.green,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            // Actions column
+            Expanded(
+              flex: 1,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Center(
+                  child: _buildActionButtons(context, false),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-  // Enhanced name section
-  Widget _buildNameSection(bool isMobile, bool isTablet, bool isDesktop) {
-    // Build full name with proper handling of missing parts
+  // Info row for mobile view
+  Widget _buildInfoRow(String label, String value, IconData icon, Color color) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Icon(icon, size: 14, color: color),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 10,
+                  color: Colors.grey.shade600,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Colors.black87,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Action buttons
+  Widget _buildActionButtons(BuildContext context, bool isMobile) {
+    final size = isMobile ? 32.0 : 28.0;
+    final iconSize = isMobile ? 16.0 : 14.0;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.blue.shade50,
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: Colors.blue.shade200),
+          ),
+          child: IconButton(
+            onPressed: () => _handleEdit(context),
+            icon: Icon(Icons.edit_outlined,
+                size: iconSize, color: Colors.blue.shade700),
+            padding: EdgeInsets.all(isMobile ? 8 : 4),
+            constraints: BoxConstraints(minWidth: size, minHeight: size),
+            tooltip: 'Edit Admin',
+          ),
+        ),
+        const SizedBox(width: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.red.shade50,
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: Colors.red.shade200),
+          ),
+          child: IconButton(
+            onPressed: () => _handleDelete(context),
+            icon: Icon(Icons.delete_outline,
+                size: iconSize, color: Colors.red.shade700),
+            padding: EdgeInsets.all(isMobile ? 8 : 4),
+            constraints: BoxConstraints(minWidth: size, minHeight: size),
+            tooltip: 'Delete Admin',
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Get full name
+  String _getFullName() {
     List<String> nameParts = [];
 
-    // Add first name (required) - handle both API and local field names
     final firstName = admin['first_name'] ?? admin['firstName'];
     if (firstName != null && firstName.toString().trim().isNotEmpty) {
       nameParts.add(firstName.toString().trim());
     }
 
-    // Add middle name (optional) - handle both API and local field names
     final middleName = admin['middle_name'] ?? admin['middleName'];
     if (middleName != null && middleName.toString().trim().isNotEmpty) {
       nameParts.add(middleName.toString().trim());
     }
 
-    // Add last name (required) - handle both API and local field names
     final lastName = admin['last_name'] ?? admin['lastName'];
     if (lastName != null && lastName.toString().trim().isNotEmpty) {
       nameParts.add(lastName.toString().trim());
     }
 
-    // Join all parts with spaces
     String fullName = nameParts.join(' ');
-
-    // Fallback if no name parts found
-    if (fullName.isEmpty) {
-      fullName = 'Unknown Admin';
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          fullName,
-          style: TextStyle(
-            fontSize: isMobile ? 16 : (isTablet ? 15 : 18),
-            fontWeight: FontWeight.bold,
-            color: Colors.grey.shade800,
-            letterSpacing: 0.3,
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        const SizedBox(height: 2),
-        Text(
-          'Administrator',
-          style: TextStyle(
-            fontSize: isMobile ? 10 : (isTablet ? 9 : 11),
-            color: Colors.blue.shade600,
-            fontWeight: FontWeight.w500,
-            letterSpacing: 0.2,
-          ),
-        ),
-      ],
-    );
+    return fullName.isEmpty ? 'Unknown Admin' : fullName;
   }
 
-  // Status badge
-  Widget _buildStatusBadge() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: Colors.green.shade100,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.green.shade300, width: 1),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 4,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.green.shade600,
-              shape: BoxShape.circle,
-            ),
-          ),
-          const SizedBox(width: 4),
-          Text(
-            'Active',
-            style: TextStyle(
-              fontSize: 8,
-              color: Colors.green.shade700,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // Get initials for avatar
+  String _getInitials() {
+    final firstName = admin['first_name'] ?? admin['firstName'] ?? '';
+    final lastName = admin['last_name'] ?? admin['lastName'] ?? '';
 
-  // Enhanced contact information section
-  Widget _buildContactInformation(
-      bool isMobile, bool isTablet, bool isDesktop) {
-    // Check if we have date of birth to limit the number of fields shown
-    final hasDateOfBirth = (admin['date_of_birth'] ?? admin['dateOfBirth']) !=
-            null &&
-        (admin['date_of_birth'] ?? admin['dateOfBirth']).toString().isNotEmpty;
+    String firstInitial =
+        firstName.isNotEmpty ? firstName[0].toUpperCase() : '';
+    String lastInitial = lastName.isNotEmpty ? lastName[0].toUpperCase() : '';
 
-    return Container(
-      padding: EdgeInsets.all(isMobile ? 6 : 8),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildEnhancedInfoRow(
-            Icons.email_outlined,
-            'Email',
-            admin['email_address'] ?? admin['email'],
-            Colors.blue,
-            isMobile: isMobile,
-            isCompact: true,
-          ),
-          SizedBox(height: isMobile ? 2 : 3),
-          _buildEnhancedInfoRow(
-            Icons.phone_outlined,
-            'Contact',
-            admin['phone_number'] ?? admin['contactNumber'],
-            Colors.green,
-            isMobile: isMobile,
-            isCompact: true,
-          ),
-          // Only show date of birth if there's space and it exists
-          if (hasDateOfBirth && !isMobile) ...[
-            SizedBox(height: isMobile ? 2 : 3),
-            _buildEnhancedInfoRow(
-              Icons.cake_outlined,
-              'Date of Birth',
-              admin['date_of_birth'] ?? admin['dateOfBirth'],
-              Colors.purple,
-              isMobile: isMobile,
-              isCompact: true,
-            ),
-          ],
-          // Password field hidden for security
-          // SizedBox(height: isMobile ? 2 : 3),
-          // _buildEnhancedInfoRow(
-          //   Icons.lock_outline,
-          //   'Password',
-          //   admin['password'] ?? '********',
-          //   Colors.orange,
-          //   isMobile: isMobile,
-          //   isCompact: true,
-          // ),
-        ],
-      ),
-    );
-  }
-
-  // Enhanced action buttons
-  Widget _buildActionButtons(
-      bool isMobile, bool isTablet, bool isDesktop, BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(8),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 4,
-                offset: const Offset(0, 1),
-              ),
-            ],
-          ),
-          child: Column(
-            children: [
-              _buildActionButton(
-                icon: Icons.edit_outlined,
-                color: Colors.blue,
-                onPressed: () => _handleEdit(context),
-                isMobile: isMobile,
-                isDesktopGrid: isTablet,
-                tooltip: 'Edit Admin',
-              ),
-              Container(
-                height: 1,
-                color: Colors.grey.shade200,
-                margin: const EdgeInsets.symmetric(horizontal: 4),
-              ),
-              _buildActionButton(
-                icon: Icons.delete_outline,
-                color: Colors.red,
-                onPressed: () => _handleDelete(context),
-                isMobile: isMobile,
-                isDesktopGrid: isTablet,
-                tooltip: 'Delete Admin',
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  // Individual action button
-  Widget _buildActionButton({
-    required IconData icon,
-    required Color color,
-    required VoidCallback onPressed,
-    required bool isMobile,
-    required bool isDesktopGrid,
-    required String tooltip,
-  }) {
-    final size = isMobile ? 28.0 : (isDesktopGrid ? 32.0 : 36.0);
-    final iconSize = isMobile ? 14.0 : (isDesktopGrid ? 16.0 : 18.0);
-
-    return Tooltip(
-      message: tooltip,
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(
-            icon,
-            color: color,
-            size: iconSize,
-          ),
-        ),
-      ),
-    );
+    return '$firstInitial$lastInitial';
   }
 
   // Handle edit functionality
@@ -363,19 +416,14 @@ class AdminProfileCard extends StatelessWidget {
       context,
       admin,
       (updatedAdmin) {
-        // Update the admin in the main list
         final adminIndex = admins.indexWhere((a) => a['id'] == admin['id']);
         if (adminIndex != -1) {
           admins[adminIndex] = updatedAdmin;
         }
 
-        // Call the callback
         onEdit(updatedAdmin);
-
-        // Update filtered admins list
         _updateFilteredList();
 
-        // Show success message
         final firstName =
             updatedAdmin['first_name'] ?? updatedAdmin['firstName'] ?? 'Admin';
         ScaffoldMessenger.of(context).showSnackBar(
@@ -397,9 +445,8 @@ class AdminProfileCard extends StatelessWidget {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: Row(
             children: [
               Icon(Icons.warning_amber_rounded, color: Colors.orange.shade600),
@@ -423,10 +470,8 @@ class AdminProfileCard extends StatelessWidget {
             ),
             ElevatedButton(
               onPressed: () async {
-                // Close the confirmation dialog
                 Navigator.of(context).pop();
 
-                // Show loading indicator
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Row(
@@ -445,15 +490,12 @@ class AdminProfileCard extends StatelessWidget {
                 );
 
                 try {
-                  // Call the delete service
                   final adminId = admin['id'];
                   final success = await AdminService.deleteAdmin(adminId);
 
-                  // Check if widget is still mounted before using context
                   if (!context.mounted) return;
 
                   if (success) {
-                    // Show success message
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content:
@@ -462,13 +504,9 @@ class AdminProfileCard extends StatelessWidget {
                       ),
                     );
 
-                    // Call the callback to remove from the list
                     onDelete(index);
-
-                    // Update filtered admins list
                     _updateFilteredList();
                   } else {
-                    // Show error message
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Failed to delete admin'),
@@ -477,10 +515,8 @@ class AdminProfileCard extends StatelessWidget {
                     );
                   }
                 } catch (e) {
-                  // Check if widget is still mounted before using context
                   if (!context.mounted) return;
 
-                  // Show error message
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('Error deleting admin: $e'),
@@ -495,8 +531,7 @@ class AdminProfileCard extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
+                    borderRadius: BorderRadius.circular(8)),
               ),
               child: const Text('Delete'),
             ),
@@ -506,7 +541,7 @@ class AdminProfileCard extends StatelessWidget {
     );
   }
 
-  // Update filtered admins list based on current search
+  // Update filtered admins list
   void _updateFilteredList() {
     final query = searchController.text.toLowerCase();
     List<Map<String, dynamic>> filteredList;
@@ -545,64 +580,5 @@ class AdminProfileCard extends StatelessWidget {
     }
 
     updateFilteredAdmins(filteredList);
-  }
-
-  // Profile image methods removed for cleaner design
-
-  // Enhanced info row with icons and better styling
-  Widget _buildEnhancedInfoRow(
-    IconData icon,
-    String label,
-    String value,
-    Color iconColor, {
-    bool isMobile = false,
-    bool isCompact = false,
-  }) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          padding: EdgeInsets.all(isMobile || isCompact ? 2 : 3),
-          decoration: BoxDecoration(
-            color: iconColor.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(3),
-          ),
-          child: Icon(
-            icon,
-            size: isMobile || isCompact ? 8 : 10,
-            color: iconColor,
-          ),
-        ),
-        SizedBox(width: isMobile ? 4 : 6),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: isMobile || isCompact ? 8 : 9,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey.shade600,
-                  letterSpacing: 0.1,
-                ),
-              ),
-              const SizedBox(height: 1),
-              Text(
-                value,
-                style: TextStyle(
-                  fontSize: isMobile || isCompact ? 10 : 11,
-                  color: Colors.grey.shade800,
-                  fontWeight: FontWeight.w500,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
   }
 }
