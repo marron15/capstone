@@ -168,11 +168,18 @@ class _CustomersPageState extends State<CustomersPage> {
     // Convert customer data from the API
     String membershipType = customerData['membership_type'] ?? 'Monthly';
     DateTime expirationDate;
+    DateTime startDate;
 
     try {
       expirationDate = DateTime.parse(customerData['expiration_date']);
     } catch (e) {
       expirationDate = DateTime.now().add(const Duration(days: 30));
+    }
+
+    try {
+      startDate = DateTime.parse(customerData['start_date']);
+    } catch (e) {
+      startDate = DateTime.now();
     }
 
     return {
@@ -182,6 +189,7 @@ class _CustomersPageState extends State<CustomersPage> {
       'contactNumber': customerData['phone_number'] ?? 'Not provided',
       'membershipType': membershipType,
       'expirationDate': expirationDate,
+      'startDate': startDate,
       'email': customerData['email'] ?? '',
       'fullName':
           '${customerData['first_name'] ?? ''} ${customerData['last_name'] ?? ''}'
@@ -232,6 +240,13 @@ class _CustomersPageState extends State<CustomersPage> {
     }
   }
 
+  String _formatExpirationDate(DateTime expirationDate) {
+    final String dd = expirationDate.day.toString().padLeft(2, '0');
+    final String mm = expirationDate.month.toString().padLeft(2, '0');
+    final String yyyy = expirationDate.year.toString().padLeft(4, '0');
+    return '$mm/$dd/$yyyy';
+  }
+
   Color _getMembershipTypeColor(String membershipType) {
     switch (membershipType) {
       case 'Daily':
@@ -251,8 +266,24 @@ class _CustomersPageState extends State<CustomersPage> {
       builder: (context) => const AdminSignUpModal(),
     ).then((result) {
       if (result != null && result['success'] == true) {
-        // Reload the entire list from the database to ensure consistency
-        _loadCustomers();
+        final data = result['customerData'] as Map<String, dynamic>;
+        // UI-only insertion so table updates immediately; backend can sync later
+        setState(() {
+          _customers.add({
+            'name': data['name'] ?? '',
+            'contactNumber': data['contactNumber'] ?? 'Not provided',
+            'membershipType': data['membershipType'] ?? 'Monthly',
+            'expirationDate': data['expirationDate'] as DateTime,
+            'startDate': data['startDate'] as DateTime? ?? DateTime.now(),
+            'email': data['email'] ?? '',
+            'fullName': data['fullName'] ?? '',
+            'birthdate': data['birthdate'],
+            'address': data['address'],
+            'emergencyContactName': data['emergencyContactName'],
+            'emergencyContactPhone': data['emergencyContactPhone'],
+            'customerId': data['customerId'],
+          });
+        });
       }
     });
   }
@@ -385,7 +416,10 @@ class _CustomersPageState extends State<CustomersPage> {
                     ..._customers.map((customer) {
                       final expirationDate =
                           customer['expirationDate'] as DateTime;
-                      final remainingTime = _getRemainingTime(expirationDate);
+                      final startDate = customer['startDate'] as DateTime;
+                      final formattedExpiry =
+                          _formatExpirationDate(expirationDate);
+                      final formattedStart = _formatExpirationDate(startDate);
                       final membershipType =
                           customer['membershipType'] as String;
                       return Card(
@@ -415,10 +449,9 @@ class _CustomersPageState extends State<CustomersPage> {
                                       // Show customer view/edit modal
                                       final result = await CustomerViewEditModal
                                           .showCustomerModal(context, customer);
-                                      if (result == true) {
-                                        // Refresh the list if customer was updated
-                                        await _refreshCustomerList();
-                                        _forceRebuild(); // Force additional UI rebuild
+                                      if (result == true && mounted) {
+                                        setState(
+                                            () {}); // UI-only immediate update
                                       }
                                     },
                                     style: TextButton.styleFrom(
@@ -458,23 +491,38 @@ class _CustomersPageState extends State<CustomersPage> {
                                 ],
                               ),
                               const SizedBox(height: 4),
-                              Row(
+                              const Row(
                                 children: [
-                                  const Text('Time left: ',
+                                  Text('Membership Start: ',
                                       style: TextStyle(
                                           fontWeight: FontWeight.w500,
                                           fontSize: 13)),
-                                  Text(
-                                    remainingTime,
-                                    style: TextStyle(
-                                      color: remainingTime == 'Expired'
-                                          ? Colors.red
-                                          : Colors.black87,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
                                 ],
+                              ),
+                              Text(
+                                formattedStart,
+                                style: const TextStyle(
+                                  color: Colors.black87,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              const Row(
+                                children: [
+                                  Text('Membership Expiration: ',
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.w500,
+                                          fontSize: 13)),
+                                ],
+                              ),
+                              Text(
+                                formattedExpiry,
+                                style: const TextStyle(
+                                  color: Colors.black87,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                               const SizedBox(height: 8),
                               Row(
@@ -605,7 +653,12 @@ class _CustomersPageState extends State<CustomersPage> {
                                             fontWeight: FontWeight.bold))),
                                 Expanded(
                                     flex: 3,
-                                    child: Text('Time Remaining',
+                                    child: Text('Membership Start Date',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold))),
+                                Expanded(
+                                    flex: 3,
+                                    child: Text('Membership Expiration Date',
                                         style: TextStyle(
                                             fontWeight: FontWeight.bold))),
                                 SizedBox(
@@ -621,8 +674,11 @@ class _CustomersPageState extends State<CustomersPage> {
                           ..._customers.map((customer) {
                             final expirationDate =
                                 customer['expirationDate'] as DateTime;
-                            final remainingTime =
-                                _getRemainingTime(expirationDate);
+                            final startDate = customer['startDate'] as DateTime;
+                            final formattedExpiry =
+                                _formatExpirationDate(expirationDate);
+                            final formattedStart =
+                                _formatExpirationDate(startDate);
                             final membershipType =
                                 customer['membershipType'] as String;
                             return Column(
@@ -663,11 +719,22 @@ class _CustomersPageState extends State<CustomersPage> {
                                         padding: const EdgeInsets.symmetric(
                                             vertical: 14),
                                         child: Text(
-                                          remainingTime,
-                                          style: TextStyle(
-                                            color: remainingTime == 'Expired'
-                                                ? Colors.red
-                                                : Colors.black87,
+                                          formattedStart,
+                                          style: const TextStyle(
+                                            color: Colors.black87,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 3,
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 14),
+                                        child: Text(
+                                          formattedExpiry,
+                                          style: const TextStyle(
+                                            color: Colors.black87,
                                           ),
                                         ),
                                       ),
@@ -689,14 +756,9 @@ class _CustomersPageState extends State<CustomersPage> {
                                                           context, customer);
                                               debugPrint(
                                                   'Desktop: Modal result: $result');
-                                              if (result == true) {
-                                                // Refresh the list if customer was updated
-                                                debugPrint(
-                                                    'Desktop: Customer was updated, refreshing list...');
-                                                await _refreshCustomerList();
-                                                _forceRebuild(); // Force additional UI rebuild
-                                                debugPrint(
-                                                    'Desktop: Customer list refreshed successfully');
+                                              if (result == true && mounted) {
+                                                setState(
+                                                    () {}); // UI-only immediate update
                                               } else {
                                                 debugPrint(
                                                     'Desktop: No changes made or modal was cancelled');

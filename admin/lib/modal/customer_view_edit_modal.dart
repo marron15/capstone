@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
-import 'dart:io';
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'dart:math' as math;
-import 'package:image_picker/image_picker.dart';
-import 'package:file_picker/file_picker.dart';
+// Removed image picker and file picker imports
 import '../services/api_service.dart';
 
 class CustomerViewEditModal {
@@ -89,14 +86,30 @@ class CustomerViewEditModal {
                 ? customer['address'].toString().split(',')[4].trim()
                 : 'Philippines'));
 
+    // Membership Type state with normalization and fallback
+    String normalizeMembershipType(String? raw) {
+      final String value = (raw ?? '').trim();
+      if (value.isEmpty) return '';
+      final String lower = value.toLowerCase();
+      if (lower == 'daily') return 'Daily';
+      if (lower.replaceAll(' ', '') == 'halfmonth') return 'Half Month';
+      if (lower == 'monthly') return 'Monthly';
+      return '';
+    }
+
+    String membershipType = normalizeMembershipType((customer['membership']
+                ?['membership_type'] ??
+            customer['membership_type'] ??
+            customer['status'])
+        .toString());
+
     // State variables
     bool isEditing = true;
     bool isLoading = false;
     bool isPasswordVisible = false;
     String? errorMessage;
     DateTime? selectedDate;
-    File? selectedImage;
-    Uint8List? webImageBytes;
+    // Image-related state removed
 
     // Transaction-related state removed
 
@@ -131,40 +144,7 @@ class CustomerViewEditModal {
       }
     }
 
-    // Function to pick image
-    Future<void> pickImage(StateSetter setModalState) async {
-      if (kIsWeb) {
-        FilePickerResult? result = await FilePicker.platform.pickFiles(
-          type: FileType.image,
-        );
-        if (result != null && result.files.single.bytes != null) {
-          setModalState(() {
-            webImageBytes = result.files.single.bytes;
-            selectedImage = null;
-          });
-        }
-      } else if (Platform.isAndroid || Platform.isIOS) {
-        final ImagePicker picker = ImagePicker();
-        final XFile? image =
-            await picker.pickImage(source: ImageSource.gallery);
-        if (image != null) {
-          setModalState(() {
-            selectedImage = File(image.path);
-            webImageBytes = null;
-          });
-        }
-      } else {
-        FilePickerResult? result = await FilePicker.platform.pickFiles(
-          type: FileType.image,
-        );
-        if (result != null && result.files.single.path != null) {
-          setModalState(() {
-            selectedImage = File(result.files.single.path!);
-            webImageBytes = null;
-          });
-        }
-      }
-    }
+    // Image picker removed
 
     // Transaction-related pickers removed
 
@@ -233,7 +213,14 @@ class CustomerViewEditModal {
           };
         }
 
-        // Transaction data removed
+        // Persist membership type if changed via Membership endpoint
+        final bool membershipUpdated =
+            await ApiService.createMembershipForCustomer(
+          customerId: customerId is int
+              ? customerId
+              : int.tryParse(customerId.toString()) ?? -1,
+          membershipType: membershipType,
+        );
 
         final result = await ApiService.updateCustomerByAdmin(
           id: customerId is int
@@ -281,7 +268,31 @@ class CustomerViewEditModal {
             };
           }
 
-          // Transaction local update removed
+          // Update local membership type and dates for UI immediately
+          customer['membership_type'] = membershipType;
+          customer['membershipType'] = membershipType;
+          final DateTime newStartDate = DateTime.now();
+          int addDays;
+          switch (membershipType) {
+            case 'Daily':
+              addDays = 1;
+              break;
+            case 'Half Month':
+              addDays = 15;
+              break;
+            case 'Monthly':
+            default:
+              addDays = 30;
+          }
+          final DateTime newExpirationDate =
+              newStartDate.add(Duration(days: addDays));
+          customer['startDate'] = newStartDate;
+          customer['expirationDate'] = newExpirationDate;
+          // Also set potential backend field names for future syncing
+          customer['start_date'] =
+              '${newStartDate.year.toString().padLeft(4, '0')}-${newStartDate.month.toString().padLeft(2, '0')}-${newStartDate.day.toString().padLeft(2, '0')}';
+          customer['expiration_date'] =
+              '${newExpirationDate.year.toString().padLeft(4, '0')}-${newExpirationDate.month.toString().padLeft(2, '0')}-${newExpirationDate.day.toString().padLeft(2, '0')}';
 
           // Debug: Log updated customer data
           debugPrint('Customer data after update: $customer');
@@ -390,76 +401,7 @@ class CustomerViewEditModal {
       );
     }
 
-    // Build image section
-    Widget buildImageSection(StateSetter setModalState) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Profile Image',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Center(
-            child: Column(
-              children: [
-                Container(
-                  height: 96,
-                  width: 96,
-                  decoration: BoxDecoration(
-                    color: Colors.white24,
-                    borderRadius: BorderRadius.circular(48),
-                    border: Border.all(
-                      color: Colors.white.withAlpha((0.25 * 255).toInt()),
-                      width: 2,
-                    ),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(48),
-                    child: (kIsWeb && webImageBytes != null)
-                        ? Image.memory(
-                            webImageBytes!,
-                            fit: BoxFit.cover,
-                          )
-                        : (selectedImage != null)
-                            ? Image.file(
-                                selectedImage!,
-                                fit: BoxFit.cover,
-                              )
-                            : const Icon(
-                                Icons.person,
-                                size: 60,
-                                color: Colors.white70,
-                              ),
-                  ),
-                ),
-                if (isEditing) ...[
-                  const SizedBox(height: 12),
-                  ElevatedButton.icon(
-                    onPressed: () => pickImage(setModalState),
-                    icon: const Icon(Icons.camera_alt, size: 18),
-                    label: const Text('Change Image'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.lightBlueAccent,
-                      foregroundColor: Colors.black,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 10),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
-      );
-    }
+    // Profile image section removed
 
     final bool? dialogResult = await showDialog<bool>(
       context: context,
@@ -655,10 +597,6 @@ class CustomerViewEditModal {
                                   // Personal and Address Sections side-by-side on wide screens
                                   Builder(
                                     builder: (context) {
-                                      final bool isWide =
-                                          MediaQuery.of(context).size.width >
-                                              900;
-
                                       final Widget personalSection = Container(
                                         padding: const EdgeInsets.all(20),
                                         decoration: BoxDecoration(
@@ -696,21 +634,124 @@ class CustomerViewEditModal {
                                               ],
                                             ),
                                             const SizedBox(height: 20),
-                                            buildImageSection(setModalState),
-                                            const SizedBox(height: 24),
                                             Row(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
                                               children: [
                                                 Expanded(
-                                                  child: buildFormField(
-                                                      "First Name",
-                                                      firstNameController,
-                                                      isRequired: true),
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      buildFormField(
+                                                          "First Name",
+                                                          firstNameController,
+                                                          isRequired: true),
+                                                      const SizedBox(
+                                                          height: 20),
+                                                      buildFormField(
+                                                          "Middle Name",
+                                                          middleNameController),
+                                                    ],
+                                                  ),
                                                 ),
                                                 const SizedBox(width: 20),
                                                 Expanded(
-                                                  child: buildFormField(
-                                                      "Middle Name",
-                                                      middleNameController),
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      const Text(
+                                                        'Membership Type',
+                                                        style: TextStyle(
+                                                          fontSize: 16,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                          color: Colors.white,
+                                                        ),
+                                                      ),
+                                                      const SizedBox(height: 8),
+                                                      IgnorePointer(
+                                                        ignoring: !isEditing,
+                                                        child:
+                                                            DropdownButtonFormField<
+                                                                String>(
+                                                          value: membershipType
+                                                                  .isEmpty
+                                                              ? null
+                                                              : membershipType,
+                                                          items: const [
+                                                            DropdownMenuItem(
+                                                              value: 'Daily',
+                                                              child: Text(
+                                                                'Daily',
+                                                                style: TextStyle(
+                                                                    color: Colors
+                                                                        .white),
+                                                              ),
+                                                            ),
+                                                            DropdownMenuItem(
+                                                              value:
+                                                                  'Half Month',
+                                                              child: Text(
+                                                                'Half Month',
+                                                                style: TextStyle(
+                                                                    color: Colors
+                                                                        .white),
+                                                              ),
+                                                            ),
+                                                            DropdownMenuItem(
+                                                              value: 'Monthly',
+                                                              child: Text(
+                                                                'Monthly',
+                                                                style: TextStyle(
+                                                                    color: Colors
+                                                                        .white),
+                                                              ),
+                                                            ),
+                                                          ],
+                                                          onChanged: (val) {
+                                                            if (val == null) {
+                                                              return;
+                                                            }
+                                                            setModalState(() {
+                                                              membershipType =
+                                                                  val;
+                                                            });
+                                                          },
+                                                          style:
+                                                              const TextStyle(
+                                                            color: Colors.white,
+                                                          ),
+                                                          dropdownColor:
+                                                              const Color(
+                                                                  0xFF1E1E1E),
+                                                          iconEnabledColor:
+                                                              Colors.white70,
+                                                          iconDisabledColor:
+                                                              Colors.white38,
+                                                          decoration:
+                                                              InputDecoration(
+                                                            filled: true,
+                                                            fillColor: Colors
+                                                                .black
+                                                                .withAlpha((0.3 *
+                                                                        255)
+                                                                    .toInt()),
+                                                            border:
+                                                                OutlineInputBorder(
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .circular(
+                                                                          14),
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
                                                 ),
                                               ],
                                             ),
@@ -1039,6 +1080,7 @@ class CustomerViewEditModal {
                                                 ),
                                               ],
                                             ),
+                                            // Membership Type moved to Personal section
                                             const SizedBox(height: 20),
                                             buildFormField(
                                                 "Street", streetController),
@@ -1076,6 +1118,9 @@ class CustomerViewEditModal {
                                           ],
                                         ),
                                       );
+                                      final bool isWide =
+                                          MediaQuery.of(context).size.width >
+                                              900;
 
                                       if (isWide) {
                                         return Row(
@@ -1173,8 +1218,7 @@ class CustomerViewEditModal {
                                                             ?['country'] ??
                                                         '';
                                                     // Transaction reset removed
-                                                    selectedImage = null;
-                                                    webImageBytes = null;
+                                                    // Image state reset removed
                                                     errorMessage = null;
                                                   });
                                                 },

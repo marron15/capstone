@@ -375,6 +375,7 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
               'contactNumber': contact,
               'membershipType': _selectedMembershipType,
               'expirationDate': expirationDate,
+              'startDate': DateTime.now(),
               'email': email,
               'fullName':
                   '$firstName ${middleName.isNotEmpty ? '$middleName ' : ''}$lastName',
