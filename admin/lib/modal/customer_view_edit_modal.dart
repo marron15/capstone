@@ -56,22 +56,7 @@ class CustomerViewEditModal {
     final TextEditingController passwordController =
         TextEditingController(text: originalPasswordValue);
 
-    // Transaction controllers and initial values
-    final TextEditingController paidAmountController = TextEditingController(
-        text:
-            (customer['transaction_details']?['paid_amount'] ?? '').toString());
-    final TextEditingController transactionDateController =
-        TextEditingController(
-            text: customer['transaction_details']?['transaction_date'] ?? '');
-    final TextEditingController referenceNumberController =
-        TextEditingController(
-            text: customer['transaction_details']?['reference_number'] ?? '');
-    String paymentMethod =
-        (customer['transaction_details']?['payment_method'] ?? 'GCash')
-            .toString();
-    String paymentStatus =
-        (customer['transaction_details']?['payment_status'] ?? 'Paid')
-            .toString();
+    // Transaction controllers and related UI removed
 
     // Handle address fields with fallbacks
     final TextEditingController streetController = TextEditingController(
@@ -113,11 +98,7 @@ class CustomerViewEditModal {
     File? selectedImage;
     Uint8List? webImageBytes;
 
-    // Transaction image/date state
-    DateTime? selectedTransactionDate;
-    File? transactionImageFile;
-    Uint8List? transactionImageBytes =
-        customer['transaction_details']?['reference_image_bytes'];
+    // Transaction-related state removed
 
     // Function to pick date
     Future<void> pickDate(StateSetter setModalState) async {
@@ -185,57 +166,7 @@ class CustomerViewEditModal {
       }
     }
 
-    // Function to pick transaction date
-    Future<void> pickTransactionDate(StateSetter setModalState) async {
-      final DateTime? picked = await showDatePicker(
-        context: context,
-        initialDate: selectedTransactionDate ?? DateTime.now(),
-        firstDate: DateTime(2000),
-        lastDate: DateTime.now().add(const Duration(days: 3650)),
-      );
-      if (picked != null && picked != selectedTransactionDate) {
-        setModalState(() {
-          selectedTransactionDate = picked;
-          transactionDateController.text =
-              "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
-        });
-      }
-    }
-
-    // Function to pick transaction proof image
-    Future<void> pickTransactionImage(StateSetter setModalState) async {
-      if (kIsWeb) {
-        FilePickerResult? result = await FilePicker.platform.pickFiles(
-          type: FileType.image,
-        );
-        if (result != null && result.files.single.bytes != null) {
-          setModalState(() {
-            transactionImageBytes = result.files.single.bytes;
-            transactionImageFile = null;
-          });
-        }
-      } else if (Platform.isAndroid || Platform.isIOS) {
-        final ImagePicker picker = ImagePicker();
-        final XFile? image =
-            await picker.pickImage(source: ImageSource.gallery);
-        if (image != null) {
-          setModalState(() {
-            transactionImageFile = File(image.path);
-            transactionImageBytes = null;
-          });
-        }
-      } else {
-        FilePickerResult? result = await FilePicker.platform.pickFiles(
-          type: FileType.image,
-        );
-        if (result != null && result.files.single.path != null) {
-          setModalState(() {
-            transactionImageFile = File(result.files.single.path!);
-            transactionImageBytes = null;
-          });
-        }
-      }
-    }
+    // Transaction-related pickers removed
 
     // Function to save changes
     Future<void> saveChanges(StateSetter setModalState) async {
@@ -302,21 +233,7 @@ class CustomerViewEditModal {
           };
         }
 
-        // Add transaction details if any provided
-        final bool hasAnyTransactionField =
-            paidAmountController.text.trim().isNotEmpty ||
-                transactionDateController.text.trim().isNotEmpty ||
-                referenceNumberController.text.trim().isNotEmpty ||
-                (transactionImageBytes != null || transactionImageFile != null);
-        if (hasAnyTransactionField) {
-          updateData['transaction_details'] = {
-            'paid_amount': paidAmountController.text.trim(),
-            'payment_method': paymentMethod,
-            'payment_status': paymentStatus,
-            'transaction_date': transactionDateController.text.trim(),
-            'reference_number': referenceNumberController.text.trim(),
-          };
-        }
+        // Transaction data removed
 
         final result = await ApiService.updateCustomerByAdmin(
           id: customerId is int
@@ -364,17 +281,7 @@ class CustomerViewEditModal {
             };
           }
 
-          // Update transaction details locally
-          if (hasAnyTransactionField) {
-            customer['transaction_details'] = {
-              'paid_amount': paidAmountController.text.trim(),
-              'payment_method': paymentMethod,
-              'payment_status': paymentStatus,
-              'transaction_date': transactionDateController.text.trim(),
-              'reference_number': referenceNumberController.text.trim(),
-              'reference_image_bytes': transactionImageBytes,
-            };
-          }
+          // Transaction local update removed
 
           // Debug: Log updated customer data
           debugPrint('Customer data after update: $customer');
@@ -1194,270 +1101,7 @@ class CustomerViewEditModal {
 
                                   const SizedBox(height: 32),
 
-                                  // Transaction Section
-                                  Container(
-                                    padding: const EdgeInsets.all(20),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white
-                                          .withAlpha((0.05 * 255).toInt()),
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(
-                                        color: Colors.white
-                                            .withAlpha((0.1 * 255).toInt()),
-                                        width: 1,
-                                      ),
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        const Row(
-                                          children: [
-                                            Icon(
-                                              Icons.receipt_long,
-                                              color: Colors.lightBlueAccent,
-                                              size: 24,
-                                            ),
-                                            SizedBox(width: 12),
-                                            Text(
-                                              'Transaction Information',
-                                              style: TextStyle(
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.lightBlueAccent,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 20),
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: buildFormField(
-                                                  "Paid Amount",
-                                                  paidAmountController),
-                                            ),
-                                            const SizedBox(width: 20),
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  const Text(
-                                                    'Payment Method',
-                                                    style: TextStyle(
-                                                      fontSize: 16,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      color: Colors.white,
-                                                    ),
-                                                  ),
-                                                  const SizedBox(height: 8),
-                                                  IgnorePointer(
-                                                    ignoring: !isEditing,
-                                                    child:
-                                                        DropdownButtonFormField<
-                                                            String>(
-                                                      value: paymentMethod,
-                                                      items: const [
-                                                        DropdownMenuItem(
-                                                          value: 'GCash',
-                                                          child: Text('GCash'),
-                                                        ),
-                                                        DropdownMenuItem(
-                                                          value: 'Cash',
-                                                          child: Text('Cash'),
-                                                        ),
-                                                      ],
-                                                      onChanged: (val) {
-                                                        if (val == null) return;
-                                                        setModalState(() {
-                                                          paymentMethod = val;
-                                                        });
-                                                      },
-                                                      decoration:
-                                                          InputDecoration(
-                                                        filled: true,
-                                                        fillColor: Colors.black
-                                                            .withAlpha(
-                                                                (0.3 * 255)
-                                                                    .toInt()),
-                                                        border:
-                                                            OutlineInputBorder(
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(14),
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 20),
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  const Text(
-                                                    'Payment Status',
-                                                    style: TextStyle(
-                                                      fontSize: 16,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      color: Colors.white,
-                                                    ),
-                                                  ),
-                                                  const SizedBox(height: 8),
-                                                  IgnorePointer(
-                                                    ignoring: !isEditing,
-                                                    child:
-                                                        DropdownButtonFormField<
-                                                            String>(
-                                                      value: paymentStatus,
-                                                      items: const [
-                                                        DropdownMenuItem(
-                                                          value: 'Paid',
-                                                          child: Text('Paid'),
-                                                        ),
-                                                        DropdownMenuItem(
-                                                          value: 'Refund',
-                                                          child: Text('Refund'),
-                                                        ),
-                                                      ],
-                                                      onChanged: (val) {
-                                                        if (val == null) return;
-                                                        setModalState(() {
-                                                          paymentStatus = val;
-                                                        });
-                                                      },
-                                                      decoration:
-                                                          InputDecoration(
-                                                        filled: true,
-                                                        fillColor: Colors.black
-                                                            .withAlpha(
-                                                                (0.3 * 255)
-                                                                    .toInt()),
-                                                        border:
-                                                            OutlineInputBorder(
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(14),
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            const SizedBox(width: 20),
-                                            Expanded(
-                                              child: buildFormField(
-                                                'Transaction Date',
-                                                transactionDateController,
-                                                isReadOnly: true,
-                                                onTap: () =>
-                                                    pickTransactionDate(
-                                                        setModalState),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 20),
-                                        buildFormField('Reference Number',
-                                            referenceNumberController),
-                                        const SizedBox(height: 20),
-                                        const Text(
-                                          'Reference Image',
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w600,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 12),
-                                        Center(
-                                          child: Column(
-                                            children: [
-                                              Container(
-                                                height: 120,
-                                                width: 120,
-                                                decoration: BoxDecoration(
-                                                  color: Colors.white24,
-                                                  borderRadius:
-                                                      BorderRadius.circular(12),
-                                                  border: Border.all(
-                                                    color: Colors.white
-                                                        .withAlpha((0.25 * 255)
-                                                            .toInt()),
-                                                    width: 2,
-                                                  ),
-                                                ),
-                                                child: ClipRRect(
-                                                  borderRadius:
-                                                      BorderRadius.circular(12),
-                                                  child: (kIsWeb &&
-                                                          transactionImageBytes !=
-                                                              null)
-                                                      ? Image.memory(
-                                                          transactionImageBytes!,
-                                                          fit: BoxFit.cover,
-                                                        )
-                                                      : (transactionImageFile !=
-                                                              null)
-                                                          ? Image.file(
-                                                              transactionImageFile!,
-                                                              fit: BoxFit.cover,
-                                                            )
-                                                          : const Icon(
-                                                              Icons.image,
-                                                              size: 60,
-                                                              color: Colors
-                                                                  .white70,
-                                                            ),
-                                                ),
-                                              ),
-                                              if (isEditing) ...[
-                                                const SizedBox(height: 12),
-                                                ElevatedButton.icon(
-                                                  onPressed: () =>
-                                                      pickTransactionImage(
-                                                          setModalState),
-                                                  icon: const Icon(
-                                                      Icons.camera_alt,
-                                                      size: 18),
-                                                  label: const Text(
-                                                      'Change Reference Image'),
-                                                  style:
-                                                      ElevatedButton.styleFrom(
-                                                    backgroundColor:
-                                                        Colors.lightBlueAccent,
-                                                    foregroundColor:
-                                                        Colors.black,
-                                                    shape:
-                                                        RoundedRectangleBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              20),
-                                                    ),
-                                                    padding: const EdgeInsets
-                                                        .symmetric(
-                                                        horizontal: 20,
-                                                        vertical: 10),
-                                                  ),
-                                                ),
-                                              ],
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
+                                  // Transaction section removed
 
                                   // Action buttons
                                   if (isEditing)
@@ -1528,42 +1172,7 @@ class CustomerViewEditModal {
                                                                 'address_details']
                                                             ?['country'] ??
                                                         '';
-                                                    paidAmountController
-                                                        .text = (customer[
-                                                                    'transaction_details']
-                                                                ?[
-                                                                'paid_amount'] ??
-                                                            '')
-                                                        .toString();
-                                                    transactionDateController
-                                                        .text = customer[
-                                                                'transaction_details']
-                                                            ?[
-                                                            'transaction_date'] ??
-                                                        '';
-                                                    referenceNumberController
-                                                        .text = customer[
-                                                                'transaction_details']
-                                                            ?[
-                                                            'reference_number'] ??
-                                                        '';
-                                                    paymentMethod = (customer[
-                                                                    'transaction_details']
-                                                                ?[
-                                                                'payment_method'] ??
-                                                            'GCash')
-                                                        .toString();
-                                                    paymentStatus = (customer[
-                                                                    'transaction_details']
-                                                                ?[
-                                                                'payment_status'] ??
-                                                            'Paid')
-                                                        .toString();
-                                                    transactionImageFile = null;
-                                                    transactionImageBytes = customer[
-                                                            'transaction_details']
-                                                        ?[
-                                                        'reference_image_bytes'];
+                                                    // Transaction reset removed
                                                     selectedImage = null;
                                                     webImageBytes = null;
                                                     errorMessage = null;
