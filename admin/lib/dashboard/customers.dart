@@ -16,6 +16,8 @@ class _CustomersPageState extends State<CustomersPage> {
   List<Map<String, dynamic>> _customers = [];
   bool _isLoading = true;
   String? _errorMessage;
+  bool _showArchived = false;
+  List<Map<String, dynamic>> _archivedCustomers = [];
 
   @override
   void initState() {
@@ -69,6 +71,67 @@ class _CustomersPageState extends State<CustomersPage> {
         );
       }
     }
+  }
+
+  Future<void> _confirmAndArchive(Map<String, dynamic> customer) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Archive customer?'),
+        content: Text(
+            'This will archive ${customer['name'] ?? 'this customer'}. Archived customers can be restored later.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.orange),
+            child: const Text('Archive'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      // Move customer from active to archived list
+      setState(() {
+        _customers
+            .removeWhere((c) => c['customerId'] == customer['customerId']);
+        _archivedCustomers.add(customer);
+      });
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${customer['name'] ?? 'Customer'} has been archived'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    }
+  }
+
+  void _showArchivedCustomers() {
+    setState(() {
+      _showArchived = !_showArchived;
+    });
+  }
+
+  void _restoreCustomer(Map<String, dynamic> customer) {
+    setState(() {
+      _archivedCustomers
+          .removeWhere((c) => c['customerId'] == customer['customerId']);
+      _customers.add(customer);
+    });
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${customer['name'] ?? 'Customer'} has been restored'),
+        backgroundColor: Colors.green,
+      ),
+    );
   }
 
   Future<void> _loadCustomers() async {
@@ -345,7 +408,7 @@ class _CustomersPageState extends State<CustomersPage> {
       );
     }
 
-    if (_customers.isEmpty) {
+    if (_customers.isEmpty && _archivedCustomers.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -376,6 +439,68 @@ class _CustomersPageState extends State<CustomersPage> {
       );
     }
 
+    if (_showArchived && _archivedCustomers.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.archive_outlined,
+              size: 64,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No archived customers',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Archived customers will appear here',
+              style: TextStyle(color: Colors.grey),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: _showArchivedCustomers,
+              icon: const Icon(Icons.people),
+              label: const Text('View Active Customers'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (!_showArchived && _customers.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.people_outline,
+              size: 64,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No active customers',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Add your first customer to get started',
+              style: TextStyle(color: Colors.grey),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: _showAddCustomerModal,
+              icon: const Icon(Icons.person_add),
+              label: const Text('Add First Customer'),
+            ),
+          ],
+        ),
+      );
+    }
+
     return LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth < 600) {
@@ -386,25 +511,52 @@ class _CustomersPageState extends State<CustomersPage> {
               Container(
                 width: double.infinity,
                 margin: const EdgeInsets.all(16),
-                child: ElevatedButton.icon(
-                  onPressed: _showAddCustomerModal,
-                  icon: const Icon(Icons.person_add, size: 20),
-                  label: const Text('Add New Customer'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: _showArchivedCustomers,
+                        icon: Icon(_showArchived ? Icons.people : Icons.archive,
+                            size: 20),
+                        label: Text(_showArchived
+                            ? 'Active Customers'
+                            : 'Archived Customers'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              _showArchived ? Colors.green : Colors.grey[600],
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                      ),
                     ),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: _showAddCustomerModal,
+                        icon: const Icon(Icons.person_add, size: 20),
+                        label: const Text('Add New Customer'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               Expanded(
                 child: ListView(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   children: [
-                    ..._customers.map((customer) {
+                    ...(_showArchived ? _archivedCustomers : _customers)
+                        .map((customer) {
                       final expirationDate =
                           customer['expirationDate'] as DateTime;
                       final startDate = customer['startDate'] as DateTime;
@@ -545,20 +697,39 @@ class _CustomersPageState extends State<CustomersPage> {
                                     child: const Text('View'),
                                   ),
                                   const SizedBox(width: 8),
-                                  TextButton(
-                                    onPressed: () =>
-                                        _confirmAndDelete(customer),
-                                    style: TextButton.styleFrom(
-                                      backgroundColor: Colors.red.shade50,
-                                      foregroundColor: Colors.red,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(16),
+                                  if (!_showArchived) ...[
+                                    TextButton(
+                                      onPressed: () =>
+                                          _confirmAndArchive(customer),
+                                      style: TextButton.styleFrom(
+                                        backgroundColor: Colors.orange.shade50,
+                                        foregroundColor: Colors.orange,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(16),
+                                        ),
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 12, vertical: 8),
                                       ),
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 12, vertical: 8),
+                                      child: const Text('Archive'),
                                     ),
-                                    child: const Text('Delete'),
-                                  ),
+                                  ] else ...[
+                                    TextButton(
+                                      onPressed: () =>
+                                          _restoreCustomer(customer),
+                                      style: TextButton.styleFrom(
+                                        backgroundColor: Colors.green.shade50,
+                                        foregroundColor: Colors.green,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(16),
+                                        ),
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 12, vertical: 8),
+                                      ),
+                                      child: const Text('Restore'),
+                                    ),
+                                  ],
                                 ],
                               ),
                             ],
@@ -590,19 +761,43 @@ class _CustomersPageState extends State<CustomersPage> {
                         color: Colors.white,
                       ),
                     ),
-                    ElevatedButton.icon(
-                      onPressed: _showAddCustomerModal,
-                      icon: const Icon(Icons.person_add, size: 18),
-                      label: const Text('Add New Customer'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                    Row(
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed: _showArchivedCustomers,
+                          icon: Icon(
+                              _showArchived ? Icons.people : Icons.archive,
+                              size: 18),
+                          label: Text(_showArchived
+                              ? 'Active Customers'
+                              : 'Archived Customers'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                                _showArchived ? Colors.green : Colors.grey[600],
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 12),
+                          ),
                         ),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 20, vertical: 12),
-                      ),
+                        const SizedBox(width: 12),
+                        ElevatedButton.icon(
+                          onPressed: _showAddCustomerModal,
+                          icon: const Icon(Icons.person_add, size: 18),
+                          label: const Text('Add New Customer'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 12),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -662,7 +857,8 @@ class _CustomersPageState extends State<CustomersPage> {
                           ),
                           const Divider(height: 24, color: Colors.black26),
                           // Data Rows
-                          ..._customers.map((customer) {
+                          ...(_showArchived ? _archivedCustomers : _customers)
+                              .map((customer) {
                             final expirationDate =
                                 customer['expirationDate'] as DateTime;
                             final startDate = customer['startDate'] as DateTime;
@@ -771,24 +967,45 @@ class _CustomersPageState extends State<CustomersPage> {
                                             child: const Text('View'),
                                           ),
                                           const SizedBox(width: 8),
-                                          TextButton(
-                                            onPressed: () =>
-                                                _confirmAndDelete(customer),
-                                            style: TextButton.styleFrom(
-                                              backgroundColor:
-                                                  Colors.red.shade50,
-                                              foregroundColor: Colors.red,
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(16),
+                                          if (!_showArchived) ...[
+                                            TextButton(
+                                              onPressed: () =>
+                                                  _confirmAndArchive(customer),
+                                              style: TextButton.styleFrom(
+                                                backgroundColor:
+                                                    Colors.orange.shade50,
+                                                foregroundColor: Colors.orange,
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(16),
+                                                ),
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 12,
+                                                        vertical: 8),
                                               ),
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                      horizontal: 12,
-                                                      vertical: 8),
+                                              child: const Text('Archive'),
                                             ),
-                                            child: const Text('Delete'),
-                                          ),
+                                          ] else ...[
+                                            TextButton(
+                                              onPressed: () =>
+                                                  _restoreCustomer(customer),
+                                              style: TextButton.styleFrom(
+                                                backgroundColor:
+                                                    Colors.green.shade50,
+                                                foregroundColor: Colors.green,
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(16),
+                                                ),
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 12,
+                                                        vertical: 8),
+                                              ),
+                                              child: const Text('Restore'),
+                                            ),
+                                          ],
                                         ],
                                       ),
                                     ),
