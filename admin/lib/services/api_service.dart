@@ -21,6 +21,8 @@ class ApiService {
   // Membership endpoints
   static const String insertMembershipEndpoint =
       '$baseUrl/membership/insertMembership.php';
+  static const String getAllMembershipsEndpoint =
+      '$baseUrl/membership/getAllMembership.php';
   // Address endpoints (these PHP scripts read from $_POST)
   static const String insertAddressEndpoint =
       '$baseUrl/address/insertAddress.php';
@@ -230,6 +232,91 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
+
+        // If the backend doesn't attach membership, enrich on the client by fetching memberships
+        if (responseData['success'] == true && responseData['data'] is List) {
+          try {
+            final membershipsRes = await http.get(
+              Uri.parse(getAllMembershipsEndpoint),
+              headers: {'Accept': 'application/json'},
+            );
+            if (membershipsRes.statusCode == 200 &&
+                membershipsRes.body.isNotEmpty) {
+              final dynamic parsed = jsonDecode(membershipsRes.body);
+              if (parsed is List) {
+                // Build latest membership per customer_id
+                final Map<String, Map<String, dynamic>> latestByCustomerId = {};
+                DateTime parseDate(dynamic v) {
+                  final String s = (v ?? '').toString();
+                  return DateTime.tryParse(s) ??
+                      DateTime.fromMillisecondsSinceEpoch(0);
+                }
+
+                int parseInt(dynamic v) =>
+                    int.tryParse((v ?? '').toString()) ?? -1;
+
+                for (final dynamic m in parsed) {
+                  if (m is! Map<String, dynamic>) continue;
+                  final String key =
+                      (m['customer_id'] ?? m['customerId'] ?? '').toString();
+                  if (key.isEmpty) continue;
+                  final Map<String, dynamic>? existing =
+                      latestByCustomerId[key];
+                  if (existing == null) {
+                    latestByCustomerId[key] = m;
+                    continue;
+                  }
+
+                  final DateTime newStart =
+                      parseDate(m['start_date'] ?? m['startDate']);
+                  final DateTime oldStart = parseDate(
+                      existing['start_date'] ?? existing['startDate']);
+                  final DateTime newUpdated =
+                      parseDate(m['updated_at'] ?? m['updatedAt']);
+                  final DateTime oldUpdated = parseDate(
+                      existing['updated_at'] ?? existing['updatedAt']);
+                  final int newId = parseInt(m['id']);
+                  final int oldId = parseInt(existing['id']);
+
+                  final bool isNewer = newStart.isAfter(oldStart) ||
+                      (newStart.isAtSameMomentAs(oldStart) &&
+                          newUpdated.isAfter(oldUpdated)) ||
+                      (newStart.isAtSameMomentAs(oldStart) &&
+                          newUpdated.isAtSameMomentAs(oldUpdated) &&
+                          newId > oldId);
+
+                  if (isNewer) latestByCustomerId[key] = m;
+                }
+
+                // Attach membership to each customer in the response
+                final List<dynamic> customers =
+                    responseData['data'] as List<dynamic>;
+                for (final dynamic c in customers) {
+                  if (c is Map<String, dynamic>) {
+                    final String cid =
+                        (c['id'] ?? c['customer_id'] ?? '').toString();
+                    final Map<String, dynamic>? mem = latestByCustomerId[cid];
+                    if (mem != null) {
+                      final String membershipType =
+                          (mem['membership_type'] ?? mem['status'] ?? '')
+                              .toString();
+                      c['membership'] = mem;
+                      c['membership_type'] = membershipType;
+                      c['status'] = mem['status'] ?? membershipType;
+                      c['start_date'] = mem['start_date'] ?? mem['startDate'];
+                      c['expiration_date'] =
+                          mem['expiration_date'] ?? mem['expirationDate'];
+                    }
+                  }
+                }
+              }
+            }
+          } catch (e) {
+            debugPrint(
+                'Warning: failed to fetch memberships for enrichment: $e');
+          }
+        }
+
         return responseData;
       } else {
         // Try to parse error response

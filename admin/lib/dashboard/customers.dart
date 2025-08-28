@@ -71,39 +71,6 @@ class _CustomersPageState extends State<CustomersPage> {
     }
   }
 
-  // Force refresh the customer list
-  Future<void> _refreshCustomerList() async {
-    debugPrint('_refreshCustomerList: Starting forced refresh...');
-
-    // Clear current data first
-    if (mounted) {
-      setState(() {
-        _customers = [];
-        _isLoading = true;
-      });
-    }
-
-    // Reload customers from API
-    await _loadCustomers();
-
-    // Force additional UI rebuild
-    if (mounted) {
-      setState(() {
-        debugPrint('_refreshCustomerList: Forcing UI rebuild...');
-      });
-    }
-    debugPrint('_refreshCustomerList: Refresh completed');
-  }
-
-  // Force complete UI rebuild
-  void _forceRebuild() {
-    if (mounted) {
-      setState(() {
-        debugPrint('_forceRebuild: Forcing complete UI rebuild...');
-      });
-    }
-  }
-
   Future<void> _loadCustomers() async {
     debugPrint('_loadCustomers: Starting to load customers...');
     debugPrint('_loadCustomers: Current customers count: ${_customers.length}');
@@ -165,19 +132,52 @@ class _CustomersPageState extends State<CustomersPage> {
   }
 
   Map<String, dynamic> _convertCustomerData(Map<String, dynamic> customerData) {
-    // Convert customer data from the API
-    String membershipType = customerData['membership_type'] ?? 'Monthly';
+    // Normalize membership type from various possible fields
+    String normalizeMembershipType(String? raw) {
+      final String val = (raw ?? '').trim().toLowerCase();
+      if (val.isEmpty) return '';
+      if (val == 'daily') return 'Daily';
+      if (val.replaceAll(' ', '') == 'halfmonth') return 'Half Month';
+      if (val == 'monthly') return 'Monthly';
+      // Some APIs might return like "half month 1" or variants
+      if (val.startsWith('half') && val.contains('month')) return 'Half Month';
+      return 'Monthly';
+    }
+
+    // Prefer nested membership field if present
+    final Map<String, dynamic>? membership =
+        customerData['membership'] is Map<String, dynamic>
+            ? customerData['membership'] as Map<String, dynamic>
+            : null;
+
+    final String membershipType = normalizeMembershipType(
+      membership?['membership_type'] ??
+          customerData['membership_type'] ??
+          customerData['status'],
+    );
+
     DateTime expirationDate;
     DateTime startDate;
 
+    // Parse dates from any available keys
+    String? expirationRaw =
+        (membership?['expiration_date'] ?? customerData['expiration_date'])
+            ?.toString();
+    String? startRaw =
+        (membership?['start_date'] ?? customerData['start_date'])?.toString();
+
     try {
-      expirationDate = DateTime.parse(customerData['expiration_date']);
+      expirationDate = expirationRaw != null && expirationRaw.isNotEmpty
+          ? DateTime.parse(expirationRaw)
+          : DateTime.now().add(const Duration(days: 30));
     } catch (e) {
       expirationDate = DateTime.now().add(const Duration(days: 30));
     }
 
     try {
-      startDate = DateTime.parse(customerData['start_date']);
+      startDate = startRaw != null && startRaw.isNotEmpty
+          ? DateTime.parse(startRaw)
+          : DateTime.now();
     } catch (e) {
       startDate = DateTime.now();
     }
@@ -212,6 +212,12 @@ class _CustomersPageState extends State<CustomersPage> {
       'address': customerData['address'],
       // Include password for admin editing
       'password': customerData['password'],
+      // Pass through any nested membership for downstream use
+      'membership': membership,
+      'membership_type': membershipType,
+      'start_date': startRaw,
+      'expiration_date': expirationRaw,
+      'status': customerData['status'],
     };
   }
 
@@ -222,21 +228,6 @@ class _CustomersPageState extends State<CustomersPage> {
         final DateTime dateB = b['expirationDate'] as DateTime;
         return dateA.compareTo(dateB);
       });
-    }
-  }
-
-  String _getRemainingTime(DateTime expirationDate) {
-    final now = DateTime.now();
-    final difference = expirationDate.difference(now);
-
-    if (difference.inDays < 0) {
-      return 'Expired';
-    } else if (difference.inDays == 0) {
-      return 'Expires today';
-    } else if (difference.inDays == 1) {
-      return '1 day remaining';
-    } else {
-      return '${difference.inDays} days remaining';
     }
   }
 
@@ -574,7 +565,7 @@ class _CustomersPageState extends State<CustomersPage> {
                           ),
                         ),
                       );
-                    }).toList(),
+                    }),
                   ],
                 ),
               ),
@@ -807,7 +798,7 @@ class _CustomersPageState extends State<CustomersPage> {
                                     height: 18, color: Colors.black12),
                               ],
                             );
-                          }).toList(),
+                          }),
                         ],
                       ),
                     ),

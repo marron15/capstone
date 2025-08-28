@@ -97,11 +97,14 @@ class CustomerViewEditModal {
       return '';
     }
 
-    String membershipType = normalizeMembershipType((customer['membership']
-                ?['membership_type'] ??
-            customer['membership_type'] ??
-            customer['status'])
-        .toString());
+    String membershipType =
+        normalizeMembershipType((customer['membership']?['membership_type'] ??
+                customer['membership_type'] ??
+                // Fallbacks when API provided camelCase or uses status
+                customer['membership']?['status'] ??
+                customer['status'] ??
+                customer['membershipType'])
+            .toString());
 
     // State variables
     bool isEditing = true;
@@ -214,8 +217,7 @@ class CustomerViewEditModal {
         }
 
         // Persist membership type if changed via Membership endpoint
-        final bool membershipUpdated =
-            await ApiService.createMembershipForCustomer(
+        await ApiService.createMembershipForCustomer(
           customerId: customerId is int
               ? customerId
               : int.tryParse(customerId.toString()) ?? -1,

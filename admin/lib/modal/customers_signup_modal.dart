@@ -364,6 +364,17 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
               country: _countryController.text.trim(),
             );
           }
+
+          // Persist membership immediately for new customers
+          try {
+            await ApiService.createMembershipForCustomer(
+              customerId: customerId,
+              membershipType: _selectedMembershipType ?? 'Monthly',
+            );
+          } catch (e) {
+            debugPrint(
+                'Warning: failed to create membership for new customer: $e');
+          }
         }
         debugPrint('🎫 Membership created: $membershipCreated');
 
