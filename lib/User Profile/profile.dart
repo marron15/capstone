@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 
-import 'dart:io';
 import 'profile_data.dart';
 
 import '../landing_page_components/landing_page.dart';
 import 'membership_duration.dart';
-import 'package:flutter/foundation.dart';
+
 import '../services/auth_service.dart';
 import '../services/auth_state.dart';
 
@@ -408,8 +407,7 @@ class _ProfilePageState extends State<ProfilePage> {
         isMobile
             ? EdgeInsets.symmetric(vertical: 14)
             : EdgeInsets.symmetric(vertical: 18);
-    final avatarRadius = isMobile ? 38.0 : 48.0;
-    final iconSize = isMobile ? 28.0 : 36.0;
+
     final labelFontSize = isMobile ? 13.0 : 15.0;
     final textFieldFontSize = isMobile ? 14.0 : 16.0;
 
