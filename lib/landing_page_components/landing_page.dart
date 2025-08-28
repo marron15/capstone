@@ -3,9 +3,9 @@ import 'header.dart';
 import 'equipment_images.dart';
 import 'add_ons.dart';
 import 'products.dart';
-import 'plans.dart';
 import 'trainers.dart';
 import '../modals/login.dart';
+import '../services/auth_state.dart';
 
 import 'footer.dart';
 import '../User Profile/profile.dart';
@@ -55,6 +55,180 @@ class _LandingPageState extends State<LandingPage> {
         );
       }
     }
+  }
+
+  // Helper method to format dates
+  String _formatDate(DateTime date) {
+    final months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return '${months[date.month - 1]} ${date.day}, ${date.year}';
+  }
+
+  // Helper method to check if membership is active
+  bool _isMembershipActive(DateTime expirationDate) {
+    return DateTime.now().isBefore(expirationDate);
+  }
+
+  // Helper method to get time remaining
+  String _getTimeRemaining(DateTime expirationDate) {
+    final now = DateTime.now();
+    final difference = expirationDate.difference(now);
+
+    if (difference.isNegative) return 'Expired';
+
+    final days = difference.inDays;
+    final hours = difference.inHours % 24;
+
+    if (days > 0) {
+      return '${days}d ${hours}h';
+    } else if (hours > 0) {
+      return '${hours}h';
+    } else {
+      return '${difference.inMinutes}m';
+    }
+  }
+
+  // Helper method to get membership progress (0.0 to 1.0)
+  double _getMembershipProgress(DateTime startDate, DateTime expirationDate) {
+    final now = DateTime.now();
+    final totalDuration = expirationDate.difference(startDate);
+    final elapsed = now.difference(startDate);
+
+    if (totalDuration.inMilliseconds == 0) return 0.0;
+    if (elapsed.isNegative) return 0.0;
+    if (elapsed.inMilliseconds > totalDuration.inMilliseconds) return 1.0;
+
+    return elapsed.inMilliseconds / totalDuration.inMilliseconds;
+  }
+
+  // Helper method to build date row
+  Widget _buildDateRow(
+    String label,
+    String date,
+    IconData icon,
+    Color color,
+    bool isSmallScreen,
+    Size screenSize,
+  ) {
+    return Row(
+      children: [
+        Container(
+          padding: EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.2),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: color, size: 20),
+        ),
+        SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              Text(
+                date,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize:
+                      (isSmallScreen
+                          ? (screenSize.width * 0.035).clamp(12.0, 18.0)
+                          : (screenSize.width * 0.024).clamp(14.0, 22.0)),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Helper method to build benefit item
+  Widget _buildBenefitItem(String text, IconData icon) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Icon(icon, color: Colors.blue, size: 16),
+          SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Helper method to build stat item
+  Widget _buildStatItem(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
+    return Column(
+      children: [
+        Icon(icon, color: color, size: 24),
+        SizedBox(height: 8),
+        Text(
+          value,
+          style: TextStyle(
+            color: color,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.white70,
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Helper method to get days used
+  int _getDaysUsed(DateTime startDate) {
+    final now = DateTime.now();
+    final difference = now.difference(startDate);
+    return difference.inDays;
+  }
+
+  // Helper method to get days left
+  int _getDaysLeft(DateTime expirationDate) {
+    final now = DateTime.now();
+    final difference = expirationDate.difference(now);
+    return difference.isNegative ? 0 : difference.inDays;
   }
 
   @override
@@ -136,8 +310,8 @@ class _LandingPageState extends State<LandingPage> {
               },
             ),
             _DrawerNavItem(
-              icon: Icons.school,
-              label: 'Programs',
+              icon: Icons.fitness_center,
+              label: 'Gym Equipment',
               onTap: () {
                 Navigator.pop(context);
                 _scrollToSection(1);
@@ -243,61 +417,561 @@ class _LandingPageState extends State<LandingPage> {
                                 ),
                               ),
                               SizedBox(height: screenSize.height * 0.03),
-                              Text(
-                                'Do you want to get Gym Membership?\nLogin to access your account!',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize:
-                                      (isSmallScreen
-                                          ? (screenSize.width * 0.048).clamp(
-                                            15.0,
-                                            22.0,
-                                          )
-                                          : (screenSize.width * 0.032).clamp(
-                                            16.0,
-                                            26.0,
-                                          )),
-                                  fontWeight: FontWeight.w500,
-                                  height: 1.5,
-                                ),
-                              ),
-                              SizedBox(height: screenSize.height * 0.012),
-                              SizedBox(height: screenSize.height * 0.04),
-                              SizedBox(
-                                width: (isSmallScreen
-                                        ? screenSize.width * 0.7
-                                        : screenSize.width * 0.3)
-                                    .clamp(180.0, 340.0),
-                                child: ElevatedButton(
-                                  onPressed: () {
-                                    showDialog(
-                                      context: context,
-                                      builder: (context) => const LoginModal(),
+                              // Conditional content based on login status
+                              AnimatedBuilder(
+                                animation: authState,
+                                builder: (context, child) {
+                                  if (authState.isLoggedIn) {
+                                    // Show membership information when logged in
+                                    return Column(
+                                      children: [
+                                        Text(
+                                          'Welcome back, ${authState.customerName ?? 'Member'}!',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize:
+                                                (isSmallScreen
+                                                    ? (screenSize.width * 0.048)
+                                                        .clamp(15.0, 22.0)
+                                                    : (screenSize.width * 0.032)
+                                                        .clamp(16.0, 26.0)),
+                                            fontWeight: FontWeight.w700,
+                                            height: 1.5,
+                                          ),
+                                        ),
+                                        SizedBox(
+                                          height: screenSize.height * 0.02,
+                                        ),
+                                        if (authState.membershipData !=
+                                            null) ...[
+                                          Container(
+                                            width: double.infinity,
+                                            constraints: BoxConstraints(
+                                              maxWidth:
+                                                  isSmallScreen ? 320 : 400,
+                                            ),
+                                            padding: EdgeInsets.all(20),
+                                            decoration: BoxDecoration(
+                                              gradient: LinearGradient(
+                                                begin: Alignment.topLeft,
+                                                end: Alignment.bottomRight,
+                                                colors: [
+                                                  Colors.black87.withValues(
+                                                    alpha: 0.9,
+                                                  ),
+                                                  Colors.blueGrey.withValues(
+                                                    alpha: 0.8,
+                                                  ),
+                                                  Colors.black87.withValues(
+                                                    alpha: 0.9,
+                                                  ),
+                                                ],
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(16),
+                                              border: Border.all(
+                                                color:
+                                                    _isMembershipActive(
+                                                          authState
+                                                              .membershipData!
+                                                              .expirationDate,
+                                                        )
+                                                        ? Colors.green
+                                                            .withValues(
+                                                              alpha: 0.6,
+                                                            )
+                                                        : Colors.red.withValues(
+                                                          alpha: 0.6,
+                                                        ),
+                                                width: 2,
+                                              ),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color:
+                                                      _isMembershipActive(
+                                                            authState
+                                                                .membershipData!
+                                                                .expirationDate,
+                                                          )
+                                                          ? Colors.green
+                                                              .withValues(
+                                                                alpha: 0.3,
+                                                              )
+                                                          : Colors.red
+                                                              .withValues(
+                                                                alpha: 0.3,
+                                                              ),
+                                                  blurRadius: 15,
+                                                  spreadRadius: 2,
+                                                ),
+                                              ],
+                                            ),
+                                            child: Column(
+                                              children: [
+                                                // Header with membership type and status
+                                                Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceBetween,
+                                                  children: [
+                                                    Expanded(
+                                                      child: Text(
+                                                        '${authState.membershipData!.membershipType} Membership',
+                                                        style: TextStyle(
+                                                          color:
+                                                              Colors
+                                                                  .lightBlueAccent,
+                                                          fontSize:
+                                                              (isSmallScreen
+                                                                  ? (screenSize
+                                                                              .width *
+                                                                          0.045)
+                                                                      .clamp(
+                                                                        16.0,
+                                                                        22.0,
+                                                                      )
+                                                                  : (screenSize
+                                                                              .width *
+                                                                          0.03)
+                                                                      .clamp(
+                                                                        18.0,
+                                                                        26.0,
+                                                                      )),
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    Container(
+                                                      padding:
+                                                          EdgeInsets.symmetric(
+                                                            horizontal: 12,
+                                                            vertical: 6,
+                                                          ),
+                                                      decoration: BoxDecoration(
+                                                        color:
+                                                            _isMembershipActive(
+                                                                  authState
+                                                                      .membershipData!
+                                                                      .expirationDate,
+                                                                )
+                                                                ? Colors.green
+                                                                    .withValues(
+                                                                      alpha:
+                                                                          0.9,
+                                                                    )
+                                                                : Colors.red
+                                                                    .withValues(
+                                                                      alpha:
+                                                                          0.9,
+                                                                    ),
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              20,
+                                                            ),
+                                                        boxShadow: [
+                                                          BoxShadow(
+                                                            color: (_isMembershipActive(
+                                                                      authState
+                                                                          .membershipData!
+                                                                          .expirationDate,
+                                                                    )
+                                                                    ? Colors
+                                                                        .green
+                                                                    : Colors
+                                                                        .red)
+                                                                .withValues(
+                                                                  alpha: 0.4,
+                                                                ),
+                                                            blurRadius: 8,
+                                                            spreadRadius: 1,
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      child: Row(
+                                                        mainAxisSize:
+                                                            MainAxisSize.min,
+                                                        children: [
+                                                          Icon(
+                                                            _isMembershipActive(
+                                                                  authState
+                                                                      .membershipData!
+                                                                      .expirationDate,
+                                                                )
+                                                                ? Icons
+                                                                    .check_circle
+                                                                : Icons.warning,
+                                                            color: Colors.white,
+                                                            size: 16,
+                                                          ),
+                                                          SizedBox(width: 6),
+                                                          Text(
+                                                            _isMembershipActive(
+                                                                  authState
+                                                                      .membershipData!
+                                                                      .expirationDate,
+                                                                )
+                                                                ? 'Active'
+                                                                : 'Expired',
+                                                            style: TextStyle(
+                                                              color:
+                                                                  Colors.white,
+                                                              fontSize: 12,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                SizedBox(height: 16),
+
+                                                // Progress bar showing time remaining
+                                                if (_isMembershipActive(
+                                                  authState
+                                                      .membershipData!
+                                                      .expirationDate,
+                                                )) ...[
+                                                  Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      Row(
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .spaceBetween,
+                                                        children: [
+                                                          Text(
+                                                            'Time Remaining',
+                                                            style: TextStyle(
+                                                              color:
+                                                                  Colors
+                                                                      .white70,
+                                                              fontSize: 12,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w500,
+                                                            ),
+                                                          ),
+                                                          Text(
+                                                            _getTimeRemaining(
+                                                              authState
+                                                                  .membershipData!
+                                                                  .expirationDate,
+                                                            ),
+                                                            style: TextStyle(
+                                                              color:
+                                                                  Colors
+                                                                      .lightBlueAccent,
+                                                              fontSize: 12,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      SizedBox(height: 8),
+                                                      LinearProgressIndicator(
+                                                        value: _getMembershipProgress(
+                                                          authState
+                                                              .membershipData!
+                                                              .startDate,
+                                                          authState
+                                                              .membershipData!
+                                                              .expirationDate,
+                                                        ),
+                                                        backgroundColor: Colors
+                                                            .white
+                                                            .withValues(
+                                                              alpha: 0.2,
+                                                            ),
+                                                        valueColor: AlwaysStoppedAnimation<
+                                                          Color
+                                                        >(
+                                                          _getMembershipProgress(
+                                                                    authState
+                                                                        .membershipData!
+                                                                        .startDate,
+                                                                    authState
+                                                                        .membershipData!
+                                                                        .expirationDate,
+                                                                  ) >
+                                                                  0.7
+                                                              ? Colors.orange
+                                                              : Colors.green,
+                                                        ),
+                                                        minHeight: 6,
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              3,
+                                                            ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  SizedBox(height: 16),
+                                                ],
+
+                                                // Dates section
+                                                Container(
+                                                  padding: EdgeInsets.all(16),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.white
+                                                        .withValues(alpha: 0.1),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          12,
+                                                        ),
+                                                    border: Border.all(
+                                                      color: Colors.white
+                                                          .withValues(
+                                                            alpha: 0.2,
+                                                          ),
+                                                      width: 1,
+                                                    ),
+                                                  ),
+                                                  child: Column(
+                                                    children: [
+                                                      _buildDateRow(
+                                                        'Start Date',
+                                                        _formatDate(
+                                                          authState
+                                                              .membershipData!
+                                                              .startDate,
+                                                        ),
+                                                        Icons.calendar_today,
+                                                        Colors.green,
+                                                        isSmallScreen,
+                                                        screenSize,
+                                                      ),
+                                                      SizedBox(height: 12),
+                                                      _buildDateRow(
+                                                        'Expires',
+                                                        _formatDate(
+                                                          authState
+                                                              .membershipData!
+                                                              .expirationDate,
+                                                        ),
+                                                        Icons.event_busy,
+                                                        Colors.orange,
+                                                        isSmallScreen,
+                                                        screenSize,
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                                SizedBox(height: 16),
+
+                                                // Membership statistics
+                                                if (_isMembershipActive(
+                                                  authState
+                                                      .membershipData!
+                                                      .expirationDate,
+                                                )) ...[
+                                                  Container(
+                                                    padding: EdgeInsets.all(16),
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.green
+                                                          .withValues(
+                                                            alpha: 0.1,
+                                                          ),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            12,
+                                                          ),
+                                                      border: Border.all(
+                                                        color: Colors.green
+                                                            .withValues(
+                                                              alpha: 0.3,
+                                                            ),
+                                                        width: 1,
+                                                      ),
+                                                    ),
+                                                    child: Row(
+                                                      children: [
+                                                        Expanded(
+                                                          child: _buildStatItem(
+                                                            'Days Used',
+                                                            '${_getDaysUsed(authState.membershipData!.startDate)}',
+                                                            Icons.timer,
+                                                            Colors.green,
+                                                          ),
+                                                        ),
+                                                        Expanded(
+                                                          child: _buildStatItem(
+                                                            'Days Left',
+                                                            '${_getDaysLeft(authState.membershipData!.expirationDate)}',
+                                                            Icons.schedule,
+                                                            Colors.orange,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                  SizedBox(height: 16),
+                                                ],
+
+                                                // Membership benefits
+                                                Container(
+                                                  padding: EdgeInsets.all(16),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.blue
+                                                        .withValues(alpha: 0.1),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          12,
+                                                        ),
+                                                    border: Border.all(
+                                                      color: Colors.blue
+                                                          .withValues(
+                                                            alpha: 0.3,
+                                                          ),
+                                                      width: 1,
+                                                    ),
+                                                  ),
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      Row(
+                                                        children: [
+                                                          Icon(
+                                                            Icons.star,
+                                                            color: Colors.amber,
+                                                            size: 20,
+                                                          ),
+                                                          SizedBox(width: 8),
+                                                          Text(
+                                                            'Membership Benefits',
+                                                            style: TextStyle(
+                                                              color:
+                                                                  Colors.amber,
+                                                              fontSize: 14,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      SizedBox(height: 12),
+                                                      _buildBenefitItem(
+                                                        'Access to all gym equipment',
+                                                        Icons.fitness_center,
+                                                      ),
+                                                      _buildBenefitItem(
+                                                        'Group fitness classes',
+                                                        Icons.group,
+                                                      ),
+                                                      _buildBenefitItem(
+                                                        'Locker room access',
+                                                        Icons.lock,
+                                                      ),
+                                                      _buildBenefitItem(
+                                                        'Free Wi-Fi',
+                                                        Icons.wifi,
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                                SizedBox(height: 16),
+                                              ],
+                                            ),
+                                          ),
+                                        ] else ...[
+                                          Text(
+                                            'Loading membership details...',
+                                            style: TextStyle(
+                                              color: Colors.white70,
+                                              fontSize:
+                                                  (isSmallScreen
+                                                      ? (screenSize.width *
+                                                              0.035)
+                                                          .clamp(12.0, 18.0)
+                                                      : (screenSize.width *
+                                                              0.024)
+                                                          .clamp(14.0, 22.0)),
+                                            ),
+                                          ),
+                                        ],
+                                      ],
                                     );
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.black87,
-                                    foregroundColor: Colors.white,
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: (screenSize.width * 0.04)
-                                          .clamp(16.0, 32.0),
-                                      vertical: (screenSize.height * 0.025)
-                                          .clamp(10.0, 22.0),
-                                    ),
-                                    textStyle: TextStyle(
-                                      fontSize: (isSmallScreen
-                                              ? screenSize.width * 0.055
-                                              : screenSize.width * 0.035)
-                                          .clamp(16.0, 28.0),
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(11),
-                                    ),
-                                    elevation: 4,
-                                  ),
-                                  child: const Text('Login'),
-                                ),
+                                  } else {
+                                    // Show login prompt when not logged in
+                                    return Column(
+                                      children: [
+                                        Text(
+                                          'Do you want to get Gym Membership?\nLogin to access your account!',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize:
+                                                (isSmallScreen
+                                                    ? (screenSize.width * 0.048)
+                                                        .clamp(15.0, 22.0)
+                                                    : (screenSize.width * 0.032)
+                                                        .clamp(16.0, 26.0)),
+                                            fontWeight: FontWeight.w500,
+                                            height: 1.5,
+                                          ),
+                                        ),
+                                        SizedBox(
+                                          height: screenSize.height * 0.012,
+                                        ),
+                                        SizedBox(
+                                          height: screenSize.height * 0.04,
+                                        ),
+                                        SizedBox(
+                                          width: (isSmallScreen
+                                                  ? screenSize.width * 0.7
+                                                  : screenSize.width * 0.3)
+                                              .clamp(180.0, 340.0),
+                                          child: ElevatedButton(
+                                            onPressed: () {
+                                              showDialog(
+                                                context: context,
+                                                builder:
+                                                    (context) =>
+                                                        const LoginModal(),
+                                              );
+                                            },
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.black87,
+                                              foregroundColor: Colors.white,
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: (screenSize.width *
+                                                        0.04)
+                                                    .clamp(16.0, 32.0),
+                                                vertical: (screenSize.height *
+                                                        0.025)
+                                                    .clamp(10.0, 22.0),
+                                              ),
+                                              textStyle: TextStyle(
+                                                fontSize: (isSmallScreen
+                                                        ? screenSize.width *
+                                                            0.055
+                                                        : screenSize.width *
+                                                            0.035)
+                                                    .clamp(16.0, 28.0),
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(11),
+                                              ),
+                                              elevation: 4,
+                                            ),
+                                            child: const Text('Login'),
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  }
+                                },
                               ),
                             ],
                           ),
@@ -310,13 +984,7 @@ class _LandingPageState extends State<LandingPage> {
                           screenHeight: screenSize.height,
                         ),
                         SizedBox(height: screenSize.height * 0.06),
-                        PlansSection(
-                          key: _plansKey,
-                          isSmallScreen: isSmallScreen,
-                          screenWidth: screenSize.width,
-                          screenHeight: screenSize.height,
-                        ),
-                        SizedBox(height: screenSize.height * 0.06),
+
                         ServicesSection(
                           key: _servicesKey,
                           isSmallScreen: isSmallScreen,

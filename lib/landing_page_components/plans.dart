@@ -18,26 +18,6 @@ class PlansSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: isSmallScreen ? 20.0 : screenWidth * 0.1,
-          ),
-          child: Center(
-            child: Text(
-              'Our Membership Prices',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: (isSmallScreen
-                        ? screenWidth * 0.07
-                        : screenWidth * 0.045)
-                    .clamp(22.0, 48.0),
-                fontWeight: FontWeight.bold,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-        ),
-        SizedBox(height: 20),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
@@ -52,7 +32,6 @@ class PlansSection extends StatelessWidget {
                 features: [
                   'For Membership - You can walk in Gym for paying Cash or Through G-Cash.',
                   'No Annual',
-                  'Add-Ons: Personal Trainer - ₱2,500 Total (Membership Included)',
                 ],
                 buttonText: 'Get Membership Now',
                 gradient: null,
@@ -68,7 +47,6 @@ class PlansSection extends StatelessWidget {
                 features: [
                   'For Membership - You can walk in Gym for paying Cash or Through G-Cash.',
                   'No Annual',
-                  'Add-Ons: Personal Trainer - ₱2,500 Total (Membership Included)',
                 ],
                 buttonText: 'Get Membership Now',
                 gradient: null,
@@ -85,7 +63,6 @@ class PlansSection extends StatelessWidget {
                   'For Membership - You can walk in Gym for paying Cash or Through G-Cash.',
                   'Renew for 1 Month Membership  ₱350.00',
                   'No Annual',
-                  'Add-Ons: Personal Trainer - ₱2,500 Total (Membership Included)',
                 ],
                 buttonText: 'Get Membership Now',
                 gradient: null,

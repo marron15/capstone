@@ -50,8 +50,8 @@ class BlackHeader extends StatelessWidget {
                     onTap: () => onNavTap(0),
                   ),
                   _HeaderNavButton(
-                    icon: Icons.school,
-                    label: 'Programs',
+                    icon: Icons.fitness_center,
+                    label: 'Gym Equipment',
                     onTap: () => onNavTap(1),
                   ),
                   _HeaderNavButton(

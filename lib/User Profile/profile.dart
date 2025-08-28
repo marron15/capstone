@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
+
 import 'dart:io';
 import 'profile_data.dart';
-import 'note.dart';
-import 'transaction.dart';
 
 import '../landing_page_components/landing_page.dart';
 import 'membership_duration.dart';
@@ -32,18 +30,15 @@ class _ProfilePageState extends State<ProfilePage> {
   late TextEditingController _emailController = TextEditingController(
     text: profileNotifier.value.email ?? '',
   );
-  final TextEditingController _noteController = TextEditingController();
+
   late VoidCallback _firstNameListener;
   late VoidCallback _middleNameListener;
   late VoidCallback _lastNameListener;
   late VoidCallback _contactListener;
   late VoidCallback _emailListener;
-  File? _imageFile;
-  File? _pendingImageFile;
   DateTime? _birthdate;
   TextEditingController _passwordController = TextEditingController();
   bool _obscurePassword = true;
-  Uint8List? _pendingWebImageBytes;
 
   // Controllers for address fields
   late TextEditingController _addressController;
@@ -61,7 +56,6 @@ class _ProfilePageState extends State<ProfilePage> {
   void initState() {
     super.initState();
     _birthdate = profileNotifier.value.birthdate;
-    _imageFile = profileNotifier.value.imageFile;
     // Don't populate password field for security - it will be empty initially
     _passwordController.text = '';
 
@@ -134,7 +128,7 @@ class _ProfilePageState extends State<ProfilePage> {
     _lastNameController.dispose();
     _contactController.dispose();
     _emailController.dispose();
-    _noteController.dispose();
+
     _passwordController.dispose();
     // Dispose of address controllers
     _addressController.dispose();
@@ -210,8 +204,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   bool _hasChanges() {
-    return _imageFile != profileNotifier.value.imageFile ||
-        _firstNameController.text != profileNotifier.value.firstName ||
+    return _firstNameController.text != profileNotifier.value.firstName ||
         _middleNameController.text != profileNotifier.value.middleName ||
         _lastNameController.text != profileNotifier.value.lastName ||
         _contactController.text != profileNotifier.value.contactNumber ||
@@ -238,84 +231,6 @@ class _ProfilePageState extends State<ProfilePage> {
             (profileNotifier.value.emergencyContactName ?? '') ||
         _emergencyPhoneController.text !=
             (profileNotifier.value.emergencyContactPhone ?? '');
-  }
-
-  Future<void> _pickImage() async {
-    final picker = ImagePicker();
-    if (kIsWeb) {
-      final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-      if (pickedFile != null) {
-        final bytes = await pickedFile.readAsBytes();
-        setState(() {
-          _pendingWebImageBytes = bytes;
-          _pendingImageFile = null;
-        });
-      }
-    } else {
-      final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-      if (pickedFile != null) {
-        setState(() {
-          _pendingImageFile = File(pickedFile.path);
-          _pendingWebImageBytes = null;
-        });
-      }
-    }
-  }
-
-  void _cancelPendingImage() {
-    setState(() {
-      _pendingImageFile = null;
-      _pendingWebImageBytes = null;
-    });
-  }
-
-  void _savePendingImage() {
-    setState(() {
-      if (kIsWeb) {
-        profileNotifier.value = ProfileData(
-          imageFile: null,
-          webImageBytes: _pendingWebImageBytes,
-          firstName: profileNotifier.value.firstName,
-          middleName: profileNotifier.value.middleName,
-          lastName: profileNotifier.value.lastName,
-          contactNumber: profileNotifier.value.contactNumber,
-          email: profileNotifier.value.email,
-          birthdate: profileNotifier.value.birthdate,
-          password: profileNotifier.value.password,
-          address: profileNotifier.value.address,
-          street: profileNotifier.value.street,
-          city: profileNotifier.value.city,
-          stateProvince: profileNotifier.value.stateProvince,
-          postalCode: profileNotifier.value.postalCode,
-          country: profileNotifier.value.country,
-          emergencyContactName: profileNotifier.value.emergencyContactName,
-          emergencyContactPhone: profileNotifier.value.emergencyContactPhone,
-        );
-      } else {
-        _imageFile = _pendingImageFile;
-        profileNotifier.value = ProfileData(
-          imageFile: _imageFile,
-          webImageBytes: null,
-          firstName: profileNotifier.value.firstName,
-          middleName: profileNotifier.value.middleName,
-          lastName: profileNotifier.value.lastName,
-          contactNumber: profileNotifier.value.contactNumber,
-          email: profileNotifier.value.email,
-          birthdate: profileNotifier.value.birthdate,
-          password: profileNotifier.value.password,
-          address: profileNotifier.value.address,
-          street: profileNotifier.value.street,
-          city: profileNotifier.value.city,
-          stateProvince: profileNotifier.value.stateProvince,
-          postalCode: profileNotifier.value.postalCode,
-          country: profileNotifier.value.country,
-          emergencyContactName: profileNotifier.value.emergencyContactName,
-          emergencyContactPhone: profileNotifier.value.emergencyContactPhone,
-        );
-      }
-      _pendingImageFile = null;
-      _pendingWebImageBytes = null;
-    });
   }
 
   // Save profile changes to server
@@ -666,7 +581,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         _emailController.text =
                             profileNotifier.value.email ?? '';
                         _birthdate = profileNotifier.value.birthdate;
-                        _imageFile = profileNotifier.value.imageFile;
+
                         _passwordController.text = '';
                         _emergencyNameController.text =
                             profileNotifier.value.emergencyContactName ?? '';
@@ -769,70 +684,7 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
         SizedBox(height: 8),
         SizedBox(height: 24),
-        Center(
-          child: GestureDetector(
-            onTap: _pickImage,
-            child: CircleAvatar(
-              radius: avatarRadius,
-              backgroundColor: Colors.white24,
-              backgroundImage:
-                  kIsWeb
-                      ? (_pendingWebImageBytes != null
-                          ? MemoryImage(_pendingWebImageBytes!)
-                          : (profileNotifier.value.webImageBytes != null
-                              ? MemoryImage(
-                                profileNotifier.value.webImageBytes!,
-                              )
-                              : null))
-                      : (_pendingImageFile != null
-                          ? FileImage(_pendingImageFile!)
-                          : (_imageFile != null
-                              ? FileImage(_imageFile!)
-                              : null)),
-              child:
-                  (kIsWeb
-                          ? (_pendingWebImageBytes == null &&
-                              profileNotifier.value.webImageBytes == null)
-                          : (_pendingImageFile == null && _imageFile == null))
-                      ? Icon(
-                        Icons.camera_alt,
-                        size: iconSize,
-                        color: Colors.white,
-                      )
-                      : null,
-            ),
-          ),
-        ),
-        if (_pendingImageFile != null || _pendingWebImageBytes != null)
-          Padding(
-            padding: const EdgeInsets.only(top: 12.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton(
-                  onPressed: _cancelPendingImage,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey[300],
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Text('Cancel', style: TextStyle(color: Colors.black)),
-                ),
-                SizedBox(width: 16),
-                ElevatedButton(
-                  onPressed: _savePendingImage,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Text('Save', style: TextStyle(color: Colors.white)),
-                ),
-              ],
-            ),
-          ),
+
         SizedBox(height: 32),
       ],
     );
@@ -1066,33 +918,7 @@ class _ProfilePageState extends State<ProfilePage> {
         IntrinsicHeight(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.only(right: 16.0),
-                  child: Align(
-                    alignment: Alignment.topCenter,
-                    child: NoteWidget(
-                      controller: _noteController,
-                      onSave: () {
-                        ScaffoldMessenger.of(
-                          context,
-                        ).showSnackBar(SnackBar(content: Text('Note saved!')));
-                      },
-                    ),
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 16.0),
-                  child: Align(
-                    alignment: Alignment.topCenter,
-                    child: TransactionProofWidget(),
-                  ),
-                ),
-              ),
-            ],
+            children: [],
           ),
         ),
       ],
@@ -1270,52 +1096,7 @@ class _ProfilePageState extends State<ProfilePage> {
                               ),
                               SizedBox(height: 8),
                               SizedBox(height: 24),
-                              Center(
-                                child: GestureDetector(
-                                  onTap: _pickImage,
-                                  child: CircleAvatar(
-                                    radius: avatarRadius,
-                                    backgroundColor: Colors.white24,
-                                    backgroundImage:
-                                        kIsWeb
-                                            ? (_pendingWebImageBytes != null
-                                                ? MemoryImage(
-                                                  _pendingWebImageBytes!,
-                                                )
-                                                : (profileNotifier
-                                                            .value
-                                                            .webImageBytes !=
-                                                        null
-                                                    ? MemoryImage(
-                                                      profileNotifier
-                                                          .value
-                                                          .webImageBytes!,
-                                                    )
-                                                    : null))
-                                            : (_pendingImageFile != null
-                                                ? FileImage(_pendingImageFile!)
-                                                : (_imageFile != null
-                                                    ? FileImage(_imageFile!)
-                                                    : null)),
-                                    child:
-                                        (kIsWeb
-                                                ? (_pendingWebImageBytes ==
-                                                        null &&
-                                                    profileNotifier
-                                                            .value
-                                                            .webImageBytes ==
-                                                        null)
-                                                : (_pendingImageFile == null &&
-                                                    _imageFile == null))
-                                            ? Icon(
-                                              Icons.camera_alt,
-                                              size: iconSize,
-                                              color: Colors.white,
-                                            )
-                                            : null,
-                                  ),
-                                ),
-                              ),
+
                               SizedBox(height: 32),
                               ...leftColumnFields,
                               SizedBox(height: isMobile ? 18 : 32),
@@ -1404,18 +1185,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                     ),
                                   ],
                                 ),
-                              SizedBox(height: 32),
-                              NoteWidget(
-                                controller: _noteController,
-                                onSave: () {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('Note saved!')),
-                                  );
-                                },
-                              ),
-                              SizedBox(height: 32),
-                              TransactionProofWidget(),
-                              SizedBox(height: 32),
+
                               mobileEmergencyContact,
                             ],
                           ),

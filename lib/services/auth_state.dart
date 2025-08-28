@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'auth_service.dart';
+import 'membership_service.dart';
 import '../User Profile/profile_data.dart';
 
 class AuthState extends ChangeNotifier {
@@ -11,6 +12,7 @@ class AuthState extends ChangeNotifier {
   int? _customerId;
   String? _accessToken;
   String? _refreshToken;
+  MembershipData? _membershipData;
 
   // Getters
   bool get isLoggedIn => _isLoggedIn;
@@ -20,6 +22,7 @@ class AuthState extends ChangeNotifier {
   int? get customerId => _customerId;
   String? get accessToken => _accessToken;
   String? get refreshToken => _refreshToken;
+  MembershipData? get membershipData => _membershipData;
 
   // Login method
   Future<void> login({
@@ -36,6 +39,9 @@ class AuthState extends ChangeNotifier {
     _accessToken = accessToken;
     _refreshToken = refreshToken;
 
+    // Fetch membership data
+    await _fetchMembershipData(customerId);
+
     // Store tokens in SharedPreferences
     await _saveTokens();
 
@@ -50,6 +56,7 @@ class AuthState extends ChangeNotifier {
     _customerName = null;
     _accessToken = null;
     _refreshToken = null;
+    _membershipData = null;
 
     // Clear tokens from SharedPreferences
     await _clearTokens();
@@ -59,6 +66,24 @@ class AuthState extends ChangeNotifier {
 
   // Check if customer is authenticated
   bool get isAuthenticated => _isLoggedIn;
+
+  // Fetch membership data for a customer
+  Future<void> _fetchMembershipData(int customerId) async {
+    try {
+      final membershipResult =
+          await MembershipService.getMembershipByCustomerId(customerId);
+      if (membershipResult.success && membershipResult.membershipData != null) {
+        _membershipData = membershipResult.membershipData;
+        print('✅ Membership data fetched: ${_membershipData?.membershipType}');
+      } else {
+        print('⚠️ No membership data found for customer $customerId');
+        _membershipData = null;
+      }
+    } catch (e) {
+      print('❌ Failed to fetch membership data: $e');
+      _membershipData = null;
+    }
+  }
 
   // Initialize auth state from stored tokens
   Future<void> initializeFromStorage() async {
@@ -113,6 +138,10 @@ class AuthState extends ChangeNotifier {
         _customerName = customerData['full_name'];
         _accessToken = accessToken;
         _refreshToken = refreshToken;
+
+        // Fetch membership data when restoring auth state
+        await _fetchMembershipData(customerData['customer_id']);
+
         notifyListeners();
         print('✅ Auth state restored successfully');
       } else if (refreshToken != null) {
@@ -143,6 +172,9 @@ class AuthState extends ChangeNotifier {
         _customerName = customerData['full_name'];
         _accessToken = refreshResult['access_token'];
         _refreshToken = refreshResult['refresh_token'];
+
+        // Fetch membership data when refreshing token
+        await _fetchMembershipData(customerData['customer_id']);
 
         await _saveTokens();
         notifyListeners();
