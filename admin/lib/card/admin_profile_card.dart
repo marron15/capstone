@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
-import 'dart:io';
-import 'dart:convert';
 import '../modal/admin_modal.dart';
 import '../services/admin_service.dart';
 
@@ -83,14 +80,10 @@ class AdminProfileCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Header Section with Profile Image and Name
+                // Header Section with Name and Details
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Enhanced Profile Image
-                    _buildEnhancedProfileImage(isMobile, isTablet, isDesktop),
-                    SizedBox(width: isMobile ? 6 : (isTablet ? 8 : 10)),
-
                     // Admin Details Section
                     Expanded(
                       child: Column(
@@ -125,43 +118,7 @@ class AdminProfileCard extends StatelessWidget {
     );
   }
 
-  // Enhanced profile image with better styling
-  Widget _buildEnhancedProfileImage(
-      bool isMobile, bool isTablet, bool isDesktop) {
-    final size = isMobile ? 45.0 : (isTablet ? 55.0 : 65.0);
-
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.blue.shade100,
-                Colors.blue.shade50,
-              ],
-            ),
-          ),
-          child: _buildProfileImage(
-              admin['img'] ?? admin['img_url'] ?? admin['profileImage']),
-        ),
-      ),
-    );
-  }
+  // Profile image removed for cleaner design
 
   // Enhanced name section
   Widget _buildNameSection(bool isMobile, bool isTablet, bool isDesktop) {
@@ -297,22 +254,23 @@ class AdminProfileCard extends StatelessWidget {
             SizedBox(height: isMobile ? 2 : 3),
             _buildEnhancedInfoRow(
               Icons.cake_outlined,
-              'DOB',
+              'Date of Birth',
               admin['date_of_birth'] ?? admin['dateOfBirth'],
               Colors.purple,
               isMobile: isMobile,
               isCompact: true,
             ),
           ],
-          SizedBox(height: isMobile ? 2 : 3),
-          _buildEnhancedInfoRow(
-            Icons.lock_outline,
-            'Password',
-            admin['password'] ?? '********',
-            Colors.orange,
-            isMobile: isMobile,
-            isCompact: true,
-          ),
+          // Password field hidden for security
+          // SizedBox(height: isMobile ? 2 : 3),
+          // _buildEnhancedInfoRow(
+          //   Icons.lock_outline,
+          //   'Password',
+          //   admin['password'] ?? '********',
+          //   Colors.orange,
+          //   isMobile: isMobile,
+          //   isCompact: true,
+          // ),
         ],
       ),
     );
@@ -589,139 +547,7 @@ class AdminProfileCard extends StatelessWidget {
     updateFilteredAdmins(filteredList);
   }
 
-  // Helper method to build profile image widget
-  Widget _buildProfileImage(dynamic profileImage) {
-    // Debug logging for troubleshooting
-    debugPrint('Building profile image with type: ${profileImage.runtimeType}');
-    if (profileImage is String) {
-      debugPrint('Image string length: ${profileImage.length}');
-      if (profileImage.startsWith('data:image')) {
-        debugPrint('Detected data URI format');
-      } else if (profileImage.length > 100) {
-        debugPrint('Detected potential base64 string');
-      }
-    }
-
-    if (profileImage == null) {
-      return Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Colors.blue.shade300,
-              Colors.blue.shade500,
-            ],
-          ),
-        ),
-        child: const Icon(
-          Icons.person,
-          size: 40,
-          color: Colors.white,
-        ),
-      );
-    }
-
-    // Support URL provided by backend (e.g., img_url)
-    if (profileImage is String && profileImage.startsWith('http')) {
-      return Image.network(
-        profileImage,
-        fit: BoxFit.cover,
-        width: double.infinity,
-        height: double.infinity,
-        errorBuilder: (context, error, stackTrace) {
-          return const Icon(Icons.person, size: 40, color: Colors.white);
-        },
-      );
-    }
-
-    // Support data URI base64 string from backend
-    if (profileImage is String && profileImage.startsWith('data:image')) {
-      try {
-        final base64Part = profileImage.split(',').last;
-        final bytes = base64Decode(base64Part);
-        return Image.memory(
-          bytes,
-          fit: BoxFit.cover,
-          width: double.infinity,
-          height: double.infinity,
-          errorBuilder: (context, error, stackTrace) {
-            debugPrint('Error loading base64 image: $error');
-            return _buildFallbackImage();
-          },
-        );
-      } catch (e) {
-        debugPrint('Error decoding base64 image: $e');
-        return _buildFallbackImage();
-      }
-    }
-
-    // Support plain base64 string (no data: prefix) stored in DB
-    if (profileImage is String && profileImage.length > 100) {
-      final base64Pattern = RegExp(r'^[A-Za-z0-9+\/]+=*$');
-      if (base64Pattern.hasMatch(profileImage)) {
-        try {
-          final bytes = base64Decode(profileImage);
-          return Image.memory(
-            bytes,
-            fit: BoxFit.cover,
-            width: double.infinity,
-            height: double.infinity,
-            errorBuilder: (context, error, stackTrace) {
-              debugPrint('Error loading plain base64 image: $error');
-              return _buildFallbackImage();
-            },
-          );
-        } catch (e) {
-          debugPrint('Error decoding plain base64 image: $e');
-          return _buildFallbackImage();
-        }
-      }
-    }
-
-    if (kIsWeb && profileImage is Uint8List) {
-      return Image.memory(
-        profileImage,
-        fit: BoxFit.cover,
-        width: double.infinity,
-        height: double.infinity,
-      );
-    } else if (profileImage is File) {
-      return Image.file(
-        profileImage,
-        fit: BoxFit.cover,
-        width: double.infinity,
-        height: double.infinity,
-      );
-    }
-
-    return _buildFallbackImage();
-  }
-
-  // Fallback image widget
-  Widget _buildFallbackImage() {
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.blue.shade300,
-            Colors.blue.shade500,
-          ],
-        ),
-      ),
-      child: const Icon(
-        Icons.person,
-        size: 40,
-        color: Colors.white,
-      ),
-    );
-  }
+  // Profile image methods removed for cleaner design
 
   // Enhanced info row with icons and better styling
   Widget _buildEnhancedInfoRow(

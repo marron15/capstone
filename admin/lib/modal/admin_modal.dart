@@ -1,10 +1,5 @@
 import 'package:flutter/material.dart';
-import 'dart:io';
 import 'dart:ui';
-import 'dart:convert';
-import 'package:flutter/foundation.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:file_picker/file_picker.dart';
 import '../services/admin_service.dart';
 
 class AdminModal {
@@ -21,9 +16,6 @@ class AdminModal {
     final TextEditingController passwordController = TextEditingController();
     final TextEditingController dateOfBirthController = TextEditingController();
 
-    // Image variables
-    File? selectedImage;
-    Uint8List? webImageBytes;
     DateTime? selectedDate;
     bool isLoading = false;
 
@@ -56,40 +48,6 @@ class AdminModal {
           dateOfBirthController.text =
               "${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}";
         });
-      }
-    }
-
-    // Function to pick image
-    Future<void> pickImage(StateSetter setModalState) async {
-      if (kIsWeb) {
-        // Use file_picker for web
-        FilePickerResult? result = await FilePicker.platform.pickFiles(
-          type: FileType.image,
-        );
-        if (result != null && result.files.single.bytes != null) {
-          setModalState(() {
-            webImageBytes = result.files.single.bytes;
-          });
-        }
-      } else if (Platform.isAndroid || Platform.isIOS) {
-        final ImagePicker picker = ImagePicker();
-        final XFile? image =
-            await picker.pickImage(source: ImageSource.gallery);
-        if (image != null) {
-          setModalState(() {
-            selectedImage = File(image.path);
-          });
-        }
-      } else {
-        // Desktop (Windows, macOS, Linux)
-        FilePickerResult? result = await FilePicker.platform.pickFiles(
-          type: FileType.image,
-        );
-        if (result != null && result.files.single.path != null) {
-          setModalState(() {
-            selectedImage = File(result.files.single.path!);
-          });
-        }
       }
     }
 
@@ -159,7 +117,6 @@ class AdminModal {
           password: passwordController.text,
           dateOfBirth: formattedDate,
           phoneNumber: contactNumberController.text.trim(),
-          profileImage: kIsWeb ? webImageBytes : selectedImage,
         );
 
         // Use setModalState to safely update UI after async operation
@@ -253,62 +210,6 @@ class AdminModal {
                   ? const Icon(Icons.calendar_today,
                       size: 20, color: Colors.white70)
                   : null,
-            ),
-          ),
-        ],
-      );
-    }
-
-    // Build image upload section
-    Widget buildImageUploadSection(StateSetter setModalState) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Profile Image:',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.white,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Center(
-            child: CircleAvatar(
-              radius: 60,
-              backgroundColor: Colors.white24,
-              backgroundImage: (kIsWeb && webImageBytes != null)
-                  ? MemoryImage(webImageBytes!)
-                  : (selectedImage != null)
-                      ? FileImage(selectedImage!) as ImageProvider
-                      : null,
-              child: (kIsWeb && webImageBytes == null && selectedImage == null)
-                  ? IconButton(
-                      icon: const Icon(
-                        Icons.camera_alt,
-                        color: Colors.white,
-                        size: 40,
-                      ),
-                      onPressed: () => pickImage(setModalState),
-                    )
-                  : null,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Center(
-            child: ElevatedButton.icon(
-              onPressed: () => pickImage(setModalState),
-              icon: const Icon(Icons.upload, size: 16),
-              label: const Text('Upload Image'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: Colors.black,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              ),
             ),
           ),
         ],
@@ -435,8 +336,6 @@ class AdminModal {
                                       indent: 2,
                                     ),
                                   ),
-                                  buildImageUploadSection(setModalState),
-                                  const SizedBox(height: 24),
                                   buildFormField(
                                       "First Name:", firstNameController),
                                   const SizedBox(height: 16),
@@ -555,9 +454,6 @@ class AdminModal {
     final TextEditingController dateOfBirthController = TextEditingController(
         text: admin['date_of_birth'] ?? admin['dateOfBirth'] ?? '');
 
-    // Image variables
-    File? selectedImage = admin['img'] is File ? admin['img'] : null;
-    Uint8List? webImageBytes = admin['img'] is Uint8List ? admin['img'] : null;
     DateTime? selectedDate;
     bool isLoading = false;
 
@@ -589,43 +485,6 @@ class AdminModal {
           dateOfBirthController.text =
               "${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}";
         });
-      }
-    }
-
-    // Function to pick image
-    Future<void> pickImage(StateSetter setModalState) async {
-      if (kIsWeb) {
-        // Use file_picker for web
-        FilePickerResult? result = await FilePicker.platform.pickFiles(
-          type: FileType.image,
-        );
-        if (result != null && result.files.single.bytes != null) {
-          setModalState(() {
-            webImageBytes = result.files.single.bytes;
-            selectedImage = null; // Clear the other image type
-          });
-        }
-      } else if (Platform.isAndroid || Platform.isIOS) {
-        final ImagePicker picker = ImagePicker();
-        final XFile? image =
-            await picker.pickImage(source: ImageSource.gallery);
-        if (image != null) {
-          setModalState(() {
-            selectedImage = File(image.path);
-            webImageBytes = null; // Clear the other image type
-          });
-        }
-      } else {
-        // Desktop (Windows, macOS, Linux)
-        FilePickerResult? result = await FilePicker.platform.pickFiles(
-          type: FileType.image,
-        );
-        if (result != null && result.files.single.path != null) {
-          setModalState(() {
-            selectedImage = File(result.files.single.path!);
-            webImageBytes = null; // Clear the other image type
-          });
-        }
       }
     }
 
@@ -692,18 +551,6 @@ class AdminModal {
           'updatedAt': DateTime.now().toIso8601String(),
         };
 
-        // Handle profile image
-        if (webImageBytes != null || selectedImage != null) {
-          if (kIsWeb && webImageBytes != null) {
-            String base64Image = base64Encode(webImageBytes!);
-            updateData['img'] = 'data:image/jpeg;base64,$base64Image';
-          } else if (selectedImage != null) {
-            List<int> imageBytes = await selectedImage!.readAsBytes();
-            String base64Image = base64Encode(imageBytes);
-            updateData['img'] = 'data:image/jpeg;base64,$base64Image';
-          }
-        }
-
         // Handle password update if changed
         if (passwordController.text != '********' &&
             passwordController.text.isNotEmpty) {
@@ -735,9 +582,6 @@ class AdminModal {
             updatedAdmin['date_of_birth'] = updateData['dateOfBirth'];
             updatedAdmin['email_address'] = updateData['emailAddress'];
             updatedAdmin['phone_number'] = updateData['phoneNumber'];
-            if (updateData['img'] != null) {
-              updatedAdmin['img'] = updateData['img'];
-            }
 
             // Call the callback with the updated admin data
             onEdit(updatedAdmin);
@@ -817,62 +661,6 @@ class AdminModal {
                   ? const Icon(Icons.calendar_today,
                       size: 20, color: Colors.white70)
                   : null,
-            ),
-          ),
-        ],
-      );
-    }
-
-    // Build image upload section
-    Widget buildImageUploadSection(StateSetter setModalState) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Profile Image:',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.white,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Center(
-            child: CircleAvatar(
-              radius: 60,
-              backgroundColor: Colors.white24,
-              backgroundImage: (kIsWeb && webImageBytes != null)
-                  ? MemoryImage(webImageBytes!)
-                  : (selectedImage != null)
-                      ? FileImage(selectedImage!) as ImageProvider
-                      : null,
-              child: (kIsWeb && webImageBytes == null && selectedImage == null)
-                  ? IconButton(
-                      icon: const Icon(
-                        Icons.camera_alt,
-                        color: Colors.white,
-                        size: 40,
-                      ),
-                      onPressed: () => pickImage(setModalState),
-                    )
-                  : null,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Center(
-            child: ElevatedButton.icon(
-              onPressed: () => pickImage(setModalState),
-              icon: const Icon(Icons.upload, size: 16),
-              label: const Text('Change Image'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: Colors.black,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              ),
             ),
           ),
         ],
@@ -999,8 +787,6 @@ class AdminModal {
                                       indent: 2,
                                     ),
                                   ),
-                                  buildImageUploadSection(setModalState),
-                                  const SizedBox(height: 24),
                                   buildFormField(
                                       "First Name:", firstNameController),
                                   const SizedBox(height: 16),

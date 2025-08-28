@@ -379,7 +379,7 @@ class _LandingPageState extends State<LandingPage> {
                     fit: BoxFit.cover,
                   ),
                 ),
-                Container(color: Colors.black.withAlpha((0.7 * 255).toInt())),
+                Container(color: Colors.black.withAlpha((0.4 * 255).toInt())),
                 SafeArea(
                   child: SingleChildScrollView(
                     controller: _scrollController,
@@ -688,7 +688,7 @@ class _LandingPageState extends State<LandingPage> {
                                                         backgroundColor: Colors
                                                             .white
                                                             .withValues(
-                                                              alpha: 0.2,
+                                                              alpha: 0.8,
                                                             ),
                                                         valueColor: AlwaysStoppedAnimation<
                                                           Color
