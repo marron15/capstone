@@ -3,12 +3,24 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 
 class AuthService {
-  static const String baseUrl = 'http://localhost/gym_api/customers';
+  static String _apiHost() {
+    if (kIsWeb) return 'localhost';
+    try {
+      if (defaultTargetPlatform == TargetPlatform.android) return '10.0.2.2';
+      return 'localhost';
+    } catch (_) {
+      return 'localhost';
+    }
+  }
+
+  static String get _customersBase =>
+      'http://' + _apiHost() + '/gym_api/customers';
+  static String get _addressBase => 'http://' + _apiHost() + '/gym_api/address';
 
   static Future<LoginResult> login(String email, String password) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/Login.php'),
+        Uri.parse('$_customersBase/Login.php'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({'email': email, 'password': password}),
       );
@@ -52,7 +64,7 @@ class AuthService {
   static Future<SignupResult> signup(SignupData signupData) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/Signup.php'),
+        Uri.parse('$_customersBase/Signup.php'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode(signupData.toJson()),
       );
@@ -92,7 +104,7 @@ class AuthService {
   static Future<LogoutResult> logout({int? customerId}) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/Logout.php'),
+        Uri.parse('$_customersBase/Logout.php'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({if (customerId != null) 'customer_id': customerId}),
       );
@@ -118,7 +130,7 @@ class AuthService {
   static Future<TokenValidationResult> validateToken(String token) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/ValidateToken.php'),
+        Uri.parse('$_customersBase/ValidateToken.php'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({'token': token}),
       );
@@ -155,7 +167,7 @@ class AuthService {
   static Future<RefreshTokenResult> refreshToken(String refreshToken) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/RefreshToken.php'),
+        Uri.parse('$_customersBase/RefreshToken.php'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({'refresh_token': refreshToken}),
       );
@@ -199,7 +211,7 @@ class AuthService {
   static Future<ProfileDataResult> getProfileData(int customerId) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/getProfile.php'),
+        Uri.parse('$_customersBase/getProfile.php'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({'customer_id': customerId}),
       );
@@ -234,7 +246,7 @@ class AuthService {
   ) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/updateProfile.php'),
+        Uri.parse('$_customersBase/updateProfile.php'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode(profileData),
       );
@@ -457,7 +469,7 @@ class CustomerData {
 Future<String?> _fetchAddressForCustomer(int customerId) async {
   try {
     final response = await http.get(
-      Uri.parse('http://localhost/gym_api/address/getAllAddress.php'),
+      Uri.parse(AuthService._addressBase + '/getAllAddress.php'),
       headers: {'Accept': 'application/json'},
     );
     if (response.statusCode != 200) return null;

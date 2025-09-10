@@ -196,24 +196,48 @@ class _LoginModalState extends State<LoginModal> with TickerProviderStateMixin {
   }) {
     return InputDecoration(
       labelText: label,
-      labelStyle: const TextStyle(color: Colors.white),
+      labelStyle: const TextStyle(
+        color: Colors.white,
+        fontSize: 16,
+        fontWeight: FontWeight.w500,
+      ),
       hintText: hintText,
-      hintStyle: const TextStyle(color: Colors.white54),
-      prefixIcon: Icon(icon, color: Colors.white),
+      hintStyle: const TextStyle(color: Colors.white60, fontSize: 14),
+      prefixIcon: Container(
+        margin: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(icon, color: Colors.white, size: 20),
+      ),
       filled: true,
-      fillColor: Colors.black.withAlpha((0.3 * 255).toInt()),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+      fillColor: Colors.white.withValues(alpha: 0.1),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide.none,
+      ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         borderSide: const BorderSide(color: Colors.lightBlueAccent, width: 2),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         borderSide: BorderSide(
-          color: Colors.white.withAlpha((0.18 * 255).toInt()),
-          width: 1.2,
+          color: Colors.white.withValues(alpha: 0.2),
+          width: 1,
         ),
       ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: Colors.red, width: 1),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: Colors.red, width: 2),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       suffixIcon: suffixIcon,
     );
   }
@@ -229,29 +253,40 @@ class _LoginModalState extends State<LoginModal> with TickerProviderStateMixin {
           scale: _scaleAnim ?? const AlwaysStoppedAnimation(1.0),
           child: Center(
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(22),
+              borderRadius: BorderRadius.circular(24),
               child: Stack(
                 children: [
                   BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                    filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                     child: Container(
                       width:
                           MediaQuery.of(context).size.width < 460
                               ? MediaQuery.of(context).size.width * 0.95
-                              : 440,
+                              : 460,
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(22),
-                        color: Colors.black.withAlpha((0.7 * 255).toInt()),
+                        borderRadius: BorderRadius.circular(24),
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Colors.black.withValues(alpha: 0.8),
+                            Colors.black.withValues(alpha: 0.9),
+                          ],
+                        ),
                         border: Border.all(
-                          color: Colors.white.withAlpha((0.25 * 255).toInt()),
-                          width: 1.5,
+                          color: Colors.white.withValues(alpha: 0.3),
+                          width: 2,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.blueAccent.withAlpha(
-                              (0.18 * 255).toInt(),
-                            ),
-                            blurRadius: 32,
+                            color: Colors.blueAccent.withValues(alpha: 0.2),
+                            blurRadius: 40,
+                            spreadRadius: 4,
+                            offset: const Offset(0, 12),
+                          ),
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.3),
+                            blurRadius: 20,
                             spreadRadius: 2,
                             offset: const Offset(0, 8),
                           ),
@@ -581,29 +616,60 @@ class _AnimatedGradientButtonState extends State<_AnimatedGradientButton>
             scale: _scaleAnim.value,
             child: Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 16),
+              height: 56,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(14),
-                color:
+                borderRadius: BorderRadius.circular(16),
+                gradient:
                     isEnabled
-                        ? Colors.white
-                        : Colors.grey.withAlpha((0.6 * 255).toInt()),
+                        ? const LinearGradient(
+                          colors: [Color(0xFF2196F3), Color(0xFF1976D2)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        )
+                        : LinearGradient(
+                          colors: [
+                            Colors.grey.withValues(alpha: 0.6),
+                            Colors.grey.withValues(alpha: 0.8),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withAlpha((0.28 * 255).toInt()),
-                    blurRadius: 16,
-                    offset: const Offset(0, 6),
+                    color:
+                        isEnabled
+                            ? const Color(0xFF2196F3).withValues(alpha: 0.4)
+                            : Colors.grey.withValues(alpha: 0.3),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                    spreadRadius: 0,
+                  ),
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.2),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                    spreadRadius: 0,
                   ),
                 ],
               ),
-              alignment: Alignment.center,
-              child: DefaultTextStyle.merge(
-                style: TextStyle(
-                  color: isEnabled ? Colors.black : Colors.grey[600],
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: widget.onPressed,
+                  child: Container(
+                    alignment: Alignment.center,
+                    child: DefaultTextStyle.merge(
+                      style: TextStyle(
+                        color: isEnabled ? Colors.white : Colors.grey[600],
+                        fontWeight: FontWeight.w700,
+                        fontSize: 18,
+                        letterSpacing: 0.5,
+                      ),
+                      child: widget.child,
+                    ),
+                  ),
                 ),
-                child: widget.child,
               ),
             ),
           );

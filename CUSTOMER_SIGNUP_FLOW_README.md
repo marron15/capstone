@@ -6,7 +6,7 @@ This document describes the complete flow for adding customers through the admin
 ## System Architecture
 
 ### 1. Admin System (Flutter)
-- **Location**: `capstone/admin/`
+- **Location**: `capstone/lib/admin/`
 - **Purpose**: Admin dashboard for managing gym members
 - **Key Components**:
   - `customers_signup_modal.dart`: Modal for adding new customers
