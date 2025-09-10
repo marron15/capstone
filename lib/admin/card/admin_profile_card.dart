@@ -74,7 +74,9 @@ class AdminProfileTable extends StatelessWidget {
                       const SizedBox(height: 4),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 2),
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.blue.shade50,
                           borderRadius: BorderRadius.circular(12),
@@ -98,25 +100,41 @@ class AdminProfileTable extends StatelessWidget {
             const SizedBox(height: 12),
             // Info rows
             _buildInfoRow(
-                'Email',
-                admin['email_address'] ?? admin['email'] ?? 'N/A',
-                Icons.email_outlined,
-                Colors.blue),
+              'Email',
+              admin['email_address'] ?? admin['email'] ?? 'N/A',
+              Icons.email_outlined,
+              Colors.blue,
+            ),
             const SizedBox(height: 8),
             _buildInfoRow(
-                'Contact',
-                admin['phone_number'] ?? admin['contactNumber'] ?? 'N/A',
-                Icons.phone_outlined,
-                Colors.green),
+              'Contact',
+              admin['phone_number'] ?? admin['contactNumber'] ?? 'N/A',
+              Icons.phone_outlined,
+              Colors.green,
+            ),
             const SizedBox(height: 8),
             _buildInfoRow(
-                'Date of Birth',
-                admin['date_of_birth'] ?? admin['dateOfBirth'] ?? 'N/A',
-                Icons.cake_outlined,
-                Colors.purple),
+              'Date of Birth',
+              admin['date_of_birth'] ?? admin['dateOfBirth'] ?? 'N/A',
+              Icons.cake_outlined,
+              Colors.purple,
+            ),
             const SizedBox(height: 8),
             _buildInfoRow(
-                'Status', 'Active', Icons.check_circle_outline, Colors.green),
+              'Status',
+              (admin['status'] ?? 'active').toString().toLowerCase() ==
+                      'inactive'
+                  ? 'Inactive'
+                  : 'Active',
+              (admin['status'] ?? 'active').toString().toLowerCase() ==
+                      'inactive'
+                  ? Icons.archive_outlined
+                  : Icons.check_circle_outline,
+              (admin['status'] ?? 'active').toString().toLowerCase() ==
+                      'inactive'
+                  ? Colors.orange
+                  : Colors.green,
+            ),
           ],
         ),
       ),
@@ -176,7 +194,9 @@ class AdminProfileTable extends StatelessWidget {
                         const SizedBox(height: 4),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 2),
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.blue.shade50,
                             borderRadius: BorderRadius.circular(8),
@@ -243,8 +263,10 @@ class AdminProfileTable extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: Center(
                   child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.green.shade50,
                       borderRadius: BorderRadius.circular(12),
@@ -262,11 +284,22 @@ class AdminProfileTable extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 6),
-                        const Text(
-                          'Active',
+                        Text(
+                          (admin['status'] ?? 'active')
+                                      .toString()
+                                      .toLowerCase() ==
+                                  'inactive'
+                              ? 'Inactive'
+                              : 'Active',
                           style: TextStyle(
                             fontSize: 11,
-                            color: Colors.green,
+                            color:
+                                (admin['status'] ?? 'active')
+                                            .toString()
+                                            .toLowerCase() ==
+                                        'inactive'
+                                    ? Colors.orange
+                                    : Colors.green,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -281,9 +314,7 @@ class AdminProfileTable extends StatelessWidget {
               flex: 1,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: Center(
-                  child: _buildActionButtons(context, false),
-                ),
+                child: Center(child: _buildActionButtons(context, false)),
               ),
             ),
           ],
@@ -348,8 +379,11 @@ class AdminProfileTable extends StatelessWidget {
           ),
           child: IconButton(
             onPressed: () => _handleEdit(context),
-            icon: Icon(Icons.edit_outlined,
-                size: iconSize, color: Colors.blue.shade700),
+            icon: Icon(
+              Icons.edit_outlined,
+              size: iconSize,
+              color: Colors.blue.shade700,
+            ),
             padding: EdgeInsets.all(isMobile ? 8 : 4),
             constraints: BoxConstraints(minWidth: size, minHeight: size),
             tooltip: 'Edit Admin',
@@ -358,17 +392,41 @@ class AdminProfileTable extends StatelessWidget {
         const SizedBox(width: 8),
         Container(
           decoration: BoxDecoration(
-            color: Colors.red.shade50,
+            color:
+                (admin['status'] ?? 'active').toString().toLowerCase() ==
+                        'inactive'
+                    ? Colors.green.shade50
+                    : Colors.orange.shade50,
             borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: Colors.red.shade200),
+            border: Border.all(
+              color:
+                  (admin['status'] ?? 'active').toString().toLowerCase() ==
+                          'inactive'
+                      ? Colors.green.shade200
+                      : Colors.orange.shade200,
+            ),
           ),
           child: IconButton(
-            onPressed: () => _handleDelete(context),
-            icon: Icon(Icons.delete_outline,
-                size: iconSize, color: Colors.red.shade700),
+            onPressed: () => _handleArchiveRestore(context),
+            icon: Icon(
+              (admin['status'] ?? 'active').toString().toLowerCase() ==
+                      'inactive'
+                  ? Icons.settings_backup_restore_rounded
+                  : Icons.archive_outlined,
+              size: iconSize,
+              color:
+                  (admin['status'] ?? 'active').toString().toLowerCase() ==
+                          'inactive'
+                      ? Colors.green.shade700
+                      : Colors.orange.shade700,
+            ),
             padding: EdgeInsets.all(isMobile ? 8 : 4),
             constraints: BoxConstraints(minWidth: size, minHeight: size),
-            tooltip: 'Delete Admin',
+            tooltip:
+                (admin['status'] ?? 'active').toString().toLowerCase() ==
+                        'inactive'
+                    ? 'Restore Admin'
+                    : 'Archive Admin',
           ),
         ),
       ],
@@ -412,50 +470,57 @@ class AdminProfileTable extends StatelessWidget {
 
   // Handle edit functionality
   void _handleEdit(BuildContext context) {
-    AdminModal.showEditAdminModal(
-      context,
-      admin,
-      (updatedAdmin) {
-        final adminIndex = admins.indexWhere((a) => a['id'] == admin['id']);
-        if (adminIndex != -1) {
-          admins[adminIndex] = updatedAdmin;
-        }
+    AdminModal.showEditAdminModal(context, admin, (updatedAdmin) {
+      final adminIndex = admins.indexWhere((a) => a['id'] == admin['id']);
+      if (adminIndex != -1) {
+        admins[adminIndex] = updatedAdmin;
+      }
 
-        onEdit(updatedAdmin);
-        _updateFilteredList();
+      onEdit(updatedAdmin);
+      _updateFilteredList();
 
-        final firstName =
-            updatedAdmin['first_name'] ?? updatedAdmin['firstName'] ?? 'Admin';
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('$firstName updated successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      },
-    );
+      final firstName =
+          updatedAdmin['first_name'] ?? updatedAdmin['firstName'] ?? 'Admin';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('$firstName updated successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    });
   }
 
-  // Handle delete functionality
-  void _handleDelete(BuildContext context) {
+  // Handle archive/restore functionality
+  void _handleArchiveRestore(BuildContext context) {
     final firstName = admin['first_name'] ?? admin['firstName'] ?? 'Unknown';
     final lastName = admin['last_name'] ?? admin['lastName'] ?? 'Admin';
+    final bool isInactive =
+        (admin['status'] ?? 'active').toString().toLowerCase() == 'inactive';
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: Row(
             children: [
-              Icon(Icons.warning_amber_rounded, color: Colors.orange.shade600),
+              Icon(
+                isInactive
+                    ? Icons.settings_backup_restore_rounded
+                    : Icons.archive_outlined,
+                color:
+                    isInactive ? Colors.green.shade600 : Colors.orange.shade600,
+              ),
               const SizedBox(width: 12),
-              const Text('Delete Admin'),
+              Text(isInactive ? 'Restore Admin' : 'Archive Admin'),
             ],
           ),
           content: Text(
-            'Are you sure you want to delete $firstName $lastName? This action cannot be undone.',
+            isInactive
+                ? 'Restore $firstName $lastName to active?'
+                : 'Archive $firstName $lastName? You can restore this later.',
             style: const TextStyle(fontSize: 16),
           ),
           actions: [
@@ -463,8 +528,10 @@ class AdminProfileTable extends StatelessWidget {
               onPressed: () => Navigator.of(context).pop(),
               style: TextButton.styleFrom(
                 foregroundColor: Colors.grey.shade600,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
               ),
               child: const Text('Cancel'),
             ),
@@ -482,7 +549,7 @@ class AdminProfileTable extends StatelessWidget {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         ),
                         SizedBox(width: 16),
-                        Text('Deleting admin...'),
+                        Text('Processing...'),
                       ],
                     ),
                     duration: Duration(seconds: 2),
@@ -491,25 +558,36 @@ class AdminProfileTable extends StatelessWidget {
 
                 try {
                   final adminId = admin['id'];
-                  final success = await AdminService.deleteAdmin(adminId);
+                  final bool success =
+                      isInactive
+                          ? await AdminService.restoreAdmin(adminId)
+                          : await AdminService.deleteAdmin(adminId);
 
                   if (!context.mounted) return;
 
                   if (success) {
+                    admin['status'] = isInactive ? 'active' : 'inactive';
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content:
-                            Text('$firstName $lastName deleted successfully!'),
-                        backgroundColor: Colors.green,
+                        content: Text(
+                          isInactive
+                              ? '$firstName $lastName restored successfully!'
+                              : '$firstName $lastName archived successfully!',
+                        ),
+                        backgroundColor:
+                            isInactive ? Colors.green : Colors.orange,
                       ),
                     );
 
-                    onDelete(index);
                     _updateFilteredList();
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Failed to delete admin'),
+                      SnackBar(
+                        content: Text(
+                          isInactive
+                              ? 'Failed to restore admin'
+                              : 'Failed to archive admin',
+                        ),
                         backgroundColor: Colors.red,
                       ),
                     );
@@ -519,21 +597,25 @@ class AdminProfileTable extends StatelessWidget {
 
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Error deleting admin: $e'),
+                      content: Text('Error: $e'),
                       backgroundColor: Colors.red,
                     ),
                   );
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red.shade600,
+                backgroundColor:
+                    isInactive ? Colors.green.shade600 : Colors.orange.shade600,
                 foregroundColor: Colors.white,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8)),
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
-              child: const Text('Delete'),
+              child: Text(isInactive ? 'Restore' : 'Archive'),
             ),
           ],
         );
@@ -549,34 +631,40 @@ class AdminProfileTable extends StatelessWidget {
     if (query.isEmpty) {
       filteredList = List.from(admins);
     } else {
-      filteredList = admins.where((admin) {
-        final firstName = (admin['first_name'] ?? admin['firstName'] ?? '')
-            .toString()
-            .toLowerCase();
-        final middleName = (admin['middle_name'] ?? admin['middleName'] ?? '')
-            .toString()
-            .toLowerCase();
-        final lastName = (admin['last_name'] ?? admin['lastName'] ?? '')
-            .toString()
-            .toLowerCase();
-        final email = (admin['email_address'] ?? admin['email'] ?? '')
-            .toString()
-            .toLowerCase();
-        final phone = (admin['phone_number'] ?? admin['contactNumber'] ?? '')
-            .toString()
-            .toLowerCase();
-        final dateOfBirth =
-            (admin['date_of_birth'] ?? admin['dateOfBirth'] ?? '')
-                .toString()
-                .toLowerCase();
+      filteredList =
+          admins.where((admin) {
+            final firstName =
+                (admin['first_name'] ?? admin['firstName'] ?? '')
+                    .toString()
+                    .toLowerCase();
+            final middleName =
+                (admin['middle_name'] ?? admin['middleName'] ?? '')
+                    .toString()
+                    .toLowerCase();
+            final lastName =
+                (admin['last_name'] ?? admin['lastName'] ?? '')
+                    .toString()
+                    .toLowerCase();
+            final email =
+                (admin['email_address'] ?? admin['email'] ?? '')
+                    .toString()
+                    .toLowerCase();
+            final phone =
+                (admin['phone_number'] ?? admin['contactNumber'] ?? '')
+                    .toString()
+                    .toLowerCase();
+            final dateOfBirth =
+                (admin['date_of_birth'] ?? admin['dateOfBirth'] ?? '')
+                    .toString()
+                    .toLowerCase();
 
-        return firstName.contains(query) ||
-            middleName.contains(query) ||
-            lastName.contains(query) ||
-            email.contains(query) ||
-            phone.contains(query) ||
-            dateOfBirth.contains(query);
-      }).toList();
+            return firstName.contains(query) ||
+                middleName.contains(query) ||
+                lastName.contains(query) ||
+                email.contains(query) ||
+                phone.contains(query) ||
+                dateOfBirth.contains(query);
+          }).toList();
     }
 
     updateFilteredAdmins(filteredList);

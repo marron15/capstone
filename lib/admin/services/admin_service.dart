@@ -238,10 +238,10 @@ class AdminService {
     }
   }
 
-  // Delete admin
+  // Archive admin (soft delete)
   static Future<bool> deleteAdmin(int id) async {
     try {
-      debugPrint('🔄 Deleting admin with ID: $id');
+      debugPrint('🔄 Archiving admin with ID: $id');
 
       final response = await http.post(
         Uri.parse('$baseUrl/deleteAdminByID.php'),
@@ -259,7 +259,30 @@ class AdminService {
 
       return false;
     } catch (e) {
-      debugPrint('❌ Error deleting admin: $e');
+      debugPrint('❌ Error archiving admin: $e');
+      return false;
+    }
+  }
+
+  // Restore admin (activate)
+  static Future<bool> restoreAdmin(int id) async {
+    try {
+      debugPrint('🔄 Restoring admin with ID: $id');
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/activateAdminByID.php'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'id': id}),
+      );
+
+      if (response.statusCode == 200) {
+        final result = jsonDecode(response.body);
+        return result['success'] == true;
+      }
+
+      return false;
+    } catch (e) {
+      debugPrint('❌ Error restoring admin: $e');
       return false;
     }
   }
