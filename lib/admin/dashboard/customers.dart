@@ -20,6 +20,7 @@ class _CustomersPageState extends State<CustomersPage> {
   List<Map<String, dynamic>> _archivedCustomers = [];
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  String _membershipFilter = 'All';
 
   @override
   void initState() {
@@ -105,7 +106,6 @@ class _CustomersPageState extends State<CustomersPage> {
   List<Map<String, dynamic>> _getVisibleCustomers() {
     final List<Map<String, dynamic>> source =
         _showArchived ? _archivedCustomers : _customers;
-    if (_searchQuery.trim().isEmpty) return source;
     final String q = _searchQuery.trim().toLowerCase();
     return source.where((c) {
       final String name =
@@ -114,7 +114,20 @@ class _CustomersPageState extends State<CustomersPage> {
           (c['contactNumber'] ?? c['phone_number'] ?? '')
               .toString()
               .toLowerCase();
-      return name.contains(q) || contact.contains(q);
+      final bool matchesSearch =
+          q.isEmpty || name.contains(q) || contact.contains(q);
+      if (!matchesSearch) return false;
+      if (_membershipFilter == 'All') return true;
+      final String type =
+          (c['membershipType'] ?? c['membership_type'] ?? '')
+              .toString()
+              .toLowerCase();
+      if (_membershipFilter == 'Daily') return type == 'daily';
+      if (_membershipFilter == 'Monthly')
+        return type == 'monthly' || type.isEmpty;
+      // Half Month check allows minor variations
+      return type.replaceAll(' ', '') == 'halfmonth' ||
+          (type.startsWith('half') && type.contains('month'));
     }).toList();
   }
 
@@ -599,9 +612,7 @@ class _CustomersPageState extends State<CustomersPage> {
                 child: ListView(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   children: [
-                    ...(_showArchived ? _archivedCustomers : _customers).map((
-                      customer,
-                    ) {
+                    ..._getVisibleCustomers().map((customer) {
                       final expirationDate =
                           customer['expirationDate'] as DateTime;
                       final startDate = customer['startDate'] as DateTime;
@@ -912,6 +923,48 @@ class _CustomersPageState extends State<CustomersPage> {
                                 vertical: 0,
                               ),
                               isDense: true,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        // Membership filter dropdown
+                        DropdownButtonHideUnderline(
+                          child: Container(
+                            height: 40,
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.black12),
+                            ),
+                            child: DropdownButton<String>(
+                              value: _membershipFilter,
+                              items: const [
+                                DropdownMenuItem(
+                                  value: 'All',
+                                  child: Text('All'),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'Daily',
+                                  child: Text('Daily'),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'Half Month',
+                                  child: Text('Half Month'),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'Monthly',
+                                  child: Text('Monthly'),
+                                ),
+                              ],
+                              onChanged: (val) {
+                                if (val == null) return;
+                                setState(() {
+                                  _membershipFilter = val;
+                                });
+                              },
+                              style: const TextStyle(color: Colors.black87),
+                              icon: const Icon(Icons.filter_list, size: 18),
                             ),
                           ),
                         ),
