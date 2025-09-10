@@ -87,8 +87,11 @@ class _CustomersPageState extends State<CustomersPage> {
         return;
       }
 
-      final String ts = DateTime.now().toIso8601String().replaceAll(':', '-');
-      final String fileName = 'customers-$ts';
+      final DateTime now = DateTime.now();
+      final String dd = now.day.toString().padLeft(2, '0');
+      final String mm = now.month.toString().padLeft(2, '0');
+      final String yyyy = now.year.toString().padLeft(4, '0');
+      final String fileName = '$mm-$dd-$yyyy Customers';
       final Uint8List u8 = Uint8List.fromList(bytes);
       await FileSaver.instance.saveFile(
         name: fileName,
