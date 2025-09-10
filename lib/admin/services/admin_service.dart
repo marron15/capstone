@@ -98,7 +98,7 @@ class AdminService {
 
   // Login admin
   static Future<Map<String, dynamic>> loginAdmin({
-    required String email,
+    required String contactNumber,
     required String password,
   }) async {
     try {
@@ -107,7 +107,7 @@ class AdminService {
       final response = await http.post(
         Uri.parse('$baseUrl/Login.php'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': email, 'password': password}),
+        body: jsonEncode({'phone_number': contactNumber, 'password': password}),
       );
 
       debugPrint('📡 Response status: ${response.statusCode}');

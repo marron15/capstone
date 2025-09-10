@@ -11,7 +11,7 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
+  final _contactController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
   bool _isLoading = false;
@@ -37,7 +37,7 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _contactController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -55,7 +55,7 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       final result = await AdminService.loginAdmin(
-        email: _emailController.text.trim(),
+        contactNumber: _contactController.text.trim(),
         password: _passwordController.text,
       );
 
@@ -166,15 +166,15 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         const SizedBox(height: 32),
                         TextFormField(
-                          controller: _emailController,
+                          controller: _contactController,
                           style: const TextStyle(color: Colors.white),
                           decoration: InputDecoration(
-                            labelText: 'Email',
+                            labelText: 'Contact Number',
                             labelStyle: TextStyle(
                               color: Colors.greenAccent.shade100,
                             ),
                             prefixIcon: Icon(
-                              Icons.email,
+                              Icons.phone,
                               color: Colors.greenAccent.shade100,
                             ),
                             filled: true,
@@ -192,14 +192,11 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Please enter your email';
+                              return 'Please enter your contact number';
                             }
-                            // Email validation
-                            final emailRegex = RegExp(
-                              r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                            );
-                            if (!emailRegex.hasMatch(value.trim())) {
-                              return 'Please enter a valid email address';
+                            final onlyDigits = RegExp(r'^\d{11}$');
+                            if (!onlyDigits.hasMatch(value.trim())) {
+                              return 'Contact number must be exactly 11 digits';
                             }
                             return null;
                           },
