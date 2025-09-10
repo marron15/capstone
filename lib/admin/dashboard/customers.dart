@@ -4,7 +4,7 @@ import '../modal/customers_signup_modal.dart';
 import '../modal/customer_view_edit_modal.dart';
 import '../services/api_service.dart';
 import 'dart:typed_data';
-import 'package:excel/excel.dart' as xls;
+import 'package:syncfusion_flutter_xlsio/xlsio.dart' as xlsio;
 import 'package:file_saver/file_saver.dart';
 
 class CustomersPage extends StatefulWidget {
@@ -42,50 +42,64 @@ class _CustomersPageState extends State<CustomersPage> {
         return;
       }
 
-      final xls.Excel workbook = xls.Excel.createExcel();
-      final String sheetName = 'Customers';
-      if (workbook.sheets.keys.contains('Sheet1')) {
-        workbook.rename('Sheet1', sheetName);
-      }
-      final xls.Sheet sheet = workbook[sheetName];
+      final xlsio.Workbook workbook = xlsio.Workbook();
+      final xlsio.Worksheet sheet = workbook.worksheets[0];
+      sheet.name = 'Customers';
 
       // Header
-      sheet.appendRow(<xls.CellValue?>[
-        xls.TextCellValue('Name'),
-        xls.TextCellValue('Contact Number'),
-        xls.TextCellValue('Membership Type'),
-        xls.TextCellValue('Membership Start Date'),
-        xls.TextCellValue('Membership Expiration Date'),
-        xls.TextCellValue('Status'),
-      ]);
+      sheet.getRangeByIndex(1, 1).setText('Name');
+      sheet.getRangeByIndex(1, 2).setText('Contact Number');
+      sheet.getRangeByIndex(1, 3).setText('Membership Type');
+      sheet.getRangeByIndex(1, 4).setText('Membership Start Date');
+      sheet.getRangeByIndex(1, 5).setText('Membership Expiration Date');
 
-      for (final Map<String, dynamic> c in rows) {
+      // Style header row (row 1)
+      final xlsio.Range headerRange = sheet.getRangeByIndex(1, 1, 1, 5);
+      headerRange.cellStyle.bold = true;
+      headerRange.cellStyle.backColor = '#E6F0FF';
+
+      for (int i = 0; i < rows.length; i++) {
+        final Map<String, dynamic> c = rows[i];
         final DateTime start = c['startDate'] as DateTime;
         final DateTime exp = c['expirationDate'] as DateTime;
-        sheet.appendRow(<xls.CellValue?>[
-          xls.TextCellValue((c['name'] ?? '').toString()),
-          xls.TextCellValue(
-            (c['contactNumber'] ?? c['phone_number'] ?? '').toString(),
-          ),
-          xls.TextCellValue(
-            (c['membershipType'] ?? c['membership_type'] ?? '').toString(),
-          ),
-          xls.TextCellValue(_formatExpirationDate(start)),
-          xls.TextCellValue(_formatExpirationDate(exp)),
-          xls.TextCellValue(
-            (c['status'] ?? (_showArchived ? 'inactive' : 'active')).toString(),
-          ),
-        ]);
+        final int rowIdx = i + 2; // data starts at row 2
+        sheet.getRangeByIndex(rowIdx, 1).setText((c['name'] ?? '').toString());
+        sheet
+            .getRangeByIndex(rowIdx, 2)
+            .setText(
+              (c['contactNumber'] ?? c['phone_number'] ?? '').toString(),
+            );
+        final String membershipStr =
+            (c['membershipType'] ?? c['membership_type'] ?? '').toString();
+        sheet.getRangeByIndex(rowIdx, 3).setText(membershipStr);
+        sheet.getRangeByIndex(rowIdx, 4).setText(_formatExpirationDate(start));
+        sheet.getRangeByIndex(rowIdx, 5).setText(_formatExpirationDate(exp));
+
+        // Apply background color to Membership Type column per row
+        String bgHex;
+        switch (membershipStr) {
+          case 'Daily':
+            bgHex = '#FFEAD1'; // light orange
+            break;
+          case 'Half Month':
+            bgHex = '#E5F0FF'; // light blue
+            break;
+          case 'Monthly':
+            bgHex = '#E6F7EA'; // light green
+            break;
+          default:
+            bgHex = '#FFFFFF';
+        }
+        final xlsio.Range membershipCell = sheet.getRangeByIndex(rowIdx, 3);
+        membershipCell.cellStyle.backColor = bgHex;
       }
 
-      final List<int>? bytes = workbook.encode();
-      if (bytes == null) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to generate Excel file')),
-        );
-        return;
-      }
+      // Auto-fit columns based on content (apply on range, not worksheet)
+      final int lastRow = rows.length + 1; // header + data
+      sheet.getRangeByIndex(1, 1, lastRow, 5).autoFitColumns();
+
+      final List<int> bytes = workbook.saveAsStream();
+      workbook.dispose();
 
       final DateTime now = DateTime.now();
       final String dd = now.day.toString().padLeft(2, '0');

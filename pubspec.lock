@@ -105,14 +105,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.7"
-  excel:
-    dependency: "direct main"
-    description:
-      name: excel
-      sha256: "1a15327dcad260d5db21d1f6e04f04838109b39a2f6a84ea486ceda36e468780"
-      url: "https://pub.dev"
-    source: hosted
-    version: "4.0.6"
   fake_async:
     dependency: transitive
     description:
@@ -256,6 +248,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.1.2"
+  image:
+    dependency: transitive
+    description:
+      name: image
+      sha256: f31d52537dc417fdcde36088fdf11d191026fd5e4fae742491ebd40e5a8bea7d
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.3.0"
   image_picker:
     dependency: "direct main"
     description:
@@ -328,6 +328,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.20.2"
+  jiffy:
+    dependency: transitive
+    description:
+      name: jiffy
+      sha256: "9bafbfe6d97587048bf449165e050029e716a12438f54a3d39e7e3a256decdac"
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.4.3"
   leak_tracker:
     dependency: transitive
     description:
@@ -480,6 +488,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.8"
+  quiver:
+    dependency: transitive
+    description:
+      name: quiver
+      sha256: ea0b925899e64ecdfbf9c7becb60d5b50e706ade44a85b2363be2a22d88117d2
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.2.2"
   rational:
     dependency: transitive
     description:
@@ -594,6 +610,22 @@ packages:
     description:
       name: syncfusion_flutter_core
       sha256: "6898c5dc81f73ac4e1156a075e4dd4591ea8927f26dcc77f6ba0e9b1b1d6c8c5"
+      url: "https://pub.dev"
+    source: hosted
+    version: "29.2.7"
+  syncfusion_flutter_xlsio:
+    dependency: "direct main"
+    description:
+      name: syncfusion_flutter_xlsio
+      sha256: "1ea8715d41ddb5570aa6a9376a3013df45ae5d135a09979bf8a97a2b5ae9d1d4"
+      url: "https://pub.dev"
+    source: hosted
+    version: "29.2.7"
+  syncfusion_officecore:
+    dependency: transitive
+    description:
+      name: syncfusion_officecore
+      sha256: "07c66cf1655205e24f0c476e31e4a8c985bb929a60c19bcbbc608644127c7854"
       url: "https://pub.dev"
     source: hosted
     version: "29.2.7"
