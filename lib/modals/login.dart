@@ -164,9 +164,6 @@ class _LoginModalState extends State<LoginModal> with TickerProviderStateMixin {
               duration: const Duration(seconds: 3),
             ),
           );
-
-          // TODO: Navigate to dashboard or main app screen
-          // You can add navigation logic here based on your app structure
         }
       } else {
         // Login failed

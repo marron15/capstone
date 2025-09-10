@@ -3,6 +3,9 @@ import '../sidenav.dart';
 import '../modal/customers_signup_modal.dart';
 import '../modal/customer_view_edit_modal.dart';
 import '../services/api_service.dart';
+import 'dart:typed_data';
+import 'package:excel/excel.dart' as xls;
+import 'package:file_saver/file_saver.dart';
 
 class CustomersPage extends StatefulWidget {
   const CustomersPage({super.key});
@@ -26,6 +29,86 @@ class _CustomersPageState extends State<CustomersPage> {
   void initState() {
     super.initState();
     _loadCustomers();
+  }
+
+  Future<void> _exportCustomersToExcel() async {
+    try {
+      final List<Map<String, dynamic>> rows = _getVisibleCustomers();
+      if (rows.isEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('No data to export')));
+        return;
+      }
+
+      final xls.Excel workbook = xls.Excel.createExcel();
+      final String sheetName = 'Customers';
+      if (workbook.sheets.keys.contains('Sheet1')) {
+        workbook.rename('Sheet1', sheetName);
+      }
+      final xls.Sheet sheet = workbook[sheetName];
+
+      // Header
+      sheet.appendRow(<xls.CellValue?>[
+        xls.TextCellValue('Name'),
+        xls.TextCellValue('Contact Number'),
+        xls.TextCellValue('Membership Type'),
+        xls.TextCellValue('Membership Start Date'),
+        xls.TextCellValue('Membership Expiration Date'),
+        xls.TextCellValue('Status'),
+      ]);
+
+      for (final Map<String, dynamic> c in rows) {
+        final DateTime start = c['startDate'] as DateTime;
+        final DateTime exp = c['expirationDate'] as DateTime;
+        sheet.appendRow(<xls.CellValue?>[
+          xls.TextCellValue((c['name'] ?? '').toString()),
+          xls.TextCellValue(
+            (c['contactNumber'] ?? c['phone_number'] ?? '').toString(),
+          ),
+          xls.TextCellValue(
+            (c['membershipType'] ?? c['membership_type'] ?? '').toString(),
+          ),
+          xls.TextCellValue(_formatExpirationDate(start)),
+          xls.TextCellValue(_formatExpirationDate(exp)),
+          xls.TextCellValue(
+            (c['status'] ?? (_showArchived ? 'inactive' : 'active')).toString(),
+          ),
+        ]);
+      }
+
+      final List<int>? bytes = workbook.encode();
+      if (bytes == null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to generate Excel file')),
+        );
+        return;
+      }
+
+      final String ts = DateTime.now().toIso8601String().replaceAll(':', '-');
+      final String fileName = 'customers-$ts';
+      final Uint8List u8 = Uint8List.fromList(bytes);
+      await FileSaver.instance.saveFile(
+        name: fileName,
+        bytes: u8,
+        ext: 'xlsx',
+        mimeType: MimeType.microsoftExcel,
+      );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Exported ${rows.length} rows to $fileName.xlsx'),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Export failed: $e')));
+    }
   }
 
   Future<void> _confirmAndArchive(Map<String, dynamic> customer) async {
@@ -604,6 +687,22 @@ class _CustomersPageState extends State<CustomersPage> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: ElevatedButton.icon(
+                        onPressed: _exportCustomersToExcel,
+                        icon: const Icon(Icons.download, size: 20),
+                        label: const Text('Export'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.teal,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton.icon(
                         onPressed: _showAddCustomerModal,
                         icon: const Icon(Icons.person_add, size: 20),
                         label: const Text('Add New Customer'),
@@ -879,6 +978,23 @@ class _CustomersPageState extends State<CustomersPage> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor:
                                 _showArchived ? Colors.green : Colors.grey[600],
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 12,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        ElevatedButton.icon(
+                          onPressed: _exportCustomersToExcel,
+                          icon: const Icon(Icons.download, size: 18),
+                          label: const Text('Export'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.teal,
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
