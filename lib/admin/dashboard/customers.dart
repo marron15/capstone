@@ -175,8 +175,9 @@ class _CustomersPageState extends State<CustomersPage> {
 
         // Load archived customers
         debugPrint('_loadCustomers: Loading archived customers...');
+        // Backend marks archived customers as "inactive"
         final archivedResult = await ApiService.getCustomersByStatus(
-          status: 'archived',
+          status: 'inactive',
         );
         List<Map<String, dynamic>> loadedArchivedCustomers = [];
 
