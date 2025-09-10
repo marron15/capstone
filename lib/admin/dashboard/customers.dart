@@ -107,28 +107,40 @@ class _CustomersPageState extends State<CustomersPage> {
     final List<Map<String, dynamic>> source =
         _showArchived ? _archivedCustomers : _customers;
     final String q = _searchQuery.trim().toLowerCase();
-    return source.where((c) {
-      final String name =
-          (c['name'] ?? c['fullName'] ?? '').toString().toLowerCase();
-      final String contact =
-          (c['contactNumber'] ?? c['phone_number'] ?? '')
-              .toString()
-              .toLowerCase();
-      final bool matchesSearch =
-          q.isEmpty || name.contains(q) || contact.contains(q);
-      if (!matchesSearch) return false;
-      if (_membershipFilter == 'All') return true;
-      final String type =
-          (c['membershipType'] ?? c['membership_type'] ?? '')
-              .toString()
-              .toLowerCase();
-      if (_membershipFilter == 'Daily') return type == 'daily';
-      if (_membershipFilter == 'Monthly')
-        return type == 'monthly' || type.isEmpty;
-      // Half Month check allows minor variations
-      return type.replaceAll(' ', '') == 'halfmonth' ||
-          (type.startsWith('half') && type.contains('month'));
-    }).toList();
+    final List<Map<String, dynamic>> filtered =
+        source.where((c) {
+          final String name =
+              (c['name'] ?? c['fullName'] ?? '').toString().toLowerCase();
+          final String contact =
+              (c['contactNumber'] ?? c['phone_number'] ?? '')
+                  .toString()
+                  .toLowerCase();
+          final bool matchesSearch =
+              q.isEmpty || name.contains(q) || contact.contains(q);
+          if (!matchesSearch) return false;
+          if (_membershipFilter == 'All') return true;
+          final String type =
+              (c['membershipType'] ?? c['membership_type'] ?? '')
+                  .toString()
+                  .toLowerCase();
+          if (_membershipFilter == 'Daily') return type == 'daily';
+          if (_membershipFilter == 'Monthly')
+            return type == 'monthly' || type.isEmpty;
+          // Half Month check allows minor variations
+          return type.replaceAll(' ', '') == 'halfmonth' ||
+              (type.startsWith('half') && type.contains('month'));
+        }).toList();
+
+    // Sort by soonest expiration when viewing All
+    if (_membershipFilter == 'All') {
+      filtered.sort((a, b) {
+        final DateTime aExp = a['expirationDate'] as DateTime;
+        final DateTime bExp = b['expirationDate'] as DateTime;
+        return aExp.compareTo(bExp);
+      });
+    }
+
+    return filtered;
   }
 
   Future<void> _restoreCustomer(Map<String, dynamic> customer) async {
