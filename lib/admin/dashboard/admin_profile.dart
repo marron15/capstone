@@ -436,15 +436,15 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                               controller: searchController,
                               onChanged: _filterAdmins,
                               decoration: const InputDecoration(
-                                hintText: 'Search admins...',
+                                hintText: 'Search',
                                 prefixIcon: Icon(
                                   Icons.search,
                                   color: Colors.grey,
-                                  size: 20,
+                                  size: 15,
                                 ),
                                 border: InputBorder.none,
                                 contentPadding: EdgeInsets.symmetric(
-                                  vertical: 8,
+                                  vertical: 0,
                                 ),
                                 isDense: true,
                               ),
@@ -477,7 +477,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                                 Icon(Icons.add, size: 16),
                                 SizedBox(width: 4),
                                 Text(
-                                  'new admin',
+                                  'New Admin',
                                   style: TextStyle(fontSize: 14),
                                 ),
                               ],

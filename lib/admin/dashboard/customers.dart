@@ -18,6 +18,8 @@ class _CustomersPageState extends State<CustomersPage> {
   String? _errorMessage;
   bool _showArchived = false;
   List<Map<String, dynamic>> _archivedCustomers = [];
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -97,6 +99,23 @@ class _CustomersPageState extends State<CustomersPage> {
     setState(() {
       _showArchived = !_showArchived;
     });
+  }
+
+  // Returns the list currently visible, filtered by search
+  List<Map<String, dynamic>> _getVisibleCustomers() {
+    final List<Map<String, dynamic>> source =
+        _showArchived ? _archivedCustomers : _customers;
+    if (_searchQuery.trim().isEmpty) return source;
+    final String q = _searchQuery.trim().toLowerCase();
+    return source.where((c) {
+      final String name =
+          (c['name'] ?? c['fullName'] ?? '').toString().toLowerCase();
+      final String contact =
+          (c['contactNumber'] ?? c['phone_number'] ?? '')
+              .toString()
+              .toLowerCase();
+      return name.contains(q) || contact.contains(q);
+    }).toList();
   }
 
   Future<void> _restoreCustomer(Map<String, dynamic> customer) async {
@@ -864,6 +883,38 @@ class _CustomersPageState extends State<CustomersPage> {
                             ),
                           ),
                         ),
+                        const SizedBox(width: 12),
+                        SizedBox(
+                          width: 220,
+                          height: 40,
+                          child: TextField(
+                            controller: _searchController,
+                            onChanged:
+                                (val) => setState(() {
+                                  _searchQuery = val;
+                                }),
+                            style: const TextStyle(color: Colors.black87),
+                            decoration: InputDecoration(
+                              hintText: 'Search',
+                              prefixIcon: const Icon(
+                                Icons.search,
+                                size: 18,
+                                color: Colors.grey,
+                              ),
+                              filled: true,
+                              fillColor: Colors.white,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide.none,
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 0,
+                              ),
+                              isDense: true,
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ],
@@ -950,9 +1001,7 @@ class _CustomersPageState extends State<CustomersPage> {
                           ),
                           const Divider(height: 24, color: Colors.black26),
                           // Data Rows
-                          ...(_showArchived ? _archivedCustomers : _customers).map((
-                            customer,
-                          ) {
+                          ..._getVisibleCustomers().map((customer) {
                             final expirationDate =
                                 customer['expirationDate'] as DateTime;
                             final startDate = customer['startDate'] as DateTime;
