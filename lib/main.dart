@@ -296,11 +296,18 @@ class _LoginChoicePageState extends State<LoginChoicePage>
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Solid white background
-          Container(color: Colors.white),
-          // Content container on white background
+          // Fullscreen background slideshow
+          const _BackgroundSlideshow(
+            imagePaths: [
+              'assets/images/gym_view/Front View.jpg',
+              'assets/images/gym_view/BACK VIEW OF GYM.jpg',
+            ],
+          ),
+          // Dark overlay for readability
+          Container(color: Colors.black54),
+          // Content container on top of background
           Container(
-            color: Colors.white,
+            color: Colors.transparent,
             child: SafeArea(
               child: Center(
                 child: FadeTransition(
@@ -310,7 +317,101 @@ class _LoginChoicePageState extends State<LoginChoicePage>
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const SizedBox(height: 32),
+                        // Hero heading and subheading
+                        Align(
+                          alignment: Alignment.center,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: const [
+                                Text(
+                                  "Greetings, Welcome to RNR Fitness Gym!",
+                                  style: TextStyle(
+                                    fontSize: 38,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: 0.5,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                SizedBox(height: 10),
+                                Text(
+                                  'Access memberships, trainers, and services.',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.white70,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // Call to action buttons
+                        Align(
+                          alignment: Alignment.center,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                ElevatedButton(
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => const LandingPage(),
+                                      ),
+                                    );
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.blueAccent,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 12,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
+                                  child: const Text('Get Started'),
+                                ),
+                                const SizedBox(width: 12),
+                                OutlinedButton(
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => const LoginPage(),
+                                      ),
+                                    );
+                                  },
+                                  style: OutlinedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 12,
+                                    ),
+                                    side: const BorderSide(
+                                      color: Colors.white70,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    'Admin Login',
+                                    style: TextStyle(color: Colors.white70),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
 
                         // Side by side containers
                         AnimatedBuilder(
@@ -320,155 +421,186 @@ class _LoginChoicePageState extends State<LoginChoicePage>
                               opacity: _fadeAnimation,
                               child: SlideTransition(
                                 position: _slideAnimation,
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    // Customer Container (Left)
-                                    SizedBox(
-                                      width: 180,
-                                      child: _buildChoiceContainer(
-                                        onTap: () {
-                                          Navigator.push(
-                                            context,
-                                            PageRouteBuilder(
-                                              pageBuilder:
-                                                  (
+                                child: Align(
+                                  alignment: Alignment.center,
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        // Customer Container (Left)
+                                        SizedBox(
+                                          width: 180,
+                                          child: _buildChoiceContainer(
+                                            onTap: () {
+                                              Navigator.push(
+                                                context,
+                                                PageRouteBuilder(
+                                                  pageBuilder:
+                                                      (
+                                                        context,
+                                                        animation,
+                                                        secondaryAnimation,
+                                                      ) => const LandingPage(),
+                                                  transitionsBuilder: (
                                                     context,
                                                     animation,
                                                     secondaryAnimation,
-                                                  ) => const LandingPage(),
-                                              transitionsBuilder: (
-                                                context,
-                                                animation,
-                                                secondaryAnimation,
-                                                child,
-                                              ) {
-                                                return SlideTransition(
-                                                  position: animation.drive(
-                                                    Tween(
-                                                      begin: const Offset(
-                                                        1.0,
-                                                        0.0,
+                                                    child,
+                                                  ) {
+                                                    return SlideTransition(
+                                                      position: animation.drive(
+                                                        Tween(
+                                                          begin: const Offset(
+                                                            1.0,
+                                                            0.0,
+                                                          ),
+                                                          end: Offset.zero,
+                                                        ).chain(
+                                                          CurveTween(
+                                                            curve:
+                                                                Curves
+                                                                    .easeInOut,
+                                                          ),
+                                                        ),
                                                       ),
-                                                      end: Offset.zero,
-                                                    ).chain(
-                                                      CurveTween(
-                                                        curve: Curves.easeInOut,
+                                                      child: child,
+                                                    );
+                                                  },
+                                                  transitionDuration:
+                                                      const Duration(
+                                                        milliseconds: 300,
                                                       ),
-                                                    ),
-                                                  ),
-                                                  child: child,
-                                                );
-                                              },
-                                              transitionDuration:
-                                                  const Duration(
-                                                    milliseconds: 300,
-                                                  ),
+                                                ),
+                                              );
+                                            },
+                                            icon: Icons.person_outline,
+                                            title: 'Are you Customer?',
+                                            subtitle:
+                                                'Access gym services and membership',
+                                            gradient: const LinearGradient(
+                                              colors: [
+                                                Color(0xFF36454F),
+                                                Color(0xFF111111),
+                                              ],
+                                              begin: Alignment.topLeft,
+                                              end: Alignment.bottomRight,
                                             ),
-                                          );
-                                        },
-                                        icon: Icons.person_outline,
-                                        title: 'Are you Customer?',
-                                        subtitle:
-                                            'Access gym services and membership',
-                                        gradient: const LinearGradient(
-                                          colors: [
-                                            Colors.white,
-                                            Color(0xFFE3F2FD),
-                                          ],
-                                          begin: Alignment.topLeft,
-                                          end: Alignment.bottomRight,
+                                            textColor: Colors.white,
+                                            iconColor: Colors.white,
+                                          ),
                                         ),
-                                        textColor: const Color(0xFF1976D2),
-                                        iconColor: const Color(0xFF1976D2),
-                                      ),
-                                    ),
 
-                                    const SizedBox(width: 24),
+                                        const SizedBox(width: 24),
 
-                                    // Admin Container (Right)
-                                    SizedBox(
-                                      width: 180,
-                                      child: _buildChoiceContainer(
-                                        onTap: () {
-                                          Navigator.push(
-                                            context,
-                                            PageRouteBuilder(
-                                              pageBuilder:
-                                                  (
+                                        // Admin Container (Right)
+                                        SizedBox(
+                                          width: 180,
+                                          child: _buildChoiceContainer(
+                                            onTap: () {
+                                              Navigator.push(
+                                                context,
+                                                PageRouteBuilder(
+                                                  pageBuilder:
+                                                      (
+                                                        context,
+                                                        animation,
+                                                        secondaryAnimation,
+                                                      ) => const LoginPage(),
+                                                  transitionsBuilder: (
                                                     context,
                                                     animation,
                                                     secondaryAnimation,
-                                                  ) => const LoginPage(),
-                                              transitionsBuilder: (
-                                                context,
-                                                animation,
-                                                secondaryAnimation,
-                                                child,
-                                              ) {
-                                                return SlideTransition(
-                                                  position: animation.drive(
-                                                    Tween(
-                                                      begin: const Offset(
-                                                        1.0,
-                                                        0.0,
+                                                    child,
+                                                  ) {
+                                                    return SlideTransition(
+                                                      position: animation.drive(
+                                                        Tween(
+                                                          begin: const Offset(
+                                                            1.0,
+                                                            0.0,
+                                                          ),
+                                                          end: Offset.zero,
+                                                        ).chain(
+                                                          CurveTween(
+                                                            curve:
+                                                                Curves
+                                                                    .easeInOut,
+                                                          ),
+                                                        ),
                                                       ),
-                                                      end: Offset.zero,
-                                                    ).chain(
-                                                      CurveTween(
-                                                        curve: Curves.easeInOut,
+                                                      child: child,
+                                                    );
+                                                  },
+                                                  transitionDuration:
+                                                      const Duration(
+                                                        milliseconds: 300,
                                                       ),
-                                                    ),
-                                                  ),
-                                                  child: child,
-                                                );
-                                              },
-                                              transitionDuration:
-                                                  const Duration(
-                                                    milliseconds: 300,
-                                                  ),
+                                                ),
+                                              );
+                                            },
+                                            icon:
+                                                Icons
+                                                    .admin_panel_settings_outlined,
+                                            title: 'Are you Admin?',
+                                            subtitle:
+                                                'Manage gym operations and members',
+                                            gradient: const LinearGradient(
+                                              colors: [
+                                                Color(0xFF36454F),
+                                                Color(0xFF111111),
+                                              ],
+                                              begin: Alignment.topLeft,
+                                              end: Alignment.bottomRight,
                                             ),
-                                          );
-                                        },
-                                        icon:
-                                            Icons.admin_panel_settings_outlined,
-                                        title: 'Are you Admin?',
-                                        subtitle:
-                                            'Manage gym operations and members',
-                                        gradient: const LinearGradient(
-                                          colors: [
-                                            Color(0xFFFF9800),
-                                            Color(0xFFE65100),
-                                          ],
-                                          begin: Alignment.topLeft,
-                                          end: Alignment.bottomRight,
+                                            textColor: Colors.white,
+                                            iconColor: Colors.white,
+                                          ),
                                         ),
-                                        textColor: Colors.white,
-                                        iconColor: Colors.white,
-                                      ),
+                                      ],
                                     ),
-                                  ],
+                                  ),
                                 ),
                               ),
                             );
                           },
                         ),
 
-                        const SizedBox(height: 40),
+                        const SizedBox(height: 24),
 
-                        // Additional Info with animation
-                        FadeTransition(
-                          opacity: _fadeAnimation,
-                          child: const Text(
-                            'Select your role to continue',
-                            style: TextStyle(
-                              color: Colors.white60,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w400,
-                              letterSpacing: 0.5,
+                        // Benefits row
+                        Align(
+                          alignment: Alignment.center,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: const [
+                                _BenefitChip(
+                                  icon: Icons.people,
+                                  label: 'Welcoming Environment',
+                                ),
+                                SizedBox(width: 18),
+                                _BenefitChip(
+                                  icon: Icons.fitness_center,
+                                  label: 'Quality Equipment',
+                                ),
+                                SizedBox(width: 18),
+                                _BenefitChip(
+                                  icon: Icons.water_drop,
+                                  label: 'Free Water',
+                                ),
+                              ],
                             ),
                           ),
                         ),
+
+                        const SizedBox(height: 24),
+
+                        // Lead capture removed
                       ],
                     ),
                   ),
@@ -503,7 +635,7 @@ class _LoginChoicePageState extends State<LoginChoicePage>
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: Align(
-                    alignment: Alignment.centerLeft,
+                    alignment: Alignment.center,
                     child: const Text(
                       'RNR Fitness Gym',
                       style: TextStyle(
@@ -518,6 +650,7 @@ class _LoginChoicePageState extends State<LoginChoicePage>
               ),
             ),
           ),
+          // Background slideshow replaces side images
         ],
       ),
     );
@@ -617,6 +750,195 @@ class _LoginChoicePageState extends State<LoginChoicePage>
                 ],
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// (Removed unused _SideImage widget)
+
+class _SideSlideshow extends StatefulWidget {
+  final List<String> imagePaths;
+  final double width;
+  final double height;
+
+  const _SideSlideshow({
+    required this.imagePaths,
+    required this.width,
+    required this.height,
+  });
+
+  @override
+  State<_SideSlideshow> createState() => _SideSlideshowState();
+}
+
+class _SideSlideshowState extends State<_SideSlideshow>
+    with SingleTickerProviderStateMixin {
+  late final PageController _pageController;
+  int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+    // Auto-rotate every 4 seconds
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      while (mounted) {
+        await Future<void>.delayed(const Duration(seconds: 4));
+        if (!mounted) break;
+        _currentIndex = (_currentIndex + 1) % widget.imagePaths.length;
+        _pageController.animateToPage(
+          _currentIndex,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        );
+        setState(() {});
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Container(
+          width: widget.width,
+          height: widget.height,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withAlpha((0.18 * 255).toInt()),
+                blurRadius: 12,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: PageView.builder(
+            controller: _pageController,
+            itemCount: widget.imagePaths.length,
+            itemBuilder: (context, index) {
+              return Image.asset(widget.imagePaths[index], fit: BoxFit.cover);
+            },
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: List.generate(widget.imagePaths.length, (i) {
+            final bool isActive = i == _currentIndex;
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              margin: const EdgeInsets.symmetric(horizontal: 3),
+              width: isActive ? 12 : 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color:
+                    isActive
+                        ? Colors.black.withAlpha((0.7 * 255).toInt())
+                        : Colors.black.withAlpha((0.35 * 255).toInt()),
+                borderRadius: BorderRadius.circular(6),
+              ),
+            );
+          }),
+        ),
+      ],
+    );
+  }
+}
+
+class _BenefitChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+
+  const _BenefitChip({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha((0.07 * 255).toInt()),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+        border: Border.all(color: Colors.black12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 18, color: Colors.black87),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.black87,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Full-screen background slideshow widget
+class _BackgroundSlideshow extends StatefulWidget {
+  final List<String> imagePaths;
+  const _BackgroundSlideshow({required this.imagePaths});
+
+  @override
+  State<_BackgroundSlideshow> createState() => _BackgroundSlideshowState();
+}
+
+class _BackgroundSlideshowState extends State<_BackgroundSlideshow> {
+  int _index = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _tick();
+  }
+
+  void _tick() async {
+    while (mounted) {
+      await Future<void>.delayed(const Duration(seconds: 4));
+      if (!mounted) break;
+      setState(() {
+        _index = (_index + 1) % widget.imagePaths.length;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 800),
+      switchInCurve: Curves.easeInOut,
+      switchOutCurve: Curves.easeInOut,
+      child: Container(
+        key: ValueKey(_index),
+        decoration: BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage(widget.imagePaths[_index]),
+            fit: BoxFit.cover,
+            alignment: Alignment.center,
           ),
         ),
       ),
