@@ -16,8 +16,6 @@ import 'footer.dart';
 
 import '../User Profile/profile.dart';
 
-import '../User Profile/profile_data.dart';
-
 class LandingPage extends StatefulWidget {
   const LandingPage({Key? key}) : super(key: key);
 
@@ -370,78 +368,21 @@ class _LandingPageState extends State<LandingPage>
           padding: EdgeInsets.zero,
 
           children: [
-            SizedBox(height: 80),
+            SizedBox(height: 150),
+            _DrawerNavItem(
+              icon: Icons.account_circle,
 
-            ValueListenableBuilder<ProfileData>(
-              valueListenable: profileNotifier,
+              label: 'Profile',
 
-              builder:
-                  (context, profile, _) => Column(
-                    children: [
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
+              onTap: () {
+                Navigator.pop(context);
 
-                            MaterialPageRoute(
-                              builder: (context) => ProfilePage(),
-                            ),
-                          );
-                        },
+                Navigator.push(
+                  context,
 
-                        child: CircleAvatar(
-                          radius: 60,
-
-                          backgroundColor: const Color.fromARGB(
-                            59,
-
-                            170,
-
-                            170,
-
-                            170,
-                          ),
-
-                          backgroundImage:
-                              profile.imageFile != null
-                                  ? FileImage(profile.imageFile!)
-                                  : null,
-
-                          child:
-                              profile.imageFile == null
-                                  ? Icon(
-                                    Icons.person,
-
-                                    color: Colors.white,
-
-                                    size: 60,
-                                  )
-                                  : null,
-                        ),
-                      ),
-
-                      const SizedBox(height: 15),
-
-                      Text(
-                        ('${profile.firstName} ${profile.middleName} ${profile.lastName}')
-                                .trim()
-                                .isNotEmpty
-                            ? ('${profile.firstName} ${profile.middleName} ${profile.lastName}')
-                                .trim()
-                            : 'Guest',
-
-                        style: TextStyle(
-                          color: Colors.white,
-
-                          fontSize: 22,
-
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-
-                      SizedBox(height: 20),
-                    ],
-                  ),
+                  MaterialPageRoute(builder: (context) => ProfilePage()),
+                );
+              },
             ),
 
             _DrawerNavItem(

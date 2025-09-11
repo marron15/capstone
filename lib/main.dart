@@ -250,10 +250,8 @@ class _LoginChoicePageState extends State<LoginChoicePage>
     with TickerProviderStateMixin {
   late AnimationController _fadeController;
   late AnimationController _slideController;
-  late AnimationController _logoController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
-  late Animation<double> _logoAnimation;
 
   @override
   void initState() {
@@ -269,11 +267,6 @@ class _LoginChoicePageState extends State<LoginChoicePage>
       vsync: this,
     );
 
-    _logoController = AnimationController(
-      duration: const Duration(seconds: 2),
-      vsync: this,
-    )..repeat(reverse: true);
-
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
     );
@@ -285,10 +278,6 @@ class _LoginChoicePageState extends State<LoginChoicePage>
       CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic),
     );
 
-    _logoAnimation = Tween<double>(begin: 0.9, end: 1.1).animate(
-      CurvedAnimation(parent: _logoController, curve: Curves.easeInOut),
-    );
-
     // Start animations
     _fadeController.forward();
     _slideController.forward();
@@ -298,7 +287,6 @@ class _LoginChoicePageState extends State<LoginChoicePage>
   void dispose() {
     _fadeController.dispose();
     _slideController.dispose();
-    _logoController.dispose();
     super.dispose();
   }
 
@@ -308,31 +296,11 @@ class _LoginChoicePageState extends State<LoginChoicePage>
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Background image
-          Opacity(
-            opacity: 1.0,
-            child: Image.asset(
-              'assets/images/gym_view/BACK VIEW OF GYM 2.jpg',
-              fit: BoxFit.cover,
-            ),
-          ),
-          // Dark overlay
-          Container(color: Colors.black.withAlpha((0.4 * 255).toInt())),
-          // Content
+          // Solid white background
+          Container(color: Colors.white),
+          // Content container on white background
           Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF1E3C72),
-                  Color(0xFF2A5298),
-                  Color(0xFF8B5CF6),
-                  Color(0xFFEC4899),
-                ],
-                stops: [0.0, 0.3, 0.7, 1.0],
-              ),
-            ),
+            color: Colors.white,
             child: SafeArea(
               child: Center(
                 child: FadeTransition(
@@ -342,70 +310,6 @@ class _LoginChoicePageState extends State<LoginChoicePage>
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Animated Logo
-                        AnimatedBuilder(
-                          animation: _logoAnimation,
-                          builder: (context, child) {
-                            return Transform.scale(
-                              scale: _logoAnimation.value,
-                              child: Container(
-                                width: 80,
-                                height: 80,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  gradient: const LinearGradient(
-                                    colors: [Colors.white, Color(0xFF64B5F6)],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.3,
-                                      ),
-                                      blurRadius: 30,
-                                      spreadRadius: 10,
-                                    ),
-                                    BoxShadow(
-                                      color: Colors.blue.withValues(alpha: 0.4),
-                                      blurRadius: 40,
-                                      spreadRadius: 5,
-                                    ),
-                                  ],
-                                ),
-                                child: const Icon(
-                                  Icons.fitness_center,
-                                  size: 40,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-
-                        const SizedBox(height: 24),
-
-                        // App Title with animation
-                        const Text(
-                          'RNR Fitness',
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.white,
-                            letterSpacing: 2.0,
-                            shadows: [
-                              Shadow(
-                                color: Colors.black26,
-                                offset: Offset(0, 2),
-                                blurRadius: 4,
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        //Space between title and containers
-                        const SizedBox(height: 8),
-
                         const SizedBox(height: 32),
 
                         // Side by side containers
@@ -566,6 +470,48 @@ class _LoginChoicePageState extends State<LoginChoicePage>
                           ),
                         ),
                       ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          // Header bar with left-aligned logo
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              bottom: false,
+              child: Container(
+                height: 56,
+                decoration: BoxDecoration(
+                  color: const Color.fromARGB(
+                    255,
+                    0,
+                    0,
+                    0,
+                  ).withAlpha((0.92 * 255).toInt()),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withAlpha((0.25 * 255).toInt()),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: const Text(
+                      'RNR Fitness Gym',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.5,
+                      ),
                     ),
                   ),
                 ),

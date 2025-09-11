@@ -76,6 +76,7 @@ flutter:
     - assets/images/gym_view/
     - assets/images/services&products/
     - assets/images/gym_view/BACK VIEW OF GYM.jpg
+    - assets/images/RNR1.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

@@ -246,7 +246,9 @@ class _ProfilePageState extends State<ProfilePage>
 
   Future<void> _handleLogout() async {
     try {
+      // Clear auth and local profile state
       await authState.logout();
+      profileNotifier.value = ProfileData();
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => LandingPage()),
@@ -277,6 +279,39 @@ class _ProfilePageState extends State<ProfilePage>
 
   @override
   Widget build(BuildContext context) {
+    // If user is logged out, prevent showing stale data
+    if (!authState.isLoggedIn) {
+      return Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(
+          backgroundColor: Colors.black,
+          elevation: 0,
+          iconTheme: const IconThemeData(color: Colors.white),
+          title: const Text('Profile', style: TextStyle(color: Colors.white)),
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                'Please log in to view your profile.',
+                style: TextStyle(color: Colors.white70),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => LandingPage()),
+                  );
+                },
+                child: const Text('Go to Login'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
     final isMobile = MediaQuery.of(context).size.width < 600;
     final titleFontSize = isMobile ? 24.0 : 32.0;
     final buttonPadding =

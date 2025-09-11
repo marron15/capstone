@@ -26,12 +26,13 @@ class BlackHeader extends StatelessWidget {
         children: [
           if (isSmallScreen) ...[
             Builder(
-              builder: (context) => IconButton(
-                icon: const Icon(Icons.menu, color: Colors.white),
-                onPressed: () {
-                  Scaffold.of(context).openDrawer();
-                },
-              ),
+              builder:
+                  (context) => IconButton(
+                    icon: const Icon(Icons.menu, color: Colors.white),
+                    onPressed: () {
+                      Scaffold.of(context).openDrawer();
+                    },
+                  ),
             ),
             const SizedBox(width: 30),
           ],
@@ -106,13 +107,14 @@ class BlackHeader extends StatelessWidget {
                                   ),
                                   actions: [
                                     TextButton(
-                                      onPressed: () =>
-                                          Navigator.of(context).pop(false),
+                                      onPressed:
+                                          () =>
+                                              Navigator.of(context).pop(false),
                                       child: const Text('Cancel'),
                                     ),
                                     TextButton(
-                                      onPressed: () =>
-                                          Navigator.of(context).pop(true),
+                                      onPressed:
+                                          () => Navigator.of(context).pop(true),
                                       child: const Text('Logout'),
                                     ),
                                   ],

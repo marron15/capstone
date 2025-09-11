@@ -3,7 +3,18 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 
 class MembershipService {
-  static const String baseUrl = 'http://localhost/gym_api/membership';
+  // Use Android emulator host when running on Android, else localhost
+  static String _apiHost() {
+    if (kIsWeb) return 'localhost';
+    try {
+      if (defaultTargetPlatform == TargetPlatform.android) return '10.0.2.2';
+      return 'localhost';
+    } catch (_) {
+      return 'localhost';
+    }
+  }
+
+  static String get baseUrl => 'http://' + _apiHost() + '/gym_api/membership';
 
   static Future<MembershipResult> getMembershipByCustomerId(
     int customerId,

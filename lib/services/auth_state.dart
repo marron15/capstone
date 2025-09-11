@@ -61,6 +61,11 @@ class AuthState extends ChangeNotifier {
     // Clear tokens from SharedPreferences
     await _clearTokens();
 
+    // Also clear any locally cached profile form data
+    try {
+      profileNotifier.value = ProfileData();
+    } catch (_) {}
+
     notifyListeners();
   }
 
