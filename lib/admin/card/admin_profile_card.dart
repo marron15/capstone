@@ -11,6 +11,7 @@ class AdminProfileTable extends StatelessWidget {
   final TextEditingController searchController;
   final List<Map<String, dynamic>> admins;
   final Function(List<Map<String, dynamic>>) updateFilteredAdmins;
+  final VoidCallback recomputeFilters;
 
   const AdminProfileTable({
     super.key,
@@ -21,6 +22,7 @@ class AdminProfileTable extends StatelessWidget {
     required this.searchController,
     required this.admins,
     required this.updateFilteredAdmins,
+    required this.recomputeFilters,
   });
 
   @override
@@ -477,7 +479,7 @@ class AdminProfileTable extends StatelessWidget {
       }
 
       onEdit(updatedAdmin);
-      _updateFilteredList();
+      recomputeFilters();
 
       final firstName =
           updatedAdmin['first_name'] ?? updatedAdmin['firstName'] ?? 'Admin';
@@ -579,7 +581,7 @@ class AdminProfileTable extends StatelessWidget {
                       ),
                     );
 
-                    _updateFilteredList();
+                    recomputeFilters();
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
@@ -623,50 +625,5 @@ class AdminProfileTable extends StatelessWidget {
     );
   }
 
-  // Update filtered admins list
-  void _updateFilteredList() {
-    final query = searchController.text.toLowerCase();
-    List<Map<String, dynamic>> filteredList;
-
-    if (query.isEmpty) {
-      filteredList = List.from(admins);
-    } else {
-      filteredList =
-          admins.where((admin) {
-            final firstName =
-                (admin['first_name'] ?? admin['firstName'] ?? '')
-                    .toString()
-                    .toLowerCase();
-            final middleName =
-                (admin['middle_name'] ?? admin['middleName'] ?? '')
-                    .toString()
-                    .toLowerCase();
-            final lastName =
-                (admin['last_name'] ?? admin['lastName'] ?? '')
-                    .toString()
-                    .toLowerCase();
-            final email =
-                (admin['email_address'] ?? admin['email'] ?? '')
-                    .toString()
-                    .toLowerCase();
-            final phone =
-                (admin['phone_number'] ?? admin['contactNumber'] ?? '')
-                    .toString()
-                    .toLowerCase();
-            final dateOfBirth =
-                (admin['date_of_birth'] ?? admin['dateOfBirth'] ?? '')
-                    .toString()
-                    .toLowerCase();
-
-            return firstName.contains(query) ||
-                middleName.contains(query) ||
-                lastName.contains(query) ||
-                email.contains(query) ||
-                phone.contains(query) ||
-                dateOfBirth.contains(query);
-          }).toList();
-    }
-
-    updateFilteredAdmins(filteredList);
-  }
+  // Filtering recomputed in parent via recomputeFilters
 }

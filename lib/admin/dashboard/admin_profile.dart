@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../excel/excel_admin_export.dart';
 import '../modal/admin_modal.dart';
 import '../sidenav.dart';
 import '../card/admin_profile_card.dart' show AdminProfileTable;
@@ -133,7 +134,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
   void _updateFilteredAdmins() {
     final query = searchController.text.toLowerCase();
 
-    // 1) Start from status-filtered list
+    // 1) Start from status-filtered list via toggle
     final List<Map<String, dynamic>> statusScoped =
         _admins.where((admin) {
           final String status =
@@ -192,6 +193,11 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
   // Refresh admins from API
   Future<void> _refreshAdmins() async {
     await _loadAdmins();
+  }
+
+  // Export admins to Excel
+  Future<void> _exportAdmins() async {
+    await exportAdminsToExcel(context, _filteredAdmins);
   }
 
   // Table layout for desktop
@@ -336,6 +342,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
               searchController: searchController,
               admins: _admins,
               updateFilteredAdmins: _setFilteredAdmins,
+              recomputeFilters: _updateFilteredAdmins,
             );
           }),
         ],
@@ -360,7 +367,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
       appBar: AppBar(
         title: const Center(child: Text('Admin Profiles')),
         foregroundColor: Colors.white,
-        backgroundColor: const Color(0xFF36454F),
+        backgroundColor: Colors.black,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -370,19 +377,13 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
         ],
       ),
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF141E30), Color(0xFF232526)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
+        decoration: const BoxDecoration(color: Colors.white),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              height: isMobile ? 100 : 60,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              height: isMobile ? 120 : null,
+              padding: const EdgeInsets.all(16),
               color: Colors.transparent,
               child:
                   isMobile
@@ -391,6 +392,57 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                         children: [
                           Row(
                             children: [
+                              // Export
+                              ElevatedButton.icon(
+                                onPressed: _exportAdmins,
+                                icon: const Icon(Icons.table_view, size: 16),
+                                label: const Text('Export'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  foregroundColor: Colors.black87,
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 8,
+                                  ),
+                                ),
+                              ),
+                              const Spacer(),
+                              // View Archives toggle
+                              ElevatedButton.icon(
+                                onPressed: () {
+                                  setState(() {
+                                    _showArchived = !_showArchived;
+                                    _updateFilteredAdmins();
+                                  });
+                                },
+                                icon: Icon(
+                                  _showArchived ? Icons.people : Icons.archive,
+                                  size: 16,
+                                ),
+                                label: Text(
+                                  _showArchived
+                                      ? 'View Active'
+                                      : 'View Archives',
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  foregroundColor: Colors.black87,
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 8,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              // New Admin
                               ElevatedButton(
                                 onPressed: () {
                                   AdminModal.showAddAdminModal(
@@ -416,7 +468,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                                     Icon(Icons.add, size: 16),
                                     SizedBox(width: 4),
                                     Text(
-                                      'new admin',
+                                      'New Admin',
                                       style: TextStyle(fontSize: 14),
                                     ),
                                   ],
@@ -452,96 +504,133 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                           ),
                         ],
                       )
-                      : Row(
+                      : Column(
                         children: [
-                          // Add new admin (left side)
-                          ElevatedButton(
-                            onPressed: () {
-                              AdminModal.showAddAdminModal(context, _addAdmin);
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: Colors.blue,
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.add, size: 16),
-                                SizedBox(width: 4),
-                                Text(
-                                  'New Admin',
-                                  style: TextStyle(fontSize: 14),
+                          Row(
+                            children: [
+                              Text(
+                                'Admin Profiles',
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.black,
                                 ),
-                              ],
-                            ),
-                          ),
-                          const Spacer(),
-                          // Archived/Active toggle to the left of search
-                          ElevatedButton.icon(
-                            onPressed: () {
-                              setState(() {
-                                _showArchived = !_showArchived;
-                                _updateFilteredAdmins();
-                              });
-                            },
-                            icon: Icon(
-                              _showArchived ? Icons.people : Icons.archive,
-                              size: 16,
-                            ),
-                            label: Text(
-                              _showArchived
-                                  ? 'Active Admins'
-                                  : 'Archived Admins',
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor:
-                                  _showArchived
-                                      ? Colors.green
-                                      : Colors.grey[600],
-                              foregroundColor: Colors.white,
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20),
                               ),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                            ),
+                            ],
                           ),
-                          const SizedBox(width: 12),
-                          Container(
-                            width: 220,
-                            height: 36,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(18),
-                            ),
-                            child: TextField(
-                              controller: searchController,
-                              onChanged: _filterAdmins,
-                              decoration: const InputDecoration(
-                                hintText: 'Search',
-                                prefixIcon: Icon(
-                                  Icons.search,
-                                  color: Colors.grey,
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              // Search box (match customers.dart styling)
+                              SizedBox(
+                                width: 560,
+                                height: 42,
+                                child: TextField(
+                                  controller: searchController,
+                                  onChanged: _filterAdmins,
+                                  style: const TextStyle(color: Colors.black87),
+                                  decoration: InputDecoration(
+                                    hintText: 'Search',
+                                    prefixIcon: const Icon(
+                                      Icons.search,
+                                      size: 20,
+                                      color: Colors.black54,
+                                    ),
+                                    filled: true,
+                                    fillColor: Colors.white,
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: const BorderSide(
+                                        color: Colors.black26,
+                                      ),
+                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 0,
+                                    ),
+                                    isDense: true,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              // Export button styled like customers page
+                              OutlinedButton.icon(
+                                onPressed: _exportAdmins,
+                                icon: const Icon(
+                                  Icons.table_chart_rounded,
+                                  color: Colors.teal,
                                   size: 20,
                                 ),
-                                border: InputBorder.none,
-                                contentPadding: EdgeInsets.symmetric(
-                                  vertical: 8,
+                                label: const Text('Export'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: Colors.black87,
+                                  side: const BorderSide(color: Colors.black26),
+                                  backgroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 10,
+                                  ),
                                 ),
-                                isDense: true,
                               ),
-                            ),
+                              const Spacer(),
+                              // View archives pill button
+                              OutlinedButton.icon(
+                                onPressed: () {
+                                  setState(() {
+                                    _showArchived = !_showArchived;
+                                    _updateFilteredAdmins();
+                                  });
+                                },
+                                icon: Icon(
+                                  _showArchived ? Icons.people : Icons.archive,
+                                  size: 18,
+                                ),
+                                label: Text(
+                                  _showArchived
+                                      ? 'View Active'
+                                      : 'View Archives',
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: Colors.black87,
+                                  side: const BorderSide(color: Colors.black26),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(22),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 10,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              // New Admin pill button
+                              ElevatedButton.icon(
+                                onPressed: () {
+                                  AdminModal.showAddAdminModal(
+                                    context,
+                                    _addAdmin,
+                                  );
+                                },
+                                icon: const Icon(Icons.add, size: 18),
+                                label: const Text('New Admin'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  foregroundColor: Colors.black87,
+                                  elevation: 1,
+                                  side: const BorderSide(color: Colors.black26),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(22),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 10,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -641,6 +730,8 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                                           admins: _admins,
                                           updateFilteredAdmins:
                                               _setFilteredAdmins,
+                                          recomputeFilters:
+                                              _updateFilteredAdmins,
                                         );
                                       }).toList(),
                                 )

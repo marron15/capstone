@@ -15,15 +15,18 @@ class TrainerModal {
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide:
-            BorderSide(color: Colors.white.withAlpha((0.18 * 255).toInt())),
+        borderSide: BorderSide(
+          color: Colors.white.withAlpha((0.18 * 255).toInt()),
+        ),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
     );
   }
 
   static void showAddTrainerModal(
-      BuildContext context, Function(Map<String, String>) onAdd) {
+    BuildContext context,
+    Function(Map<String, String>) onAdd,
+  ) {
     final TextEditingController firstNameController = TextEditingController();
     final TextEditingController middleNameController = TextEditingController();
     final TextEditingController lastNameController = TextEditingController();
@@ -36,9 +39,10 @@ class TrainerModal {
       builder: (BuildContext context) {
         return Dialog(
           backgroundColor: Colors.transparent,
-          insetPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-          child: Center(
+          alignment: Alignment.center,
+          insetPadding: const EdgeInsets.fromLTRB(16, 24, 16, 24),
+          child: Align(
+            alignment: Alignment.center,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(22),
               child: Stack(
@@ -46,8 +50,8 @@ class TrainerModal {
                   BackdropFilter(
                     filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
                     child: Container(
-                      width: 600,
-                      constraints: const BoxConstraints(maxWidth: 700),
+                      width: 680,
+                      constraints: const BoxConstraints(maxWidth: 720),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(22),
                         color: Colors.black.withAlpha((0.7 * 255).toInt()),
@@ -57,8 +61,9 @@ class TrainerModal {
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.blueAccent
-                                .withAlpha((0.18 * 255).toInt()),
+                            color: Colors.blueAccent.withAlpha(
+                              (0.18 * 255).toInt(),
+                            ),
                             blurRadius: 32,
                             spreadRadius: 2,
                             offset: const Offset(0, 8),
@@ -85,10 +90,12 @@ class TrainerModal {
                                       shape: BoxShape.circle,
                                       gradient: LinearGradient(
                                         colors: [
-                                          Colors.blueAccent
-                                              .withAlpha((0.25 * 255).toInt()),
-                                          Colors.lightBlueAccent
-                                              .withAlpha((0.18 * 255).toInt()),
+                                          Colors.blueAccent.withAlpha(
+                                            (0.25 * 255).toInt(),
+                                          ),
+                                          Colors.lightBlueAccent.withAlpha(
+                                            (0.18 * 255).toInt(),
+                                          ),
                                         ],
                                         begin: Alignment.topLeft,
                                         end: Alignment.bottomRight,
@@ -112,18 +119,22 @@ class TrainerModal {
                                   ),
                                   const Spacer(),
                                   IconButton(
-                                    onPressed: () =>
-                                        Navigator.of(context).pop(),
-                                    icon: const Icon(Icons.close,
-                                        size: 26, color: Colors.white),
+                                    onPressed:
+                                        () => Navigator.of(context).pop(),
+                                    icon: const Icon(
+                                      Icons.close,
+                                      size: 26,
+                                      color: Colors.white,
+                                    ),
                                   ),
                                 ],
                               ),
                               const SizedBox(height: 20),
                               Divider(
                                 thickness: 1.5,
-                                color: Colors.lightBlueAccent
-                                    .withAlpha((0.22 * 255).toInt()),
+                                color: Colors.lightBlueAccent.withAlpha(
+                                  (0.22 * 255).toInt(),
+                                ),
                                 height: 24,
                                 endIndent: 12,
                                 indent: 2,
@@ -133,45 +144,81 @@ class TrainerModal {
                                 controller: firstNameController,
                                 style: const TextStyle(color: Colors.white),
                                 decoration: _inputDecoration('First Name'),
-                                validator: (value) =>
-                                    value == null || value.isEmpty
-                                        ? 'Please enter first name'
-                                        : null,
+                                validator:
+                                    (value) =>
+                                        value == null || value.isEmpty
+                                            ? 'Please enter first name'
+                                            : null,
                               ),
                               const SizedBox(height: 16),
-                              TextFormField(
-                                controller: middleNameController,
-                                style: const TextStyle(color: Colors.white),
-                                decoration:
-                                    _inputDecoration('Middle Name (optional)'),
-                              ),
-                              const SizedBox(height: 16),
-                              TextFormField(
-                                controller: lastNameController,
-                                style: const TextStyle(color: Colors.white),
-                                decoration: _inputDecoration('Last Name'),
-                                validator: (value) =>
-                                    value == null || value.isEmpty
-                                        ? 'Please enter last name'
-                                        : null,
-                              ),
-                              const SizedBox(height: 16),
-                              TextFormField(
-                                controller: contactNumberController,
-                                style: const TextStyle(color: Colors.white),
-                                decoration: _inputDecoration('Contact Number'),
-                                validator: (value) =>
-                                    value == null || value.isEmpty
-                                        ? 'Please enter contact number'
-                                        : null,
+                              LayoutBuilder(
+                                builder: (context, constraints) {
+                                  final bool isWide =
+                                      constraints.maxWidth > 520;
+                                  final double fieldWidth =
+                                      isWide
+                                          ? (constraints.maxWidth - 16) / 2
+                                          : constraints.maxWidth;
+                                  Widget sized(Widget child) =>
+                                      SizedBox(width: fieldWidth, child: child);
+                                  return Wrap(
+                                    spacing: 16,
+                                    runSpacing: 16,
+                                    children: [
+                                      sized(
+                                        TextFormField(
+                                          controller: middleNameController,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                          ),
+                                          decoration: _inputDecoration(
+                                            'Middle Name (optional)',
+                                          ),
+                                        ),
+                                      ),
+                                      sized(
+                                        TextFormField(
+                                          controller: lastNameController,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                          ),
+                                          decoration: _inputDecoration(
+                                            'Last Name',
+                                          ),
+                                          validator:
+                                              (value) =>
+                                                  value == null || value.isEmpty
+                                                      ? 'Please enter last name'
+                                                      : null,
+                                        ),
+                                      ),
+                                      sized(
+                                        TextFormField(
+                                          controller: contactNumberController,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                          ),
+                                          decoration: _inputDecoration(
+                                            'Contact Number',
+                                          ),
+                                          validator:
+                                              (value) =>
+                                                  value == null || value.isEmpty
+                                                      ? 'Please enter contact number'
+                                                      : null,
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                },
                               ),
                               const SizedBox(height: 24),
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
                                   ElevatedButton(
-                                    onPressed: () =>
-                                        Navigator.of(context).pop(),
+                                    onPressed:
+                                        () => Navigator.of(context).pop(),
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.white,
                                       foregroundColor: Colors.black,
@@ -179,7 +226,9 @@ class TrainerModal {
                                         borderRadius: BorderRadius.circular(14),
                                       ),
                                       padding: const EdgeInsets.symmetric(
-                                          horizontal: 24, vertical: 12),
+                                        horizontal: 24,
+                                        vertical: 12,
+                                      ),
                                     ),
                                     child: const Text('Cancel'),
                                   ),
@@ -205,7 +254,9 @@ class TrainerModal {
                                         borderRadius: BorderRadius.circular(14),
                                       ),
                                       padding: const EdgeInsets.symmetric(
-                                          horizontal: 24, vertical: 12),
+                                        horizontal: 24,
+                                        vertical: 12,
+                                      ),
                                     ),
                                     child: const Text('Submit'),
                                   ),
@@ -226,16 +277,23 @@ class TrainerModal {
     );
   }
 
-  static void showEditTrainerModal(BuildContext context,
-      Map<String, String> trainer, Function(Map<String, String>) onEdit) {
-    final TextEditingController firstNameController =
-        TextEditingController(text: trainer['firstName']);
-    final TextEditingController middleNameController =
-        TextEditingController(text: trainer['middleName']);
-    final TextEditingController lastNameController =
-        TextEditingController(text: trainer['lastName']);
-    final TextEditingController contactNumberController =
-        TextEditingController(text: trainer['contactNumber']);
+  static void showEditTrainerModal(
+    BuildContext context,
+    Map<String, String> trainer,
+    Function(Map<String, String>) onEdit,
+  ) {
+    final TextEditingController firstNameController = TextEditingController(
+      text: trainer['firstName'],
+    );
+    final TextEditingController middleNameController = TextEditingController(
+      text: trainer['middleName'],
+    );
+    final TextEditingController lastNameController = TextEditingController(
+      text: trainer['lastName'],
+    );
+    final TextEditingController contactNumberController = TextEditingController(
+      text: trainer['contactNumber'],
+    );
     final formKey = GlobalKey<FormState>();
 
     showDialog(
@@ -243,9 +301,10 @@ class TrainerModal {
       builder: (BuildContext context) {
         return Dialog(
           backgroundColor: Colors.transparent,
-          insetPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-          child: Center(
+          alignment: Alignment.center,
+          insetPadding: const EdgeInsets.fromLTRB(16, 24, 16, 24),
+          child: Align(
+            alignment: Alignment.center,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(22),
               child: Stack(
@@ -253,8 +312,8 @@ class TrainerModal {
                   BackdropFilter(
                     filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
                     child: Container(
-                      width: 600,
-                      constraints: const BoxConstraints(maxWidth: 700),
+                      width: 680,
+                      constraints: const BoxConstraints(maxWidth: 720),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(22),
                         color: Colors.black.withAlpha((0.7 * 255).toInt()),
@@ -264,8 +323,9 @@ class TrainerModal {
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.blueAccent
-                                .withAlpha((0.18 * 255).toInt()),
+                            color: Colors.blueAccent.withAlpha(
+                              (0.18 * 255).toInt(),
+                            ),
                             blurRadius: 32,
                             spreadRadius: 2,
                             offset: const Offset(0, 8),
@@ -292,10 +352,12 @@ class TrainerModal {
                                       shape: BoxShape.circle,
                                       gradient: LinearGradient(
                                         colors: [
-                                          Colors.blueAccent
-                                              .withAlpha((0.25 * 255).toInt()),
-                                          Colors.lightBlueAccent
-                                              .withAlpha((0.18 * 255).toInt()),
+                                          Colors.blueAccent.withAlpha(
+                                            (0.25 * 255).toInt(),
+                                          ),
+                                          Colors.lightBlueAccent.withAlpha(
+                                            (0.18 * 255).toInt(),
+                                          ),
                                         ],
                                         begin: Alignment.topLeft,
                                         end: Alignment.bottomRight,
@@ -319,18 +381,22 @@ class TrainerModal {
                                   ),
                                   const Spacer(),
                                   IconButton(
-                                    onPressed: () =>
-                                        Navigator.of(context).pop(),
-                                    icon: const Icon(Icons.close,
-                                        size: 26, color: Colors.white),
+                                    onPressed:
+                                        () => Navigator.of(context).pop(),
+                                    icon: const Icon(
+                                      Icons.close,
+                                      size: 26,
+                                      color: Colors.white,
+                                    ),
                                   ),
                                 ],
                               ),
                               const SizedBox(height: 20),
                               Divider(
                                 thickness: 1.5,
-                                color: Colors.lightBlueAccent
-                                    .withAlpha((0.22 * 255).toInt()),
+                                color: Colors.lightBlueAccent.withAlpha(
+                                  (0.22 * 255).toInt(),
+                                ),
                                 height: 24,
                                 endIndent: 12,
                                 indent: 2,
@@ -340,45 +406,49 @@ class TrainerModal {
                                 controller: firstNameController,
                                 style: const TextStyle(color: Colors.white),
                                 decoration: _inputDecoration('First Name'),
-                                validator: (value) =>
-                                    value == null || value.isEmpty
-                                        ? 'Please enter first name'
-                                        : null,
+                                validator:
+                                    (value) =>
+                                        value == null || value.isEmpty
+                                            ? 'Please enter first name'
+                                            : null,
                               ),
                               const SizedBox(height: 16),
                               TextFormField(
                                 controller: middleNameController,
                                 style: const TextStyle(color: Colors.white),
-                                decoration:
-                                    _inputDecoration('Middle Name (optional)'),
+                                decoration: _inputDecoration(
+                                  'Middle Name (optional)',
+                                ),
                               ),
                               const SizedBox(height: 16),
                               TextFormField(
                                 controller: lastNameController,
                                 style: const TextStyle(color: Colors.white),
                                 decoration: _inputDecoration('Last Name'),
-                                validator: (value) =>
-                                    value == null || value.isEmpty
-                                        ? 'Please enter last name'
-                                        : null,
+                                validator:
+                                    (value) =>
+                                        value == null || value.isEmpty
+                                            ? 'Please enter last name'
+                                            : null,
                               ),
                               const SizedBox(height: 16),
                               TextFormField(
                                 controller: contactNumberController,
                                 style: const TextStyle(color: Colors.white),
                                 decoration: _inputDecoration('Contact Number'),
-                                validator: (value) =>
-                                    value == null || value.isEmpty
-                                        ? 'Please enter contact number'
-                                        : null,
+                                validator:
+                                    (value) =>
+                                        value == null || value.isEmpty
+                                            ? 'Please enter contact number'
+                                            : null,
                               ),
                               const SizedBox(height: 24),
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
                                   ElevatedButton(
-                                    onPressed: () =>
-                                        Navigator.of(context).pop(),
+                                    onPressed:
+                                        () => Navigator.of(context).pop(),
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.white,
                                       foregroundColor: Colors.black,
@@ -386,7 +456,9 @@ class TrainerModal {
                                         borderRadius: BorderRadius.circular(14),
                                       ),
                                       padding: const EdgeInsets.symmetric(
-                                          horizontal: 24, vertical: 12),
+                                        horizontal: 24,
+                                        vertical: 12,
+                                      ),
                                     ),
                                     child: const Text('Cancel'),
                                   ),
@@ -412,7 +484,9 @@ class TrainerModal {
                                         borderRadius: BorderRadius.circular(14),
                                       ),
                                       padding: const EdgeInsets.symmetric(
-                                          horizontal: 24, vertical: 12),
+                                        horizontal: 24,
+                                        vertical: 12,
+                                      ),
                                     ),
                                     child: const Text('Save'),
                                   ),

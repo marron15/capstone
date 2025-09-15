@@ -17,16 +17,10 @@ class StatisticPage extends StatelessWidget {
       appBar: AppBar(
         title: const Center(child: Text('Dashboard')),
         foregroundColor: Colors.white,
-        backgroundColor: const Color(0xFF36454F),
+        backgroundColor: Colors.black,
       ),
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF141E30), Color(0xFF232526)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
+        decoration: const BoxDecoration(color: Colors.white),
         child: Padding(
           padding: const EdgeInsets.all(24.0),
           child: Column(
@@ -37,7 +31,7 @@ class StatisticPage extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: Colors.black,
                 ),
               ),
               const SizedBox(height: 24),
@@ -93,8 +87,11 @@ class _StatCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final Widget child;
-  const _StatCard(
-      {required this.title, required this.child, this.subtitle = ''});
+  const _StatCard({
+    required this.title,
+    required this.child,
+    this.subtitle = '',
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -26,9 +26,8 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
   Animation<double>? _iconAnim;
 
   int _currentStep = 0;
-  String? _selectedMonth;
-  int? _selectedDay;
-  int? _selectedYear;
+  DateTime? _selectedBirthdate;
+  final TextEditingController _birthdateController = TextEditingController();
   String? _selectedMembershipType = 'Monthly';
   final FocusNode _firstNameFocus = FocusNode();
   final FocusNode _middleNameFocus = FocusNode();
@@ -126,6 +125,7 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
     _lastNameController.dispose();
     _contactController.dispose();
     _emailController.dispose();
+    _birthdateController.dispose();
     _passwordController.dispose();
     _rePasswordController.dispose();
     _emailController.removeListener(_emailListener);
@@ -238,39 +238,21 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
       String contact = _contactController.text.trim();
 
       // Format birthdate
-      String? birthdate;
-      if (_selectedYear != null &&
-          _selectedMonth != null &&
-          _selectedDay != null) {
-        final monthIndex = [
-              'January',
-              'February',
-              'March',
-              'April',
-              'May',
-              'June',
-              'July',
-              'August',
-              'September',
-              'October',
-              'November',
-              'December',
-            ].indexOf(_selectedMonth!) +
-            1;
-
-        birthdate =
-            '${_selectedYear!}-${monthIndex.toString().padLeft(2, '0')}-${_selectedDay!.toString().padLeft(2, '0')}';
-      }
+      String? birthdate =
+          _selectedBirthdate != null
+              ? '${_selectedBirthdate!.year}-${_selectedBirthdate!.month.toString().padLeft(2, '0')}-${_selectedBirthdate!.day.toString().padLeft(2, '0')}'
+              : null;
 
       // Combine address fields
       String? fullAddress;
-      List<String> addressParts = [
-        _streetController.text.trim(),
-        _cityController.text.trim(),
-        _stateProvinceController.text.trim(),
-        _postalCodeController.text.trim(),
-        _countryController.text.trim(),
-      ].where((part) => part.isNotEmpty).toList();
+      List<String> addressParts =
+          [
+            _streetController.text.trim(),
+            _cityController.text.trim(),
+            _stateProvinceController.text.trim(),
+            _postalCodeController.text.trim(),
+            _countryController.text.trim(),
+          ].where((part) => part.isNotEmpty).toList();
 
       if (addressParts.isNotEmpty) {
         fullAddress = addressParts.join(', ');
@@ -304,38 +286,47 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
         password: password,
         birthdate: birthdate,
         phoneNumber: contact.isNotEmpty ? contact : null,
-        emergencyContactName: _emergencyNameController.text.trim().isNotEmpty
-            ? _emergencyNameController.text.trim()
-            : null,
-        emergencyContactNumber: _emergencyPhoneController.text.trim().isNotEmpty
-            ? _emergencyPhoneController.text.trim()
-            : null,
-        street: _streetController.text.trim().isNotEmpty
-            ? _streetController.text.trim()
-            : null,
-        city: _cityController.text.trim().isNotEmpty
-            ? _cityController.text.trim()
-            : null,
-        state: _stateProvinceController.text.trim().isNotEmpty
-            ? _stateProvinceController.text.trim()
-            : null,
-        postalCode: _postalCodeController.text.trim().isNotEmpty
-            ? _postalCodeController.text.trim()
-            : null,
-        country: _countryController.text.trim().isNotEmpty
-            ? _countryController.text.trim()
-            : null,
+        emergencyContactName:
+            _emergencyNameController.text.trim().isNotEmpty
+                ? _emergencyNameController.text.trim()
+                : null,
+        emergencyContactNumber:
+            _emergencyPhoneController.text.trim().isNotEmpty
+                ? _emergencyPhoneController.text.trim()
+                : null,
+        street:
+            _streetController.text.trim().isNotEmpty
+                ? _streetController.text.trim()
+                : null,
+        city:
+            _cityController.text.trim().isNotEmpty
+                ? _cityController.text.trim()
+                : null,
+        state:
+            _stateProvinceController.text.trim().isNotEmpty
+                ? _stateProvinceController.text.trim()
+                : null,
+        postalCode:
+            _postalCodeController.text.trim().isNotEmpty
+                ? _postalCodeController.text.trim()
+                : null,
+        country:
+            _countryController.text.trim().isNotEmpty
+                ? _countryController.text.trim()
+                : null,
         membershipType: _selectedMembershipType,
-        expirationDate: expirationDate
-            .toIso8601String()
-            .split('T')[0], // Format as YYYY-MM-DD
+        expirationDate:
+            expirationDate.toIso8601String().split(
+              'T',
+            )[0], // Format as YYYY-MM-DD
       );
 
       debugPrint('📡 API Response: $result');
 
       if (result['success'] == true && mounted) {
         // Get customer ID from response (support multiple shapes)
-        final dynamic rawId = result['user']?['id'] ??
+        final dynamic rawId =
+            result['user']?['id'] ??
             result['customer']?['id'] ??
             result['data']?['customer_id'] ??
             result['data']?['id'];
@@ -347,19 +338,21 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
 
         // If we have a valid customer id and address fields, insert address record
         if (customerId != null) {
-          final hasAnyAddress = (_streetController.text.trim().isNotEmpty ||
-              _cityController.text.trim().isNotEmpty ||
-              _stateProvinceController.text.trim().isNotEmpty ||
-              _postalCodeController.text.trim().isNotEmpty ||
-              _countryController.text.trim().isNotEmpty);
+          final hasAnyAddress =
+              (_streetController.text.trim().isNotEmpty ||
+                  _cityController.text.trim().isNotEmpty ||
+                  _stateProvinceController.text.trim().isNotEmpty ||
+                  _postalCodeController.text.trim().isNotEmpty ||
+                  _countryController.text.trim().isNotEmpty);
           if (hasAnyAddress) {
             await ApiService.insertCustomerAddress(
               customerId: customerId,
               street: _streetController.text.trim(),
               city: _cityController.text.trim(),
-              state: _stateProvinceController.text.trim().isNotEmpty
-                  ? _stateProvinceController.text.trim()
-                  : null,
+              state:
+                  _stateProvinceController.text.trim().isNotEmpty
+                      ? _stateProvinceController.text.trim()
+                      : null,
               postalCode: _postalCodeController.text.trim(),
               country: _countryController.text.trim(),
             );
@@ -373,7 +366,8 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
             );
           } catch (e) {
             debugPrint(
-                'Warning: failed to create membership for new customer: $e');
+              'Warning: failed to create membership for new customer: $e',
+            );
           }
         }
         debugPrint('🎫 Membership created: $membershipCreated');
@@ -396,7 +390,7 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
               'emergencyContactPhone': _emergencyPhoneController.text.trim(),
               'customerId':
                   customerId, // Store the customer ID from API response
-            }
+            },
           });
         }
 
@@ -404,52 +398,53 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
         if (mounted) {
           showDialog(
             context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('Customer Added Successfully!'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Customer "$firstName $lastName" has been registered in the database with $_selectedMembershipType membership.',
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    '✅ The customer can now log in using their email and password.',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '📧 Email: $email',
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                  const Text(
-                    '🔑 Password: [As set during registration]',
-                    style: TextStyle(fontSize: 12),
-                  ),
-                  if (membershipCreated) ...[
-                    const SizedBox(height: 8),
-                    const Text(
-                      '🎫 Membership has been created and is active.',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.blue,
-                        fontWeight: FontWeight.w500,
+            builder:
+                (context) => AlertDialog(
+                  title: const Text('Customer Added Successfully!'),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Customer "$firstName $lastName" has been registered in the database with $_selectedMembershipType membership.',
                       ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        '✅ The customer can now log in using their email and password.',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '📧 Email: $email',
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                      const Text(
+                        '🔑 Password: [As set during registration]',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                      if (membershipCreated) ...[
+                        const SizedBox(height: 8),
+                        const Text(
+                          '🎫 Membership has been created and is active.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.blue,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text('OK'),
                     ),
                   ],
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('OK'),
                 ),
-              ],
-            ),
           );
         }
       } else {
@@ -480,12 +475,14 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
   Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      insetPadding: const EdgeInsets.fromLTRB(16, 24, 16, 24),
+      alignment: Alignment.center,
       child: FadeTransition(
         opacity: _fadeAnim ?? const AlwaysStoppedAnimation(1.0),
         child: ScaleTransition(
           scale: _scaleAnim ?? const AlwaysStoppedAnimation(1.0),
-          child: Center(
+          child: Align(
+            alignment: Alignment.center,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(22),
               child: Stack(
@@ -494,9 +491,10 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
                   BackdropFilter(
                     filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
                     child: Container(
-                      width: MediaQuery.of(context).size.width < 600
-                          ? MediaQuery.of(context).size.width * 0.99
-                          : 560,
+                      width:
+                          MediaQuery.of(context).size.width < 800
+                              ? MediaQuery.of(context).size.width * 0.98
+                              : 740,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(22),
                         color: Colors.black.withAlpha((0.7 * 255).toInt()),
@@ -518,7 +516,7 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 38,
-                          vertical: 36,
+                          vertical: 22,
                         ),
                         child: SingleChildScrollView(
                           child: Column(
@@ -531,15 +529,17 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
                                     child: Row(
                                       children: [
                                         AnimatedBuilder(
-                                          animation: _iconAnim ??
+                                          animation:
+                                              _iconAnim ??
                                               const AlwaysStoppedAnimation(0.0),
                                           builder: (context, child) {
                                             return Transform.rotate(
-                                              angle: (_iconAnim ??
-                                                      const AlwaysStoppedAnimation(
-                                                        0.0,
-                                                      ))
-                                                  .value,
+                                              angle:
+                                                  (_iconAnim ??
+                                                          const AlwaysStoppedAnimation(
+                                                            0.0,
+                                                          ))
+                                                      .value,
                                               child: Container(
                                                 width: 36,
                                                 height: 36,
@@ -549,12 +549,14 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
                                                     colors: [
                                                       Colors.blueAccent
                                                           .withAlpha(
-                                                        (0.25 * 255).toInt(),
-                                                      ),
+                                                            (0.25 * 255)
+                                                                .toInt(),
+                                                          ),
                                                       Colors.lightBlueAccent
                                                           .withAlpha(
-                                                        (0.18 * 255).toInt(),
-                                                      ),
+                                                            (0.18 * 255)
+                                                                .toInt(),
+                                                          ),
                                                     ],
                                                     begin: Alignment.topLeft,
                                                     end: Alignment.bottomRight,
@@ -590,8 +592,8 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
                                       size: 26,
                                       color: Colors.white,
                                     ),
-                                    onPressed: () =>
-                                        Navigator.of(context).pop(),
+                                    onPressed:
+                                        () => Navigator.of(context).pop(),
                                     tooltip: 'Close',
                                   ),
                                 ],
@@ -611,6 +613,7 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
                               ),
                               if (_currentStep == 0) ...[
                                 Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     const SizedBox(height: 1.5),
                                     const Text(
@@ -621,186 +624,372 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
                                         fontSize: 16,
                                       ),
                                     ),
-                                    TextField(
-                                      controller: _firstNameController,
-                                      focusNode: _firstNameFocus,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                      ),
-                                      decoration: _inputDecoration(
-                                        label: 'First Name',
-                                        icon: Icons.person_outline,
-                                        focusNode: _firstNameFocus,
-                                        hintText: 'First Name',
-                                        errorText: _firstNameError,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 14),
-                                    TextField(
-                                      controller: _middleNameController,
-                                      focusNode: _middleNameFocus,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                      ),
-                                      decoration: _inputDecoration(
-                                        label: 'Middle Name',
-                                        icon: Icons.person_outline,
-                                        focusNode: _middleNameFocus,
-                                        hintText: 'M.I.',
-                                      ),
-                                    ),
-                                    const SizedBox(height: 14),
-                                    TextField(
-                                      controller: _lastNameController,
-                                      focusNode: _lastNameFocus,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                      ),
-                                      decoration: _inputDecoration(
-                                        label: 'Last Name',
-                                        icon: Icons.person_outline,
-                                        focusNode: _lastNameFocus,
-                                        hintText: 'Last Name',
-                                        errorText: _lastNameError,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 24),
-                                    const Text(
-                                      'Select Birthdate',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 16,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 10),
-                                    DropdownButtonFormField<String>(
-                                      value: _selectedMonth,
-                                      decoration: _inputDecoration(
-                                        label: 'Month',
-                                        icon: Icons.calendar_today,
-                                        focusNode: null,
-                                        errorText: _birthdateError,
-                                      ),
-                                      dropdownColor: Colors.blueGrey[900],
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                      ),
-                                      items: [
-                                        'January',
-                                        'February',
-                                        'March',
-                                        'April',
-                                        'May',
-                                        'June',
-                                        'July',
-                                        'August',
-                                        'September',
-                                        'October',
-                                        'November',
-                                        'December',
-                                      ]
-                                          .map(
-                                            (month) => DropdownMenuItem(
-                                              value: month,
-                                              child: Text(month),
+                                    LayoutBuilder(
+                                      builder: (context, constraints) {
+                                        final bool isWide =
+                                            constraints.maxWidth > 520;
+                                        final double fieldWidth =
+                                            isWide
+                                                ? (constraints.maxWidth - 16) /
+                                                    2
+                                                : constraints.maxWidth;
+                                        Widget sized(Widget child) => SizedBox(
+                                          width: fieldWidth,
+                                          child: child,
+                                        );
+                                        return Wrap(
+                                          spacing: 16,
+                                          runSpacing: 14,
+                                          children: [
+                                            sized(
+                                              TextField(
+                                                controller:
+                                                    _firstNameController,
+                                                focusNode: _firstNameFocus,
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                ),
+                                                decoration: _inputDecoration(
+                                                  label: 'First Name',
+                                                  icon: Icons.person_outline,
+                                                  focusNode: _firstNameFocus,
+                                                  hintText: 'First Name',
+                                                  errorText: _firstNameError,
+                                                ),
+                                              ),
                                             ),
-                                          )
-                                          .toList(),
-                                      onChanged: (val) => setState(
-                                        () => _selectedMonth = val,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 14),
-                                    DropdownButtonFormField<int>(
-                                      value: _selectedDay,
-                                      decoration: _inputDecoration(
-                                        label: 'Day',
-                                        icon: Icons.calendar_today,
-                                        focusNode: null,
-                                        errorText: _birthdateError,
-                                      ),
-                                      dropdownColor: Colors.blueGrey[900],
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                      ),
-                                      items: List.generate(31, (i) => i + 1)
-                                          .map(
-                                            (day) => DropdownMenuItem(
-                                              value: day,
-                                              child: Text(day.toString()),
+                                            sized(
+                                              TextField(
+                                                controller:
+                                                    _middleNameController,
+                                                focusNode: _middleNameFocus,
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                ),
+                                                decoration: _inputDecoration(
+                                                  label: 'Middle Name',
+                                                  icon: Icons.person_outline,
+                                                  focusNode: _middleNameFocus,
+                                                  hintText: 'M.I.',
+                                                ),
+                                              ),
                                             ),
-                                          )
-                                          .toList(),
-                                      onChanged: (val) => setState(
-                                        () => _selectedDay = val,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 14),
-                                    DropdownButtonFormField<int>(
-                                      value: _selectedYear,
-                                      decoration: _inputDecoration(
-                                        label: 'Year',
-                                        icon: Icons.calendar_today,
-                                        focusNode: null,
-                                        errorText: _birthdateError,
-                                      ),
-                                      dropdownColor: Colors.blueGrey[900],
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                      ),
-                                      items: List.generate(
-                                        DateTime.now().year - 1949,
-                                        (i) => 1950 + i,
-                                      )
-                                          .map(
-                                            (year) => DropdownMenuItem(
-                                              value: year,
-                                              child: Text(year.toString()),
+                                            sized(
+                                              TextField(
+                                                controller: _lastNameController,
+                                                focusNode: _lastNameFocus,
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                ),
+                                                decoration: _inputDecoration(
+                                                  label: 'Last Name',
+                                                  icon: Icons.person_outline,
+                                                  focusNode: _lastNameFocus,
+                                                  hintText: 'Last Name',
+                                                  errorText: _lastNameError,
+                                                ),
+                                              ),
                                             ),
-                                          )
-                                          .toList(),
-                                      onChanged: (val) => setState(
-                                        () => _selectedYear = val,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 24),
-                                    const Text(
-                                      'Select Membership Type',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 16,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 10),
-                                    DropdownButtonFormField<String>(
-                                      value: _selectedMembershipType,
-                                      decoration: _inputDecoration(
-                                        label: 'Membership Type',
-                                        icon: Icons.card_membership,
-                                        focusNode: null,
-                                        errorText: _membershipTypeError,
-                                      ),
-                                      dropdownColor: Colors.blueGrey[900],
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                      ),
-                                      items: ['Daily', 'Half Month', 'Monthly']
-                                          .map(
-                                            (type) => DropdownMenuItem(
-                                              value: type,
-                                              child: Text(type),
+                                            sized(
+                                              DropdownButtonFormField<String>(
+                                                value: _selectedMembershipType,
+                                                decoration: _inputDecoration(
+                                                  label: 'Membership Type',
+                                                  icon: Icons.card_membership,
+                                                  focusNode: null,
+                                                  errorText:
+                                                      _membershipTypeError,
+                                                ),
+                                                dropdownColor:
+                                                    Colors.blueGrey[900],
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                ),
+                                                items:
+                                                    [
+                                                          'Daily',
+                                                          'Half Month',
+                                                          'Monthly',
+                                                        ]
+                                                        .map(
+                                                          (type) =>
+                                                              DropdownMenuItem(
+                                                                value: type,
+                                                                child: Text(
+                                                                  type,
+                                                                ),
+                                                              ),
+                                                        )
+                                                        .toList(),
+                                                onChanged:
+                                                    (val) => setState(
+                                                      () =>
+                                                          _selectedMembershipType =
+                                                              val,
+                                                    ),
+                                              ),
                                             ),
-                                          )
-                                          .toList(),
-                                      onChanged: (val) => setState(
-                                        () => _selectedMembershipType = val,
-                                      ),
+                                            sized(
+                                              TextField(
+                                                controller:
+                                                    _birthdateController,
+                                                readOnly: true,
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                ),
+                                                decoration: _inputDecoration(
+                                                  label: 'Birthdate',
+                                                  icon: Icons.calendar_today,
+                                                  hintText: 'YYYY-MM-DD',
+                                                  errorText: _birthdateError,
+                                                ),
+                                                onTap: () async {
+                                                  final DateTime initial =
+                                                      _selectedBirthdate ??
+                                                      DateTime.now().subtract(
+                                                        const Duration(
+                                                          days: 365 * 18,
+                                                        ),
+                                                      );
+                                                  final DateTime?
+                                                  picked = await showDatePicker(
+                                                    context: context,
+                                                    initialDate: initial,
+                                                    firstDate: DateTime(1950),
+                                                    lastDate: DateTime.now(),
+                                                    builder: (context, child) {
+                                                      return Theme(
+                                                        data: Theme.of(
+                                                          context,
+                                                        ).copyWith(
+                                                          colorScheme:
+                                                              const ColorScheme.light(
+                                                                primary:
+                                                                    Colors.blue,
+                                                                onPrimary:
+                                                                    Colors
+                                                                        .white,
+                                                                surface:
+                                                                    Colors
+                                                                        .white,
+                                                                onSurface:
+                                                                    Colors
+                                                                        .black,
+                                                              ),
+                                                        ),
+                                                        child: child!,
+                                                      );
+                                                    },
+                                                  );
+                                                  if (picked != null) {
+                                                    setState(() {
+                                                      _selectedBirthdate =
+                                                          picked;
+                                                      _birthdateController
+                                                              .text =
+                                                          '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
+                                                    });
+                                                  }
+                                                },
+                                              ),
+                                            ),
+                                          ],
+                                        );
+                                      },
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 32),
+                                const SizedBox(height: 16),
+                                // Address Information (moved under Personal Information)
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Address Information',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    LayoutBuilder(
+                                      builder: (context, constraints) {
+                                        final bool isWide =
+                                            constraints.maxWidth > 520;
+                                        final double fieldWidth =
+                                            isWide
+                                                ? (constraints.maxWidth - 16) /
+                                                    2
+                                                : constraints.maxWidth;
+                                        Widget sized(Widget child) => SizedBox(
+                                          width: fieldWidth,
+                                          child: child,
+                                        );
+                                        return Wrap(
+                                          spacing: 16,
+                                          runSpacing: 14,
+                                          children: [
+                                            sized(
+                                              TextField(
+                                                controller: _streetController,
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                ),
+                                                decoration: _inputDecoration(
+                                                  label: 'Street',
+                                                  icon: Icons.streetview,
+                                                  hintText: 'Enter street name',
+                                                  errorText: _streetError,
+                                                ),
+                                              ),
+                                            ),
+                                            sized(
+                                              TextField(
+                                                controller: _cityController,
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                ),
+                                                decoration: _inputDecoration(
+                                                  label: 'City',
+                                                  icon:
+                                                      Icons
+                                                          .location_city_outlined,
+                                                  hintText: 'Enter city name',
+                                                  errorText: _cityError,
+                                                ),
+                                              ),
+                                            ),
+                                            sized(
+                                              TextField(
+                                                controller:
+                                                    _stateProvinceController,
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                ),
+                                                decoration: _inputDecoration(
+                                                  label: 'State / Province',
+                                                  icon: Icons.location_city,
+                                                  hintText:
+                                                      'Enter state or province',
+                                                  errorText:
+                                                      _stateProvinceError,
+                                                ),
+                                              ),
+                                            ),
+                                            sized(
+                                              TextField(
+                                                controller:
+                                                    _postalCodeController,
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                ),
+                                                decoration: _inputDecoration(
+                                                  label: 'Postal Code',
+                                                  icon:
+                                                      Icons
+                                                          .markunread_mailbox_outlined,
+                                                  hintText: 'Enter postal code',
+                                                  errorText: _postalCodeError,
+                                                ),
+                                                keyboardType:
+                                                    TextInputType.number,
+                                              ),
+                                            ),
+                                            sized(
+                                              TextField(
+                                                controller: _countryController,
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                ),
+                                                decoration: _inputDecoration(
+                                                  label: 'Country',
+                                                  icon: Icons.public_outlined,
+                                                  hintText: 'Enter country',
+                                                  errorText: _countryError,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                // Emergency information (under Address)
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Emergency Contact Information',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    LayoutBuilder(
+                                      builder: (context, constraints) {
+                                        final bool isWide =
+                                            constraints.maxWidth > 520;
+                                        final double fieldWidth =
+                                            isWide
+                                                ? (constraints.maxWidth - 16) /
+                                                    2
+                                                : constraints.maxWidth;
+                                        Widget sized(Widget child) => SizedBox(
+                                          width: fieldWidth,
+                                          child: child,
+                                        );
+                                        return Wrap(
+                                          spacing: 16,
+                                          runSpacing: 14,
+                                          children: [
+                                            sized(
+                                              TextField(
+                                                controller:
+                                                    _emergencyNameController,
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                ),
+                                                decoration: _inputDecoration(
+                                                  label:
+                                                      'Emergency Contact Name',
+                                                  icon: Icons.person,
+                                                  hintText: 'Full Name',
+                                                  errorText:
+                                                      _emergencyNameError,
+                                                ),
+                                              ),
+                                            ),
+                                            sized(
+                                              TextField(
+                                                controller:
+                                                    _emergencyPhoneController,
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                ),
+                                                decoration: _inputDecoration(
+                                                  label:
+                                                      'Emergency Contact Phone',
+                                                  icon: Icons.phone,
+                                                  hintText: '09XXXXXXXXX',
+                                                  errorText:
+                                                      _emergencyPhoneError,
+                                                ),
+                                                keyboardType:
+                                                    TextInputType.phone,
+                                              ),
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 16),
                                 SizedBox(
                                   width: double.infinity,
                                   child: ElevatedButton.icon(
@@ -842,9 +1031,7 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
                                         });
                                         hasError = true;
                                       }
-                                      if (_selectedMonth == null ||
-                                          _selectedDay == null ||
-                                          _selectedYear == null) {
+                                      if (_selectedBirthdate == null) {
                                         setState(() {
                                           _birthdateError =
                                               'Birthdate is required.';
@@ -880,8 +1067,165 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
                                     ),
                                   ),
                                 ),
-                              ] else if (_currentStep == 1) ...[
-                                // Address step
+                              ] else if (_currentStep == -1) ...[
+                                // Emergency contact and image upload step (moved to step 1)
+                                const Text(
+                                  'Upload Profile Image (Optional)',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                Center(
+                                  child: CircleAvatar(
+                                    radius: 48,
+                                    backgroundColor: Colors.white24,
+                                    backgroundImage:
+                                        _webImageBytes != null
+                                            ? MemoryImage(_webImageBytes!)
+                                            : _selectedImage != null
+                                            ? FileImage(_selectedImage!)
+                                                as ImageProvider
+                                            : null,
+                                    child:
+                                        (_webImageBytes == null &&
+                                                _selectedImage == null)
+                                            ? IconButton(
+                                              icon: const Icon(
+                                                Icons.camera_alt,
+                                                color: Colors.white,
+                                                size: 32,
+                                              ),
+                                              onPressed: _pickImage,
+                                            )
+                                            : null,
+                                  ),
+                                ),
+                                const SizedBox(height: 14),
+                                TextField(
+                                  controller: _emergencyNameController,
+                                  style: const TextStyle(color: Colors.white),
+                                  decoration: _inputDecoration(
+                                    label: 'Emergency Contact Name',
+                                    icon: Icons.person,
+                                    hintText: 'Full Name',
+                                    errorText: _emergencyNameError,
+                                  ),
+                                ),
+                                const SizedBox(height: 14),
+                                TextField(
+                                  controller: _emergencyPhoneController,
+                                  style: const TextStyle(color: Colors.white),
+                                  decoration: _inputDecoration(
+                                    label: 'Emergency Contact Phone',
+                                    icon: Icons.phone,
+                                    hintText: '09XXXXXXXXX',
+                                    errorText: _emergencyPhoneError,
+                                  ),
+                                  keyboardType: TextInputType.phone,
+                                ),
+                                const SizedBox(height: 32),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: SizedBox(
+                                        width: double.infinity,
+                                        child: ElevatedButton.icon(
+                                          style: ElevatedButton.styleFrom(
+                                            padding: const EdgeInsets.symmetric(
+                                              vertical: 10,
+                                            ),
+                                            backgroundColor: Colors.white,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(14),
+                                            ),
+                                          ),
+                                          onPressed: () {
+                                            setState(() {
+                                              _currentStep = 0;
+                                            });
+                                          },
+                                          icon: const Icon(
+                                            Icons.arrow_back,
+                                            size: 18,
+                                            color: Colors.black,
+                                          ),
+                                          label: const Text(
+                                            'Back',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w500,
+                                              fontSize: 15,
+                                              color: Colors.black,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 20),
+                                    Expanded(
+                                      child: SizedBox(
+                                        width: double.infinity,
+                                        child: ElevatedButton(
+                                          style: ElevatedButton.styleFrom(
+                                            padding: const EdgeInsets.symmetric(
+                                              vertical: 10,
+                                            ),
+                                            backgroundColor: Colors.white,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(14),
+                                            ),
+                                          ),
+                                          onPressed: () {
+                                            setState(() {
+                                              _emergencyNameError = null;
+                                              _emergencyPhoneError = null;
+                                            });
+
+                                            bool hasError = false;
+                                            if (_emergencyNameController.text
+                                                .trim()
+                                                .isEmpty) {
+                                              setState(() {
+                                                _emergencyNameError =
+                                                    'Emergency contact name is required.';
+                                              });
+                                              hasError = true;
+                                            }
+                                            if (_emergencyPhoneController.text
+                                                .trim()
+                                                .isEmpty) {
+                                              setState(() {
+                                                _emergencyPhoneError =
+                                                    'Emergency contact phone is required.';
+                                              });
+                                              hasError = true;
+                                            }
+
+                                            if (!hasError) {
+                                              setState(() {
+                                                _currentStep = 2;
+                                              });
+                                            }
+                                          },
+                                          child: const Text(
+                                            'Next',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w500,
+                                              fontSize: 15,
+                                              color: Colors.black,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ] else if (_currentStep == -1) ...[
+                                // Address step (moved to step 2)
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -980,7 +1324,7 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
                                           ),
                                           onPressed: () {
                                             setState(() {
-                                              _currentStep = 0;
+                                              _currentStep = 1;
                                             });
                                           },
                                           icon: const Icon(
@@ -1063,161 +1407,6 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
 
                                             if (!hasError) {
                                               setState(() {
-                                                _currentStep = 2;
-                                              });
-                                            }
-                                          },
-                                          child: const Text(
-                                            'Next',
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.w500,
-                                              fontSize: 15,
-                                              color: Colors.black,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ] else if (_currentStep == 2) ...[
-                                // Emergency contact and image upload step
-                                const Text(
-                                  'Upload Profile Image (Optional)',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                Center(
-                                  child: CircleAvatar(
-                                    radius: 48,
-                                    backgroundColor: Colors.white24,
-                                    backgroundImage: _webImageBytes != null
-                                        ? MemoryImage(_webImageBytes!)
-                                        : _selectedImage != null
-                                            ? FileImage(_selectedImage!)
-                                                as ImageProvider
-                                            : null,
-                                    child: (_webImageBytes == null &&
-                                            _selectedImage == null)
-                                        ? IconButton(
-                                            icon: const Icon(
-                                              Icons.camera_alt,
-                                              color: Colors.white,
-                                              size: 32,
-                                            ),
-                                            onPressed: _pickImage,
-                                          )
-                                        : null,
-                                  ),
-                                ),
-                                const SizedBox(height: 24),
-                                TextField(
-                                  controller: _emergencyNameController,
-                                  style: const TextStyle(color: Colors.white),
-                                  decoration: _inputDecoration(
-                                    label: 'Emergency Contact Name',
-                                    icon: Icons.person,
-                                    hintText: 'Full Name',
-                                    errorText: _emergencyNameError,
-                                  ),
-                                ),
-                                const SizedBox(height: 14),
-                                TextField(
-                                  controller: _emergencyPhoneController,
-                                  style: const TextStyle(color: Colors.white),
-                                  decoration: _inputDecoration(
-                                    label: 'Emergency Contact Phone',
-                                    icon: Icons.phone,
-                                    hintText: '09XXXXXXXXX',
-                                    errorText: _emergencyPhoneError,
-                                  ),
-                                  keyboardType: TextInputType.phone,
-                                ),
-                                const SizedBox(height: 32),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: SizedBox(
-                                        width: double.infinity,
-                                        child: ElevatedButton.icon(
-                                          style: ElevatedButton.styleFrom(
-                                            padding: const EdgeInsets.symmetric(
-                                              vertical: 10,
-                                            ),
-                                            backgroundColor: Colors.white,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(14),
-                                            ),
-                                          ),
-                                          onPressed: () {
-                                            setState(() {
-                                              _currentStep = 1;
-                                            });
-                                          },
-                                          icon: const Icon(
-                                            Icons.arrow_back,
-                                            size: 18,
-                                            color: Colors.black,
-                                          ),
-                                          label: const Text(
-                                            'Back',
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.w500,
-                                              fontSize: 15,
-                                              color: Colors.black,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 20),
-                                    Expanded(
-                                      child: SizedBox(
-                                        width: double.infinity,
-                                        child: ElevatedButton(
-                                          style: ElevatedButton.styleFrom(
-                                            padding: const EdgeInsets.symmetric(
-                                              vertical: 10,
-                                            ),
-                                            backgroundColor: Colors.white,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(14),
-                                            ),
-                                          ),
-                                          onPressed: () {
-                                            setState(() {
-                                              _emergencyNameError = null;
-                                              _emergencyPhoneError = null;
-                                            });
-
-                                            bool hasError = false;
-                                            if (_emergencyNameController.text
-                                                .trim()
-                                                .isEmpty) {
-                                              setState(() {
-                                                _emergencyNameError =
-                                                    'Emergency contact name is required.';
-                                              });
-                                              hasError = true;
-                                            }
-                                            if (_emergencyPhoneController.text
-                                                .trim()
-                                                .isEmpty) {
-                                              setState(() {
-                                                _emergencyPhoneError =
-                                                    'Emergency contact phone is required.';
-                                              });
-                                              hasError = true;
-                                            }
-
-                                            if (!hasError) {
-                                              setState(() {
                                                 _currentStep = 3;
                                               });
                                             }
@@ -1281,10 +1470,12 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
                                             : Icons.visibility,
                                         color: Colors.white70,
                                       ),
-                                      onPressed: () => setState(
-                                        () => _obscurePassword =
-                                            !_obscurePassword,
-                                      ),
+                                      onPressed:
+                                          () => setState(
+                                            () =>
+                                                _obscurePassword =
+                                                    !_obscurePassword,
+                                          ),
                                     ),
                                   ).copyWith(errorText: _passwordError),
                                 ),
@@ -1305,10 +1496,12 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
                                             : Icons.visibility,
                                         color: Colors.white70,
                                       ),
-                                      onPressed: () => setState(
-                                        () => _obscureRePassword =
-                                            !_obscureRePassword,
-                                      ),
+                                      onPressed:
+                                          () => setState(
+                                            () =>
+                                                _obscureRePassword =
+                                                    !_obscureRePassword,
+                                          ),
                                     ),
                                   ).copyWith(errorText: _rePasswordError),
                                 ),
@@ -1369,7 +1562,7 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
                                           ),
                                           onPressed: () {
                                             setState(() {
-                                              _currentStep = 2;
+                                              _currentStep = 0;
                                             });
                                           },
                                           icon: const Icon(
@@ -1403,103 +1596,108 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
                                                   BorderRadius.circular(14),
                                             ),
                                           ),
-                                          onPressed: _isLoading
-                                              ? null
-                                              : () async {
-                                                  setState(() {
-                                                    _contactError = null;
-                                                    _emailError = null;
-                                                    _passwordError = null;
-                                                  });
-
-                                                  bool hasError = false;
-                                                  if (_contactController.text
-                                                      .trim()
-                                                      .isEmpty) {
+                                          onPressed:
+                                              _isLoading
+                                                  ? null
+                                                  : () async {
                                                     setState(() {
-                                                      _contactError =
-                                                          'Contact number is required.';
+                                                      _contactError = null;
+                                                      _emailError = null;
+                                                      _passwordError = null;
                                                     });
-                                                    hasError = true;
-                                                  }
-                                                  if (_emailController.text
-                                                      .trim()
-                                                      .isEmpty) {
-                                                    setState(() {
-                                                      _emailError =
-                                                          'Email is required.';
-                                                    });
-                                                    hasError = true;
-                                                  }
-                                                  if (_passwordController
-                                                      .text.isEmpty) {
-                                                    setState(() {
-                                                      _passwordError =
-                                                          'Password is required.';
-                                                    });
-                                                    hasError = true;
-                                                  }
 
-                                                  // Additional email validation
-                                                  if (_emailController.text
-                                                          .trim()
-                                                          .isNotEmpty &&
-                                                      !RegExp(
-                                                        r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                                                      ).hasMatch(
-                                                        _emailController.text
-                                                            .trim(),
-                                                      )) {
-                                                    setState(() {
-                                                      _emailError =
-                                                          'Please enter a valid email address';
-                                                    });
-                                                    hasError = true;
-                                                  }
+                                                    bool hasError = false;
+                                                    if (_contactController.text
+                                                        .trim()
+                                                        .isEmpty) {
+                                                      setState(() {
+                                                        _contactError =
+                                                            'Contact number is required.';
+                                                      });
+                                                      hasError = true;
+                                                    }
+                                                    if (_emailController.text
+                                                        .trim()
+                                                        .isEmpty) {
+                                                      setState(() {
+                                                        _emailError =
+                                                            'Email is required.';
+                                                      });
+                                                      hasError = true;
+                                                    }
+                                                    if (_passwordController
+                                                        .text
+                                                        .isEmpty) {
+                                                      setState(() {
+                                                        _passwordError =
+                                                            'Password is required.';
+                                                      });
+                                                      hasError = true;
+                                                    }
 
-                                                  // Password length validation
-                                                  if (_passwordController
-                                                          .text.isNotEmpty &&
-                                                      _passwordController
-                                                              .text.length <
-                                                          6) {
-                                                    setState(() {
-                                                      _passwordError =
-                                                          'Password must be at least 6 characters long';
-                                                    });
-                                                    hasError = true;
-                                                  }
+                                                    // Additional email validation
+                                                    if (_emailController.text
+                                                            .trim()
+                                                            .isNotEmpty &&
+                                                        !RegExp(
+                                                          r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                                                        ).hasMatch(
+                                                          _emailController.text
+                                                              .trim(),
+                                                        )) {
+                                                      setState(() {
+                                                        _emailError =
+                                                            'Please enter a valid email address';
+                                                      });
+                                                      hasError = true;
+                                                    }
 
-                                                  if (_rePasswordError !=
-                                                      null) {
-                                                    hasError = true;
-                                                  }
+                                                    // Password length validation
+                                                    if (_passwordController
+                                                            .text
+                                                            .isNotEmpty &&
+                                                        _passwordController
+                                                                .text
+                                                                .length <
+                                                            6) {
+                                                      setState(() {
+                                                        _passwordError =
+                                                            'Password must be at least 6 characters long';
+                                                      });
+                                                      hasError = true;
+                                                    }
 
-                                                  if (!hasError) {
-                                                    await _handleSignup();
-                                                  }
-                                                },
-                                          child: _isLoading
-                                              ? const SizedBox(
-                                                  width: 20,
-                                                  height: 20,
-                                                  child:
-                                                      CircularProgressIndicator(
-                                                    strokeWidth: 2,
-                                                    valueColor:
-                                                        AlwaysStoppedAnimation<
-                                                                Color>(
-                                                            Colors.black),
+                                                    if (_rePasswordError !=
+                                                        null) {
+                                                      hasError = true;
+                                                    }
+
+                                                    if (!hasError) {
+                                                      await _handleSignup();
+                                                    }
+                                                  },
+                                          child:
+                                              _isLoading
+                                                  ? const SizedBox(
+                                                    width: 20,
+                                                    height: 20,
+                                                    child: CircularProgressIndicator(
+                                                      strokeWidth: 2,
+                                                      valueColor:
+                                                          AlwaysStoppedAnimation<
+                                                            Color
+                                                          >(Colors.black),
+                                                    ),
+                                                  )
+                                                  : const Text(
+                                                    'Add Customer',
+                                                    style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                      fontSize: 15,
+                                                      color: Colors.black,
+                                                    ),
                                                   ),
-                                                )
-                                              : const Text(
-                                                  'Add Customer',
-                                                  style: TextStyle(
-                                                    fontWeight: FontWeight.w500,
-                                                    fontSize: 15,
-                                                    color: Colors.black,
-                                                  ),
-                                                ),
                                         ),
                                       ),
                                     ),

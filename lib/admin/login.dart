@@ -105,23 +105,14 @@ class _LoginPageState extends State<LoginPage> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color(0xFF141E30),
-              Color(0xFF232526),
-            ], // Dark gym-like gradient
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
+        decoration: const BoxDecoration(color: Colors.white),
         child: Center(
           child: SingleChildScrollView(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 400),
               child: Card(
                 elevation: 16,
-                color: const Color(0xFF1A1F25), // Even darker card
+                color: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(28),
                 ),
@@ -144,11 +135,11 @@ class _LoginPageState extends State<LoginPage> {
                           children: [
                             CircleAvatar(
                               radius: 34,
-                              backgroundColor: Colors.greenAccent.withAlpha(38),
+                              backgroundColor: Colors.grey.withAlpha(38),
                               child: Icon(
                                 Icons.fitness_center,
                                 size: 44,
-                                color: Colors.greenAccent.shade400,
+                                color: Colors.grey.shade700,
                               ),
                             ),
                             const SizedBox(height: 14),
@@ -157,7 +148,7 @@ class _LoginPageState extends State<LoginPage> {
                               style: TextStyle(
                                 fontSize: 28,
                                 fontWeight: FontWeight.w900,
-                                color: Colors.greenAccent.shade400,
+                                color: Colors.grey.shade800,
                                 letterSpacing: 2,
                                 fontFamily: 'Roboto',
                               ),
@@ -167,25 +158,23 @@ class _LoginPageState extends State<LoginPage> {
                         const SizedBox(height: 32),
                         TextFormField(
                           controller: _contactController,
-                          style: const TextStyle(color: Colors.white),
+                          style: const TextStyle(color: Colors.black),
                           decoration: InputDecoration(
                             labelText: 'Contact Number',
-                            labelStyle: TextStyle(
-                              color: Colors.greenAccent.shade100,
-                            ),
+                            labelStyle: TextStyle(color: Colors.grey.shade600),
                             prefixIcon: Icon(
                               Icons.phone,
-                              color: Colors.greenAccent.shade100,
+                              color: Colors.grey.shade600,
                             ),
                             filled: true,
-                            fillColor: const Color(0xFF232526),
+                            fillColor: Colors.grey.shade50,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
                               borderSide: BorderSide(
-                                color: Colors.greenAccent.shade400,
+                                color: Colors.blue.shade400,
                                 width: 2,
                               ),
                             ),
@@ -205,25 +194,23 @@ class _LoginPageState extends State<LoginPage> {
                         TextFormField(
                           controller: _passwordController,
                           obscureText: !_isPasswordVisible,
-                          style: const TextStyle(color: Colors.white),
+                          style: const TextStyle(color: Colors.black),
                           decoration: InputDecoration(
                             labelText: 'Password',
-                            labelStyle: TextStyle(
-                              color: Colors.greenAccent.shade100,
-                            ),
+                            labelStyle: TextStyle(color: Colors.grey.shade600),
                             prefixIcon: Icon(
                               Icons.lock,
-                              color: Colors.greenAccent.shade100,
+                              color: Colors.grey.shade600,
                             ),
                             filled: true,
-                            fillColor: const Color(0xFF232526),
+                            fillColor: Colors.grey.shade50,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
                               borderSide: BorderSide(
-                                color: Colors.greenAccent.shade400,
+                                color: Colors.blue.shade400,
                                 width: 2,
                               ),
                             ),
@@ -232,7 +219,7 @@ class _LoginPageState extends State<LoginPage> {
                                 _isPasswordVisible
                                     ? Icons.visibility
                                     : Icons.visibility_off,
-                                color: Colors.greenAccent.shade100,
+                                color: Colors.grey.shade600,
                               ),
                               onPressed: () {
                                 setState(() {
@@ -296,7 +283,7 @@ class _LoginPageState extends State<LoginPage> {
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(16),
                               ),
-                              backgroundColor: Colors.greenAccent.shade400,
+                              backgroundColor: Colors.blue.shade400,
                               foregroundColor: Colors.black,
                               elevation: 6,
                             ),

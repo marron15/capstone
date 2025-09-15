@@ -21,10 +21,10 @@ class CustomerViewEditModal {
       'Customer ID field type: ${customer['customer_id']?.runtimeType}',
     );
 
-    // Force landscape orientation while the modal is open
+    // Force portrait orientation while the modal is open
     await SystemChrome.setPreferredOrientations([
-      DeviceOrientation.landscapeLeft,
-      DeviceOrientation.landscapeRight,
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
     ]);
 
     // After the async gap above, ensure the context is still mounted
@@ -486,11 +486,10 @@ class CustomerViewEditModal {
           builder: (context, setModalState) {
             return Dialog(
               backgroundColor: Colors.transparent,
-              insetPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 24,
-              ),
-              child: Center(
+              alignment: Alignment.topCenter,
+              insetPadding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+              child: Align(
+                alignment: Alignment.topCenter,
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(22),
                   child: Stack(
@@ -500,11 +499,11 @@ class CustomerViewEditModal {
                         filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
                         child: Container(
                           width: math.min(
-                            MediaQuery.of(context).size.width * 0.97,
-                            1400,
+                            MediaQuery.of(context).size.width * 0.88,
+                            820,
                           ),
                           constraints: BoxConstraints(
-                            maxWidth: 1400,
+                            maxWidth: 820,
                             maxHeight: MediaQuery.of(context).size.height * 0.9,
                           ),
                           decoration: BoxDecoration(
@@ -740,10 +739,7 @@ class CustomerViewEditModal {
                                                       const SizedBox(
                                                         height: 20,
                                                       ),
-                                                      buildFormField(
-                                                        "Middle Name",
-                                                        middleNameController,
-                                                      ),
+                                                      // Middle Name moved to a separate left-right row below
                                                     ],
                                                   ),
                                                 ),
@@ -856,18 +852,46 @@ class CustomerViewEditModal {
                                               ],
                                             ),
                                             const SizedBox(height: 20),
-                                            buildFormField(
-                                              "Last Name",
-                                              lastNameController,
-                                              isRequired: true,
+                                            Row(
+                                              children: [
+                                                Expanded(
+                                                  child: buildFormField(
+                                                    "Middle Name",
+                                                    middleNameController,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 20),
+                                                Expanded(
+                                                  child: buildFormField(
+                                                    "Last Name",
+                                                    lastNameController,
+                                                    isRequired: true,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
                                             const SizedBox(height: 20),
-                                            buildFormField(
-                                              "Date of Birth",
-                                              birthdateController,
-                                              isReadOnly: true,
-                                              onTap:
-                                                  () => pickDate(setModalState),
+                                            Row(
+                                              children: [
+                                                Expanded(
+                                                  child: buildFormField(
+                                                    "Date of Birth",
+                                                    birthdateController,
+                                                    isReadOnly: true,
+                                                    onTap:
+                                                        () => pickDate(
+                                                          setModalState,
+                                                        ),
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 20),
+                                                Expanded(
+                                                  child: buildFormField(
+                                                    "Contact Number",
+                                                    contactController,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
                                             const SizedBox(height: 20),
                                             Row(
@@ -877,13 +901,6 @@ class CustomerViewEditModal {
                                                     "Email",
                                                     emailController,
                                                     isRequired: true,
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 20),
-                                                Expanded(
-                                                  child: buildFormField(
-                                                    "Contact Number",
-                                                    contactController,
                                                   ),
                                                 ),
                                               ],
@@ -1262,22 +1279,7 @@ class CustomerViewEditModal {
                                           ],
                                         ),
                                       );
-                                      final bool isWide =
-                                          MediaQuery.of(context).size.width >
-                                          900;
-
-                                      if (isWide) {
-                                        return Row(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Expanded(child: personalSection),
-                                            const SizedBox(width: 24),
-                                            Expanded(child: addressSection),
-                                          ],
-                                        );
-                                      }
-
+                                      // Force portrait-style (single column) layout
                                       return Column(
                                         children: [
                                           personalSection,

@@ -52,11 +52,12 @@ class _TrainersPageState extends State<TrainersPage> {
   void _filterTrainers(String query) {
     setState(() {
       final lowerQuery = query.toLowerCase();
-      _filteredTrainers = _trainers.where((trainer) {
-        return trainer['firstName']!.toLowerCase().contains(lowerQuery) ||
-            trainer['lastName']!.toLowerCase().contains(lowerQuery) ||
-            trainer['contactNumber']!.toLowerCase().contains(lowerQuery);
-      }).toList();
+      _filteredTrainers =
+          _trainers.where((trainer) {
+            return trainer['firstName']!.toLowerCase().contains(lowerQuery) ||
+                trainer['lastName']!.toLowerCase().contains(lowerQuery) ||
+                trainer['contactNumber']!.toLowerCase().contains(lowerQuery);
+          }).toList();
     });
   }
 
@@ -68,17 +69,11 @@ class _TrainersPageState extends State<TrainersPage> {
       appBar: AppBar(
         title: const Center(child: Text('Gym Trainers')),
         foregroundColor: Colors.white,
-        backgroundColor: const Color(0xFF36454F),
+        backgroundColor: Colors.black,
         elevation: 0,
       ),
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF141E30), Color(0xFF232526)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
+        decoration: const BoxDecoration(color: Colors.white),
         child: LayoutBuilder(
           builder: (context, constraints) {
             if (constraints.maxWidth < 600) {
@@ -91,7 +86,9 @@ class _TrainersPageState extends State<TrainersPage> {
                       ElevatedButton(
                         onPressed: () {
                           TrainerModal.showAddTrainerModal(
-                              context, _addTrainer);
+                            context,
+                            _addTrainer,
+                          );
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white,
@@ -101,14 +98,16 @@ class _TrainersPageState extends State<TrainersPage> {
                             borderRadius: BorderRadius.circular(20),
                           ),
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 8),
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
                         ),
                         child: const Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(Icons.add, size: 16),
                             SizedBox(width: 4),
-                            Text('new trainer', style: TextStyle(fontSize: 14)),
+                            Text('New Trainer', style: TextStyle(fontSize: 14)),
                           ],
                         ),
                       ),
@@ -125,8 +124,11 @@ class _TrainersPageState extends State<TrainersPage> {
                           onChanged: _filterTrainers,
                           decoration: const InputDecoration(
                             hintText: 'Search',
-                            prefixIcon: Icon(Icons.search,
-                                color: Colors.grey, size: 20),
+                            prefixIcon: Icon(
+                              Icons.search,
+                              color: Colors.grey,
+                              size: 20,
+                            ),
                             border: InputBorder.none,
                             contentPadding: EdgeInsets.symmetric(vertical: 8),
                             isDense: true,
@@ -147,7 +149,9 @@ class _TrainersPageState extends State<TrainersPage> {
                       elevation: 2,
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 18),
+                          horizontal: 16,
+                          vertical: 18,
+                        ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -157,14 +161,17 @@ class _TrainersPageState extends State<TrainersPage> {
                                 Text(
                                   '${trainer['firstName'] ?? ''} ${trainer['lastName'] ?? ''}',
                                   style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16),
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
                                 ),
                                 Row(
                                   children: [
                                     IconButton(
-                                      icon: const Icon(Icons.edit,
-                                          color: Colors.blue),
+                                      icon: const Icon(
+                                        Icons.edit,
+                                        color: Colors.blue,
+                                      ),
                                       onPressed: () {
                                         TrainerModal.showEditTrainerModal(
                                           context,
@@ -176,17 +183,21 @@ class _TrainersPageState extends State<TrainersPage> {
                                       },
                                     ),
                                     IconButton(
-                                      icon: const Icon(Icons.delete,
-                                          color: Colors.red),
+                                      icon: const Icon(
+                                        Icons.delete,
+                                        color: Colors.red,
+                                      ),
                                       onPressed: () {
                                         showDialog(
                                           context: context,
                                           builder: (BuildContext context) {
                                             return AlertDialog(
-                                              title:
-                                                  const Text('Delete Trainer'),
+                                              title: const Text(
+                                                'Delete Trainer',
+                                              ),
                                               content: const Text(
-                                                  'Are you sure you want to delete this trainer?'),
+                                                'Are you sure you want to delete this trainer?',
+                                              ),
                                               actions: [
                                                 TextButton(
                                                   onPressed: () {
@@ -199,9 +210,12 @@ class _TrainersPageState extends State<TrainersPage> {
                                                     _removeTrainer(index);
                                                     Navigator.of(context).pop();
                                                   },
-                                                  child: const Text('Delete',
-                                                      style: TextStyle(
-                                                          color: Colors.red)),
+                                                  child: const Text(
+                                                    'Delete',
+                                                    style: TextStyle(
+                                                      color: Colors.red,
+                                                    ),
+                                                  ),
                                                 ),
                                               ],
                                             );
@@ -217,7 +231,9 @@ class _TrainersPageState extends State<TrainersPage> {
                             Text(
                               trainer['contactNumber'] ?? '',
                               style: const TextStyle(
-                                  fontSize: 14, color: Colors.black87),
+                                fontSize: 14,
+                                color: Colors.black87,
+                              ),
                             ),
                           ],
                         ),
@@ -227,202 +243,357 @@ class _TrainersPageState extends State<TrainersPage> {
                 ],
               );
             } else {
-              // Desktop/tablet layout: table
+              // Desktop/tablet layout: styled like customers table
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 12),
-                    child: Row(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
                       children: [
-                        ElevatedButton(
-                          onPressed: () {
-                            TrainerModal.showAddTrainerModal(
-                                context, _addTrainer);
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: Colors.blue,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
+                        Row(
+                          children: [
+                            Text(
+                              'Trainers',
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.black,
+                              ),
                             ),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 8),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.add, size: 16),
-                              SizedBox(width: 4),
-                              Text('new trainer',
-                                  style: TextStyle(fontSize: 14)),
-                            ],
-                          ),
+                          ],
                         ),
-                        const Spacer(),
-                        Container(
-                          width: 220,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(18),
-                          ),
-                          child: TextField(
-                            controller: searchController,
-                            onChanged: _filterTrainers,
-                            decoration: const InputDecoration(
-                              hintText: 'Search',
-                              prefixIcon: Icon(Icons.search,
-                                  color: Colors.grey, size: 20),
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.symmetric(vertical: 8),
-                              isDense: true,
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            // Search styled like customers
+                            SizedBox(
+                              width: 560,
+                              height: 42,
+                              child: TextField(
+                                controller: searchController,
+                                onChanged: _filterTrainers,
+                                style: const TextStyle(color: Colors.black87),
+                                decoration: InputDecoration(
+                                  hintText: 'Search',
+                                  prefixIcon: const Icon(
+                                    Icons.search,
+                                    size: 20,
+                                    color: Colors.black54,
+                                  ),
+                                  filled: true,
+                                  fillColor: Colors.white,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(
+                                      color: Colors.black26,
+                                    ),
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 0,
+                                  ),
+                                  isDense: true,
+                                ),
+                              ),
                             ),
-                          ),
+                            const Spacer(),
+                            // New Trainer pill button
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                TrainerModal.showAddTrainerModal(
+                                  context,
+                                  _addTrainer,
+                                );
+                              },
+                              icon: const Icon(Icons.add, size: 18),
+                              label: const Text('New Trainer'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: Colors.black87,
+                                elevation: 1,
+                                side: const BorderSide(color: Colors.black26),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(22),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 10,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
                   ),
                   Expanded(
                     child: SingleChildScrollView(
-                      padding: const EdgeInsets.all(16),
-                      child: Card(
-                        elevation: 3,
-                        shape: RoundedRectangleBorder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
                           borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(20),
-                          child: Column(
-                            children: [
-                              // Header Row
-                              Container(
-                                color: Colors.blue[50],
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 12),
-                                child: const Row(
-                                  children: [
-                                    Expanded(
-                                        flex: 3,
-                                        child: Text('First Name',
-                                            style: TextStyle(
-                                                fontWeight: FontWeight.bold))),
-                                    Expanded(
-                                        flex: 3,
-                                        child: Text('Last Name',
-                                            style: TextStyle(
-                                                fontWeight: FontWeight.bold))),
-                                    Expanded(
-                                        flex: 4,
-                                        child: Text('Contact Number',
-                                            style: TextStyle(
-                                                fontWeight: FontWeight.bold))),
-                                    SizedBox(
-                                        width: 80,
-                                        child: Text('Actions',
-                                            style: TextStyle(
-                                                fontWeight: FontWeight.bold))),
-                                  ],
+                        child: Column(
+                          children: [
+                            // Header Row styled like admin_profile/customers
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 18,
+                                horizontal: 16,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade100,
+                                borderRadius: const BorderRadius.only(
+                                  topLeft: Radius.circular(12),
+                                  topRight: Radius.circular(12),
+                                ),
+                                border: Border(
+                                  bottom: BorderSide(
+                                    color: Colors.grey.shade300,
+                                    width: 2,
+                                  ),
                                 ),
                               ),
-                              const Divider(height: 1, color: Colors.black26),
-                              // Data Rows
-                              ..._filteredTrainers.asMap().entries.map((entry) {
-                                int index = entry.key;
-                                var trainer = entry.value;
-                                return Column(
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                            flex: 3,
-                                            child: Text(
-                                                trainer['firstName'] ?? '')),
-                                        Expanded(
-                                            flex: 3,
-                                            child: Text(
-                                                trainer['lastName'] ?? '')),
-                                        Expanded(
-                                            flex: 4,
-                                            child: Text(
-                                                trainer['contactNumber'] ??
-                                                    '')),
-                                        SizedBox(
-                                          width: 80,
-                                          child: Row(
-                                            children: [
-                                              IconButton(
-                                                icon: const Icon(Icons.edit,
-                                                    color: Colors.blue),
+                              child: const Row(
+                                children: [
+                                  Expanded(
+                                    flex: 3,
+                                    child: Text(
+                                      'First Name',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w700,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    flex: 3,
+                                    child: Text(
+                                      'Last Name',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w700,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    flex: 4,
+                                    child: Text(
+                                      'Contact Number',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w700,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    width: 160,
+                                    child: Text(
+                                      'Actions',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w700,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            // Data Rows
+                            ..._filteredTrainers.asMap().entries.map((entry) {
+                              int index = entry.key;
+                              var trainer = entry.value;
+                              return Column(
+                                children: [
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        flex: 3,
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 14,
+                                            horizontal: 8,
+                                          ),
+                                          child: Text(
+                                            trainer['firstName'] ?? '',
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ),
+                                      ),
+                                      Expanded(
+                                        flex: 3,
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 14,
+                                            horizontal: 8,
+                                          ),
+                                          child: Text(
+                                            trainer['lastName'] ?? '',
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ),
+                                      ),
+                                      Expanded(
+                                        flex: 4,
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 14,
+                                            horizontal: 8,
+                                          ),
+                                          child: Text(
+                                            trainer['contactNumber'] ?? '',
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        width: 160,
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            // Edit icon
+                                            Container(
+                                              decoration: BoxDecoration(
+                                                color: Colors.blue.shade50,
+                                                borderRadius:
+                                                    BorderRadius.circular(6),
+                                                border: Border.all(
+                                                  color: Colors.blue.shade200,
+                                                ),
+                                              ),
+                                              child: IconButton(
                                                 onPressed: () {
-                                                  TrainerModal
-                                                      .showEditTrainerModal(
+                                                  TrainerModal.showEditTrainerModal(
                                                     context,
                                                     trainer,
                                                     (updatedTrainer) {
-                                                      _editTrainer(index,
-                                                          updatedTrainer);
+                                                      _editTrainer(
+                                                        index,
+                                                        updatedTrainer,
+                                                      );
                                                     },
                                                   );
                                                 },
+                                                icon: Icon(
+                                                  Icons.edit_outlined,
+                                                  size: 14,
+                                                  color: Colors.blue.shade700,
+                                                ),
+                                                padding: const EdgeInsets.all(
+                                                  4,
+                                                ),
+                                                constraints:
+                                                    const BoxConstraints(
+                                                      minWidth: 28,
+                                                      minHeight: 28,
+                                                    ),
+                                                tooltip: 'Edit',
                                               ),
-                                              IconButton(
-                                                icon: const Icon(Icons.delete,
-                                                    color: Colors.red),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            // Delete icon
+                                            Container(
+                                              decoration: BoxDecoration(
+                                                color: Colors.orange.shade50,
+                                                borderRadius:
+                                                    BorderRadius.circular(6),
+                                                border: Border.all(
+                                                  color: Colors.orange.shade200,
+                                                ),
+                                              ),
+                                              child: IconButton(
                                                 onPressed: () {
                                                   showDialog(
                                                     context: context,
-                                                    builder:
-                                                        (BuildContext context) {
+                                                    builder: (context) {
                                                       return AlertDialog(
                                                         title: const Text(
-                                                            'Delete Trainer'),
+                                                          'Delete Trainer',
+                                                        ),
                                                         content: const Text(
-                                                            'Are you sure you want to delete this trainer?'),
+                                                          'Are you sure you want to delete this trainer?',
+                                                        ),
                                                         actions: [
                                                           TextButton(
-                                                            onPressed: () {
-                                                              Navigator.of(
-                                                                      context)
-                                                                  .pop();
-                                                            },
+                                                            onPressed:
+                                                                () =>
+                                                                    Navigator.of(
+                                                                      context,
+                                                                    ).pop(),
                                                             child: const Text(
-                                                                'Cancel'),
+                                                              'Cancel',
+                                                            ),
                                                           ),
                                                           TextButton(
                                                             onPressed: () {
                                                               _removeTrainer(
-                                                                  index);
+                                                                index,
+                                                              );
                                                               Navigator.of(
-                                                                      context)
-                                                                  .pop();
+                                                                context,
+                                                              ).pop();
                                                             },
                                                             child: const Text(
-                                                                'Delete',
-                                                                style: TextStyle(
-                                                                    color: Colors
-                                                                        .red)),
+                                                              'Delete',
+                                                              style: TextStyle(
+                                                                color:
+                                                                    Colors.red,
+                                                              ),
+                                                            ),
                                                           ),
                                                         ],
                                                       );
                                                     },
                                                   );
                                                 },
+                                                icon: const Icon(
+                                                  Icons.delete_outline,
+                                                  size: 14,
+                                                  color: Colors.orange,
+                                                ),
+                                                padding: const EdgeInsets.all(
+                                                  4,
+                                                ),
+                                                constraints:
+                                                    const BoxConstraints(
+                                                      minWidth: 28,
+                                                      minHeight: 28,
+                                                    ),
+                                                tooltip: 'Delete',
                                               ),
-                                            ],
-                                          ),
+                                            ),
+                                          ],
                                         ),
-                                      ],
-                                    ),
-                                    const Divider(
-                                        height: 1, color: Colors.black12),
-                                  ],
-                                );
-                              }),
-                            ],
-                          ),
+                                      ),
+                                    ],
+                                  ),
+                                  Divider(
+                                    height: 1,
+                                    color: Colors.grey.shade200,
+                                  ),
+                                ],
+                              );
+                            }),
+                          ],
                         ),
                       ),
                     ),

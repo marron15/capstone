@@ -1,24 +1,36 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
-import 'package:flutter/services.dart';
 import '../services/admin_service.dart';
-import 'admin_edit.dart';
 
-class AdminModal {
-  // Show the modal dialog for adding a new admin
-  static void showAddAdminModal(
+class AdminEditModal {
+  // Show the modal dialog for editing an admin
+  static void showEditAdminModal(
     BuildContext context,
-    Function(Map<String, dynamic>) onAdd,
+    Map<String, dynamic> admin,
+    Function(Map<String, dynamic>) onEdit,
   ) {
-    // Controllers for new admin form
-    final TextEditingController firstNameController = TextEditingController();
-    final TextEditingController middleNameController = TextEditingController();
-    final TextEditingController lastNameController = TextEditingController();
-    final TextEditingController emailController = TextEditingController();
-    final TextEditingController contactNumberController =
-        TextEditingController();
-    final TextEditingController passwordController = TextEditingController();
-    final TextEditingController dateOfBirthController = TextEditingController();
+    // Controllers for edit admin form
+    final TextEditingController firstNameController = TextEditingController(
+      text: admin['first_name'] ?? admin['firstName'],
+    );
+    final TextEditingController middleNameController = TextEditingController(
+      text: admin['middle_name'] ?? admin['middleName'] ?? '',
+    );
+    final TextEditingController lastNameController = TextEditingController(
+      text: admin['last_name'] ?? admin['lastName'],
+    );
+    final TextEditingController emailController = TextEditingController(
+      text: admin['email_address'] ?? admin['email'],
+    );
+    final TextEditingController contactNumberController = TextEditingController(
+      text: admin['phone_number'] ?? admin['contactNumber'],
+    );
+    final TextEditingController passwordController = TextEditingController(
+      text: '********',
+    );
+    final TextEditingController dateOfBirthController = TextEditingController(
+      text: admin['date_of_birth'] ?? admin['dateOfBirth'] ?? '',
+    );
 
     DateTime? selectedDate;
     bool isLoading = false;
@@ -27,13 +39,10 @@ class AdminModal {
     Future<void> pickDate(StateSetter setModalState) async {
       final DateTime? picked = await showDatePicker(
         context: context,
-        initialDate: DateTime.now().subtract(
-          const Duration(days: 6570),
-        ), // 18 years ago
+        initialDate:
+            selectedDate ?? DateTime.now().subtract(const Duration(days: 6570)),
         firstDate: DateTime(1950),
-        lastDate: DateTime.now().subtract(
-          const Duration(days: 6570),
-        ), // Must be at least 18
+        lastDate: DateTime.now().subtract(const Duration(days: 6570)),
         builder: (context, child) {
           return Theme(
             data: Theme.of(context).copyWith(
@@ -58,57 +67,49 @@ class AdminModal {
     }
 
     // Validate the form fields
-    String? validationError;
+    String? editValidationError;
     bool validateForm() {
-      // Basic validation - check for empty fields
       if (firstNameController.text.trim().isEmpty ||
           lastNameController.text.trim().isEmpty ||
           emailController.text.trim().isEmpty ||
           contactNumberController.text.trim().isEmpty ||
-          passwordController.text.isEmpty ||
           dateOfBirthController.text.isEmpty) {
-        validationError = 'Please fill all required fields correctly';
+        editValidationError = 'Please fill all required fields correctly';
         return false;
       }
 
       // Email validation
       final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
       if (!emailRegex.hasMatch(emailController.text.trim())) {
-        validationError = 'Please enter a valid email address';
-        return false;
-      }
-
-      // Password validation
-      if (passwordController.text.length < 6) {
-        validationError = 'Password must be at least 6 characters';
+        editValidationError = 'Please enter a valid email address';
         return false;
       }
 
       // Phone number must be exactly 11 digits (numbers only)
-      final String phone = contactNumberController.text.trim();
-      if (!RegExp(r'^\d+$').hasMatch(phone)) {
-        validationError = 'Contact number must contain digits only';
+      final String editPhone = contactNumberController.text.trim();
+      if (!RegExp(r'^\d+$').hasMatch(editPhone)) {
+        editValidationError = 'Contact number must contain digits only';
         return false;
       }
-      if (phone.length > 11) {
-        validationError =
-            'Contact number exceeded (${phone.length}) digits. Use 11 digits only.';
+      if (editPhone.length > 11) {
+        editValidationError =
+            'Contact number exceeded (${editPhone.length}) digits. Use 11 digits only.';
         return false;
       }
-      if (phone.length < 11) {
-        validationError = 'Contact number must be exactly 11 digits';
+      if (editPhone.length < 11) {
+        editValidationError = 'Contact number must be exactly 11 digits';
         return false;
       }
 
       return true;
     }
 
-    // Handle admin creation
-    Future<void> handleAdminCreation(StateSetter setModalState) async {
+    // Handle admin update
+    Future<void> handleAdminUpdate(StateSetter setModalState) async {
       if (!validateForm()) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(validationError ?? 'Invalid input'),
+            content: Text(editValidationError ?? 'Invalid input'),
             backgroundColor: Colors.red,
           ),
         );
@@ -120,7 +121,7 @@ class AdminModal {
       });
 
       try {
-        // Format date for API (DD/MM/YYYY to YYYY-MM-DD)
+        // Convert date format if provided
         String? formattedDate;
         if (dateOfBirthController.text.isNotEmpty) {
           List<String> dateParts = dateOfBirthController.text.split('/');
@@ -130,39 +131,61 @@ class AdminModal {
           }
         }
 
-        final result = await AdminService.signupAdmin(
-          firstName: firstNameController.text.trim(),
-          middleName: middleNameController.text.trim(),
-          lastName: lastNameController.text.trim(),
-          email: emailController.text.trim(),
-          password: passwordController.text,
-          dateOfBirth: formattedDate,
-          phoneNumber: contactNumberController.text.trim(),
-        );
+        // Prepare update data with proper field mapping
+        Map<String, dynamic> updateData = {
+          'firstName': firstNameController.text.trim(),
+          'middleName': middleNameController.text.trim(),
+          'lastName': lastNameController.text.trim(),
+          'dateOfBirth': formattedDate,
+          'emailAddress': emailController.text.trim(),
+          'phoneNumber': contactNumberController.text.trim(),
+          'updatedBy': 'system',
+          'updatedAt': DateTime.now().toIso8601String(),
+        };
+
+        // Handle password update if changed
+        if (passwordController.text != '********' &&
+            passwordController.text.isNotEmpty) {
+          updateData['password'] = passwordController.text;
+        }
+
+        final adminId = admin['id'];
+        final success = await AdminService.updateAdmin(adminId, updateData);
 
         // Use setModalState to safely update UI after async operation
         setModalState(() {
-          if (result['success'] == true) {
+          if (success) {
             // Show success message
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(
-                  'Admin ${firstNameController.text} created successfully!',
+                  'Admin ${firstNameController.text} updated successfully!',
                 ),
                 backgroundColor: Colors.green,
               ),
             );
 
-            // Call the callback with the new admin data
-            onAdd(result['admin']);
+            // Prepare updated admin data for callback
+            Map<String, dynamic> updatedAdmin = Map.from(admin);
+
+            // Map the updated fields back to the expected format
+            updatedAdmin['first_name'] = updateData['firstName'];
+            updatedAdmin['middle_name'] = updateData['middleName'];
+            updatedAdmin['last_name'] = updateData['lastName'];
+            updatedAdmin['date_of_birth'] = updateData['dateOfBirth'];
+            updatedAdmin['email_address'] = updateData['emailAddress'];
+            updatedAdmin['phone_number'] = updateData['phoneNumber'];
+
+            // Call the callback with the updated admin data
+            onEdit(updatedAdmin);
 
             // Close the modal
             Navigator.of(context).pop();
           } else {
             // Show error message
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(result['message'] ?? 'Failed to create admin'),
+              const SnackBar(
+                content: Text('Failed to update admin'),
                 backgroundColor: Colors.red,
               ),
             );
@@ -181,7 +204,6 @@ class AdminModal {
       }
     }
 
-    // Build a form field with label
     Widget buildFormField(
       String label,
       TextEditingController controller, {
@@ -207,17 +229,6 @@ class AdminModal {
             readOnly: isReadOnly,
             onTap: onTap,
             style: const TextStyle(color: Colors.white),
-            keyboardType:
-                identical(controller, contactNumberController)
-                    ? TextInputType.number
-                    : null,
-            inputFormatters:
-                identical(controller, contactNumberController)
-                    ? [
-                      FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(11),
-                    ]
-                    : null,
             decoration: InputDecoration(
               filled: true,
               fillColor: Colors.black.withAlpha((0.3 * 255).toInt()),
@@ -335,7 +346,7 @@ class AdminModal {
                                                 ),
                                               ),
                                               child: const Icon(
-                                                Icons.admin_panel_settings,
+                                                Icons.edit,
                                                 color: Colors.lightBlueAccent,
                                                 size: 24,
                                               ),
@@ -343,7 +354,7 @@ class AdminModal {
                                             const SizedBox(width: 12),
                                             const Flexible(
                                               child: Text(
-                                                'Add New Admin',
+                                                'Edit Admin',
                                                 style: TextStyle(
                                                   fontWeight: FontWeight.bold,
                                                   fontSize: 20,
@@ -477,7 +488,7 @@ class AdminModal {
                                               isLoading
                                                   ? null
                                                   : () {
-                                                    handleAdminCreation(
+                                                    handleAdminUpdate(
                                                       setModalState,
                                                     );
                                                   },
@@ -505,7 +516,7 @@ class AdminModal {
                                                           >(Colors.black),
                                                     ),
                                                   )
-                                                  : const Text("Submit"),
+                                                  : const Text("Save"),
                                         ),
                                       ),
                                     ],
@@ -525,14 +536,5 @@ class AdminModal {
         );
       },
     );
-  }
-
-  // Show the modal dialog for editing an admin
-  static void showEditAdminModal(
-    BuildContext context,
-    Map<String, dynamic> admin,
-    Function(Map<String, dynamic>) onEdit,
-  ) {
-    AdminEditModal.showEditAdminModal(context, admin, onEdit);
   }
 }

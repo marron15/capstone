@@ -432,17 +432,11 @@ class _CustomersPageState extends State<CustomersPage> {
       appBar: AppBar(
         title: const Center(child: Text('Customer Management')),
         foregroundColor: Colors.white,
-        backgroundColor: const Color(0xFF36454F),
+        backgroundColor: Colors.black,
         actions: const [],
       ),
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF141E30), Color(0xFF232526)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
+        decoration: const BoxDecoration(color: Colors.white),
         child: _buildBody(),
       ),
     );
@@ -870,88 +864,31 @@ class _CustomersPageState extends State<CustomersPage> {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Add Customer button for desktop
+              // Top controls styled like the reference design
               Padding(
                 padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                child: Column(
                   children: [
-                    const Text(
-                      'Customers List',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
                     Row(
                       children: [
-                        ElevatedButton.icon(
-                          onPressed: _showArchivedCustomers,
-                          icon: Icon(
-                            _showArchived ? Icons.people : Icons.archive,
-                            size: 18,
-                          ),
-                          label: Text(
-                            _showArchived
-                                ? 'Active Customers'
-                                : 'Archived Customers',
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                                _showArchived ? Colors.green : Colors.grey[600],
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 12,
-                            ),
+                        // Title
+                        Text(
+                          _showArchived ? 'Archived Customers' : 'Customers',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.black,
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        ElevatedButton.icon(
-                          onPressed:
-                              () => exportCustomersToExcel(
-                                context,
-                                _getVisibleCustomers(),
-                              ),
-                          icon: const Icon(Icons.download, size: 18),
-                          label: const Text('Export'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.teal,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 12,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        ElevatedButton.icon(
-                          onPressed: _showAddCustomerModal,
-                          icon: const Icon(Icons.person_add, size: 18),
-                          label: const Text('Add New Customer'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 12,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        // Search box (fixed width)
                         SizedBox(
-                          width: 220,
-                          height: 40,
+                          width: 560,
+                          height: 42,
                           child: TextField(
                             controller: _searchController,
                             onChanged:
@@ -963,14 +900,16 @@ class _CustomersPageState extends State<CustomersPage> {
                               hintText: 'Search',
                               prefixIcon: const Icon(
                                 Icons.search,
-                                size: 18,
-                                color: Colors.grey,
+                                size: 20,
+                                color: Colors.black54,
                               ),
                               filled: true,
                               fillColor: Colors.white,
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide.none,
+                                borderSide: const BorderSide(
+                                  color: Colors.black26,
+                                ),
                               ),
                               contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 12,
@@ -981,15 +920,42 @@ class _CustomersPageState extends State<CustomersPage> {
                           ),
                         ),
                         const SizedBox(width: 12),
-                        // Membership filter dropdown
+                        // Export button (Excel icon + text)
+                        OutlinedButton.icon(
+                          onPressed:
+                              () => exportCustomersToExcel(
+                                context,
+                                _getVisibleCustomers(),
+                              ),
+                          icon: const Icon(
+                            Icons.table_chart_rounded,
+                            color: Colors.teal,
+                            size: 20,
+                          ),
+                          label: const Text('Export'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.black87,
+                            side: const BorderSide(color: Colors.black26),
+                            backgroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 10,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        // Styled dropdown (membership filter for now)
                         DropdownButtonHideUnderline(
                           child: Container(
-                            height: 40,
+                            height: 42,
                             padding: const EdgeInsets.symmetric(horizontal: 12),
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.black12),
+                              border: Border.all(color: Colors.black26),
                             ),
                             child: DropdownButton<String>(
                               value: _membershipFilter,
@@ -1018,7 +984,50 @@ class _CustomersPageState extends State<CustomersPage> {
                                 });
                               },
                               style: const TextStyle(color: Colors.black87),
-                              icon: const Icon(Icons.filter_list, size: 18),
+                              icon: const Icon(Icons.arrow_drop_down),
+                            ),
+                          ),
+                        ),
+                        const Spacer(),
+                        // View archives pill button
+                        OutlinedButton.icon(
+                          onPressed: _showArchivedCustomers,
+                          icon: Icon(
+                            _showArchived ? Icons.people : Icons.archive,
+                            size: 18,
+                          ),
+                          label: Text(
+                            _showArchived ? 'View Active' : 'View Archives',
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.black87,
+                            side: const BorderSide(color: Colors.black26),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(22),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 10,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        // New customer pill button
+                        ElevatedButton.icon(
+                          onPressed: _showAddCustomerModal,
+                          icon: const Icon(Icons.add, size: 18),
+                          label: const Text('New Customer'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: Colors.black87,
+                            elevation: 1,
+                            side: const BorderSide(color: Colors.black26),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(22),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 10,
                             ),
                           ),
                         ),
@@ -1031,172 +1040,228 @@ class _CustomersPageState extends State<CustomersPage> {
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   physics: const AlwaysScrollableScrollPhysics(),
-                  child: Card(
-                    elevation: 3,
-                    shape: RoundedRectangleBorder(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.1),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 28,
-                      ),
-                      child: Column(
-                        children: [
-                          // Header Row
-                          Container(
-                            color: Colors.blue[50],
-                            padding: const EdgeInsets.symmetric(vertical: 18),
-                            child: const Row(
-                              children: [
-                                Expanded(
-                                  flex: 3,
-                                  child: Text(
-                                    'Name',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  flex: 3,
-                                  child: Text(
-                                    'Contact Number',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  flex: 3,
-                                  child: Text(
-                                    'Membership Type',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  flex: 3,
-                                  child: Text(
-                                    'Membership Start Date',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  flex: 3,
-                                  child: Text(
-                                    'Membership Expiration Date',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(
-                                  width: 160,
-                                  child: Text(
-                                    'Actions',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
+                    child: Column(
+                      children: [
+                        // Header Row (match admin_profile.dart styling)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 18,
+                            horizontal: 16,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(12),
+                              topRight: Radius.circular(12),
+                            ),
+                            border: Border(
+                              bottom: BorderSide(
+                                color: Colors.grey.shade300,
+                                width: 2,
+                              ),
                             ),
                           ),
-                          const Divider(height: 24, color: Colors.black26),
-                          // Data Rows
-                          ..._getVisibleCustomers().map((customer) {
-                            final expirationDate =
-                                customer['expirationDate'] as DateTime;
-                            final startDate = customer['startDate'] as DateTime;
-                            final formattedExpiry = _formatExpirationDate(
-                              expirationDate,
-                            );
-                            final formattedStart = _formatExpirationDate(
-                              startDate,
-                            );
-                            final membershipType =
-                                customer['membershipType'] as String;
-                            return Column(
-                              children: [
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      flex: 3,
-                                      child: Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 14,
-                                        ),
-                                        child: Text(customer['name'] ?? ''),
+                          child: const Row(
+                            children: [
+                              Expanded(
+                                flex: 3,
+                                child: Text(
+                                  'Name',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                flex: 3,
+                                child: Text(
+                                  'Contact Number',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                flex: 3,
+                                child: Text(
+                                  'Membership Type',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                flex: 3,
+                                child: Text(
+                                  'Membership Start Date',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                flex: 3,
+                                child: Text(
+                                  'Membership Expiration Date',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ),
+                              SizedBox(
+                                width: 160,
+                                child: Text(
+                                  'Actions',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        // Data Rows
+                        ..._getVisibleCustomers().map((customer) {
+                          final expirationDate =
+                              customer['expirationDate'] as DateTime;
+                          final startDate = customer['startDate'] as DateTime;
+                          final formattedExpiry = _formatExpirationDate(
+                            expirationDate,
+                          );
+                          final formattedStart = _formatExpirationDate(
+                            startDate,
+                          );
+                          final membershipType =
+                              customer['membershipType'] as String;
+                          return Column(
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    flex: 3,
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 14,
+                                        horizontal: 8,
+                                      ),
+                                      child: Text(
+                                        customer['name'] ?? '',
+                                        textAlign: TextAlign.center,
                                       ),
                                     ),
-                                    Expanded(
-                                      flex: 3,
-                                      child: Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 14,
-                                        ),
-                                        child: Text(
-                                          customer['contactNumber'] ?? '',
+                                  ),
+                                  Expanded(
+                                    flex: 3,
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 14,
+                                        horizontal: 8,
+                                      ),
+                                      child: Text(
+                                        customer['contactNumber'] ?? '',
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    flex: 3,
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 14,
+                                        horizontal: 8,
+                                      ),
+                                      child: Text(
+                                        membershipType,
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color: _getMembershipTypeColor(
+                                            membershipType,
+                                          ),
                                         ),
                                       ),
                                     ),
-                                    Expanded(
-                                      flex: 3,
-                                      child: Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 14,
+                                  ),
+                                  Expanded(
+                                    flex: 3,
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 14,
+                                        horizontal: 8,
+                                      ),
+                                      child: Text(
+                                        formattedStart,
+                                        textAlign: TextAlign.center,
+                                        style: const TextStyle(
+                                          color: Colors.black87,
                                         ),
-                                        child: Text(
-                                          membershipType,
-                                          style: TextStyle(
-                                            color: _getMembershipTypeColor(
-                                              membershipType,
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    flex: 3,
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 14,
+                                        horizontal: 8,
+                                      ),
+                                      child: Text(
+                                        formattedExpiry,
+                                        textAlign: TextAlign.center,
+                                        style: const TextStyle(
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    width: 160,
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        // View/Edit icon button styled like admin table
+                                        Container(
+                                          decoration: BoxDecoration(
+                                            color: Colors.blue.shade50,
+                                            borderRadius: BorderRadius.circular(
+                                              6,
+                                            ),
+                                            border: Border.all(
+                                              color: Colors.blue.shade200,
                                             ),
                                           ),
-                                        ),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      flex: 3,
-                                      child: Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 14,
-                                        ),
-                                        child: Text(
-                                          formattedStart,
-                                          style: const TextStyle(
-                                            color: Colors.black87,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      flex: 3,
-                                      child: Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 14,
-                                        ),
-                                        child: Text(
-                                          formattedExpiry,
-                                          style: const TextStyle(
-                                            color: Colors.black87,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    SizedBox(
-                                      width: 160,
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.end,
-                                        children: [
-                                          TextButton(
+                                          child: IconButton(
                                             onPressed: () async {
-                                              // Show customer view/edit modal
                                               debugPrint(
                                                 'Desktop: Opening customer modal for: ${customer['name']}',
                                               );
@@ -1209,91 +1274,93 @@ class _CustomersPageState extends State<CustomersPage> {
                                                 'Desktop: Modal result: $result',
                                               );
                                               if (result == true && mounted) {
-                                                setState(
-                                                  () {},
-                                                ); // UI-only immediate update
-                                              } else {
-                                                debugPrint(
-                                                  'Desktop: No changes made or modal was cancelled',
-                                                );
+                                                setState(() {});
                                               }
                                             },
-                                            style: TextButton.styleFrom(
-                                              backgroundColor:
-                                                  Colors.blue.shade50,
-                                              foregroundColor: Colors.blue,
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(16),
-                                              ),
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    horizontal: 12,
-                                                    vertical: 8,
-                                                  ),
+                                            icon: Icon(
+                                              Icons.edit_outlined,
+                                              size: 14,
+                                              color: Colors.blue.shade700,
                                             ),
-                                            child: const Text('View'),
+                                            padding: const EdgeInsets.all(4),
+                                            constraints: const BoxConstraints(
+                                              minWidth: 28,
+                                              minHeight: 28,
+                                            ),
+                                            tooltip: 'View / Edit',
                                           ),
-                                          const SizedBox(width: 8),
-                                          if (!_showArchived) ...[
-                                            TextButton(
+                                        ),
+                                        const SizedBox(width: 8),
+                                        if (!_showArchived) ...[
+                                          // Archive icon button
+                                          Container(
+                                            decoration: BoxDecoration(
+                                              color: Colors.orange.shade50,
+                                              borderRadius:
+                                                  BorderRadius.circular(6),
+                                              border: Border.all(
+                                                color: Colors.orange.shade200,
+                                              ),
+                                            ),
+                                            child: IconButton(
                                               onPressed:
                                                   () => _confirmAndArchive(
                                                     customer,
                                                   ),
-                                              style: TextButton.styleFrom(
-                                                backgroundColor:
-                                                    Colors.orange.shade50,
-                                                foregroundColor: Colors.orange,
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(16),
-                                                ),
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                      horizontal: 12,
-                                                      vertical: 8,
-                                                    ),
+                                              icon: Icon(
+                                                Icons.archive_outlined,
+                                                size: 14,
+                                                color: Colors.orange.shade700,
                                               ),
-                                              child: const Text('Archive'),
+                                              padding: const EdgeInsets.all(4),
+                                              constraints: const BoxConstraints(
+                                                minWidth: 28,
+                                                minHeight: 28,
+                                              ),
+                                              tooltip: 'Archive',
                                             ),
-                                          ] else ...[
-                                            TextButton(
+                                          ),
+                                        ] else ...[
+                                          // Restore icon button
+                                          Container(
+                                            decoration: BoxDecoration(
+                                              color: Colors.green.shade50,
+                                              borderRadius:
+                                                  BorderRadius.circular(6),
+                                              border: Border.all(
+                                                color: Colors.green.shade200,
+                                              ),
+                                            ),
+                                            child: IconButton(
                                               onPressed:
                                                   () => _restoreCustomer(
                                                     customer,
                                                   ),
-                                              style: TextButton.styleFrom(
-                                                backgroundColor:
-                                                    Colors.green.shade50,
-                                                foregroundColor: Colors.green,
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(16),
-                                                ),
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                      horizontal: 12,
-                                                      vertical: 8,
-                                                    ),
+                                              icon: Icon(
+                                                Icons
+                                                    .settings_backup_restore_rounded,
+                                                size: 14,
+                                                color: Colors.green.shade700,
                                               ),
-                                              child: const Text('Restore'),
+                                              padding: const EdgeInsets.all(4),
+                                              constraints: const BoxConstraints(
+                                                minWidth: 28,
+                                                minHeight: 28,
+                                              ),
+                                              tooltip: 'Restore',
                                             ),
-                                          ],
+                                          ),
                                         ],
-                                      ),
+                                      ],
                                     ),
-                                  ],
-                                ),
-                                const Divider(
-                                  height: 18,
-                                  color: Colors.black12,
-                                ),
-                              ],
-                            );
-                          }),
-                        ],
-                      ),
+                                  ),
+                                ],
+                              ),
+                              Divider(height: 1, color: Colors.grey.shade200),
+                            ],
+                          );
+                        }),
+                      ],
                     ),
                   ),
                 ),

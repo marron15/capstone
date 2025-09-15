@@ -347,71 +347,7 @@ class _LoginChoicePageState extends State<LoginChoicePage>
                           ),
                         ),
 
-                        const SizedBox(height: 16),
-
-                        // Call to action buttons
-                        Align(
-                          alignment: Alignment.center,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                ElevatedButton(
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => const LandingPage(),
-                                      ),
-                                    );
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.blueAccent,
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 12,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                  ),
-                                  child: const Text('Get Started'),
-                                ),
-                                const SizedBox(width: 12),
-                                OutlinedButton(
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => const LoginPage(),
-                                      ),
-                                    );
-                                  },
-                                  style: OutlinedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 12,
-                                    ),
-                                    side: const BorderSide(
-                                      color: Colors.white70,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                  ),
-                                  child: const Text(
-                                    'Admin Login',
-                                    style: TextStyle(color: Colors.white70),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 32),
 
                         // Side by side containers
                         AnimatedBuilder(
@@ -434,7 +370,7 @@ class _LoginChoicePageState extends State<LoginChoicePage>
                                         // Customer Container (Left)
                                         SizedBox(
                                           width: 180,
-                                          child: _buildChoiceContainer(
+                                          child: _ChoiceContainer(
                                             onTap: () {
                                               Navigator.push(
                                                 context,
@@ -491,6 +427,7 @@ class _LoginChoicePageState extends State<LoginChoicePage>
                                             ),
                                             textColor: Colors.white,
                                             iconColor: Colors.white,
+                                            subtitleColor: Colors.white,
                                           ),
                                         ),
 
@@ -499,7 +436,7 @@ class _LoginChoicePageState extends State<LoginChoicePage>
                                         // Admin Container (Right)
                                         SizedBox(
                                           width: 180,
-                                          child: _buildChoiceContainer(
+                                          child: _ChoiceContainer(
                                             onTap: () {
                                               Navigator.push(
                                                 context,
@@ -558,6 +495,7 @@ class _LoginChoicePageState extends State<LoginChoicePage>
                                             ),
                                             textColor: Colors.white,
                                             iconColor: Colors.white,
+                                            subtitleColor: Colors.white,
                                           ),
                                         ),
                                       ],
@@ -580,8 +518,8 @@ class _LoginChoicePageState extends State<LoginChoicePage>
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: const [
                                 _BenefitChip(
-                                  icon: Icons.people,
-                                  label: 'Welcoming Environment',
+                                  icon: Icons.water_drop,
+                                  label: 'Free Water',
                                 ),
                                 SizedBox(width: 18),
                                 _BenefitChip(
@@ -590,8 +528,8 @@ class _LoginChoicePageState extends State<LoginChoicePage>
                                 ),
                                 SizedBox(width: 18),
                                 _BenefitChip(
-                                  icon: Icons.water_drop,
-                                  label: 'Free Water',
+                                  icon: Icons.people,
+                                  label: 'Welcoming Environment',
                                 ),
                               ],
                             ),
@@ -656,105 +594,7 @@ class _LoginChoicePageState extends State<LoginChoicePage>
     );
   }
 
-  Widget _buildChoiceContainer({
-    required VoidCallback onTap,
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required Gradient gradient,
-    required Color textColor,
-    required Color iconColor,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 240,
-        decoration: BoxDecoration(
-          gradient: gradient,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.2),
-              blurRadius: 15,
-              offset: const Offset(0, 6),
-              spreadRadius: 0,
-            ),
-            BoxShadow(
-              color: textColor.withValues(alpha: 0.2),
-              blurRadius: 20,
-              offset: const Offset(0, 3),
-              spreadRadius: 0,
-            ),
-          ],
-        ),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(16),
-            onTap: onTap,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Icon at the top
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: iconColor.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Icon(icon, color: iconColor, size: 40),
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  // Title
-                  Text(
-                    title,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: textColor,
-                      letterSpacing: 0.3,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-
-                  const SizedBox(height: 6),
-
-                  // Subtitle
-                  Text(
-                    subtitle,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w400,
-                      color: textColor.withValues(alpha: 0.8),
-                      letterSpacing: 0.2,
-                    ),
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  // Arrow indicator
-                  Icon(
-                    Icons.arrow_forward_ios,
-                    color: textColor.withValues(alpha: 0.6),
-                    size: 16,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  // Legacy builder removed; _ChoiceContainer is used directly
 }
 
 // (Removed unused _SideImage widget)
@@ -873,12 +713,11 @@ class _BenefitChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha((0.07 * 255).toInt()),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withAlpha((0.15 * 255).toInt()),
+            blurRadius: 14,
+            offset: const Offset(0, 8),
           ),
         ],
-        border: Border.all(color: Colors.black12),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -939,6 +778,138 @@ class _BackgroundSlideshowState extends State<_BackgroundSlideshow> {
             image: AssetImage(widget.imagePaths[_index]),
             fit: BoxFit.cover,
             alignment: Alignment.center,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// Hover-aware choice container that turns orange on hover
+class _ChoiceContainer extends StatefulWidget {
+  final VoidCallback onTap;
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Gradient gradient;
+  final Color textColor;
+  final Color iconColor;
+  final Color subtitleColor;
+
+  const _ChoiceContainer({
+    required this.onTap,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.gradient,
+    required this.textColor,
+    required this.iconColor,
+    required this.subtitleColor,
+  });
+
+  @override
+  State<_ChoiceContainer> createState() => _ChoiceContainerState();
+}
+
+class _ChoiceContainerState extends State<_ChoiceContainer> {
+  bool _isHovering = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final Color baseBg = Colors.black;
+    final Color hoverAccent = const Color(0xFFFFA812);
+    final Color backgroundColor = baseBg; // keep container black always
+    final Color foregroundTextColor = _isHovering ? hoverAccent : Colors.white;
+    final Color iconColor = Colors.white;
+    final Color subtitleColor = Colors.white;
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovering = true),
+      onExit: (_) => setState(() => _isHovering = false),
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeInOut,
+          height: 240,
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.25),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+                spreadRadius: 2,
+              ),
+              BoxShadow(
+                color: Colors.white.withValues(alpha: 0.12),
+                blurRadius: 20,
+                offset: const Offset(0, 3),
+                spreadRadius: 0,
+              ),
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: widget.onTap,
+              hoverColor: Colors.transparent,
+              splashColor: Colors.transparent,
+              highlightColor: Colors.transparent,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: iconColor.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Icon(widget.icon, color: iconColor, size: 40),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      widget.title,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: foregroundTextColor,
+                        letterSpacing: 0.3,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      widget.subtitle,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
+                        color: subtitleColor.withValues(alpha: 0.9),
+                        letterSpacing: 0.2,
+                      ),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 8),
+                    Icon(
+                      Icons.arrow_forward_ios,
+                      color: (_isHovering ? hoverAccent : Colors.white)
+                          .withValues(alpha: 0.9),
+                      size: 16,
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
       ),

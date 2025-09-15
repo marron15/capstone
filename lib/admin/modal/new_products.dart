@@ -7,12 +7,14 @@ class Product {
   final double price;
   final String description;
   final Uint8List imageBytes;
+  final String imageFileName;
 
   Product({
     required this.name,
     required this.price,
     required this.description,
     required this.imageBytes,
+    required this.imageFileName,
   });
 }
 
@@ -37,6 +39,7 @@ class _AddProductModalState extends State<AddProductModal> {
   final _descriptionController = TextEditingController();
 
   Uint8List? _imageBytes;
+  String? _imageFileName;
 
   @override
   void initState() {
@@ -46,6 +49,7 @@ class _AddProductModalState extends State<AddProductModal> {
       _priceController.text = widget.initialProduct!.price.toString();
       _descriptionController.text = widget.initialProduct!.description;
       _imageBytes = widget.initialProduct!.imageBytes;
+      _imageFileName = widget.initialProduct!.imageFileName;
     }
   }
 
@@ -65,6 +69,7 @@ class _AddProductModalState extends State<AddProductModal> {
     if (result != null && result.files.single.bytes != null) {
       setState(() {
         _imageBytes = result.files.single.bytes;
+        _imageFileName = result.files.single.name;
       });
     }
   }
@@ -80,32 +85,27 @@ class _AddProductModalState extends State<AddProductModal> {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: Colors.grey.shade200),
         ),
-        child: _imageBytes != null
-            ? ClipRRect(
-                borderRadius: BorderRadius.circular(11),
-                child: Image.memory(
-                  _imageBytes!,
-                  fit: BoxFit.cover,
-                ),
-              )
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.cloud_upload_outlined,
-                    size: 40,
-                    color: Colors.blue[300],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Click to upload image',
-                    style: TextStyle(
+        child:
+            _imageBytes != null
+                ? ClipRRect(
+                  borderRadius: BorderRadius.circular(11),
+                  child: Image.memory(_imageBytes!, fit: BoxFit.cover),
+                )
+                : Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.cloud_upload_outlined,
+                      size: 40,
                       color: Colors.blue[300],
-                      fontSize: 14,
                     ),
-                  ),
-                ],
-              ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Click to upload image',
+                      style: TextStyle(color: Colors.blue[300], fontSize: 14),
+                    ),
+                  ],
+                ),
       ),
     );
   }
@@ -116,6 +116,7 @@ class _AddProductModalState extends State<AddProductModal> {
     _descriptionController.clear();
     setState(() {
       _imageBytes = null;
+      _imageFileName = null;
     });
   }
 
@@ -126,6 +127,7 @@ class _AddProductModalState extends State<AddProductModal> {
         price: double.parse(_priceController.text),
         description: _descriptionController.text,
         imageBytes: _imageBytes!,
+        imageFileName: _imageFileName ?? 'image.png',
       );
 
       widget.onProductAdded(newProduct);
@@ -134,9 +136,11 @@ class _AddProductModalState extends State<AddProductModal> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(widget.initialProduct == null
-              ? 'Product added successfully!'
-              : 'Product updated!'),
+          content: Text(
+            widget.initialProduct == null
+                ? 'Product added successfully!'
+                : 'Product updated!',
+          ),
           backgroundColor:
               widget.initialProduct == null ? Colors.green : Colors.blue,
         ),
@@ -154,9 +158,11 @@ class _AddProductModalState extends State<AddProductModal> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
+      insetPadding: const EdgeInsets.fromLTRB(16, 24, 16, 24),
       backgroundColor: Colors.grey[50],
       title: Text(
-          widget.initialProduct == null ? 'Add New Product' : 'Edit Product'),
+        widget.initialProduct == null ? 'Add New Product' : 'Edit Product',
+      ),
       content: Form(
         key: _formKey,
         child: SingleChildScrollView(
@@ -249,10 +255,7 @@ class _AddProductModalState extends State<AddProductModal> {
             Navigator.of(context).pop();
             _clearForm();
           },
-          child: Text(
-            'Cancel',
-            style: TextStyle(color: Colors.purple[300]),
-          ),
+          child: Text('Cancel', style: TextStyle(color: Colors.purple[300])),
         ),
         ElevatedButton(
           onPressed: _handleSubmit,
@@ -263,7 +266,8 @@ class _AddProductModalState extends State<AddProductModal> {
             ),
           ),
           child: Text(
-              widget.initialProduct == null ? 'Add Product' : 'Save Changes'),
+            widget.initialProduct == null ? 'Add Product' : 'Save Changes',
+          ),
         ),
       ],
     );
