@@ -27,13 +27,9 @@ class AdminModal {
     Future<void> pickDate(StateSetter setModalState) async {
       final DateTime? picked = await showDatePicker(
         context: context,
-        initialDate: DateTime.now().subtract(
-          const Duration(days: 6570),
-        ), // 18 years ago
+        initialDate: selectedDate ?? DateTime.now(),
         firstDate: DateTime(1950),
-        lastDate: DateTime.now().subtract(
-          const Duration(days: 6570),
-        ), // Must be at least 18
+        lastDate: DateTime.now(),
         builder: (context, child) {
           return Theme(
             data: Theme.of(context).copyWith(
@@ -264,10 +260,10 @@ class AdminModal {
           builder: (context, setModalState) {
             return Dialog(
               backgroundColor: Colors.transparent,
-              alignment: Alignment.topCenter,
-              insetPadding: const EdgeInsets.fromLTRB(16, 24, 16, 24),
+              alignment: Alignment.center,
+              insetPadding: const EdgeInsets.all(16),
               child: Align(
-                alignment: Alignment.topCenter,
+                alignment: Alignment.center,
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(22),
                   child: Stack(

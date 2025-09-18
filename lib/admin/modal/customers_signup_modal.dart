@@ -475,7 +475,7 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
   Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.fromLTRB(16, 24, 16, 24),
+      insetPadding: const EdgeInsets.all(16),
       alignment: Alignment.center,
       child: FadeTransition(
         opacity: _fadeAnim ?? const AlwaysStoppedAnimation(1.0),
@@ -746,11 +746,7 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
                                                 onTap: () async {
                                                   final DateTime initial =
                                                       _selectedBirthdate ??
-                                                      DateTime.now().subtract(
-                                                        const Duration(
-                                                          days: 365 * 18,
-                                                        ),
-                                                      );
+                                                      DateTime.now();
                                                   final DateTime?
                                                   picked = await showDatePicker(
                                                     context: context,

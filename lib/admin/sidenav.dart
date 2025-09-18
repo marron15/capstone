@@ -6,6 +6,7 @@ import 'dashboard/customers.dart';
 import 'dashboard/admin_products.dart';
 import 'services/admin_service.dart';
 import 'login.dart';
+import 'package:capstone/main.dart';
 
 class SideNav extends StatelessWidget {
   const SideNav({super.key});
@@ -13,92 +14,91 @@ class SideNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Drawer(
-        child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
           Expanded(
-              child: ListView(padding: EdgeInsets.zero, children: [
-            const DrawerHeader(
-              decoration: BoxDecoration(
-                color: Colors.blue,
-              ),
-              child: Text(
-                'Admin Dashboard',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
+            child: ListView(
+              padding: EdgeInsets.zero,
+              children: [
+                const DrawerHeader(
+                  decoration: BoxDecoration(color: Colors.blue),
+                  child: Text(
+                    'Admin Dashboard',
+                    style: TextStyle(color: Colors.white, fontSize: 24),
+                  ),
                 ),
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.dashboard),
-              title: const Text('Dashboard'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const StatisticPage(),
+                ListTile(
+                  leading: const Icon(Icons.dashboard),
+                  title: const Text('Dashboard'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const StatisticPage(),
+                      ),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.person),
+                  title: const Text('Admin Profile'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const AdminProfilePage(),
+                      ),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.fitness_center),
+                  title: const Text('Trainers'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const TrainersPage(),
+                      ),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.people),
+                  title: const Text('Customers'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const CustomersPage(),
+                      ),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.inventory),
+                  title: const Text('Products'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const AdminProductsPage(),
+                      ),
+                    );
+                  },
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 16,
                   ),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.person),
-              title: const Text('Admin Profile'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const AdminProfilePage(),
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.fitness_center),
-              title: const Text('Trainers'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const TrainersPage(),
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.people),
-              title: const Text('Customers'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const CustomersPage(),
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.inventory),
-              title: const Text('Products'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const AdminProductsPage(),
-                  ),
-                );
-              },
-            ),
-            Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                child: ElevatedButton.icon(
+                  child: ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red.shade50,
                       foregroundColor: Colors.red,
@@ -115,12 +115,25 @@ class SideNav extends StatelessWidget {
                       if (!context.mounted) return;
                       Navigator.of(context).pushAndRemoveUntil(
                         MaterialPageRoute(
-                          builder: (context) => const LoginPage(),
+                          builder: (context) => const LoginChoicePage(),
                         ),
                         (route) => false,
                       );
-                    }))
-          ]))
-        ]));
+                      // Then push Admin Login so back navigates to chooser
+                      if (!context.mounted) return;
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const LoginPage(),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

@@ -119,7 +119,7 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                   ),
                   child: Column(
                     children: [
-                      // Header Row styled like customers
+                      // Header Row styled like customers (larger text)
                       Container(
                         padding: const EdgeInsets.symmetric(
                           vertical: 18,
@@ -146,7 +146,7 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                                 'Image',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
-                                  fontSize: 15,
+                                  fontSize: 18,
                                   fontWeight: FontWeight.w700,
                                   letterSpacing: 0.5,
                                 ),
@@ -158,7 +158,7 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                                 'Name',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
-                                  fontSize: 15,
+                                  fontSize: 18,
                                   fontWeight: FontWeight.w700,
                                   letterSpacing: 0.5,
                                 ),
@@ -170,7 +170,7 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                                 'Price',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
-                                  fontSize: 15,
+                                  fontSize: 18,
                                   fontWeight: FontWeight.w700,
                                   letterSpacing: 0.5,
                                 ),
@@ -182,7 +182,7 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                                 'Description',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
-                                  fontSize: 15,
+                                  fontSize: 18,
                                   fontWeight: FontWeight.w700,
                                   letterSpacing: 0.5,
                                 ),
@@ -194,7 +194,7 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                                 'Actions',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
-                                  fontSize: 15,
+                                  fontSize: 18,
                                   fontWeight: FontWeight.w700,
                                   letterSpacing: 0.5,
                                 ),
@@ -273,6 +273,7 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                                     child: Text(
                                       product.name,
                                       textAlign: TextAlign.center,
+                                      style: const TextStyle(fontSize: 16),
                                     ),
                                   ),
                                 ),
@@ -286,6 +287,7 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                                     child: Text(
                                       '₱${product.price.toStringAsFixed(2)}',
                                       textAlign: TextAlign.center,
+                                      style: const TextStyle(fontSize: 16),
                                     ),
                                   ),
                                 ),
@@ -300,6 +302,7 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                                       product.description,
                                       textAlign: TextAlign.center,
                                       overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(fontSize: 16),
                                     ),
                                   ),
                                 ),
@@ -326,13 +329,13 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                                               ),
                                           icon: Icon(
                                             Icons.edit_outlined,
-                                            size: 14,
+                                            size: 18,
                                             color: Colors.blue.shade700,
                                           ),
-                                          padding: const EdgeInsets.all(4),
+                                          padding: const EdgeInsets.all(8),
                                           constraints: const BoxConstraints(
-                                            minWidth: 28,
-                                            minHeight: 28,
+                                            minWidth: 36,
+                                            minHeight: 36,
                                           ),
                                           tooltip: 'Edit',
                                         ),
@@ -353,13 +356,13 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                                               () => _deleteProduct(index),
                                           icon: const Icon(
                                             Icons.delete_outline,
-                                            size: 14,
+                                            size: 18,
                                             color: Colors.orange,
                                           ),
-                                          padding: const EdgeInsets.all(4),
+                                          padding: const EdgeInsets.all(8),
                                           constraints: const BoxConstraints(
-                                            minWidth: 28,
-                                            minHeight: 28,
+                                            minWidth: 36,
+                                            minHeight: 36,
                                           ),
                                           tooltip: 'Delete',
                                         ),

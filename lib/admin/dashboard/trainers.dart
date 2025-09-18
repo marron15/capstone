@@ -320,6 +320,15 @@ class _TrainersPageState extends State<TrainersPage> {
                                   horizontal: 16,
                                   vertical: 10,
                                 ),
+                              ).copyWith(
+                                side: WidgetStateProperty.resolveWith(
+                                  (states) => BorderSide(
+                                    color:
+                                        states.contains(WidgetState.hovered)
+                                            ? const Color(0xFFFFA812)
+                                            : Colors.black26,
+                                  ),
+                                ),
                               ),
                             ),
                           ],
@@ -345,7 +354,7 @@ class _TrainersPageState extends State<TrainersPage> {
                         ),
                         child: Column(
                           children: [
-                            // Header Row styled like admin_profile/customers
+                            // Header Row styled like admin_profile/customers (larger text)
                             Container(
                               padding: const EdgeInsets.symmetric(
                                 vertical: 18,
@@ -372,7 +381,7 @@ class _TrainersPageState extends State<TrainersPage> {
                                       'First Name',
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
-                                        fontSize: 15,
+                                        fontSize: 18,
                                         fontWeight: FontWeight.w700,
                                         letterSpacing: 0.5,
                                       ),
@@ -384,7 +393,7 @@ class _TrainersPageState extends State<TrainersPage> {
                                       'Last Name',
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
-                                        fontSize: 15,
+                                        fontSize: 18,
                                         fontWeight: FontWeight.w700,
                                         letterSpacing: 0.5,
                                       ),
@@ -396,7 +405,7 @@ class _TrainersPageState extends State<TrainersPage> {
                                       'Contact Number',
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
-                                        fontSize: 15,
+                                        fontSize: 18,
                                         fontWeight: FontWeight.w700,
                                         letterSpacing: 0.5,
                                       ),
@@ -408,7 +417,7 @@ class _TrainersPageState extends State<TrainersPage> {
                                       'Actions',
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
-                                        fontSize: 15,
+                                        fontSize: 18,
                                         fontWeight: FontWeight.w700,
                                         letterSpacing: 0.5,
                                       ),
@@ -435,6 +444,9 @@ class _TrainersPageState extends State<TrainersPage> {
                                           child: Text(
                                             trainer['firstName'] ?? '',
                                             textAlign: TextAlign.center,
+                                            style: const TextStyle(
+                                              fontSize: 16,
+                                            ),
                                           ),
                                         ),
                                       ),
@@ -448,6 +460,9 @@ class _TrainersPageState extends State<TrainersPage> {
                                           child: Text(
                                             trainer['lastName'] ?? '',
                                             textAlign: TextAlign.center,
+                                            style: const TextStyle(
+                                              fontSize: 16,
+                                            ),
                                           ),
                                         ),
                                       ),
@@ -461,6 +476,9 @@ class _TrainersPageState extends State<TrainersPage> {
                                           child: Text(
                                             trainer['contactNumber'] ?? '',
                                             textAlign: TextAlign.center,
+                                            style: const TextStyle(
+                                              fontSize: 16,
+                                            ),
                                           ),
                                         ),
                                       ),
@@ -495,16 +513,16 @@ class _TrainersPageState extends State<TrainersPage> {
                                                 },
                                                 icon: Icon(
                                                   Icons.edit_outlined,
-                                                  size: 14,
+                                                  size: 18,
                                                   color: Colors.blue.shade700,
                                                 ),
                                                 padding: const EdgeInsets.all(
-                                                  4,
+                                                  8,
                                                 ),
                                                 constraints:
                                                     const BoxConstraints(
-                                                      minWidth: 28,
-                                                      minHeight: 28,
+                                                      minWidth: 36,
+                                                      minHeight: 36,
                                                     ),
                                                 tooltip: 'Edit',
                                               ),
@@ -541,6 +559,9 @@ class _TrainersPageState extends State<TrainersPage> {
                                                                     ).pop(),
                                                             child: const Text(
                                                               'Cancel',
+                                                              style: TextStyle(
+                                                                fontSize: 16,
+                                                              ),
                                                             ),
                                                           ),
                                                           TextButton(
@@ -557,6 +578,7 @@ class _TrainersPageState extends State<TrainersPage> {
                                                               style: TextStyle(
                                                                 color:
                                                                     Colors.red,
+                                                                fontSize: 16,
                                                               ),
                                                             ),
                                                           ),
@@ -567,16 +589,16 @@ class _TrainersPageState extends State<TrainersPage> {
                                                 },
                                                 icon: const Icon(
                                                   Icons.delete_outline,
-                                                  size: 14,
+                                                  size: 18,
                                                   color: Colors.orange,
                                                 ),
                                                 padding: const EdgeInsets.all(
-                                                  4,
+                                                  8,
                                                 ),
                                                 constraints:
                                                     const BoxConstraints(
-                                                      minWidth: 28,
-                                                      minHeight: 28,
+                                                      minWidth: 36,
+                                                      minHeight: 36,
                                                     ),
                                                 tooltip: 'Delete',
                                               ),

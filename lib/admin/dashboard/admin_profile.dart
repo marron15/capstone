@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import '../excel/excel_admin_export.dart';
 import '../modal/admin_modal.dart';
 import '../sidenav.dart';
-import '../card/admin_profile_card.dart' show AdminProfileTable;
+import 'package:capstone/admin/card/admin_profile_card.dart'
+    show AdminProfileTable;
 import '../services/admin_service.dart';
 
 class AdminProfilePage extends StatefulWidget {
@@ -238,7 +239,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                     child: Text(
                       'Name & Role',
                       style: TextStyle(
-                        fontSize: 15,
+                        fontSize: 18,
                         fontWeight: FontWeight.w700,
                         color: Colors.grey.shade800,
                         letterSpacing: 0.5,
@@ -254,7 +255,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                     child: Text(
                       'Email',
                       style: TextStyle(
-                        fontSize: 15,
+                        fontSize: 18,
                         fontWeight: FontWeight.w700,
                         color: Colors.grey.shade800,
                         letterSpacing: 0.5,
@@ -270,7 +271,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                     child: Text(
                       'Contact',
                       style: TextStyle(
-                        fontSize: 15,
+                        fontSize: 18,
                         fontWeight: FontWeight.w700,
                         color: Colors.grey.shade800,
                         letterSpacing: 0.5,
@@ -286,7 +287,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                     child: Text(
                       'Date of Birth',
                       style: TextStyle(
-                        fontSize: 15,
+                        fontSize: 18,
                         fontWeight: FontWeight.w700,
                         color: Colors.grey.shade800,
                         letterSpacing: 0.5,
@@ -302,7 +303,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                     child: Text(
                       'Status',
                       style: TextStyle(
-                        fontSize: 15,
+                        fontSize: 18,
                         fontWeight: FontWeight.w700,
                         color: Colors.grey.shade800,
                         letterSpacing: 0.5,
@@ -318,7 +319,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                     child: Text(
                       'Actions',
                       style: TextStyle(
-                        fontSize: 15,
+                        fontSize: 18,
                         fontWeight: FontWeight.w700,
                         color: Colors.grey.shade800,
                         letterSpacing: 0.5,
@@ -361,6 +362,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 768;
 
+    const Color hoverAccent = Color(0xFFFFA812);
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 245, 245, 245),
       drawer: const SideNav(),
@@ -408,6 +410,15 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                                     horizontal: 14,
                                     vertical: 8,
                                   ),
+                                ).copyWith(
+                                  side: WidgetStateProperty.resolveWith(
+                                    (states) => BorderSide(
+                                      color:
+                                          states.contains(WidgetState.hovered)
+                                              ? hoverAccent
+                                              : Colors.black26,
+                                    ),
+                                  ),
                                 ),
                               ),
                               const Spacer(),
@@ -439,6 +450,15 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                                     horizontal: 14,
                                     vertical: 8,
                                   ),
+                                ).copyWith(
+                                  side: WidgetStateProperty.resolveWith(
+                                    (states) => BorderSide(
+                                      color:
+                                          states.contains(WidgetState.hovered)
+                                              ? hoverAccent
+                                              : Colors.black26,
+                                    ),
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 8),
@@ -460,6 +480,15 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 16,
                                     vertical: 8,
+                                  ),
+                                ).copyWith(
+                                  side: WidgetStateProperty.resolveWith(
+                                    (states) => BorderSide(
+                                      color:
+                                          states.contains(WidgetState.hovered)
+                                              ? hoverAccent
+                                              : Colors.black26,
+                                    ),
                                   ),
                                 ),
                                 child: const Row(
@@ -573,6 +602,15 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                                     horizontal: 14,
                                     vertical: 10,
                                   ),
+                                ).copyWith(
+                                  side: WidgetStateProperty.resolveWith(
+                                    (states) => BorderSide(
+                                      color:
+                                          states.contains(WidgetState.hovered)
+                                              ? hoverAccent
+                                              : Colors.black26,
+                                    ),
+                                  ),
                                 ),
                               ),
                               const Spacer(),
@@ -603,6 +641,15 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                                     horizontal: 16,
                                     vertical: 10,
                                   ),
+                                ).copyWith(
+                                  side: WidgetStateProperty.resolveWith(
+                                    (states) => BorderSide(
+                                      color:
+                                          states.contains(WidgetState.hovered)
+                                              ? hoverAccent
+                                              : Colors.black26,
+                                    ),
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -627,6 +674,15 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 16,
                                     vertical: 10,
+                                  ),
+                                ).copyWith(
+                                  side: WidgetStateProperty.resolveWith(
+                                    (states) => BorderSide(
+                                      color:
+                                          states.contains(WidgetState.hovered)
+                                              ? hoverAccent
+                                              : Colors.black26,
+                                    ),
                                   ),
                                 ),
                               ),

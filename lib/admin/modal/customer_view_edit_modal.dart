@@ -143,10 +143,9 @@ class CustomerViewEditModal {
     Future<void> pickDate(StateSetter setModalState) async {
       final DateTime? picked = await showDatePicker(
         context: context,
-        initialDate:
-            selectedDate ?? DateTime.now().subtract(const Duration(days: 6570)),
+        initialDate: selectedDate ?? DateTime.now(),
         firstDate: DateTime(1950),
-        lastDate: DateTime.now().subtract(const Duration(days: 6570)),
+        lastDate: DateTime.now(),
         builder: (context, child) {
           return Theme(
             data: Theme.of(context).copyWith(
@@ -486,10 +485,10 @@ class CustomerViewEditModal {
           builder: (context, setModalState) {
             return Dialog(
               backgroundColor: Colors.transparent,
-              alignment: Alignment.topCenter,
-              insetPadding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+              alignment: Alignment.center,
+              insetPadding: const EdgeInsets.all(16),
               child: Align(
-                alignment: Alignment.topCenter,
+                alignment: Alignment.center,
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(22),
                   child: Stack(

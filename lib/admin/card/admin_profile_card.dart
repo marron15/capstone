@@ -171,7 +171,7 @@ class AdminProfileTable extends StatelessWidget {
                     child: Text(
                       _getInitials(),
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: Colors.blue.shade700,
                       ),
@@ -186,7 +186,7 @@ class AdminProfileTable extends StatelessWidget {
                         Text(
                           _getFullName(),
                           style: const TextStyle(
-                            fontSize: 14,
+                            fontSize: 16,
                             fontWeight: FontWeight.w600,
                             color: Colors.black87,
                           ),
@@ -226,7 +226,7 @@ class AdminProfileTable extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: Text(
                   admin['email_address'] ?? admin['email'] ?? 'N/A',
-                  style: const TextStyle(fontSize: 13, color: Colors.black87),
+                  style: const TextStyle(fontSize: 16, color: Colors.black87),
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
                 ),
@@ -239,7 +239,7 @@ class AdminProfileTable extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: Text(
                   admin['phone_number'] ?? admin['contactNumber'] ?? 'N/A',
-                  style: const TextStyle(fontSize: 13, color: Colors.black87),
+                  style: const TextStyle(fontSize: 16, color: Colors.black87),
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
                 ),
@@ -252,7 +252,7 @@ class AdminProfileTable extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: Text(
                   admin['date_of_birth'] ?? admin['dateOfBirth'] ?? 'N/A',
-                  style: const TextStyle(fontSize: 13, color: Colors.black87),
+                  style: const TextStyle(fontSize: 16, color: Colors.black87),
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
                 ),
@@ -294,7 +294,7 @@ class AdminProfileTable extends StatelessWidget {
                               ? 'Inactive'
                               : 'Active',
                           style: TextStyle(
-                            fontSize: 11,
+                            fontSize: 14,
                             color:
                                 (admin['status'] ?? 'active')
                                             .toString()
@@ -367,8 +367,8 @@ class AdminProfileTable extends StatelessWidget {
 
   // Action buttons
   Widget _buildActionButtons(BuildContext context, bool isMobile) {
-    final size = isMobile ? 32.0 : 28.0;
-    final iconSize = isMobile ? 16.0 : 14.0;
+    final size = 36.0;
+    final iconSize = 18.0;
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -386,7 +386,7 @@ class AdminProfileTable extends StatelessWidget {
               size: iconSize,
               color: Colors.blue.shade700,
             ),
-            padding: EdgeInsets.all(isMobile ? 8 : 4),
+            padding: const EdgeInsets.all(8),
             constraints: BoxConstraints(minWidth: size, minHeight: size),
             tooltip: 'Edit Admin',
           ),
@@ -422,7 +422,7 @@ class AdminProfileTable extends StatelessWidget {
                       ? Colors.green.shade700
                       : Colors.orange.shade700,
             ),
-            padding: EdgeInsets.all(isMobile ? 8 : 4),
+            padding: const EdgeInsets.all(8),
             constraints: BoxConstraints(minWidth: size, minHeight: size),
             tooltip:
                 (admin['status'] ?? 'active').toString().toLowerCase() ==
