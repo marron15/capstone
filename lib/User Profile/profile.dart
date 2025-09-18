@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'profile_data.dart';
 
 import '../landing_page_components/landing_page.dart';
-import 'membership_duration.dart';
 
 import '../services/auth_service.dart';
 import '../services/auth_state.dart';
@@ -640,9 +639,7 @@ class _ProfilePageState extends State<ProfilePage>
             );
           },
         ),
-        title: membershipExpirationText(
-          profileNotifier.value.membershipExpiration,
-        ),
+        title: const Text('Profile', style: TextStyle(color: Colors.white)),
         centerTitle: true,
         actions: [
           IconButton(

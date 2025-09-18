@@ -72,7 +72,7 @@ class _ForgotPasswordModalState extends State<ForgotPasswordModal>
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: Colors.lightBlueAccent, width: 2),
+        borderSide: const BorderSide(color: Color(0xFFFFA812), width: 2),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),

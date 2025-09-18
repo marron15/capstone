@@ -698,40 +698,55 @@ class _SideSlideshowState extends State<_SideSlideshow>
   }
 }
 
-class _BenefitChip extends StatelessWidget {
+class _BenefitChip extends StatefulWidget {
   final IconData icon;
   final String label;
 
   const _BenefitChip({required this.icon, required this.label});
 
   @override
+  State<_BenefitChip> createState() => _BenefitChipState();
+}
+
+class _BenefitChipState extends State<_BenefitChip> {
+  bool _isHovering = false;
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha((0.15 * 255).toInt()),
-            blurRadius: 14,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 18, color: Colors.black87),
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: const TextStyle(
-              color: Colors.black87,
-              fontWeight: FontWeight.w600,
+    final Color hoverAccent = const Color(0xFFFFA812);
+    final Color textColor = _isHovering ? hoverAccent : Colors.black87;
+    final Color iconColor = Colors.black87; // Keep icon always black
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovering = true),
+      onExit: (_) => setState(() => _isHovering = false),
+      cursor: SystemMouseCursors.click,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeInOut,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withAlpha((0.15 * 255).toInt()),
+              blurRadius: 14,
+              offset: const Offset(0, 8),
             ),
-          ),
-        ],
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(widget.icon, size: 18, color: iconColor),
+            const SizedBox(width: 8),
+            Text(
+              widget.label,
+              style: TextStyle(color: textColor, fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
       ),
     );
   }

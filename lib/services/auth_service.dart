@@ -17,12 +17,18 @@ class AuthService {
       'http://' + _apiHost() + '/gym_api/customers';
   static String get _addressBase => 'http://' + _apiHost() + '/gym_api/address';
 
-  static Future<LoginResult> login(String email, String password) async {
+  static Future<LoginResult> login(
+    String contactNumber,
+    String password,
+  ) async {
     try {
       final response = await http.post(
         Uri.parse('$_customersBase/Login.php'),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({'email': email, 'password': password}),
+        body: json.encode({
+          'contact_number': contactNumber,
+          'password': password,
+        }),
       );
 
       final Map<String, dynamic> responseData = json.decode(response.body);

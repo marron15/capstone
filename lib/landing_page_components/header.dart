@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../modals/login.dart';
 import '../services/auth_state.dart';
 import '../services/auth_service.dart';
+import '../main.dart';
 
 class BlackHeader extends StatelessWidget {
   final Function(int) onNavTap;
@@ -45,11 +46,6 @@ class BlackHeader extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   _HeaderNavButton(
-                    icon: Icons.home,
-                    label: 'Home',
-                    onTap: () => onNavTap(0),
-                  ),
-                  _HeaderNavButton(
                     icon: Icons.fitness_center,
                     label: 'Gym Equipment',
                     onTap: () => onNavTap(1),
@@ -83,6 +79,26 @@ class BlackHeader extends StatelessWidget {
                 // Show Profile and Logout buttons when logged in
                 return Row(
                   children: [
+                    // Go to main.dart (Home) button
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pushAndRemoveUntil(
+                          MaterialPageRoute(
+                            builder: (_) => const LoginChoicePage(),
+                          ),
+                          (route) => false,
+                        );
+                      },
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isSmallScreen ? 8 : 12,
+                          vertical: isSmallScreen ? 6 : 8,
+                        ),
+                      ),
+                      child: const Text('Home'),
+                    ),
+                    const SizedBox(width: 8),
                     // Profile Button
                     if (!isSmallScreen) ...[
                       _HeaderNavButton(
@@ -182,30 +198,36 @@ class BlackHeader extends StatelessWidget {
                 // Show Login and Sign Up buttons when logged out
                 return Row(
                   children: [
+                    // Go to main.dart (Home) button
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pushAndRemoveUntil(
+                          MaterialPageRoute(
+                            builder: (_) => const LoginChoicePage(),
+                          ),
+                          (route) => false,
+                        );
+                      },
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isSmallScreen ? 8 : 12,
+                          vertical: isSmallScreen ? 6 : 8,
+                        ),
+                      ),
+                      child: const Text('Home'),
+                    ),
+                    const SizedBox(width: 8),
                     // Login Button
-                    ElevatedButton(
+                    _HoverElevatedButton(
                       onPressed: () {
                         showDialog(
                           context: context,
                           builder: (context) => const LoginModal(),
                         );
                       },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: Colors.black,
-                        padding: EdgeInsets.symmetric(
-                          horizontal: isSmallScreen ? 14 : 18,
-                          vertical: isSmallScreen ? 8 : 12,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: Text(
-                        'Login',
-                        style: TextStyle(fontSize: isSmallScreen ? 14 : 16),
-                      ),
+                      isSmallScreen: isSmallScreen,
+                      text: 'Login',
                     ),
                   ],
                 );
@@ -218,7 +240,7 @@ class BlackHeader extends StatelessWidget {
   }
 }
 
-class _HeaderNavButton extends StatelessWidget {
+class _HeaderNavButton extends StatefulWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
@@ -230,17 +252,93 @@ class _HeaderNavButton extends StatelessWidget {
   });
 
   @override
+  State<_HeaderNavButton> createState() => _HeaderNavButtonState();
+}
+
+class _HeaderNavButtonState extends State<_HeaderNavButton> {
+  bool _isHovering = false;
+
+  @override
   Widget build(BuildContext context) {
-    return TextButton.icon(
-      onPressed: onTap,
-      icon: Icon(icon, color: Colors.white, size: 20),
-      label: Text(
-        label,
-        style: const TextStyle(color: Colors.white, fontSize: 16),
+    final Color hoverAccent = const Color(0xFFFFA812);
+    final Color textColor = _isHovering ? hoverAccent : Colors.white;
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovering = true),
+      onExit: (_) => setState(() => _isHovering = false),
+      cursor: SystemMouseCursors.click,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeInOut,
+        child: TextButton.icon(
+          onPressed: widget.onTap,
+          icon: Icon(widget.icon, color: Colors.white, size: 20),
+          label: AnimatedDefaultTextStyle(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeInOut,
+            style: TextStyle(color: textColor, fontSize: 16),
+            child: Text(widget.label),
+          ),
+          style: TextButton.styleFrom(
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+          ),
+        ),
       ),
-      style: TextButton.styleFrom(
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
+    );
+  }
+}
+
+class _HoverElevatedButton extends StatefulWidget {
+  final VoidCallback onPressed;
+  final bool isSmallScreen;
+  final String text;
+
+  const _HoverElevatedButton({
+    required this.onPressed,
+    required this.isSmallScreen,
+    required this.text,
+  });
+
+  @override
+  State<_HoverElevatedButton> createState() => _HoverElevatedButtonState();
+}
+
+class _HoverElevatedButtonState extends State<_HoverElevatedButton> {
+  bool _isHovering = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final Color hoverAccent = const Color(0xFFFFA812);
+    final Color textColor = _isHovering ? hoverAccent : Colors.black;
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovering = true),
+      onExit: (_) => setState(() => _isHovering = false),
+      cursor: SystemMouseCursors.click,
+      child: ElevatedButton(
+        onPressed: widget.onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          padding: EdgeInsets.symmetric(
+            horizontal: widget.isSmallScreen ? 14 : 18,
+            vertical: widget.isSmallScreen ? 8 : 12,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          elevation: 0,
+        ),
+        child: AnimatedDefaultTextStyle(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeInOut,
+          style: TextStyle(
+            color: textColor,
+            fontSize: widget.isSmallScreen ? 14 : 16,
+          ),
+          child: Text(widget.text),
+        ),
       ),
     );
   }

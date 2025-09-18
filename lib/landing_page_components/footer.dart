@@ -18,9 +18,10 @@ class Footer extends StatelessWidget {
         vertical: 28.0,
         horizontal: isSmallScreen ? 16.0 : screenWidth * 0.1,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          // Left side - Logo and gym name
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -41,31 +42,38 @@ class Footer extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 22),
-          const Text(
-            '875 RIZAL AVENUE WEST TAPINAC , OLONGAPO CITY',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              letterSpacing: 1.1,
-            ),
-          ),
-          const SizedBox(height: 10),
-          const Text(
-            'Business Hours: 11:00AM - 9:00PM',
-            style: TextStyle(
-              color: Colors.white70,
-              fontSize: 15,
-              fontWeight: FontWeight.w400,
-            ),
-          ),
-          const Text(
-            'Monday to Saturday',
-            style: TextStyle(
-              color: Colors.white70,
-              fontSize: 15,
-              fontWeight: FontWeight.w400,
-            ),
+          const Spacer(),
+          // Right side - Address and business hours
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                '875 RIZAL AVENUE WEST TAPINAC , OLONGAPO CITY',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  letterSpacing: 1.1,
+                ),
+              ),
+              const SizedBox(height: 5),
+              const Text(
+                'Business Hours: 11:00AM - 9:00PM',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+              const Text(
+                'Monday to Saturday',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ],
           ),
         ],
       ),

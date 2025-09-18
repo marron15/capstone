@@ -362,7 +362,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
     final isMobile = screenWidth < 768;
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: const Color.fromARGB(255, 245, 245, 245),
       drawer: const SideNav(),
       appBar: AppBar(
         title: const Center(child: Text('Admin Profiles')),

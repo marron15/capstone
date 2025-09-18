@@ -49,6 +49,7 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
+      backgroundColor: const Color.fromARGB(255, 245, 245, 245),
       appBar: AppBar(
         title: const Center(child: Text('Products Management')),
         backgroundColor: Colors.black,

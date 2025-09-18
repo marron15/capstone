@@ -12,7 +12,7 @@ class StatisticPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: const Color.fromARGB(255, 245, 245, 245),
       drawer: const SideNav(),
       appBar: AppBar(
         title: const Center(child: Text('Dashboard')),

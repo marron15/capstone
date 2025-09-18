@@ -26,6 +26,7 @@ class LandingPage extends StatefulWidget {
 class _LandingPageState extends State<LandingPage>
     with TickerProviderStateMixin {
   final ScrollController _scrollController = ScrollController();
+  bool _showScrollToTop = false;
 
   final GlobalKey _equipmentImagesKey = GlobalKey();
 
@@ -60,12 +61,20 @@ class _LandingPageState extends State<LandingPage>
     // Start animations
     _heroController.forward();
     _fadeController.forward();
+
+    _scrollController.addListener(() {
+      final bool shouldShow = _scrollController.offset > 300;
+      if (shouldShow != _showScrollToTop) {
+        setState(() => _showScrollToTop = shouldShow);
+      }
+    });
   }
 
   @override
   void dispose() {
     _heroController.dispose();
     _fadeController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -260,35 +269,7 @@ class _LandingPageState extends State<LandingPage>
     );
   }
 
-  // Helper method to build benefit item
-
-  Widget _buildBenefitItem(String text, IconData icon) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: 8),
-
-      child: Row(
-        children: [
-          Icon(icon, color: Colors.blue, size: 16),
-
-          SizedBox(width: 8),
-
-          Expanded(
-            child: Text(
-              text,
-
-              style: TextStyle(
-                color: Colors.white,
-
-                fontSize: 12,
-
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // (Removed _buildBenefitItem; no longer used)
 
   // Helper method to build stat item
 
@@ -576,8 +557,6 @@ class _LandingPageState extends State<LandingPage>
                                 },
                               ),
 
-                              SizedBox(height: screenSize.height * 0.03),
-
                               SizedBox(height: screenSize.height * 0.02),
 
                               // Conditional content based on login status
@@ -628,20 +607,13 @@ class _LandingPageState extends State<LandingPage>
                                             decoration: BoxDecoration(
                                               gradient: LinearGradient(
                                                 begin: Alignment.topLeft,
-
                                                 end: Alignment.bottomRight,
-
                                                 colors: [
-                                                  Colors.black87.withValues(
-                                                    alpha: 0.9,
+                                                  Colors.black.withValues(
+                                                    alpha: 0.60,
                                                   ),
-
-                                                  Colors.blueGrey.withValues(
-                                                    alpha: 0.8,
-                                                  ),
-
-                                                  Colors.black87.withValues(
-                                                    alpha: 0.9,
+                                                  Colors.black.withValues(
+                                                    alpha: 0.45,
                                                   ),
                                                 ],
                                               ),
@@ -650,43 +622,19 @@ class _LandingPageState extends State<LandingPage>
                                                   BorderRadius.circular(16),
 
                                               border: Border.all(
-                                                color:
-                                                    _isMembershipActive(
-                                                          authState
-                                                              .membershipData!
-                                                              .expirationDate,
-                                                        )
-                                                        ? Colors.green
-                                                            .withValues(
-                                                              alpha: 0.6,
-                                                            )
-                                                        : Colors.red.withValues(
-                                                          alpha: 0.6,
-                                                        ),
-
-                                                width: 2,
+                                                color: Colors.white.withValues(
+                                                  alpha: 0.22,
+                                                ),
+                                                width: 1.5,
                                               ),
 
                                               boxShadow: [
                                                 BoxShadow(
-                                                  color:
-                                                      _isMembershipActive(
-                                                            authState
-                                                                .membershipData!
-                                                                .expirationDate,
-                                                          )
-                                                          ? Colors.green
-                                                              .withValues(
-                                                                alpha: 0.3,
-                                                              )
-                                                          : Colors.red
-                                                              .withValues(
-                                                                alpha: 0.3,
-                                                              ),
-
-                                                  blurRadius: 15,
-
-                                                  spreadRadius: 2,
+                                                  color: Colors.black
+                                                      .withValues(alpha: 0.35),
+                                                  blurRadius: 18,
+                                                  spreadRadius: 1,
+                                                  offset: Offset(0, 10),
                                                 ),
                                               ],
                                             ),
@@ -705,9 +653,9 @@ class _LandingPageState extends State<LandingPage>
                                                         '${authState.membershipData!.membershipType} Membership',
 
                                                         style: TextStyle(
-                                                          color:
-                                                              Colors
-                                                                  .lightBlueAccent,
+                                                          color: const Color(
+                                                            0xFFFFA812,
+                                                          ),
 
                                                           fontSize:
                                                               (isSmallScreen
@@ -880,8 +828,9 @@ class _LandingPageState extends State<LandingPage>
 
                                                             style: TextStyle(
                                                               color:
-                                                                  Colors
-                                                                      .lightBlueAccent,
+                                                                  const Color(
+                                                                    0xFFFFA812,
+                                                                  ),
 
                                                               fontSize: 12,
 
@@ -912,22 +861,14 @@ class _LandingPageState extends State<LandingPage>
                                                               alpha: 0.8,
                                                             ),
 
-                                                        valueColor: AlwaysStoppedAnimation<
-                                                          Color
-                                                        >(
-                                                          _getMembershipProgress(
-                                                                    authState
-                                                                        .membershipData!
-                                                                        .startDate,
-
-                                                                    authState
-                                                                        .membershipData!
-                                                                        .expirationDate,
-                                                                  ) >
-                                                                  0.7
-                                                              ? Colors.orange
-                                                              : Colors.green,
-                                                        ),
+                                                        valueColor:
+                                                            AlwaysStoppedAnimation<
+                                                              Color
+                                                            >(
+                                                              const Color(
+                                                                0xFFFFA812,
+                                                              ),
+                                                            ),
 
                                                         minHeight: 6,
 
@@ -978,7 +919,7 @@ class _LandingPageState extends State<LandingPage>
 
                                                         Icons.calendar_today,
 
-                                                        Colors.green,
+                                                        const Color(0xFFFFA812),
 
                                                         isSmallScreen,
 
@@ -998,7 +939,7 @@ class _LandingPageState extends State<LandingPage>
 
                                                         Icons.event_busy,
 
-                                                        Colors.orange,
+                                                        const Color(0xFFFFA812),
 
                                                         isSmallScreen,
 
@@ -1020,10 +961,9 @@ class _LandingPageState extends State<LandingPage>
                                                     padding: EdgeInsets.all(16),
 
                                                     decoration: BoxDecoration(
-                                                      color: Colors.green
-                                                          .withValues(
-                                                            alpha: 0.1,
-                                                          ),
+                                                      color: const Color(
+                                                        0xFFFFA812,
+                                                      ).withValues(alpha: 0.1),
 
                                                       borderRadius:
                                                           BorderRadius.circular(
@@ -1031,10 +971,11 @@ class _LandingPageState extends State<LandingPage>
                                                           ),
 
                                                       border: Border.all(
-                                                        color: Colors.green
-                                                            .withValues(
-                                                              alpha: 0.3,
-                                                            ),
+                                                        color: const Color(
+                                                          0xFFFFA812,
+                                                        ).withValues(
+                                                          alpha: 0.25,
+                                                        ),
 
                                                         width: 1,
                                                       ),
@@ -1050,7 +991,9 @@ class _LandingPageState extends State<LandingPage>
 
                                                             Icons.timer,
 
-                                                            Colors.green,
+                                                            const Color(
+                                                              0xFFFFA812,
+                                                            ),
                                                           ),
                                                         ),
 
@@ -1062,7 +1005,9 @@ class _LandingPageState extends State<LandingPage>
 
                                                             Icons.schedule,
 
-                                                            Colors.orange,
+                                                            const Color(
+                                                              0xFFFFA812,
+                                                            ),
                                                           ),
                                                         ),
                                                       ],
@@ -1077,8 +1022,10 @@ class _LandingPageState extends State<LandingPage>
                                                   padding: EdgeInsets.all(16),
 
                                                   decoration: BoxDecoration(
-                                                    color: Colors.blue
-                                                        .withValues(alpha: 0.1),
+                                                    color: Colors.black
+                                                        .withValues(
+                                                          alpha: 0.25,
+                                                        ),
 
                                                     borderRadius:
                                                         BorderRadius.circular(
@@ -1086,9 +1033,9 @@ class _LandingPageState extends State<LandingPage>
                                                         ),
 
                                                     border: Border.all(
-                                                      color: Colors.blue
+                                                      color: Colors.white
                                                           .withValues(
-                                                            alpha: 0.3,
+                                                            alpha: 0.15,
                                                           ),
 
                                                       width: 1,
@@ -1101,60 +1048,7 @@ class _LandingPageState extends State<LandingPage>
                                                             .start,
 
                                                     children: [
-                                                      Row(
-                                                        children: [
-                                                          Icon(
-                                                            Icons.star,
-
-                                                            color: Colors.amber,
-
-                                                            size: 20,
-                                                          ),
-
-                                                          SizedBox(width: 8),
-
-                                                          Text(
-                                                            'Membership Benefits',
-
-                                                            style: TextStyle(
-                                                              color:
-                                                                  Colors.amber,
-
-                                                              fontSize: 14,
-
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold,
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      ),
-
-                                                      SizedBox(height: 12),
-
-                                                      _buildBenefitItem(
-                                                        'Access to all gym equipment',
-
-                                                        Icons.fitness_center,
-                                                      ),
-
-                                                      _buildBenefitItem(
-                                                        'Group fitness classes',
-
-                                                        Icons.group,
-                                                      ),
-
-                                                      _buildBenefitItem(
-                                                        'Locker room access',
-
-                                                        Icons.lock,
-                                                      ),
-
-                                                      _buildBenefitItem(
-                                                        'Free Wi-Fi',
-
-                                                        Icons.wifi,
-                                                      ),
+                                                      // Removed Membership Benefits section
                                                     ],
                                                   ),
                                                 ),
@@ -1273,6 +1167,35 @@ class _LandingPageState extends State<LandingPage>
                           screenWidth: screenSize.width,
                         ),
                       ],
+                    ),
+                  ),
+                ),
+                // Scroll-to-top button (right middle, larger)
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 16),
+                    child: AnimatedScale(
+                      duration: const Duration(milliseconds: 180),
+                      scale: _showScrollToTop ? 1.0 : 0.0,
+                      child: AnimatedOpacity(
+                        duration: const Duration(milliseconds: 180),
+                        opacity: _showScrollToTop ? 1.0 : 0.0,
+                        child: FloatingActionButton(
+                          onPressed: () {
+                            _scrollController.animateTo(
+                              0,
+                              duration: const Duration(milliseconds: 500),
+                              curve: Curves.easeInOut,
+                            );
+                          },
+                          backgroundColor: Colors.white,
+                          foregroundColor: Colors.black,
+                          elevation: 3,
+                          tooltip: 'Go Up',
+                          child: const Icon(Icons.keyboard_arrow_up, size: 24),
+                        ),
+                      ),
                     ),
                   ),
                 ),

@@ -84,7 +84,20 @@ class AdminService {
           return result;
         }
       } else {
+        // Gracefully handle error payloads (e.g., 400/401) and surface backend message
         debugPrint('❌ HTTP error: ${response.statusCode}');
+        try {
+          final decoded = jsonDecode(response.body);
+          if (decoded is Map<String, dynamic>) {
+            return {
+              'success': false,
+              'message':
+                  decoded['message'] ?? 'HTTP error: ${response.statusCode}',
+            };
+          }
+        } catch (_) {
+          // ignore decode failures and fall back to generic message
+        }
         return {
           'success': false,
           'message': 'HTTP error: ${response.statusCode}',
@@ -134,9 +147,23 @@ class AdminService {
         }
       } else {
         debugPrint('❌ HTTP error: ${response.statusCode}');
+        // Parse server error to show which field is wrong
+        try {
+          final decoded = jsonDecode(response.body);
+          if (decoded is Map<String, dynamic>) {
+            return {
+              'success': false,
+              'message': decoded['message'] ?? 'Login failed',
+              'field': decoded['field'], // 'phone' | 'password'
+            };
+          }
+        } catch (_) {}
         return {
           'success': false,
-          'message': 'HTTP error: ${response.statusCode}',
+          'message':
+              response.statusCode == 401
+                  ? 'Login failed'
+                  : 'HTTP error: ${response.statusCode}',
         };
       }
     } catch (e) {
