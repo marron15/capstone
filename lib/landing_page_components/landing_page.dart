@@ -10,7 +10,7 @@ import 'products.dart';
 
 import 'trainers.dart';
 
-import '../services/auth_state.dart';
+import '../services/unified_auth_state.dart';
 
 import 'footer.dart';
 
@@ -561,16 +561,16 @@ class _LandingPageState extends State<LandingPage>
 
                               // Conditional content based on login status
                               AnimatedBuilder(
-                                animation: authState,
+                                animation: unifiedAuthState,
 
                                 builder: (context, child) {
-                                  if (authState.isLoggedIn) {
+                                  if (unifiedAuthState.isCustomerLoggedIn) {
                                     // Show membership information when logged in
 
                                     return Column(
                                       children: [
                                         Text(
-                                          'Welcome back, ${authState.customerName ?? 'Member'}!',
+                                          'Welcome back, ${unifiedAuthState.customerName ?? 'Member'}!',
 
                                           style: TextStyle(
                                             color: Colors.white,
@@ -592,7 +592,7 @@ class _LandingPageState extends State<LandingPage>
                                           height: screenSize.height * 0.02,
                                         ),
 
-                                        if (authState.membershipData !=
+                                        if (unifiedAuthState.membershipData !=
                                             null) ...[
                                           Container(
                                             width: double.infinity,
@@ -650,7 +650,7 @@ class _LandingPageState extends State<LandingPage>
                                                   children: [
                                                     Expanded(
                                                       child: Text(
-                                                        '${authState.membershipData!.membershipType} Membership',
+                                                        '${unifiedAuthState.membershipData!.membershipType} Membership',
 
                                                         style: TextStyle(
                                                           color: const Color(
@@ -693,7 +693,7 @@ class _LandingPageState extends State<LandingPage>
                                                       decoration: BoxDecoration(
                                                         color:
                                                             _isMembershipActive(
-                                                                  authState
+                                                                  unifiedAuthState
                                                                       .membershipData!
                                                                       .expirationDate,
                                                                 )
@@ -716,7 +716,7 @@ class _LandingPageState extends State<LandingPage>
                                                         boxShadow: [
                                                           BoxShadow(
                                                             color: (_isMembershipActive(
-                                                                      authState
+                                                                      unifiedAuthState
                                                                           .membershipData!
                                                                           .expirationDate,
                                                                     )
@@ -742,7 +742,7 @@ class _LandingPageState extends State<LandingPage>
                                                         children: [
                                                           Icon(
                                                             _isMembershipActive(
-                                                                  authState
+                                                                  unifiedAuthState
                                                                       .membershipData!
                                                                       .expirationDate,
                                                                 )
@@ -759,7 +759,7 @@ class _LandingPageState extends State<LandingPage>
 
                                                           Text(
                                                             _isMembershipActive(
-                                                                  authState
+                                                                  unifiedAuthState
                                                                       .membershipData!
                                                                       .expirationDate,
                                                                 )
@@ -787,7 +787,7 @@ class _LandingPageState extends State<LandingPage>
 
                                                 // Progress bar showing time remaining
                                                 if (_isMembershipActive(
-                                                  authState
+                                                  unifiedAuthState
                                                       .membershipData!
                                                       .expirationDate,
                                                 )) ...[
@@ -821,7 +821,7 @@ class _LandingPageState extends State<LandingPage>
 
                                                           Text(
                                                             _getTimeRemaining(
-                                                              authState
+                                                              unifiedAuthState
                                                                   .membershipData!
                                                                   .expirationDate,
                                                             ),
@@ -846,11 +846,11 @@ class _LandingPageState extends State<LandingPage>
 
                                                       LinearProgressIndicator(
                                                         value: _getMembershipProgress(
-                                                          authState
+                                                          unifiedAuthState
                                                               .membershipData!
                                                               .startDate,
 
-                                                          authState
+                                                          unifiedAuthState
                                                               .membershipData!
                                                               .expirationDate,
                                                         ),
@@ -912,7 +912,7 @@ class _LandingPageState extends State<LandingPage>
                                                         'Start Date',
 
                                                         _formatDate(
-                                                          authState
+                                                          unifiedAuthState
                                                               .membershipData!
                                                               .startDate,
                                                         ),
@@ -932,7 +932,7 @@ class _LandingPageState extends State<LandingPage>
                                                         'Expires',
 
                                                         _formatDate(
-                                                          authState
+                                                          unifiedAuthState
                                                               .membershipData!
                                                               .expirationDate,
                                                         ),
@@ -953,7 +953,7 @@ class _LandingPageState extends State<LandingPage>
 
                                                 // Membership statistics
                                                 if (_isMembershipActive(
-                                                  authState
+                                                  unifiedAuthState
                                                       .membershipData!
                                                       .expirationDate,
                                                 )) ...[
@@ -987,7 +987,7 @@ class _LandingPageState extends State<LandingPage>
                                                           child: _buildStatItem(
                                                             'Days Used',
 
-                                                            '${_getDaysUsed(authState.membershipData!.startDate)}',
+                                                            '${_getDaysUsed(unifiedAuthState.membershipData!.startDate)}',
 
                                                             Icons.timer,
 
@@ -1001,7 +1001,7 @@ class _LandingPageState extends State<LandingPage>
                                                           child: _buildStatItem(
                                                             'Days Left',
 
-                                                            '${_getDaysLeft(authState.membershipData!.expirationDate)}',
+                                                            '${_getDaysLeft(unifiedAuthState.membershipData!.expirationDate)}',
 
                                                             Icons.schedule,
 

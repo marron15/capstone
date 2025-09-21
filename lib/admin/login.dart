@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
-import 'dashboard/admin_profile.dart';
 import 'services/admin_service.dart';
+import '../services/unified_auth_state.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+  final bool checkLoginStatus;
+
+  const LoginPage({super.key, this.checkLoginStatus = false});
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -22,14 +24,17 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     super.initState();
-    _checkLoginStatus();
+    // Only check login status if explicitly requested
+    if (widget.checkLoginStatus) {
+      _checkLoginStatus();
+    }
   }
 
   // Check if admin is already logged in
   Future<void> _checkLoginStatus() async {
     try {
-      final isLoggedIn = await AdminService.isAdminLoggedIn();
-      if (isLoggedIn && mounted) {
+      // Check if admin is already logged in through unified auth state
+      if (unifiedAuthState.isAdminLoggedIn && mounted) {
         _navigateToDashboard();
       }
     } catch (e) {
@@ -64,6 +69,13 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       if (result['success'] == true && mounted) {
+        // Update unified auth state
+        await unifiedAuthState.loginAdmin(
+          admin: result['admin'],
+          accessToken: result['access_token'],
+          refreshToken: result['refresh_token'],
+        );
+
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -108,9 +120,7 @@ class _LoginPageState extends State<LoginPage> {
 
   // Navigate to admin dashboard
   void _navigateToDashboard() {
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (context) => const AdminProfilePage()),
-    );
+    Navigator.of(context).pushReplacementNamed('/admin-dashboard');
   }
 
   @override
@@ -131,6 +141,14 @@ class _LoginPageState extends State<LoginPage> {
           ),
         ),
         iconTheme: const IconThemeData(color: Colors.white),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            Navigator.of(
+              context,
+            ).pushNamedAndRemoveUntil('/', (route) => false);
+          },
+        ),
       ),
       body: Container(
         width: double.infinity,
@@ -255,7 +273,12 @@ class _LoginPageState extends State<LoginPage> {
                                             16,
                                           ),
                                           borderSide: BorderSide(
-                                            color: Colors.blue.shade400,
+                                            color: const Color.fromRGBO(
+                                              255,
+                                              168,
+                                              18,
+                                              1,
+                                            ),
                                             width: 2,
                                           ),
                                         ),
@@ -302,7 +325,12 @@ class _LoginPageState extends State<LoginPage> {
                                             16,
                                           ),
                                           borderSide: BorderSide(
-                                            color: Colors.blue.shade400,
+                                            color: const Color.fromRGBO(
+                                              255,
+                                              168,
+                                              18,
+                                              1,
+                                            ),
                                             width: 2,
                                           ),
                                         ),

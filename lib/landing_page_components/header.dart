@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../modals/login.dart';
-import '../services/auth_state.dart';
+import '../services/unified_auth_state.dart';
 import '../services/auth_service.dart';
 import '../main.dart';
 
@@ -73,9 +73,9 @@ class BlackHeader extends StatelessWidget {
           ],
           // Conditional rendering based on authentication state
           AnimatedBuilder(
-            animation: authState,
+            animation: unifiedAuthState,
             builder: (context, child) {
-              if (authState.isLoggedIn) {
+              if (unifiedAuthState.isCustomerLoggedIn) {
                 // Show Profile and Logout buttons when logged in
                 return Row(
                   children: [
@@ -145,7 +145,7 @@ class BlackHeader extends StatelessWidget {
                             final result = await AuthService.logout();
 
                             // Clear auth state
-                            await authState.logout();
+                            await unifiedAuthState.logout();
 
                             // Show success message
                             if (context.mounted) {
@@ -154,7 +154,7 @@ class BlackHeader extends StatelessWidget {
                                   content: Text(
                                     result.success
                                         ? 'Logged out successfully!'
-                                        : 'Logged out locally',
+                                        : 'Successfully Logout',
                                   ),
                                   backgroundColor: Colors.green,
                                 ),
@@ -162,12 +162,12 @@ class BlackHeader extends StatelessWidget {
                             }
                           } catch (e) {
                             // Even if API call fails, clear auth state
-                            await authState.logout();
+                            await unifiedAuthState.logout();
 
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text('Logged out locally'),
+                                  content: Text('Successfully Logout'),
                                   backgroundColor: Colors.orange,
                                 ),
                               );

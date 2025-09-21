@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'landing_page_components/landing_page.dart';
 import 'admin/login.dart';
-import 'services/auth_state.dart';
+import 'admin/dashboard/admin_profile.dart';
+import 'admin/dashboard/home.dart';
+import 'admin/dashboard/trainers.dart';
+import 'admin/dashboard/customers.dart';
+import 'admin/dashboard/admin_products.dart';
+import 'services/unified_auth_state.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,7 +29,7 @@ void main() async {
   );
 
   // Initialize auth state from stored tokens
-  await authState.initializeFromStorage();
+  await unifiedAuthState.initializeFromStorage();
 
   runApp(const MyApp());
 }
@@ -37,20 +42,33 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'RNR Fitness App',
       theme: _buildTheme(),
-      home: AnimatedBuilder(
-        animation: authState,
-        builder: (context, child) {
-          if (!authState.isInitialized) {
-            return const _LoadingScreen();
-          }
+      initialRoute: '/',
+      routes: {
+        '/':
+            (context) => AnimatedBuilder(
+              animation: unifiedAuthState,
+              builder: (context, child) {
+                if (!unifiedAuthState.isInitialized) {
+                  return const _LoadingScreen();
+                }
 
-          if (authState.isLoggedIn) {
-            return const LandingPage();
-          } else {
-            return const LoginChoicePage();
-          }
-        },
-      ),
+                if (unifiedAuthState.isCustomerLoggedIn) {
+                  return const LandingPage();
+                } else if (unifiedAuthState.isAdminLoggedIn) {
+                  return const AdminProfilePage();
+                } else {
+                  return const LoginChoicePage();
+                }
+              },
+            ),
+        '/admin-login': (context) => const LoginPage(checkLoginStatus: false),
+        '/customer-landing': (context) => const LandingPage(),
+        '/admin-dashboard': (context) => const AdminProfilePage(),
+        '/admin-statistics': (context) => const StatisticPage(),
+        '/admin-trainers': (context) => const TrainersPage(),
+        '/admin-customers': (context) => const CustomersPage(),
+        '/admin-products': (context) => const AdminProductsPage(),
+      },
       debugShowCheckedModeBanner: false,
     );
   }
@@ -372,45 +390,9 @@ class _LoginChoicePageState extends State<LoginChoicePage>
                                           width: 180,
                                           child: _ChoiceContainer(
                                             onTap: () {
-                                              Navigator.push(
+                                              Navigator.pushNamed(
                                                 context,
-                                                PageRouteBuilder(
-                                                  pageBuilder:
-                                                      (
-                                                        context,
-                                                        animation,
-                                                        secondaryAnimation,
-                                                      ) => const LandingPage(),
-                                                  transitionsBuilder: (
-                                                    context,
-                                                    animation,
-                                                    secondaryAnimation,
-                                                    child,
-                                                  ) {
-                                                    return SlideTransition(
-                                                      position: animation.drive(
-                                                        Tween(
-                                                          begin: const Offset(
-                                                            1.0,
-                                                            0.0,
-                                                          ),
-                                                          end: Offset.zero,
-                                                        ).chain(
-                                                          CurveTween(
-                                                            curve:
-                                                                Curves
-                                                                    .easeInOut,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                      child: child,
-                                                    );
-                                                  },
-                                                  transitionDuration:
-                                                      const Duration(
-                                                        milliseconds: 300,
-                                                      ),
-                                                ),
+                                                '/customer-landing',
                                               );
                                             },
                                             icon: Icons.person_outline,
@@ -438,45 +420,9 @@ class _LoginChoicePageState extends State<LoginChoicePage>
                                           width: 180,
                                           child: _ChoiceContainer(
                                             onTap: () {
-                                              Navigator.push(
+                                              Navigator.pushNamed(
                                                 context,
-                                                PageRouteBuilder(
-                                                  pageBuilder:
-                                                      (
-                                                        context,
-                                                        animation,
-                                                        secondaryAnimation,
-                                                      ) => const LoginPage(),
-                                                  transitionsBuilder: (
-                                                    context,
-                                                    animation,
-                                                    secondaryAnimation,
-                                                    child,
-                                                  ) {
-                                                    return SlideTransition(
-                                                      position: animation.drive(
-                                                        Tween(
-                                                          begin: const Offset(
-                                                            1.0,
-                                                            0.0,
-                                                          ),
-                                                          end: Offset.zero,
-                                                        ).chain(
-                                                          CurveTween(
-                                                            curve:
-                                                                Curves
-                                                                    .easeInOut,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                      child: child,
-                                                    );
-                                                  },
-                                                  transitionDuration:
-                                                      const Duration(
-                                                        milliseconds: 300,
-                                                      ),
-                                                ),
+                                                '/admin-login',
                                               );
                                             },
                                             icon:

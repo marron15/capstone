@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'profile_data.dart';
 
-import '../landing_page_components/landing_page.dart';
-
 import '../services/auth_service.dart';
-import '../services/auth_state.dart';
+import '../services/unified_auth_state.dart';
 
 class ProfilePage extends StatefulWidget {
   @override
@@ -173,7 +171,7 @@ class _ProfilePageState extends State<ProfilePage>
   // Save profile changes to server
   Future<void> _saveProfileToServer() async {
     try {
-      final customerId = authState.customerId;
+      final customerId = unifiedAuthState.customerId;
       if (customerId == null) return;
 
       // Prepare profile data for update
@@ -246,12 +244,9 @@ class _ProfilePageState extends State<ProfilePage>
   Future<void> _handleLogout() async {
     try {
       // Clear auth and local profile state
-      await authState.logout();
+      await unifiedAuthState.logout();
       profileNotifier.value = ProfileData();
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => LandingPage()),
-      );
+      Navigator.pushReplacementNamed(context, '/customer-landing');
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -279,7 +274,7 @@ class _ProfilePageState extends State<ProfilePage>
   @override
   Widget build(BuildContext context) {
     // If user is logged out, prevent showing stale data
-    if (!authState.isLoggedIn) {
+    if (!unifiedAuthState.isCustomerLoggedIn) {
       return Scaffold(
         backgroundColor: Colors.black,
         appBar: AppBar(
@@ -299,10 +294,7 @@ class _ProfilePageState extends State<ProfilePage>
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => LandingPage()),
-                  );
+                  Navigator.pushReplacementNamed(context, '/customer-landing');
                 },
                 child: const Text('Go to Login'),
               ),
@@ -633,10 +625,7 @@ class _ProfilePageState extends State<ProfilePage>
         leading: IconButton(
           icon: Icon(Icons.home, color: Colors.white),
           onPressed: () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => LandingPage()),
-            );
+            Navigator.pushReplacementNamed(context, '/customer-landing');
           },
         ),
         title: const Text('Profile', style: TextStyle(color: Colors.white)),

@@ -1,12 +1,5 @@
 import 'package:flutter/material.dart';
-import 'dashboard/admin_profile.dart';
-import 'dashboard/trainers.dart';
-import 'dashboard/home.dart';
-import 'dashboard/customers.dart';
-import 'dashboard/admin_products.dart';
-import 'services/admin_service.dart';
-import 'login.dart';
-import 'package:capstone/main.dart';
+import '../services/unified_auth_state.dart';
 
 class SideNav extends StatelessWidget {
   const SideNav({super.key});
@@ -22,10 +15,12 @@ class SideNav extends StatelessWidget {
               padding: EdgeInsets.zero,
               children: [
                 const DrawerHeader(
-                  decoration: BoxDecoration(color: Colors.blue),
-                  child: Text(
-                    'Admin Dashboard',
-                    style: TextStyle(color: Colors.white, fontSize: 24),
+                  decoration: BoxDecoration(color: Colors.white),
+                  child: Center(
+                    child: Text(
+                      'Admin Dashboard',
+                      style: TextStyle(color: Colors.black, fontSize: 24),
+                    ),
                   ),
                 ),
                 ListTile(
@@ -33,12 +28,7 @@ class SideNav extends StatelessWidget {
                   title: const Text('Dashboard'),
                   onTap: () {
                     Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const StatisticPage(),
-                      ),
-                    );
+                    Navigator.pushNamed(context, '/admin-statistics');
                   },
                 ),
                 ListTile(
@@ -46,12 +36,7 @@ class SideNav extends StatelessWidget {
                   title: const Text('Admin Profile'),
                   onTap: () {
                     Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const AdminProfilePage(),
-                      ),
-                    );
+                    Navigator.pushNamed(context, '/admin-dashboard');
                   },
                 ),
                 ListTile(
@@ -59,12 +44,7 @@ class SideNav extends StatelessWidget {
                   title: const Text('Trainers'),
                   onTap: () {
                     Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const TrainersPage(),
-                      ),
-                    );
+                    Navigator.pushNamed(context, '/admin-trainers');
                   },
                 ),
                 ListTile(
@@ -72,12 +52,7 @@ class SideNav extends StatelessWidget {
                   title: const Text('Customers'),
                   onTap: () {
                     Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const CustomersPage(),
-                      ),
-                    );
+                    Navigator.pushNamed(context, '/admin-customers');
                   },
                 ),
                 ListTile(
@@ -85,12 +60,7 @@ class SideNav extends StatelessWidget {
                   title: const Text('Products'),
                   onTap: () {
                     Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const AdminProductsPage(),
-                      ),
-                    );
+                    Navigator.pushNamed(context, '/admin-products');
                   },
                 ),
                 Padding(
@@ -111,20 +81,11 @@ class SideNav extends StatelessWidget {
                     icon: const Icon(Icons.logout),
                     label: const Text('Logout'),
                     onPressed: () async {
-                      await AdminService.logoutAdmin();
+                      await unifiedAuthState.logout();
                       if (!context.mounted) return;
-                      Navigator.of(context).pushAndRemoveUntil(
-                        MaterialPageRoute(
-                          builder: (context) => const LoginChoicePage(),
-                        ),
+                      Navigator.of(context).pushNamedAndRemoveUntil(
+                        '/admin-login',
                         (route) => false,
-                      );
-                      // Then push Admin Login so back navigates to chooser
-                      if (!context.mounted) return;
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => const LoginPage(),
-                        ),
                       );
                     },
                   ),

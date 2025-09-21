@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
-import '../landing_page_components/landing_page.dart';
+
 import '../User Profile/profile_data.dart';
-import '../services/auth_state.dart';
+import '../services/unified_auth_state.dart';
 
 class LogoutButton extends StatelessWidget {
   final Widget? child;
@@ -71,7 +71,7 @@ class LogoutButton extends StatelessWidget {
       final result = await AuthService.logout();
 
       // Clear auth state and local profile data
-      authState.logout();
+      unifiedAuthState.logout();
       profileNotifier.value = ProfileData();
 
       // Close loading dialog
@@ -84,7 +84,7 @@ class LogoutButton extends StatelessWidget {
             content: Text(
               result.success
                   ? 'Logged out successfully!'
-                  : 'Logged out locally',
+                  : 'Successfully Logout',
             ),
             backgroundColor: Colors.green,
           ),
@@ -94,8 +94,8 @@ class LogoutButton extends StatelessWidget {
         onLogoutSuccess?.call();
 
         // Navigate to landing page
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => LandingPage()),
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          '/customer-landing',
           (Route<dynamic> route) => false,
         );
       }
@@ -104,21 +104,21 @@ class LogoutButton extends StatelessWidget {
       Navigator.of(context).pop();
 
       // Even if API call fails, clear auth state and local data and navigate
-      authState.logout();
+      unifiedAuthState.logout();
       profileNotifier.value = ProfileData();
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Logged out locally'),
+            content: Text('Successfully Logout'),
             backgroundColor: Colors.orange,
           ),
         );
 
         onLogoutSuccess?.call();
 
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => LandingPage()),
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          '/customer-landing',
           (Route<dynamic> route) => false,
         );
       }
