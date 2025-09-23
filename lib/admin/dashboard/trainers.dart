@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../sidenav.dart';
 import '../modal/trainer_modal.dart';
+import '../services/api_service.dart';
 
 class TrainersPage extends StatefulWidget {
   const TrainersPage({super.key});
@@ -15,11 +16,14 @@ class _TrainersPageState extends State<TrainersPage> {
 
   List<Map<String, String>> _filteredTrainers = [];
   TextEditingController searchController = TextEditingController();
+  bool _isLoading = false;
+  bool _showArchived = false;
 
   @override
   void initState() {
     super.initState();
     _filteredTrainers = List.from(_trainers);
+    _loadTrainers();
   }
 
   @override
@@ -28,11 +32,48 @@ class _TrainersPageState extends State<TrainersPage> {
     super.dispose();
   }
 
-  void _addTrainer(Map<String, String> trainer) {
+  Future<void> _loadTrainers() async {
+    setState(() => _isLoading = true);
+    final List<Map<String, String>> list = await ApiService.getAllTrainers();
     setState(() {
-      _trainers.add(trainer);
+      _trainers
+        ..clear()
+        ..addAll(list);
       _filterTrainers(searchController.text);
+      _isLoading = false;
     });
+  }
+
+  Future<void> _addTrainer(Map<String, String> trainer) async {
+    final String firstName = trainer['firstName'] ?? '';
+    final String lastName = trainer['lastName'] ?? '';
+    final String contactNumber = trainer['contactNumber'] ?? '';
+    final String middleName = trainer['middleName'] ?? '';
+
+    if (firstName.isEmpty || lastName.isEmpty || contactNumber.isEmpty) {
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    final bool ok = await ApiService.insertTrainer(
+      firstName: firstName,
+      middleName: middleName.isEmpty ? null : middleName,
+      lastName: lastName,
+      contactNumber: contactNumber,
+    );
+    if (mounted) {
+      if (ok) {
+        await _loadTrainers();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Trainer added successfully')),
+        );
+      } else {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Failed to add trainer')));
+      }
+    }
   }
 
   void _editTrainer(int index, Map<String, String> updatedTrainer) {
@@ -54,9 +95,17 @@ class _TrainersPageState extends State<TrainersPage> {
       final lowerQuery = query.toLowerCase();
       _filteredTrainers =
           _trainers.where((trainer) {
-            return trainer['firstName']!.toLowerCase().contains(lowerQuery) ||
-                trainer['lastName']!.toLowerCase().contains(lowerQuery) ||
-                trainer['contactNumber']!.toLowerCase().contains(lowerQuery);
+            final String status = (trainer['status'] ?? '').toLowerCase();
+            final bool matchesArchive =
+                _showArchived ? status == 'inactive' : status != 'inactive';
+            if (!matchesArchive) return false;
+            final String firstName = (trainer['firstName'] ?? '').toLowerCase();
+            final String lastName = (trainer['lastName'] ?? '').toLowerCase();
+            final String contact =
+                (trainer['contactNumber'] ?? '').toLowerCase();
+            return firstName.contains(lowerQuery) ||
+                lastName.contains(lowerQuery) ||
+                contact.contains(lowerQuery);
           }).toList();
     });
   }
@@ -81,6 +130,7 @@ class _TrainersPageState extends State<TrainersPage> {
               return ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
+                  if (_isLoading) const LinearProgressIndicator(minHeight: 2),
                   Row(
                     children: [
                       ElevatedButton(
@@ -266,6 +316,13 @@ class _TrainersPageState extends State<TrainersPage> {
                         const SizedBox(height: 12),
                         Row(
                           children: [
+                            if (_isLoading)
+                              const Expanded(
+                                child: Padding(
+                                  padding: EdgeInsets.only(right: 12),
+                                  child: LinearProgressIndicator(minHeight: 2),
+                                ),
+                              ),
                             // Search styled like customers
                             SizedBox(
                               width: 560,
@@ -298,6 +355,42 @@ class _TrainersPageState extends State<TrainersPage> {
                               ),
                             ),
                             const Spacer(),
+                            // Archived Trainers toggle
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                setState(() => _showArchived = !_showArchived);
+                                _filterTrainers(searchController.text);
+                              },
+                              icon: Icon(
+                                _showArchived
+                                    ? Icons.inventory_2
+                                    : Icons.inventory_2_outlined,
+                                size: 18,
+                              ),
+                              label: Text(
+                                _showArchived
+                                    ? 'Show Active Trainers'
+                                    : 'Archived Trainers',
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor:
+                                    _showArchived ? Colors.black : Colors.white,
+                                foregroundColor:
+                                    _showArchived
+                                        ? Colors.white
+                                        : Colors.black87,
+                                elevation: 1,
+                                side: const BorderSide(color: Colors.black26),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(22),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 10,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
                             // New Trainer pill button
                             ElevatedButton.icon(
                               onPressed: () {
@@ -483,7 +576,7 @@ class _TrainersPageState extends State<TrainersPage> {
                                         ),
                                       ),
                                       SizedBox(
-                                        width: 160,
+                                        width: 200,
                                         child: Row(
                                           mainAxisAlignment:
                                               MainAxisAlignment.center,
@@ -528,7 +621,7 @@ class _TrainersPageState extends State<TrainersPage> {
                                               ),
                                             ),
                                             const SizedBox(width: 8),
-                                            // Delete icon
+                                            // Archive/Restore icon
                                             Container(
                                               decoration: BoxDecoration(
                                                 color: Colors.orange.shade50,
@@ -539,56 +632,49 @@ class _TrainersPageState extends State<TrainersPage> {
                                                 ),
                                               ),
                                               child: IconButton(
-                                                onPressed: () {
-                                                  showDialog(
-                                                    context: context,
-                                                    builder: (context) {
-                                                      return AlertDialog(
-                                                        title: const Text(
-                                                          'Delete Trainer',
-                                                        ),
-                                                        content: const Text(
-                                                          'Are you sure you want to delete this trainer?',
-                                                        ),
-                                                        actions: [
-                                                          TextButton(
-                                                            onPressed:
-                                                                () =>
-                                                                    Navigator.of(
-                                                                      context,
-                                                                    ).pop(),
-                                                            child: const Text(
-                                                              'Cancel',
-                                                              style: TextStyle(
-                                                                fontSize: 16,
-                                                              ),
-                                                            ),
-                                                          ),
-                                                          TextButton(
-                                                            onPressed: () {
-                                                              _removeTrainer(
-                                                                index,
-                                                              );
-                                                              Navigator.of(
-                                                                context,
-                                                              ).pop();
-                                                            },
-                                                            child: const Text(
-                                                              'Delete',
-                                                              style: TextStyle(
-                                                                color:
-                                                                    Colors.red,
-                                                                fontSize: 16,
-                                                              ),
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      );
-                                                    },
+                                                onPressed: () async {
+                                                  final String idStr =
+                                                      trainer['id'] ?? '0';
+                                                  final int id =
+                                                      int.tryParse(idStr) ?? 0;
+                                                  final bool isArchived =
+                                                      (trainer['status'] ?? '')
+                                                          .toLowerCase() ==
+                                                      'inactive';
+                                                  setState(
+                                                    () => _isLoading = true,
                                                   );
+                                                  final bool ok =
+                                                      isArchived
+                                                          ? await ApiService.restoreTrainer(
+                                                            id,
+                                                          )
+                                                          : await ApiService.archiveTrainer(
+                                                            id,
+                                                          );
+                                                  if (mounted) {
+                                                    await _loadTrainers();
+                                                    ScaffoldMessenger.of(
+                                                      context,
+                                                    ).showSnackBar(
+                                                      SnackBar(
+                                                        content: Text(
+                                                          ok
+                                                              ? (isArchived
+                                                                  ? 'Trainer restored'
+                                                                  : 'Trainer archived')
+                                                              : 'Action failed',
+                                                        ),
+                                                      ),
+                                                    );
+                                                  }
                                                 },
-                                                icon: const Icon(
-                                                  Icons.delete_outline,
+                                                icon: Icon(
+                                                  (trainer['status'] ?? '')
+                                                              .toLowerCase() ==
+                                                          'inactive'
+                                                      ? Icons.unarchive_outlined
+                                                      : Icons.archive_outlined,
                                                   size: 18,
                                                   color: Colors.orange,
                                                 ),
@@ -600,7 +686,12 @@ class _TrainersPageState extends State<TrainersPage> {
                                                       minWidth: 36,
                                                       minHeight: 36,
                                                     ),
-                                                tooltip: 'Delete',
+                                                tooltip:
+                                                    (trainer['status'] ?? '')
+                                                                .toLowerCase() ==
+                                                            'inactive'
+                                                        ? 'Restore'
+                                                        : 'Archive',
                                               ),
                                             ),
                                           ],

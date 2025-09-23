@@ -22,6 +22,15 @@ class ApiService {
       '$baseUrl/customers/activateCustomerByID.php';
   static const String getCustomersByStatusEndpoint =
       '$baseUrl/customers/getCustomersByStatus.php';
+  // Trainers endpoints
+  static const String getAllTrainersEndpoint =
+      '$baseUrl/gymTrainers/getAllTrainers.php';
+  static const String insertTrainerEndpoint =
+      '$baseUrl/gymTrainers/insertTrainers.php';
+  static const String archiveTrainerEndpoint =
+      '$baseUrl/gymTrainers/archiveTrainerByID.php';
+  static const String restoreTrainerEndpoint =
+      '$baseUrl/gymTrainers/restoreTrainerByID.php';
   // Membership endpoints
   static const String insertMembershipEndpoint =
       '$baseUrl/membership/insertMembership.php';
@@ -210,6 +219,125 @@ class ApiService {
     } catch (e) {
       debugPrint('Error in getAllCustomers: $e');
       return {'success': false, 'message': 'Network error: $e'};
+    }
+  }
+
+  // Fetch all trainers
+  static Future<List<Map<String, String>>> getAllTrainers() async {
+    try {
+      final response = await http.get(
+        Uri.parse(getAllTrainersEndpoint),
+        headers: {'Accept': 'application/json'},
+      );
+
+      if (response.statusCode == 200 && response.body.isNotEmpty) {
+        final dynamic parsed = jsonDecode(response.body);
+        if (parsed is List) {
+          return parsed.map<Map<String, String>>((dynamic item) {
+            final Map<String, dynamic> row =
+                item is Map<String, dynamic> ? item : <String, dynamic>{};
+            String getStr(String key) => (row[key] ?? '').toString();
+            return {
+              'id': getStr('id'),
+              'firstName': getStr('first_name'),
+              'middleName': getStr('middle_name'),
+              'lastName': getStr('last_name'),
+              'contactNumber': getStr('contact_number'),
+              'status': getStr('status'),
+            };
+          }).toList();
+        }
+      }
+      return [];
+    } catch (e) {
+      debugPrint('Error in getAllTrainers: $e');
+      return [];
+    }
+  }
+
+  // Insert a trainer (form-encoded as PHP expects)
+  static Future<bool> insertTrainer({
+    required String firstName,
+    String? middleName,
+    required String lastName,
+    required String contactNumber,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse(insertTrainerEndpoint),
+        headers: {'Accept': 'application/json'},
+        body: {
+          'firstName': firstName,
+          'middleName': middleName ?? '',
+          'lastName': lastName,
+          'contactNumber': contactNumber,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        // Endpoint returns true/false JSON
+        try {
+          final dynamic parsed = jsonDecode(response.body);
+          if (parsed is bool) return parsed;
+          if (parsed is Map<String, dynamic> && parsed['success'] != null) {
+            return parsed['success'] == true;
+          }
+        } catch (_) {
+          // Fallback for plain text responses
+          final String body = response.body.toLowerCase();
+          return body.contains('true') || body.contains('success');
+        }
+      }
+      return false;
+    } catch (e) {
+      debugPrint('Error in insertTrainer: $e');
+      return false;
+    }
+  }
+
+  static Future<bool> archiveTrainer(int id) async {
+    try {
+      final res = await http.post(
+        Uri.parse(archiveTrainerEndpoint),
+        headers: {'Accept': 'application/json'},
+        body: {'id': id.toString()},
+      );
+      if (res.statusCode == 200) {
+        try {
+          final parsed = jsonDecode(res.body);
+          if (parsed is Map<String, dynamic> && parsed['success'] != null) {
+            return parsed['success'] == true;
+          }
+          if (parsed is bool) return parsed;
+        } catch (_) {}
+      }
+      return false;
+    } catch (e) {
+      debugPrint('archiveTrainer error: $e');
+      return false;
+    }
+  }
+
+  static Future<bool> restoreTrainer(int id) async {
+    try {
+      final res = await http.post(
+        Uri.parse(restoreTrainerEndpoint),
+        headers: {'Accept': 'application/json'},
+        body: {'id': id.toString()},
+      );
+      if (res.statusCode == 200) {
+        try {
+          final parsed = jsonDecode(res.body);
+          if (parsed is Map<String, dynamic> && parsed['success'] != null) {
+            return parsed['success'] == true;
+          }
+          if (parsed is bool) return parsed;
+        } catch (_) {}
+      }
+      return false;
+    } catch (e) {
+      debugPrint('restoreTrainer error: $e');
+      return false;
     }
   }
 
