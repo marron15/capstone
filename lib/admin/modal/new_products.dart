@@ -2,20 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:ui';
 import 'dart:typed_data';
+import '../services/api_service.dart';
 
 class Product {
   final String name;
   final double price;
   final String description;
-  final Uint8List imageBytes;
-  final String imageFileName;
+  final Uint8List? imageBytes;
+  final String? imageFileName;
+  final String? imageUrl; // when loaded from server path/URL
 
   Product({
     required this.name,
     required this.price,
     required this.description,
-    required this.imageBytes,
-    required this.imageFileName,
+    this.imageBytes,
+    this.imageFileName,
+    this.imageUrl,
   });
 }
 
@@ -164,27 +167,43 @@ class _AddProductModalState extends State<AddProductModal> {
     if (_formKey.currentState!.validate() && _imageBytes != null) {
       final newProduct = Product(
         name: _nameController.text,
-        price: double.tryParse(_priceController.text) ?? 0.0,
+        price: 0.0,
         description: _descriptionController.text,
-        imageBytes: _imageBytes!,
-        imageFileName: _imageFileName ?? 'image.png',
+        imageBytes: _imageBytes,
+        imageFileName: _imageFileName,
       );
 
-      widget.onProductAdded(newProduct);
-      _clearForm();
-      Navigator.of(context).pop();
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            widget.initialProduct == null
-                ? 'Product added successfully!'
-                : 'Product updated!',
-          ),
-          backgroundColor:
-              widget.initialProduct == null ? Colors.green : Colors.blue,
-        ),
-      );
+      // Persist to API
+      ApiService.insertProduct(
+        name: newProduct.name,
+        description: newProduct.description,
+        imageBytes: newProduct.imageBytes!,
+        imageFileName: newProduct.imageFileName ?? 'image.png',
+      ).then((bool ok) {
+        if (ok) {
+          widget.onProductAdded(newProduct);
+          _clearForm();
+          Navigator.of(context).pop();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                widget.initialProduct == null
+                    ? 'Product added successfully!'
+                    : 'Product updated!',
+              ),
+              backgroundColor:
+                  widget.initialProduct == null ? Colors.green : Colors.blue,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to save product'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      });
     } else if (_imageBytes == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

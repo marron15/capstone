@@ -18,9 +18,7 @@ class ProductCard extends StatelessWidget {
     return Card(
       elevation: 2,
       clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -29,12 +27,22 @@ class ProductCard extends StatelessWidget {
             child: Container(
               width: double.infinity,
               color: Colors.grey[100],
-              child: Image.memory(
-                product.imageBytes,
-                fit: BoxFit.cover,
-                width: double.infinity,
-                height: double.infinity,
-              ),
+              child:
+                  product.imageUrl != null
+                      ? Image.network(
+                        product.imageUrl!,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: double.infinity,
+                      )
+                      : (product.imageBytes != null
+                          ? Image.memory(
+                            product.imageBytes!,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            height: double.infinity,
+                          )
+                          : const SizedBox.shrink()),
             ),
           ),
           // Details Section
@@ -61,14 +69,20 @@ class ProductCard extends StatelessWidget {
                     Row(
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.edit,
-                              size: 18, color: Colors.blue),
+                          icon: const Icon(
+                            Icons.edit,
+                            size: 18,
+                            color: Colors.blue,
+                          ),
                           onPressed: onEdit,
                           tooltip: 'Edit',
                         ),
                         IconButton(
-                          icon: const Icon(Icons.delete,
-                              size: 18, color: Colors.red),
+                          icon: const Icon(
+                            Icons.delete,
+                            size: 18,
+                            color: Colors.red,
+                          ),
                           onPressed: onDelete,
                           tooltip: 'Delete',
                         ),
@@ -79,18 +93,12 @@ class ProductCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   '₱${product.price.toStringAsFixed(2)}',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   product.description.toLowerCase(),
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),

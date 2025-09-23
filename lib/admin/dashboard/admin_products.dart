@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../modal/new_products.dart';
 import '../sidenav.dart';
+import '../services/api_service.dart';
+import 'dart:typed_data';
+import 'dart:convert';
 
 class AdminProductsPage extends StatefulWidget {
   const AdminProductsPage({super.key});
@@ -12,6 +15,67 @@ class AdminProductsPage extends StatefulWidget {
 class _AdminProductsPageState extends State<AdminProductsPage> {
   final List<Product> products = [];
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  bool _showArchived = false;
+  final List<int> _productIds = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchProducts();
+  }
+
+  Future<void> _fetchProducts() async {
+    final bool archived = _showArchived;
+    final list =
+        archived
+            ? await ApiService.getProductsByStatus('inactive')
+            : await ApiService.getProductsByStatus('active');
+    setState(() {
+      products
+        ..clear()
+        ..addAll(
+          list.map((row) {
+            final String name = (row['name'] ?? '').toString();
+            final String description = (row['description'] ?? '').toString();
+            final String img = (row['img'] ?? '').toString();
+            Uint8List? bytes;
+            String? url;
+            try {
+              if (img.startsWith('uploads/') || img.startsWith('http')) {
+                url =
+                    img.startsWith('http')
+                        ? img
+                        : '${ApiService.productImageProxyEndpoint}?path=$img';
+              } else if (img.isNotEmpty) {
+                final String data =
+                    img.contains(',') ? img.split(',').last : img;
+                bytes = Uint8List.fromList(base64.decode(data));
+              }
+            } catch (_) {
+              bytes = null;
+            }
+            return Product(
+              name: name,
+              price: double.tryParse((row['price'] ?? '0').toString()) ?? 0.0,
+              description: description,
+              imageBytes: bytes,
+              imageFileName: 'image',
+              imageUrl: url,
+            );
+          }),
+        );
+      _productIds
+        ..clear()
+        ..addAll(
+          list.map((row) {
+            final dynamic v =
+                row['id'] ?? row['product_id'] ?? row['productId'];
+            final String s = (v ?? '0').toString();
+            return int.tryParse(s) ?? 0;
+          }),
+        );
+    });
+  }
 
   void _showAddProductDialog({Product? product, int? index}) {
     showDialog(
@@ -30,18 +94,6 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
           initialProduct: product,
         );
       },
-    );
-  }
-
-  void _deleteProduct(int index) {
-    setState(() {
-      products.removeAt(index);
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Product deleted!'),
-        backgroundColor: Colors.red,
-      ),
     );
   }
 
@@ -96,6 +148,20 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                         horizontal: 16,
                         vertical: 10,
                       ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      setState(() => _showArchived = !_showArchived);
+                      await _fetchProducts();
+                    },
+                    icon: Icon(
+                      _showArchived ? Icons.inventory_2 : Icons.inventory,
+                      size: 18,
+                    ),
+                    label: Text(
+                      _showArchived ? 'Show Active' : 'Show Archived',
                     ),
                   ),
                 ],
@@ -210,22 +276,42 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                                           builder:
                                               (_) => Dialog(
                                                 child: InteractiveViewer(
-                                                  child: Image.memory(
-                                                    product.imageBytes,
-                                                    fit: BoxFit.contain,
-                                                  ),
+                                                  child:
+                                                      product.imageUrl != null
+                                                          ? Image.network(
+                                                            product.imageUrl!,
+                                                            fit: BoxFit.contain,
+                                                          )
+                                                          : Image.memory(
+                                                            product.imageBytes ??
+                                                                Uint8List(0),
+                                                            fit: BoxFit.contain,
+                                                          ),
                                                 ),
                                               ),
                                         );
                                       },
                                       child: ClipRRect(
                                         borderRadius: BorderRadius.circular(8),
-                                        child: Image.memory(
-                                          product.imageBytes,
-                                          width: 64,
-                                          height: 40,
-                                          fit: BoxFit.cover,
-                                        ),
+                                        child:
+                                            product.imageUrl != null
+                                                ? Image.network(
+                                                  product.imageUrl!,
+                                                  width: 64,
+                                                  height: 40,
+                                                  fit: BoxFit.cover,
+                                                )
+                                                : (product.imageBytes != null
+                                                    ? Image.memory(
+                                                      product.imageBytes!,
+                                                      width: 64,
+                                                      height: 40,
+                                                      fit: BoxFit.cover,
+                                                    )
+                                                    : const SizedBox(
+                                                      width: 64,
+                                                      height: 40,
+                                                    )),
                                       ),
                                     ),
                                   ),
@@ -305,10 +391,60 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                                           ),
                                         ),
                                         child: IconButton(
-                                          onPressed:
-                                              () => _deleteProduct(index),
-                                          icon: const Icon(
-                                            Icons.delete_outline,
+                                          onPressed: () async {
+                                            final int id =
+                                                (index >= 0 &&
+                                                        index <
+                                                            _productIds.length)
+                                                    ? _productIds[index]
+                                                    : 0;
+                                            if (id == 0) return;
+                                            final bool wasArchived =
+                                                _showArchived;
+                                            final bool ok =
+                                                wasArchived
+                                                    ? await ApiService.restoreProduct(
+                                                      id,
+                                                    )
+                                                    : await ApiService.archiveProduct(
+                                                      id,
+                                                    );
+                                            if (ok) {
+                                              await _fetchProducts();
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    wasArchived
+                                                        ? 'Product restored'
+                                                        : 'Product archived',
+                                                  ),
+                                                  backgroundColor:
+                                                      wasArchived
+                                                          ? Colors.green
+                                                          : Colors.orange,
+                                                ),
+                                              );
+                                            } else {
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    wasArchived
+                                                        ? 'Failed to restore product'
+                                                        : 'Failed to archive product',
+                                                  ),
+                                                  backgroundColor: Colors.red,
+                                                ),
+                                              );
+                                            }
+                                          },
+                                          icon: Icon(
+                                            _showArchived
+                                                ? Icons.restore_outlined
+                                                : Icons.archive_outlined,
                                             size: 18,
                                             color: Colors.orange,
                                           ),
@@ -317,7 +453,10 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                                             minWidth: 36,
                                             minHeight: 36,
                                           ),
-                                          tooltip: 'Delete',
+                                          tooltip:
+                                              _showArchived
+                                                  ? 'Restore'
+                                                  : 'Archive',
                                         ),
                                       ),
                                     ],

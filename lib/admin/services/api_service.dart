@@ -42,6 +42,22 @@ class ApiService {
   static const String updateAddressByIdEndpoint =
       '$baseUrl/address/updatedAddressByID.php';
 
+  // Products endpoints
+  static const String getAllProductsEndpoint =
+      '$baseUrl/products/getAllProducts.php';
+  static const String insertProductEndpoint =
+      '$baseUrl/products/insertProducts.php';
+  static const String updateProductEndpoint =
+      '$baseUrl/products/updateProducts.php';
+  static const String deleteProductEndpoint =
+      '$baseUrl/products/deleteProductsByID.php';
+  static const String restoreProductEndpoint =
+      '$baseUrl/products/restoreProductsByID.php';
+  static const String productImageProxyEndpoint =
+      '$baseUrl/products/getImage.php';
+  static const String getProductsByStatusEndpoint =
+      '$baseUrl/products/getAllProducts.php';
+
   static Future<Map<String, dynamic>> signupCustomer({
     required String firstName,
     required String lastName,
@@ -219,6 +235,236 @@ class ApiService {
     } catch (e) {
       debugPrint('Error in getAllCustomers: $e');
       return {'success': false, 'message': 'Network error: $e'};
+    }
+  }
+
+  // ============================
+  // Products
+  // ============================
+
+  static String _detectMimeFromFilename(String filename) {
+    final String lower = filename.toLowerCase();
+    if (lower.endsWith('.png')) return 'image/png';
+    if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg';
+    if (lower.endsWith('.webp')) return 'image/webp';
+    return 'application/octet-stream';
+  }
+
+  static Future<List<Map<String, dynamic>>> getAllProducts() async {
+    try {
+      final res = await http.get(
+        Uri.parse(getAllProductsEndpoint),
+        headers: {'Accept': 'application/json'},
+      );
+      if (res.statusCode == 200 && res.body.isNotEmpty) {
+        final dynamic parsed = jsonDecode(res.body);
+        if (parsed is List) {
+          return List<Map<String, dynamic>>.from(parsed);
+        }
+      }
+      return [];
+    } catch (e) {
+      debugPrint('getAllProducts error: $e');
+      return [];
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> getProductsByStatus(
+    dynamic status,
+  ) async {
+    try {
+      final res = await http.get(
+        Uri.parse('$getProductsByStatusEndpoint?status=$status'),
+        headers: {'Accept': 'application/json'},
+      );
+      if (res.statusCode == 200 && res.body.isNotEmpty) {
+        final dynamic parsed = jsonDecode(res.body);
+        if (parsed is List) {
+          return List<Map<String, dynamic>>.from(parsed);
+        }
+      }
+      return [];
+    } catch (e) {
+      debugPrint('getProductsByStatus error: $e');
+      return [];
+    }
+  }
+
+  static Future<bool> insertProduct({
+    required String name,
+    required String description,
+    required Uint8List imageBytes,
+    required String imageFileName,
+  }) async {
+    try {
+      final String mime = _detectMimeFromFilename(imageFileName);
+      final String base64Img = base64Encode(imageBytes);
+      final String dataUrl =
+          mime.startsWith('image/')
+              ? 'data:$mime;base64,$base64Img'
+              : base64Img;
+
+      final body = jsonEncode({
+        'name': name,
+        'description': description,
+        'img': dataUrl,
+      });
+
+      final res = await http.post(
+        Uri.parse(insertProductEndpoint),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: body,
+      );
+
+      debugPrint('insertProduct JSON status: ${res.statusCode}');
+      debugPrint('insertProduct JSON body: ${res.body}');
+
+      if (res.statusCode == 200) {
+        try {
+          final Map<String, dynamic> parsed =
+              jsonDecode(res.body) as Map<String, dynamic>;
+          return parsed['success'] == true;
+        } catch (_) {
+          return res.body.toLowerCase().contains('true') ||
+              res.body.toLowerCase().contains('success');
+        }
+      }
+
+      // Fallback: some PHP setups expect form-encoded fields
+      final resForm = await http.post(
+        Uri.parse(insertProductEndpoint),
+        headers: {'Accept': 'application/json'},
+        body: {'name': name, 'description': description, 'img': dataUrl},
+      );
+      debugPrint('insertProduct FORM status: ${resForm.statusCode}');
+      debugPrint('insertProduct FORM body: ${resForm.body}');
+      if (resForm.statusCode == 200) {
+        try {
+          final Map<String, dynamic> parsed =
+              jsonDecode(resForm.body) as Map<String, dynamic>;
+          return parsed['success'] == true;
+        } catch (_) {
+          return resForm.body.toLowerCase().contains('true') ||
+              resForm.body.toLowerCase().contains('success');
+        }
+      }
+      return false;
+    } catch (e) {
+      debugPrint('insertProduct error: $e');
+      return false;
+    }
+  }
+
+  static Future<bool> updateProduct({
+    required int id,
+    required Map<String, dynamic> data,
+  }) async {
+    try {
+      final res = await http.post(
+        Uri.parse(updateProductEndpoint),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode({'id': id, ...data}),
+      );
+      if (res.statusCode == 200) {
+        final parsed = jsonDecode(res.body);
+        if (parsed is Map<String, dynamic>) return parsed['success'] == true;
+      }
+      return false;
+    } catch (e) {
+      debugPrint('updateProduct error: $e');
+      return false;
+    }
+  }
+
+  static Future<bool> deleteProduct(int id) async {
+    try {
+      final res = await http.post(
+        Uri.parse(deleteProductEndpoint),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode({'id': id}),
+      );
+      debugPrint('archiveProduct JSON status: ${res.statusCode}');
+      debugPrint('archiveProduct JSON body: ${res.body}');
+      if (res.statusCode == 200) {
+        try {
+          final parsed = jsonDecode(res.body);
+          if (parsed is Map<String, dynamic>) {
+            return parsed['success'] == true;
+          }
+        } catch (_) {}
+      }
+      // Fallback to form-encoded
+      final resForm = await http.post(
+        Uri.parse(deleteProductEndpoint),
+        headers: {'Accept': 'application/json'},
+        body: {'id': id.toString()},
+      );
+      debugPrint('archiveProduct FORM status: ${resForm.statusCode}');
+      debugPrint('archiveProduct FORM body: ${resForm.body}');
+      if (resForm.statusCode == 200) {
+        try {
+          final parsed = jsonDecode(resForm.body);
+          if (parsed is Map<String, dynamic>) {
+            return parsed['success'] == true;
+          }
+        } catch (_) {
+          final b = resForm.body.toLowerCase();
+          return b.contains('true') || b.contains('success');
+        }
+      }
+      return false;
+    } catch (e) {
+      debugPrint('deleteProduct error: $e');
+      return false;
+    }
+  }
+
+  static Future<bool> archiveProduct(int id) => deleteProduct(id);
+
+  static Future<bool> restoreProduct(int id) async {
+    try {
+      final res = await http.post(
+        Uri.parse(restoreProductEndpoint),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode({'id': id}),
+      );
+      if (res.statusCode == 200) {
+        try {
+          final parsed = jsonDecode(res.body);
+          if (parsed is Map<String, dynamic>) return parsed['success'] == true;
+        } catch (_) {}
+      }
+      // fallback form-encoded
+      final resForm = await http.post(
+        Uri.parse(restoreProductEndpoint),
+        headers: {'Accept': 'application/json'},
+        body: {'id': id.toString()},
+      );
+      if (resForm.statusCode == 200) {
+        try {
+          final parsed = jsonDecode(resForm.body);
+          if (parsed is Map<String, dynamic>) return parsed['success'] == true;
+        } catch (_) {
+          final b = resForm.body.toLowerCase();
+          return b.contains('true') || b.contains('success');
+        }
+      }
+      return false;
+    } catch (e) {
+      debugPrint('restoreProduct error: $e');
+      return false;
     }
   }
 
