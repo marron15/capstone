@@ -167,18 +167,6 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                             Expanded(
                               flex: 2,
                               child: Text(
-                                'Price',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              flex: 4,
-                              child: Text(
                                 'Description',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
@@ -188,8 +176,9 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                                 ),
                               ),
                             ),
-                            SizedBox(
-                              width: 160,
+                            Expanded(
+                              flex: 1,
+
                               child: Text(
                                 'Actions',
                                 textAlign: TextAlign.center,
@@ -213,11 +202,7 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                               children: [
                                 SizedBox(
                                   width: 120,
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 6,
-                                      horizontal: 8,
-                                    ),
+                                  child: Center(
                                     child: GestureDetector(
                                       onTap: () {
                                         showDialog(
@@ -233,32 +218,14 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                                               ),
                                         );
                                       },
-                                      child: Column(
-                                        children: [
-                                          ClipRRect(
-                                            borderRadius: BorderRadius.circular(
-                                              8,
-                                            ),
-                                            child: Image.memory(
-                                              product.imageBytes,
-                                              width: 64,
-                                              height: 40,
-                                              fit: BoxFit.cover,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            // show stored filename if available
-                                            (product.imageFileName),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(
-                                              fontSize: 11,
-                                              color: Colors.black87,
-                                            ),
-                                            textAlign: TextAlign.center,
-                                          ),
-                                        ],
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(8),
+                                        child: Image.memory(
+                                          product.imageBytes,
+                                          width: 64,
+                                          height: 40,
+                                          fit: BoxFit.cover,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -285,20 +252,6 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                                       horizontal: 8,
                                     ),
                                     child: Text(
-                                      '₱${product.price.toStringAsFixed(2)}',
-                                      textAlign: TextAlign.center,
-                                      style: const TextStyle(fontSize: 16),
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  flex: 4,
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 14,
-                                      horizontal: 8,
-                                    ),
-                                    child: Text(
                                       product.description,
                                       textAlign: TextAlign.center,
                                       overflow: TextOverflow.ellipsis,
@@ -306,8 +259,8 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                                     ),
                                   ),
                                 ),
-                                SizedBox(
-                                  width: 160,
+                                Expanded(
+                                  flex: 1,
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [

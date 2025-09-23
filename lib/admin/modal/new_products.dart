@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'dart:ui';
 import 'dart:typed_data';
 
 class Product {
@@ -61,6 +62,27 @@ class _AddProductModalState extends State<AddProductModal> {
     super.dispose();
   }
 
+  InputDecoration _inputDecoration(String label) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: const TextStyle(color: Colors.white70),
+      filled: true,
+      fillColor: Colors.black.withAlpha((0.3 * 255).toInt()),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Colors.lightBlueAccent, width: 1.2),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(
+          color: Colors.white.withAlpha((0.18 * 255).toInt()),
+        ),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    );
+  }
+
   Future<void> _pickImage() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.image,
@@ -79,30 +101,48 @@ class _AddProductModalState extends State<AddProductModal> {
       onTap: _pickImage,
       child: Container(
         width: double.infinity,
-        height: 150,
+        height: 180,
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade200),
+          color: Colors.black.withAlpha((0.3 * 255).toInt()),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: Colors.white.withAlpha((0.18 * 255).toInt()),
+          ),
         ),
         child:
             _imageBytes != null
                 ? ClipRRect(
-                  borderRadius: BorderRadius.circular(11),
+                  borderRadius: BorderRadius.circular(13),
                   child: Image.memory(_imageBytes!, fit: BoxFit.cover),
                 )
                 : Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      Icons.cloud_upload_outlined,
-                      size: 40,
-                      color: Colors.blue[300],
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.blueAccent.withAlpha((0.25 * 255).toInt()),
+                            Colors.lightBlueAccent.withAlpha(
+                              (0.18 * 255).toInt(),
+                            ),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.cloud_upload_outlined,
+                        color: Colors.lightBlueAccent,
+                      ),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
+                    const SizedBox(height: 10),
+                    const Text(
                       'Click to upload image',
-                      style: TextStyle(color: Colors.blue[300], fontSize: 14),
+                      style: TextStyle(color: Colors.white70, fontSize: 14),
                     ),
                   ],
                 ),
@@ -124,7 +164,7 @@ class _AddProductModalState extends State<AddProductModal> {
     if (_formKey.currentState!.validate() && _imageBytes != null) {
       final newProduct = Product(
         name: _nameController.text,
-        price: double.parse(_priceController.text),
+        price: double.tryParse(_priceController.text) ?? 0.0,
         description: _descriptionController.text,
         imageBytes: _imageBytes!,
         imageFileName: _imageFileName ?? 'image.png',
@@ -157,119 +197,191 @@ class _AddProductModalState extends State<AddProductModal> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
+    final String title =
+        widget.initialProduct == null ? 'Add New Product' : 'Edit Product';
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      alignment: Alignment.center,
       insetPadding: const EdgeInsets.fromLTRB(16, 24, 16, 24),
-      backgroundColor: Colors.grey[50],
-      title: Text(
-        widget.initialProduct == null ? 'Add New Product' : 'Edit Product',
-      ),
-      content: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+      child: Align(
+        alignment: Alignment.center,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(22),
+          child: Stack(
             children: [
-              _buildImagePreview(),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _nameController,
-                decoration: InputDecoration(
-                  labelText: 'Product Name',
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade200),
+              BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                child: Container(
+                  width: 720,
+                  constraints: const BoxConstraints(maxWidth: 760),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(22),
+                    color: Colors.black.withAlpha((0.7 * 255).toInt()),
+                    border: Border.all(
+                      color: Colors.white.withAlpha((0.25 * 255).toInt()),
+                      width: 1.5,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.blueAccent.withAlpha(
+                          (0.18 * 255).toInt(),
+                        ),
+                        blurRadius: 32,
+                        spreadRadius: 2,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
                   ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade200),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 28,
+                      vertical: 24,
+                    ),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      Colors.blueAccent.withAlpha(
+                                        (0.25 * 255).toInt(),
+                                      ),
+                                      Colors.lightBlueAccent.withAlpha(
+                                        (0.18 * 255).toInt(),
+                                      ),
+                                    ],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                ),
+                                child: const Icon(
+                                  Icons.add_photo_alternate_outlined,
+                                  color: Colors.lightBlueAccent,
+                                  size: 24,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                title,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 20,
+                                  color: Colors.white,
+                                  letterSpacing: 0.2,
+                                ),
+                              ),
+                              const Spacer(),
+                              IconButton(
+                                onPressed: () => Navigator.of(context).pop(),
+                                icon: const Icon(
+                                  Icons.close,
+                                  size: 26,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 20),
+                          Divider(
+                            thickness: 1.5,
+                            color: Colors.lightBlueAccent.withAlpha(
+                              (0.22 * 255).toInt(),
+                            ),
+                            height: 24,
+                            endIndent: 12,
+                            indent: 2,
+                          ),
+                          const SizedBox(height: 16),
+                          _buildImagePreview(),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: _nameController,
+                            style: const TextStyle(color: Colors.white),
+                            decoration: _inputDecoration('Product Name'),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter product name';
+                              }
+                              return null;
+                            },
+                          ),
+                          // Price removed per request; defaulting to 0.0 in submission
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: _descriptionController,
+                            style: const TextStyle(color: Colors.white),
+                            decoration: _inputDecoration('Description'),
+                            maxLines: 3,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter product description';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 24),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              ElevatedButton(
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                  _clearForm();
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  foregroundColor: Colors.black,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 24,
+                                    vertical: 12,
+                                  ),
+                                ),
+                                child: const Text('Cancel'),
+                              ),
+                              const SizedBox(width: 12),
+                              ElevatedButton(
+                                onPressed: _handleSubmit,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.lightBlueAccent,
+                                  foregroundColor: Colors.black,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 24,
+                                    vertical: 12,
+                                  ),
+                                ),
+                                child: Text(
+                                  widget.initialProduct == null
+                                      ? 'Add Product'
+                                      : 'Save Changes',
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter product name';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _priceController,
-                decoration: InputDecoration(
-                  labelText: 'Price',
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade200),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade200),
-                  ),
-                  prefixText: '₱',
-                ),
-                keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter product price';
-                  }
-                  if (double.tryParse(value) == null) {
-                    return 'Please enter a valid number';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _descriptionController,
-                decoration: InputDecoration(
-                  labelText: 'Description',
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade200),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade200),
-                  ),
-                ),
-                maxLines: 3,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter product description';
-                  }
-                  return null;
-                },
               ),
             ],
           ),
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-            _clearForm();
-          },
-          child: Text('Cancel', style: TextStyle(color: Colors.purple[300])),
-        ),
-        ElevatedButton(
-          onPressed: _handleSubmit,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.purple[300],
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-          child: Text(
-            widget.initialProduct == null ? 'Add Product' : 'Save Changes',
-          ),
-        ),
-      ],
     );
   }
 }
