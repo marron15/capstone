@@ -621,18 +621,10 @@ class _TrainersPageState extends State<TrainersPage> {
                                               ),
                                             ),
                                             const SizedBox(width: 8),
-                                            // Archive/Restore icon
+                                            // Archive/Restore control
                                             Container(
-                                              decoration: BoxDecoration(
-                                                color: Colors.orange.shade50,
-                                                borderRadius:
-                                                    BorderRadius.circular(6),
-                                                border: Border.all(
-                                                  color: Colors.orange.shade200,
-                                                ),
-                                              ),
-                                              child: IconButton(
-                                                onPressed: () async {
+                                              child: Builder(
+                                                builder: (context) {
                                                   final String idStr =
                                                       trainer['id'] ?? '0';
                                                   final int id =
@@ -641,57 +633,127 @@ class _TrainersPageState extends State<TrainersPage> {
                                                       (trainer['status'] ?? '')
                                                           .toLowerCase() ==
                                                       'inactive';
-                                                  setState(
-                                                    () => _isLoading = true,
-                                                  );
-                                                  final bool ok =
-                                                      isArchived
-                                                          ? await ApiService.restoreTrainer(
-                                                            id,
-                                                          )
-                                                          : await ApiService.archiveTrainer(
-                                                            id,
-                                                          );
-                                                  if (mounted) {
-                                                    await _loadTrainers();
-                                                    ScaffoldMessenger.of(
-                                                      context,
-                                                    ).showSnackBar(
-                                                      SnackBar(
-                                                        content: Text(
-                                                          ok
-                                                              ? (isArchived
-                                                                  ? 'Trainer restored'
-                                                                  : 'Trainer archived')
-                                                              : 'Action failed',
+                                                  if (isArchived) {
+                                                    return Container(
+                                                      decoration: BoxDecoration(
+                                                        color:
+                                                            Colors
+                                                                .green
+                                                                .shade50,
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              6,
+                                                            ),
+                                                        border: Border.all(
+                                                          color:
+                                                              Colors
+                                                                  .green
+                                                                  .shade200,
                                                         ),
+                                                      ),
+                                                      child: IconButton(
+                                                        onPressed: () async {
+                                                          setState(
+                                                            () =>
+                                                                _isLoading =
+                                                                    true,
+                                                          );
+                                                          final bool ok =
+                                                              await ApiService.restoreTrainer(
+                                                                id,
+                                                              );
+                                                          if (mounted) {
+                                                            await _loadTrainers();
+                                                            ScaffoldMessenger.of(
+                                                              context,
+                                                            ).showSnackBar(
+                                                              SnackBar(
+                                                                content: Text(
+                                                                  ok
+                                                                      ? 'Trainer restored'
+                                                                      : 'Action failed',
+                                                                ),
+                                                              ),
+                                                            );
+                                                          }
+                                                        },
+                                                        icon: const Icon(
+                                                          Icons
+                                                              .restore_outlined,
+                                                          size: 18,
+                                                          color: Colors.green,
+                                                        ),
+                                                        padding:
+                                                            const EdgeInsets.all(
+                                                              8,
+                                                            ),
+                                                        constraints:
+                                                            const BoxConstraints(
+                                                              minWidth: 36,
+                                                              minHeight: 36,
+                                                            ),
+                                                        tooltip: 'Restore',
                                                       ),
                                                     );
                                                   }
-                                                },
-                                                icon: Icon(
-                                                  (trainer['status'] ?? '')
-                                                              .toLowerCase() ==
-                                                          'inactive'
-                                                      ? Icons.unarchive_outlined
-                                                      : Icons.archive_outlined,
-                                                  size: 18,
-                                                  color: Colors.orange,
-                                                ),
-                                                padding: const EdgeInsets.all(
-                                                  8,
-                                                ),
-                                                constraints:
-                                                    const BoxConstraints(
-                                                      minWidth: 36,
-                                                      minHeight: 36,
+                                                  return Container(
+                                                    decoration: BoxDecoration(
+                                                      color:
+                                                          Colors.orange.shade50,
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            6,
+                                                          ),
+                                                      border: Border.all(
+                                                        color:
+                                                            Colors
+                                                                .orange
+                                                                .shade200,
+                                                      ),
                                                     ),
-                                                tooltip:
-                                                    (trainer['status'] ?? '')
-                                                                .toLowerCase() ==
-                                                            'inactive'
-                                                        ? 'Restore'
-                                                        : 'Archive',
+                                                    child: IconButton(
+                                                      onPressed: () async {
+                                                        setState(
+                                                          () =>
+                                                              _isLoading = true,
+                                                        );
+                                                        final bool ok =
+                                                            await ApiService.archiveTrainer(
+                                                              id,
+                                                            );
+                                                        if (mounted) {
+                                                          await _loadTrainers();
+                                                          ScaffoldMessenger.of(
+                                                            context,
+                                                          ).showSnackBar(
+                                                            SnackBar(
+                                                              content: Text(
+                                                                ok
+                                                                    ? 'Trainer archived'
+                                                                    : 'Action failed',
+                                                              ),
+                                                            ),
+                                                          );
+                                                        }
+                                                      },
+                                                      icon: const Icon(
+                                                        Icons.archive_outlined,
+                                                        size: 18,
+                                                        color: Colors.orange,
+                                                      ),
+                                                      padding:
+                                                          const EdgeInsets.all(
+                                                            8,
+                                                          ),
+                                                      constraints:
+                                                          const BoxConstraints(
+                                                            minWidth: 36,
+                                                            minHeight: 36,
+                                                          ),
+                                                      tooltip: 'Archive',
+                                                    ),
+                                                  );
+                                                },
                                               ),
                                             ),
                                           ],
