@@ -4,6 +4,7 @@ import '../sidenav.dart';
 import '../services/api_service.dart';
 import 'dart:typed_data';
 import 'dart:convert';
+import '../excel/excel_product_export.dart';
 
 class AdminProductsPage extends StatefulWidget {
   const AdminProductsPage({super.key});
@@ -14,6 +15,8 @@ class AdminProductsPage extends StatefulWidget {
 
 class _AdminProductsPageState extends State<AdminProductsPage> {
   final List<Product> products = [];
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   bool _showArchived = false;
   final List<int> _productIds = [];
@@ -77,6 +80,15 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
     });
   }
 
+  List<Product> _visibleProducts() {
+    final String q = _searchQuery.trim().toLowerCase();
+    if (q.isEmpty) return products;
+    return products.where((p) {
+      return p.name.toLowerCase().contains(q) ||
+          p.description.toLowerCase().contains(q);
+    }).toList();
+  }
+
   void _showAddProductDialog({Product? product, int? index}) {
     showDialog(
       context: context,
@@ -121,48 +133,152 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
           children: [
             Padding(
               padding: const EdgeInsets.all(16.0),
-              child: Row(
+              child: Column(
                 children: [
-                  Text(
-                    'Products',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.black,
-                    ),
-                  ),
-                  const Spacer(),
-                  ElevatedButton.icon(
-                    onPressed: () => _showAddProductDialog(),
-                    icon: const Icon(Icons.add, size: 18),
-                    label: const Text('New Product'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: Colors.black87,
-                      elevation: 1,
-                      side: const BorderSide(color: Colors.black26),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(22),
+                  Row(
+                    children: [
+                      Text(
+                        'Products',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.black,
+                        ),
                       ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
-                      ),
-                    ),
+                    ],
                   ),
-                  const SizedBox(width: 12),
-                  OutlinedButton.icon(
-                    onPressed: () async {
-                      setState(() => _showArchived = !_showArchived);
-                      await _fetchProducts();
-                    },
-                    icon: Icon(
-                      _showArchived ? Icons.inventory_2 : Icons.inventory,
-                      size: 18,
-                    ),
-                    label: Text(
-                      _showArchived ? 'Show Active' : 'Show Archived',
-                    ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      SizedBox(
+                        width: 560,
+                        height: 42,
+                        child: TextField(
+                          controller: _searchController,
+                          onChanged: (v) => setState(() => _searchQuery = v),
+                          style: const TextStyle(color: Colors.black87),
+                          decoration: InputDecoration(
+                            hintText: 'Search',
+                            prefixIcon: const Icon(
+                              Icons.search,
+                              size: 20,
+                              color: Colors.black54,
+                            ),
+                            filled: true,
+                            fillColor: Colors.white,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(
+                                color: Colors.black26,
+                              ),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 0,
+                            ),
+                            isDense: true,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      OutlinedButton.icon(
+                        onPressed:
+                            () => exportProductsToExcel(
+                              context,
+                              _visibleProducts(),
+                            ),
+                        icon: const Icon(
+                          Icons.table_chart_rounded,
+                          color: Colors.teal,
+                          size: 20,
+                        ),
+                        label: const Text('Export'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.black87,
+                          side: const BorderSide(color: Colors.black26),
+                          backgroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 10,
+                          ),
+                        ).copyWith(
+                          side: WidgetStateProperty.resolveWith(
+                            (states) => BorderSide(
+                              color:
+                                  states.contains(WidgetState.hovered)
+                                      ? const Color(0xFFFFA812)
+                                      : Colors.black26,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const Spacer(),
+                      OutlinedButton.icon(
+                        onPressed: () async {
+                          setState(() => _showArchived = !_showArchived);
+                          await _fetchProducts();
+                        },
+                        icon: Icon(
+                          _showArchived ? Icons.inventory_2 : Icons.inventory,
+                          size: 18,
+                        ),
+                        label: Text(
+                          _showArchived ? 'Show Active' : 'Show Archived',
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.black87,
+                          side: const BorderSide(color: Colors.black26),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(22),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 10,
+                          ),
+                          backgroundColor: Colors.white,
+                        ).copyWith(
+                          side: WidgetStateProperty.resolveWith(
+                            (states) => BorderSide(
+                              color:
+                                  states.contains(WidgetState.hovered)
+                                      ? const Color(0xFFFFA812)
+                                      : Colors.black26,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      ElevatedButton.icon(
+                        onPressed: () => _showAddProductDialog(),
+                        icon: const Icon(Icons.add, size: 18),
+                        label: const Text('New Product'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: Colors.black87,
+                          elevation: 1,
+                          side: const BorderSide(color: Colors.black26),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(22),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 10,
+                          ),
+                        ).copyWith(
+                          side: WidgetStateProperty.resolveWith(
+                            (states) => BorderSide(
+                              color:
+                                  states.contains(WidgetState.hovered)
+                                      ? const Color(0xFFFFA812)
+                                      : Colors.black26,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -259,7 +375,7 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                         ),
                       ),
                       // Data Rows
-                      ...products.asMap().entries.map((entry) {
+                      ..._visibleProducts().asMap().entries.map((entry) {
                         final index = entry.key;
                         final product = entry.value;
                         return Column(
