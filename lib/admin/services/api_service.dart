@@ -22,6 +22,10 @@ class ApiService {
       '$baseUrl/customers/activateCustomerByID.php';
   static const String getCustomersByStatusEndpoint =
       '$baseUrl/customers/getCustomersByStatus.php';
+  static const String getNewMembersThisWeekEndpoint =
+      '$baseUrl/customers/getNewMembersThisWeek.php';
+  static const String getNewMembersThisMonthEndpoint =
+      '$baseUrl/customers/getNewMembersThisMonth.php';
   // Trainers endpoints
   static const String getAllTrainersEndpoint =
       '$baseUrl/gymTrainers/getAllTrainers.php';
@@ -235,6 +239,85 @@ class ApiService {
     } catch (e) {
       debugPrint('Error in getAllCustomers: $e');
       return {'success': false, 'message': 'Network error: $e'};
+    }
+  }
+
+  // Statistics: new members this week (Mon..Sun)
+  static Future<Map<String, int>> getNewMembersThisWeek() async {
+    try {
+      final res = await http.get(
+        Uri.parse(getNewMembersThisWeekEndpoint),
+        headers: {'Accept': 'application/json'},
+      );
+      if (res.statusCode == 200 && res.body.isNotEmpty) {
+        final Map<String, dynamic> parsed =
+            jsonDecode(res.body) as Map<String, dynamic>;
+        final Map<String, dynamic> data =
+            (parsed['data'] ?? <String, dynamic>{}) as Map<String, dynamic>;
+        return data.map(
+          (k, v) => MapEntry(k.toString(), int.tryParse(v.toString()) ?? 0),
+        );
+      }
+      return {};
+    } catch (e) {
+      debugPrint('getNewMembersThisWeek error: $e');
+      return {};
+    }
+  }
+
+  // Statistics: new members this month grouped by week 1..4
+  static Future<Map<String, int>> getNewMembersThisMonth() async {
+    try {
+      final res = await http.get(
+        Uri.parse(getNewMembersThisMonthEndpoint),
+        headers: {'Accept': 'application/json'},
+      );
+      if (res.statusCode == 200 && res.body.isNotEmpty) {
+        final Map<String, dynamic> parsed =
+            jsonDecode(res.body) as Map<String, dynamic>;
+        final Map<String, dynamic> data =
+            (parsed['data'] ?? <String, dynamic>{}) as Map<String, dynamic>;
+        return data.map(
+          (k, v) => MapEntry(k.toString(), int.tryParse(v.toString()) ?? 0),
+        );
+      }
+      return {};
+    } catch (e) {
+      debugPrint('getNewMembersThisMonth error: $e');
+      return {};
+    }
+  }
+
+  // Aggregate membership totals by type using memberships endpoint
+  static Future<Map<String, int>> getMembershipTotals() async {
+    try {
+      final res = await http.get(
+        Uri.parse(getAllMembershipsEndpoint),
+        headers: {'Accept': 'application/json'},
+      );
+      if (res.statusCode == 200 && res.body.isNotEmpty) {
+        final dynamic parsed = jsonDecode(res.body);
+        if (parsed is List) {
+          int daily = 0, halfMonth = 0, monthly = 0;
+          String norm(dynamic v) => (v ?? '').toString().trim().toLowerCase();
+          for (final dynamic m in parsed) {
+            if (m is! Map<String, dynamic>) continue;
+            final String t = norm(m['membership_type'] ?? m['status']);
+            if (t == 'daily')
+              daily++;
+            else if (t.replaceAll(' ', '') == 'halfmonth' ||
+                (t.startsWith('half') && t.contains('month')))
+              halfMonth++;
+            else
+              monthly++; // default bucket
+          }
+          return {'Daily': daily, 'Half Month': halfMonth, 'Monthly': monthly};
+        }
+      }
+      return {};
+    } catch (e) {
+      debugPrint('getMembershipTotals error: $e');
+      return {};
     }
   }
 
@@ -498,6 +581,22 @@ class ApiService {
     } catch (e) {
       debugPrint('Error in getAllTrainers: $e');
       return [];
+    }
+  }
+
+  // Trainers total count helper
+  static Future<int> getTrainersTotal({bool activeOnly = true}) async {
+    try {
+      final list = await getAllTrainers();
+      if (activeOnly) {
+        return list
+            .where((t) => (t['status'] ?? '').toLowerCase() != 'inactive')
+            .length;
+      }
+      return list.length;
+    } catch (e) {
+      debugPrint('getTrainersTotal error: $e');
+      return 0;
     }
   }
 

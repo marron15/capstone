@@ -1,12 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
+import '../services/api_service.dart';
 
-class TrainersTotalPieChart extends StatelessWidget {
+class TrainersTotalPieChart extends StatefulWidget {
   const TrainersTotalPieChart({super.key});
 
   @override
+  State<TrainersTotalPieChart> createState() => _TrainersTotalPieChartState();
+}
+
+class _TrainersTotalPieChartState extends State<TrainersTotalPieChart> {
+  int _total = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final int total = await ApiService.getTrainersTotal(activeOnly: true);
+    if (!mounted) return;
+    setState(() => _total = total);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final List<PieData> data = [PieData('Total', 0, Colors.blue)];
+    final List<PieData> data = [
+      PieData('Total', _total.toDouble(), Colors.blue),
+    ];
     return SizedBox(
       width: double.infinity,
       height: double.infinity,

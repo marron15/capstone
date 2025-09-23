@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../statistics/new_week_members.dart';
 import '../statistics/total_memberships.dart';
 import '../statistics/new_members_month.dart';
-import '../statistics/trainers_total_pie.dart';
+import '../statistics/trainers_total.dart';
 import '../sidenav.dart';
 
 class StatisticPage extends StatelessWidget {
