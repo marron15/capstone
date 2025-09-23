@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import '../services/unified_auth_state.dart';
 
 class SideNav extends StatelessWidget {
-  const SideNav({super.key});
+  final double? width;
+  const SideNav({super.key, this.width});
 
   @override
   Widget build(BuildContext context) {
     return Drawer(
+      width: width,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [

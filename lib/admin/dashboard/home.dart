@@ -7,123 +7,141 @@ import '../sidenav.dart';
 import '../excel/excel_stats_export.dart';
 import '../services/api_service.dart';
 
-class StatisticPage extends StatelessWidget {
+class StatisticPage extends StatefulWidget {
   const StatisticPage({super.key});
+
+  @override
+  State<StatisticPage> createState() => _StatisticPageState();
+}
+
+class _StatisticPageState extends State<StatisticPage> {
+  static const double _drawerWidth = 280;
+  bool _isDrawerOpen = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 245, 245, 245),
-      drawer: const SideNav(),
+      drawer: const SideNav(width: _drawerWidth),
+      onDrawerChanged: (bool isOpen) => setState(() => _isDrawerOpen = isOpen),
       appBar: AppBar(
         title: const Center(child: Text('Dashboard')),
         foregroundColor: Colors.white,
         backgroundColor: Colors.black,
       ),
-      body: Container(
-        decoration: const BoxDecoration(color: Colors.white),
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  const Text(
-                    'Statistics',
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                  ),
-                  const Spacer(),
-                  ElevatedButton.icon(
-                    onPressed: () => _showExportDialog(context),
-                    icon: Icon(
-                      Icons.bar_chart_rounded,
-                      color: Colors.teal.shade700,
-                      size: 20,
-                    ),
-                    label: const Text('Export'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: Colors.black87,
-                      elevation: 0,
-                      side: BorderSide(color: Colors.grey.shade300),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
+      body: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOutCubic,
+        transform: Matrix4.translationValues(
+          _isDrawerOpen ? _drawerWidth : 0,
+          0,
+          0,
+        ),
+        child: Container(
+          decoration: const BoxDecoration(color: Colors.white),
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Text(
+                      'Statistics',
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Expanded(
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    // Responsive breakpoints for columns (2x2 layout on desktop)
-                    int crossAxisCount;
-                    if (constraints.maxWidth < 600) {
-                      crossAxisCount = 1;
-                    } else {
-                      crossAxisCount = 2;
-                    }
-
-                    const double spacing = 24;
-                    final double itemWidth =
-                        (constraints.maxWidth -
-                            spacing * (crossAxisCount - 1)) /
-                        crossAxisCount;
-                    // Target a comfortable card height across sizes
-                    final double targetHeight =
-                        constraints.maxWidth < 600
-                            ? 340
-                            : constraints.maxWidth < 900
-                            ? 300
-                            : 280;
-                    final double aspectRatio = itemWidth / targetHeight;
-
-                    return GridView.count(
-                      crossAxisCount: crossAxisCount,
-                      crossAxisSpacing: spacing,
-                      mainAxisSpacing: spacing,
-                      childAspectRatio: aspectRatio,
-                      children: const [
-                        // Top-left
-                        _StatCard(
-                          title: 'New Members this Week',
-                          subtitle: '',
-                          child: NewMembersBarGraph(),
+                    const Spacer(),
+                    ElevatedButton.icon(
+                      onPressed: () => _showExportDialog(context),
+                      icon: Icon(
+                        Icons.bar_chart_rounded,
+                        color: Colors.teal.shade700,
+                        size: 20,
+                      ),
+                      label: const Text('Export'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.black87,
+                        elevation: 0,
+                        side: BorderSide(color: Colors.grey.shade300),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
                         ),
-                        // Top-right
-                        _StatCard(
-                          title: 'New Members this Month',
-                          subtitle: '',
-                          child: NewMembersMonthBarGraph(),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
                         ),
-                        // Bottom-left
-                        _StatCard(
-                          title: 'Memberships Total',
-                          subtitle: '',
-                          child: MembershipsTotalBarGraph(),
-                        ),
-                        // Bottom-right
-                        _StatCard(
-                          title: 'Trainers Total',
-                          subtitle: '',
-                          child: TrainersTotalPieChart(),
-                        ),
-                      ],
-                    );
-                  },
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
+                const SizedBox(height: 16),
+                Expanded(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      // Responsive breakpoints for columns (2x2 layout on desktop)
+                      int crossAxisCount;
+                      if (constraints.maxWidth < 600) {
+                        crossAxisCount = 1;
+                      } else {
+                        crossAxisCount = 2;
+                      }
+
+                      const double spacing = 24;
+                      final double itemWidth =
+                          (constraints.maxWidth -
+                              spacing * (crossAxisCount - 1)) /
+                          crossAxisCount;
+                      // Target a comfortable card height across sizes
+                      final double targetHeight =
+                          constraints.maxWidth < 600
+                              ? 340
+                              : constraints.maxWidth < 900
+                              ? 300
+                              : 280;
+                      final double aspectRatio = itemWidth / targetHeight;
+
+                      return GridView.count(
+                        crossAxisCount: crossAxisCount,
+                        crossAxisSpacing: spacing,
+                        mainAxisSpacing: spacing,
+                        childAspectRatio: aspectRatio,
+                        children: const [
+                          // Top-left
+                          _StatCard(
+                            title: 'New Members this Week',
+                            subtitle: '',
+                            child: NewMembersBarGraph(),
+                          ),
+                          // Top-right
+                          _StatCard(
+                            title: 'New Members this Month',
+                            subtitle: '',
+                            child: NewMembersMonthBarGraph(),
+                          ),
+                          // Bottom-left
+                          _StatCard(
+                            title: 'Memberships Total',
+                            subtitle: '',
+                            child: MembershipsTotalBarGraph(),
+                          ),
+                          // Bottom-right
+                          _StatCard(
+                            title: 'Trainers Total',
+                            subtitle: '',
+                            child: TrainersTotalPieChart(),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

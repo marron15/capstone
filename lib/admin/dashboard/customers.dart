@@ -23,6 +23,8 @@ class _CustomersPageState extends State<CustomersPage> {
   String _searchQuery = '';
   String _membershipFilter = 'All';
   bool _showExpiredOnly = false;
+  static const double _drawerWidth = 280;
+  bool _isDrawerOpen = false;
 
   @override
   void initState() {
@@ -441,16 +443,26 @@ class _CustomersPageState extends State<CustomersPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 245, 245, 245),
-      drawer: const SideNav(),
+      drawer: const SideNav(width: _drawerWidth),
+      onDrawerChanged: (bool isOpen) => setState(() => _isDrawerOpen = isOpen),
       appBar: AppBar(
         title: const Center(child: Text('Customer Management')),
         foregroundColor: Colors.white,
         backgroundColor: Colors.black,
         actions: const [],
       ),
-      body: Container(
-        decoration: const BoxDecoration(color: Colors.white),
-        child: _buildBody(),
+      body: AnimatedContainer(
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeOutCubic,
+        transform: Matrix4.translationValues(
+          _isDrawerOpen ? _drawerWidth : 0,
+          0,
+          0,
+        ),
+        child: Container(
+          decoration: const BoxDecoration(color: Colors.white),
+          child: _buildBody(),
+        ),
       ),
     );
   }
