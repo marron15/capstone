@@ -284,6 +284,15 @@ class _LoginPageState extends State<LoginPage> {
                                         ),
                                         errorText: _contactError,
                                       ),
+
+                                      //PWEDE KO MA PRESS ENTER (Code)
+                                      textInputAction: TextInputAction.next,
+                                      onFieldSubmitted:
+                                          (_) =>
+                                              FocusScope.of(
+                                                context,
+                                              ).nextFocus(),
+
                                       validator: (value) {
                                         if (value == null || value.isEmpty) {
                                           return 'Please enter your contact number';
@@ -350,6 +359,12 @@ class _LoginPageState extends State<LoginPage> {
                                         ),
                                         errorText: _passwordError,
                                       ),
+                                      textInputAction: TextInputAction.done,
+                                      onFieldSubmitted:
+                                          (_) =>
+                                              _isLoading
+                                                  ? null
+                                                  : _handleLogin(),
                                       validator: (value) {
                                         if (value == null || value.isEmpty) {
                                           return 'Please enter your password';
