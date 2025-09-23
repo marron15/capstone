@@ -43,9 +43,37 @@ class _NewMembersBarGraphState extends State<NewMembersBarGraph> {
 
   @override
   Widget build(BuildContext context) {
+    String _formatWeekRange(DateTime date) {
+      const months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ];
+      final int weekday = date.weekday; // 1=Mon .. 7=Sun
+      final DateTime start = date.subtract(Duration(days: weekday - 1));
+      final DateTime end = start.add(const Duration(days: 6));
+      String fmt(DateTime d) => '${months[d.month - 1]} ${d.day}';
+      return '${fmt(start)} - ${fmt(end)}';
+    }
+
+    final String subtitle = _formatWeekRange(DateTime.now());
     return SfCartesianChart(
+      title: ChartTitle(
+        text: subtitle,
+        alignment: ChartAlignment.near,
+        textStyle: const TextStyle(fontSize: 12, color: Colors.black54),
+      ),
       primaryXAxis: const CategoryAxis(),
-      primaryYAxis: const NumericAxis(minimum: 0, interval: 1),
+      primaryYAxis: const NumericAxis(minimum: 0, maximum: 50, interval: 10),
       series: <CartesianSeries>[
         ColumnSeries<_BarData, String>(
           dataSource: _data,

@@ -35,7 +35,7 @@ class _TrainersTotalPieChartState extends State<TrainersTotalPieChart> {
       child: SfCartesianChart(
         legend: const Legend(isVisible: false),
         primaryXAxis: const CategoryAxis(),
-        primaryYAxis: const NumericAxis(minimum: 0),
+        primaryYAxis: const NumericAxis(minimum: 0, maximum: 50, interval: 10),
         series: <ColumnSeries<PieData, String>>[
           ColumnSeries<PieData, String>(
             dataSource: data,

@@ -16,6 +16,7 @@ class _MembershipsTotalBarGraphState extends State<MembershipsTotalBarGraph> {
     _BarData('Half Month', 0),
     _BarData('Monthly', 0),
   ];
+  int _yMax = 100;
 
   @override
   void initState() {
@@ -31,6 +32,12 @@ class _MembershipsTotalBarGraphState extends State<MembershipsTotalBarGraph> {
         _BarData('Half Month', res['Half Month'] ?? 0),
         _BarData('Monthly', res['Monthly'] ?? 0),
       ];
+      final int maxVal = _data
+          .map((e) => e.count)
+          .fold<int>(0, (a, b) => a > b ? a : b);
+      // Base at 100, then jump to the next 50 when exceeding
+      final int needed = maxVal <= 100 ? 100 : ((maxVal + 49) ~/ 50) * 50;
+      _yMax = needed;
     });
   }
 
@@ -38,7 +45,11 @@ class _MembershipsTotalBarGraphState extends State<MembershipsTotalBarGraph> {
   Widget build(BuildContext context) {
     return SfCartesianChart(
       primaryXAxis: const CategoryAxis(),
-      primaryYAxis: const NumericAxis(minimum: 0, interval: 1),
+      primaryYAxis: NumericAxis(
+        minimum: 0,
+        maximum: _yMax.toDouble(),
+        interval: _yMax <= 100 ? 10 : 25,
+      ),
       series: <CartesianSeries>[
         ColumnSeries<_BarData, String>(
           dataSource: _data,

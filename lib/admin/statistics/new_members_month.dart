@@ -38,9 +38,33 @@ class _NewMembersMonthBarGraphState extends State<NewMembersMonthBarGraph> {
 
   @override
   Widget build(BuildContext context) {
+    String monthLabel(DateTime d) {
+      const months = [
+        'January',
+        'February',
+        'March',
+        'April',
+        'May',
+        'June',
+        'July',
+        'August',
+        'September',
+        'October',
+        'November',
+        'December',
+      ];
+      return months[d.month - 1];
+    }
+
+    final String subtitle = monthLabel(DateTime.now());
     return SfCartesianChart(
+      title: ChartTitle(
+        text: subtitle,
+        alignment: ChartAlignment.near,
+        textStyle: const TextStyle(fontSize: 12, color: Colors.black54),
+      ),
       primaryXAxis: const CategoryAxis(),
-      primaryYAxis: const NumericAxis(minimum: 0, interval: 1),
+      primaryYAxis: const NumericAxis(minimum: 0, maximum: 50, interval: 10),
       series: <CartesianSeries>[
         ColumnSeries<_BarData, String>(
           dataSource: _data,
