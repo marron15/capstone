@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../statistics/week_paid_members.dart';
 import '../statistics/new_week_members.dart';
 import '../statistics/total_memberships.dart';
 import '../statistics/new_members_month.dart';
@@ -38,33 +37,53 @@ class StatisticPage extends StatelessWidget {
               Expanded(
                 child: LayoutBuilder(
                   builder: (context, constraints) {
-                    int crossAxisCount = constraints.maxWidth < 500 ? 1 : 4;
+                    // Responsive breakpoints for columns (2x2 layout on desktop)
+                    int crossAxisCount;
+                    if (constraints.maxWidth < 600) {
+                      crossAxisCount = 1;
+                    } else {
+                      crossAxisCount = 2;
+                    }
+
+                    const double spacing = 24;
+                    final double itemWidth =
+                        (constraints.maxWidth -
+                            spacing * (crossAxisCount - 1)) /
+                        crossAxisCount;
+                    // Target a comfortable card height across sizes
+                    final double targetHeight =
+                        constraints.maxWidth < 600
+                            ? 340
+                            : constraints.maxWidth < 900
+                            ? 300
+                            : 280;
+                    final double aspectRatio = itemWidth / targetHeight;
+
                     return GridView.count(
                       crossAxisCount: crossAxisCount,
-                      crossAxisSpacing: 24,
-                      mainAxisSpacing: 24,
-                      childAspectRatio: 1.2,
+                      crossAxisSpacing: spacing,
+                      mainAxisSpacing: spacing,
+                      childAspectRatio: aspectRatio,
                       children: const [
-                        _StatCard(
-                          title: 'Week Paid Members',
-                          subtitle: '',
-                          child: WeekPaidMembers(),
-                        ),
+                        // Top-left
                         _StatCard(
                           title: 'New Members this Week',
                           subtitle: '',
                           child: NewMembersBarGraph(),
                         ),
-                        _StatCard(
-                          title: 'Memberships Total',
-                          subtitle: '',
-                          child: MembershipsTotalBarGraph(),
-                        ),
+                        // Top-right
                         _StatCard(
                           title: 'New Members this Month',
                           subtitle: '',
                           child: NewMembersMonthBarGraph(),
                         ),
+                        // Bottom-left
+                        _StatCard(
+                          title: 'Memberships Total',
+                          subtitle: '',
+                          child: MembershipsTotalBarGraph(),
+                        ),
+                        // Bottom-right
                         _StatCard(
                           title: 'Trainers Total',
                           subtitle: '',
@@ -99,13 +118,13 @@ class _StatCard extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       elevation: 4,
       child: Padding(
-        padding: const EdgeInsets.all(32.0),
+        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               title,
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
             if (subtitle.isNotEmpty)
               Padding(
