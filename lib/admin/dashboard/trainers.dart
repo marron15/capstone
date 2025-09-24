@@ -22,6 +22,57 @@ class _TrainersPageState extends State<TrainersPage> {
   static const double _drawerWidth = 280;
   bool _isDrawerOpen = false;
 
+  Widget _buildArchiveEmpty({
+    required String title,
+    required String helper,
+    required String actionLabel,
+    required VoidCallback onAction,
+  }) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(48),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.inventory_2_outlined,
+              size: 64,
+              color: Colors.black.withValues(alpha: 0.35),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              title,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              helper,
+              style: const TextStyle(fontSize: 14, color: Colors.black54),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: onAction,
+              icon: const Icon(Icons.group_outlined, size: 18),
+              label: Text(actionLabel),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFEFF3FF),
+                foregroundColor: Colors.black87,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(22),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -53,7 +104,15 @@ class _TrainersPageState extends State<TrainersPage> {
     final String contactNumber = trainer['contactNumber'] ?? '';
     final String middleName = trainer['middleName'] ?? '';
 
-    if (firstName.isEmpty || lastName.isEmpty || contactNumber.isEmpty) {
+    final bool isContactValid = RegExp(r'^\d{11}$').hasMatch(contactNumber);
+    if (firstName.isEmpty || lastName.isEmpty || !isContactValid) {
+      if (mounted && !isContactValid) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Contact number must be exactly 11 digits'),
+          ),
+        );
+      }
       return;
     }
 
@@ -225,116 +284,129 @@ class _TrainersPageState extends State<TrainersPage> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    ..._filteredTrainers.asMap().entries.map((entry) {
-                      int index = entry.key;
-                      var trainer = entry.value;
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 2,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 18,
+                    if (_showArchived && _filteredTrainers.isEmpty)
+                      _buildArchiveEmpty(
+                        title: 'No archived trainers',
+                        helper: 'Archived trainers will appear here',
+                        actionLabel: 'View Active Trainers',
+                        onAction: () {
+                          setState(() => _showArchived = false);
+                          _filterTrainers(searchController.text);
+                        },
+                      )
+                    else
+                      ..._filteredTrainers.asMap().entries.map((entry) {
+                        int index = entry.key;
+                        var trainer = entry.value;
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    '${trainer['firstName'] ?? ''} ${trainer['lastName'] ?? ''}',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                  Row(
-                                    children: [
-                                      IconButton(
-                                        icon: const Icon(
-                                          Icons.edit,
-                                          color: Colors.blue,
-                                        ),
-                                        onPressed: () {
-                                          TrainerModal.showEditTrainerModal(
-                                            context,
-                                            trainer,
-                                            (updatedTrainer) {
-                                              _editTrainer(
-                                                index,
-                                                updatedTrainer,
-                                              );
-                                            },
-                                          );
-                                        },
+                          elevation: 2,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 18,
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      '${trainer['firstName'] ?? ''} ${trainer['lastName'] ?? ''}',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
                                       ),
-                                      IconButton(
-                                        icon: const Icon(
-                                          Icons.delete,
-                                          color: Colors.red,
+                                    ),
+                                    Row(
+                                      children: [
+                                        IconButton(
+                                          icon: const Icon(
+                                            Icons.edit,
+                                            color: Colors.blue,
+                                          ),
+                                          onPressed: () {
+                                            TrainerModal.showEditTrainerModal(
+                                              context,
+                                              trainer,
+                                              (updatedTrainer) {
+                                                _editTrainer(
+                                                  index,
+                                                  updatedTrainer,
+                                                );
+                                              },
+                                            );
+                                          },
                                         ),
-                                        onPressed: () {
-                                          showDialog(
-                                            context: context,
-                                            builder: (BuildContext context) {
-                                              return AlertDialog(
-                                                title: const Text(
-                                                  'Delete Trainer',
-                                                ),
-                                                content: const Text(
-                                                  'Are you sure you want to delete this trainer?',
-                                                ),
-                                                actions: [
-                                                  TextButton(
-                                                    onPressed: () {
-                                                      Navigator.of(
-                                                        context,
-                                                      ).pop();
-                                                    },
-                                                    child: const Text('Cancel'),
+                                        IconButton(
+                                          icon: const Icon(
+                                            Icons.delete,
+                                            color: Colors.red,
+                                          ),
+                                          onPressed: () {
+                                            showDialog(
+                                              context: context,
+                                              builder: (BuildContext context) {
+                                                return AlertDialog(
+                                                  title: const Text(
+                                                    'Delete Trainer',
                                                   ),
-                                                  TextButton(
-                                                    onPressed: () {
-                                                      _removeTrainer(index);
-                                                      Navigator.of(
-                                                        context,
-                                                      ).pop();
-                                                    },
-                                                    child: const Text(
-                                                      'Delete',
-                                                      style: TextStyle(
-                                                        color: Colors.red,
+                                                  content: const Text(
+                                                    'Are you sure you want to delete this trainer?',
+                                                  ),
+                                                  actions: [
+                                                    TextButton(
+                                                      onPressed: () {
+                                                        Navigator.of(
+                                                          context,
+                                                        ).pop();
+                                                      },
+                                                      child: const Text(
+                                                        'Cancel',
                                                       ),
                                                     ),
-                                                  ),
-                                                ],
-                                              );
-                                            },
-                                          );
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                trainer['contactNumber'] ?? '',
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.black87,
+                                                    TextButton(
+                                                      onPressed: () {
+                                                        _removeTrainer(index);
+                                                        Navigator.of(
+                                                          context,
+                                                        ).pop();
+                                                      },
+                                                      child: const Text(
+                                                        'Delete',
+                                                        style: TextStyle(
+                                                          color: Colors.red,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                );
+                                              },
+                                            );
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ],
                                 ),
-                              ),
-                            ],
+                                const SizedBox(height: 8),
+                                Text(
+                                  trainer['contactNumber'] ?? '',
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      );
-                    }),
+                        );
+                      }),
                   ],
                 );
               } else {
@@ -610,127 +682,209 @@ class _TrainersPageState extends State<TrainersPage> {
                                 ),
                               ),
                               // Data Rows
-                              ..._filteredTrainers.asMap().entries.map((entry) {
-                                int index = entry.key;
-                                var trainer = entry.value;
-                                return Column(
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          flex: 3,
-                                          child: Padding(
-                                            padding: const EdgeInsets.symmetric(
-                                              vertical: 14,
-                                              horizontal: 8,
-                                            ),
-                                            child: Text(
-                                              trainer['firstName'] ?? '',
-                                              textAlign: TextAlign.center,
-                                              style: const TextStyle(
-                                                fontSize: 16,
+                              if (_showArchived && _filteredTrainers.isEmpty)
+                                _buildArchiveEmpty(
+                                  title: 'No archived trainers',
+                                  helper: 'Archived trainers will appear here',
+                                  actionLabel: 'Show Active Trainers',
+                                  onAction: () {
+                                    setState(() => _showArchived = false);
+                                    _filterTrainers(searchController.text);
+                                  },
+                                )
+                              else
+                                ..._filteredTrainers.asMap().entries.map((
+                                  entry,
+                                ) {
+                                  int index = entry.key;
+                                  var trainer = entry.value;
+                                  return Column(
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            flex: 3,
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    vertical: 14,
+                                                    horizontal: 8,
+                                                  ),
+                                              child: Text(
+                                                trainer['firstName'] ?? '',
+                                                textAlign: TextAlign.center,
+                                                style: const TextStyle(
+                                                  fontSize: 16,
+                                                ),
                                               ),
                                             ),
                                           ),
-                                        ),
-                                        Expanded(
-                                          flex: 3,
-                                          child: Padding(
-                                            padding: const EdgeInsets.symmetric(
-                                              vertical: 14,
-                                              horizontal: 8,
-                                            ),
-                                            child: Text(
-                                              trainer['lastName'] ?? '',
-                                              textAlign: TextAlign.center,
-                                              style: const TextStyle(
-                                                fontSize: 16,
+                                          Expanded(
+                                            flex: 3,
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    vertical: 14,
+                                                    horizontal: 8,
+                                                  ),
+                                              child: Text(
+                                                trainer['lastName'] ?? '',
+                                                textAlign: TextAlign.center,
+                                                style: const TextStyle(
+                                                  fontSize: 16,
+                                                ),
                                               ),
                                             ),
                                           ),
-                                        ),
-                                        Expanded(
-                                          flex: 4,
-                                          child: Padding(
-                                            padding: const EdgeInsets.symmetric(
-                                              vertical: 14,
-                                              horizontal: 8,
-                                            ),
-                                            child: Text(
-                                              trainer['contactNumber'] ?? '',
-                                              textAlign: TextAlign.center,
-                                              style: const TextStyle(
-                                                fontSize: 16,
+                                          Expanded(
+                                            flex: 4,
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    vertical: 14,
+                                                    horizontal: 8,
+                                                  ),
+                                              child: Text(
+                                                trainer['contactNumber'] ?? '',
+                                                textAlign: TextAlign.center,
+                                                style: const TextStyle(
+                                                  fontSize: 16,
+                                                ),
                                               ),
                                             ),
                                           ),
-                                        ),
-                                        SizedBox(
-                                          width: 200,
-                                          child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            children: [
-                                              // Edit icon
-                                              Container(
-                                                decoration: BoxDecoration(
-                                                  color: Colors.blue.shade50,
-                                                  borderRadius:
-                                                      BorderRadius.circular(6),
-                                                  border: Border.all(
-                                                    color: Colors.blue.shade200,
+                                          SizedBox(
+                                            width: 200,
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                // Edit icon
+                                                Container(
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.blue.shade50,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          6,
+                                                        ),
+                                                    border: Border.all(
+                                                      color:
+                                                          Colors.blue.shade200,
+                                                    ),
+                                                  ),
+                                                  child: IconButton(
+                                                    onPressed: () {
+                                                      TrainerModal.showEditTrainerModal(
+                                                        context,
+                                                        trainer,
+                                                        (updatedTrainer) {
+                                                          _editTrainer(
+                                                            index,
+                                                            updatedTrainer,
+                                                          );
+                                                        },
+                                                      );
+                                                    },
+                                                    icon: Icon(
+                                                      Icons.edit_outlined,
+                                                      size: 18,
+                                                      color:
+                                                          Colors.blue.shade700,
+                                                    ),
+                                                    padding:
+                                                        const EdgeInsets.all(8),
+                                                    constraints:
+                                                        const BoxConstraints(
+                                                          minWidth: 36,
+                                                          minHeight: 36,
+                                                        ),
+                                                    tooltip: 'Edit',
                                                   ),
                                                 ),
-                                                child: IconButton(
-                                                  onPressed: () {
-                                                    TrainerModal.showEditTrainerModal(
-                                                      context,
-                                                      trainer,
-                                                      (updatedTrainer) {
-                                                        _editTrainer(
-                                                          index,
-                                                          updatedTrainer,
+                                                const SizedBox(width: 8),
+                                                // Archive/Restore control
+                                                Container(
+                                                  child: Builder(
+                                                    builder: (context) {
+                                                      final String idStr =
+                                                          trainer['id'] ?? '0';
+                                                      final int id =
+                                                          int.tryParse(idStr) ??
+                                                          0;
+                                                      final bool isArchived =
+                                                          (trainer['status'] ??
+                                                                  '')
+                                                              .toLowerCase() ==
+                                                          'inactive';
+                                                      if (isArchived) {
+                                                        return Container(
+                                                          decoration: BoxDecoration(
+                                                            color:
+                                                                Colors
+                                                                    .green
+                                                                    .shade50,
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  6,
+                                                                ),
+                                                            border: Border.all(
+                                                              color:
+                                                                  Colors
+                                                                      .green
+                                                                      .shade200,
+                                                            ),
+                                                          ),
+                                                          child: IconButton(
+                                                            onPressed: () async {
+                                                              setState(
+                                                                () =>
+                                                                    _isLoading =
+                                                                        true,
+                                                              );
+                                                              final bool ok =
+                                                                  await ApiService.restoreTrainer(
+                                                                    id,
+                                                                  );
+                                                              if (mounted) {
+                                                                await _loadTrainers();
+                                                                ScaffoldMessenger.of(
+                                                                  context,
+                                                                ).showSnackBar(
+                                                                  SnackBar(
+                                                                    content: Text(
+                                                                      ok
+                                                                          ? 'Trainer restored'
+                                                                          : 'Action failed',
+                                                                    ),
+                                                                  ),
+                                                                );
+                                                              }
+                                                            },
+                                                            icon: const Icon(
+                                                              Icons
+                                                                  .restore_outlined,
+                                                              size: 18,
+                                                              color:
+                                                                  Colors.green,
+                                                            ),
+                                                            padding:
+                                                                const EdgeInsets.all(
+                                                                  8,
+                                                                ),
+                                                            constraints:
+                                                                const BoxConstraints(
+                                                                  minWidth: 36,
+                                                                  minHeight: 36,
+                                                                ),
+                                                            tooltip: 'Restore',
+                                                          ),
                                                         );
-                                                      },
-                                                    );
-                                                  },
-                                                  icon: Icon(
-                                                    Icons.edit_outlined,
-                                                    size: 18,
-                                                    color: Colors.blue.shade700,
-                                                  ),
-                                                  padding: const EdgeInsets.all(
-                                                    8,
-                                                  ),
-                                                  constraints:
-                                                      const BoxConstraints(
-                                                        minWidth: 36,
-                                                        minHeight: 36,
-                                                      ),
-                                                  tooltip: 'Edit',
-                                                ),
-                                              ),
-                                              const SizedBox(width: 8),
-                                              // Archive/Restore control
-                                              Container(
-                                                child: Builder(
-                                                  builder: (context) {
-                                                    final String idStr =
-                                                        trainer['id'] ?? '0';
-                                                    final int id =
-                                                        int.tryParse(idStr) ??
-                                                        0;
-                                                    final bool isArchived =
-                                                        (trainer['status'] ??
-                                                                '')
-                                                            .toLowerCase() ==
-                                                        'inactive';
-                                                    if (isArchived) {
+                                                      }
                                                       return Container(
                                                         decoration: BoxDecoration(
                                                           color:
                                                               Colors
-                                                                  .green
+                                                                  .orange
                                                                   .shade50,
                                                           borderRadius:
                                                               BorderRadius.circular(
@@ -739,7 +893,7 @@ class _TrainersPageState extends State<TrainersPage> {
                                                           border: Border.all(
                                                             color:
                                                                 Colors
-                                                                    .green
+                                                                    .orange
                                                                     .shade200,
                                                           ),
                                                         ),
@@ -751,7 +905,7 @@ class _TrainersPageState extends State<TrainersPage> {
                                                                       true,
                                                             );
                                                             final bool ok =
-                                                                await ApiService.restoreTrainer(
+                                                                await ApiService.archiveTrainer(
                                                                   id,
                                                                 );
                                                             if (mounted) {
@@ -762,7 +916,7 @@ class _TrainersPageState extends State<TrainersPage> {
                                                                 SnackBar(
                                                                   content: Text(
                                                                     ok
-                                                                        ? 'Trainer restored'
+                                                                        ? 'Trainer archived'
                                                                         : 'Action failed',
                                                                   ),
                                                                 ),
@@ -771,9 +925,10 @@ class _TrainersPageState extends State<TrainersPage> {
                                                           },
                                                           icon: const Icon(
                                                             Icons
-                                                                .restore_outlined,
+                                                                .archive_outlined,
                                                             size: 18,
-                                                            color: Colors.green,
+                                                            color:
+                                                                Colors.orange,
                                                           ),
                                                           padding:
                                                               const EdgeInsets.all(
@@ -784,86 +939,24 @@ class _TrainersPageState extends State<TrainersPage> {
                                                                 minWidth: 36,
                                                                 minHeight: 36,
                                                               ),
-                                                          tooltip: 'Restore',
+                                                          tooltip: 'Archive',
                                                         ),
                                                       );
-                                                    }
-                                                    return Container(
-                                                      decoration: BoxDecoration(
-                                                        color:
-                                                            Colors
-                                                                .orange
-                                                                .shade50,
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                              6,
-                                                            ),
-                                                        border: Border.all(
-                                                          color:
-                                                              Colors
-                                                                  .orange
-                                                                  .shade200,
-                                                        ),
-                                                      ),
-                                                      child: IconButton(
-                                                        onPressed: () async {
-                                                          setState(
-                                                            () =>
-                                                                _isLoading =
-                                                                    true,
-                                                          );
-                                                          final bool ok =
-                                                              await ApiService.archiveTrainer(
-                                                                id,
-                                                              );
-                                                          if (mounted) {
-                                                            await _loadTrainers();
-                                                            ScaffoldMessenger.of(
-                                                              context,
-                                                            ).showSnackBar(
-                                                              SnackBar(
-                                                                content: Text(
-                                                                  ok
-                                                                      ? 'Trainer archived'
-                                                                      : 'Action failed',
-                                                                ),
-                                                              ),
-                                                            );
-                                                          }
-                                                        },
-                                                        icon: const Icon(
-                                                          Icons
-                                                              .archive_outlined,
-                                                          size: 18,
-                                                          color: Colors.orange,
-                                                        ),
-                                                        padding:
-                                                            const EdgeInsets.all(
-                                                              8,
-                                                            ),
-                                                        constraints:
-                                                            const BoxConstraints(
-                                                              minWidth: 36,
-                                                              minHeight: 36,
-                                                            ),
-                                                        tooltip: 'Archive',
-                                                      ),
-                                                    );
-                                                  },
+                                                    },
+                                                  ),
                                                 ),
-                                              ),
-                                            ],
+                                              ],
+                                            ),
                                           ),
-                                        ),
-                                      ],
-                                    ),
-                                    Divider(
-                                      height: 1,
-                                      color: Colors.grey.shade200,
-                                    ),
-                                  ],
-                                );
-                              }),
+                                        ],
+                                      ),
+                                      Divider(
+                                        height: 1,
+                                        color: Colors.grey.shade200,
+                                      ),
+                                    ],
+                                  );
+                                }),
                             ],
                           ),
                         ),

@@ -23,6 +23,57 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
   static const double _drawerWidth = 280;
   bool _isDrawerOpen = false;
 
+  Widget _buildArchiveEmpty({
+    required String title,
+    required String helper,
+    required String actionLabel,
+    required VoidCallback onAction,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.all(48),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.inventory_2_outlined,
+              size: 64,
+              color: Colors.black.withValues(alpha: 0.35),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              title,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              helper,
+              style: const TextStyle(fontSize: 14, color: Colors.black54),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: onAction,
+              icon: const Icon(Icons.inventory_2, size: 18),
+              label: Text(actionLabel),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFEFF3FF),
+                foregroundColor: Colors.black87,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(22),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -386,223 +437,238 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                           ),
                         ),
                         // Data Rows
-                        ..._visibleProducts().asMap().entries.map((entry) {
-                          final index = entry.key;
-                          final product = entry.value;
-                          return Column(
-                            children: [
-                              Row(
-                                children: [
-                                  SizedBox(
-                                    width: 120,
-                                    child: Center(
-                                      child: GestureDetector(
-                                        onTap: () {
-                                          showDialog(
-                                            context: context,
-                                            builder:
-                                                (_) => Dialog(
-                                                  child: InteractiveViewer(
-                                                    child:
-                                                        product.imageUrl != null
-                                                            ? Image.network(
-                                                              product.imageUrl!,
-                                                              fit:
-                                                                  BoxFit
-                                                                      .contain,
-                                                            )
-                                                            : Image.memory(
-                                                              product.imageBytes ??
-                                                                  Uint8List(0),
-                                                              fit:
-                                                                  BoxFit
-                                                                      .contain,
-                                                            ),
-                                                  ),
-                                                ),
-                                          );
-                                        },
-                                        child: ClipRRect(
-                                          borderRadius: BorderRadius.circular(
-                                            8,
-                                          ),
-                                          child:
-                                              product.imageUrl != null
-                                                  ? Image.network(
-                                                    product.imageUrl!,
-                                                    width: 64,
-                                                    height: 40,
-                                                    fit: BoxFit.cover,
-                                                  )
-                                                  : (product.imageBytes != null
-                                                      ? Image.memory(
-                                                        product.imageBytes!,
-                                                        width: 64,
-                                                        height: 40,
-                                                        fit: BoxFit.cover,
-                                                      )
-                                                      : const SizedBox(
-                                                        width: 64,
-                                                        height: 40,
-                                                      )),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    flex: 3,
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 14,
-                                        horizontal: 8,
-                                      ),
-                                      child: Text(
-                                        product.name,
-                                        textAlign: TextAlign.center,
-                                        style: const TextStyle(fontSize: 16),
-                                      ),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    flex: 2,
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 14,
-                                        horizontal: 8,
-                                      ),
-                                      child: Text(
-                                        product.description,
-                                        textAlign: TextAlign.center,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(fontSize: 16),
-                                      ),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    flex: 1,
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Container(
-                                          decoration: BoxDecoration(
-                                            color: Colors.blue.shade50,
-                                            borderRadius: BorderRadius.circular(
-                                              6,
-                                            ),
-                                            border: Border.all(
-                                              color: Colors.blue.shade200,
-                                            ),
-                                          ),
-                                          child: IconButton(
-                                            onPressed:
-                                                () => _showAddProductDialog(
-                                                  product: product,
-                                                  index: index,
-                                                ),
-                                            icon: Icon(
-                                              Icons.edit_outlined,
-                                              size: 18,
-                                              color: Colors.blue.shade700,
-                                            ),
-                                            padding: const EdgeInsets.all(8),
-                                            constraints: const BoxConstraints(
-                                              minWidth: 36,
-                                              minHeight: 36,
-                                            ),
-                                            tooltip: 'Edit',
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Container(
-                                          decoration: BoxDecoration(
-                                            color: Colors.orange.shade50,
-                                            borderRadius: BorderRadius.circular(
-                                              6,
-                                            ),
-                                            border: Border.all(
-                                              color: Colors.orange.shade200,
-                                            ),
-                                          ),
-                                          child: IconButton(
-                                            onPressed: () async {
-                                              final int id =
-                                                  (index >= 0 &&
-                                                          index <
-                                                              _productIds
-                                                                  .length)
-                                                      ? _productIds[index]
-                                                      : 0;
-                                              if (id == 0) return;
-                                              final bool wasArchived =
-                                                  _showArchived;
-                                              final bool ok =
-                                                  wasArchived
-                                                      ? await ApiService.restoreProduct(
-                                                        id,
-                                                      )
-                                                      : await ApiService.archiveProduct(
-                                                        id,
-                                                      );
-                                              if (ok) {
-                                                await _fetchProducts();
-                                                ScaffoldMessenger.of(
-                                                  context,
-                                                ).showSnackBar(
-                                                  SnackBar(
-                                                    content: Text(
-                                                      wasArchived
-                                                          ? 'Product restored'
-                                                          : 'Product archived',
+                        if (_showArchived && _visibleProducts().isEmpty)
+                          _buildArchiveEmpty(
+                            title: 'No archived products',
+                            helper: 'Archived products will appear here',
+                            actionLabel: 'Show Active Products',
+                            onAction: () async {
+                              setState(() => _showArchived = false);
+                              await _fetchProducts();
+                            },
+                          )
+                        else
+                          ..._visibleProducts().asMap().entries.map((entry) {
+                            final index = entry.key;
+                            final product = entry.value;
+                            return Column(
+                              children: [
+                                Row(
+                                  children: [
+                                    SizedBox(
+                                      width: 120,
+                                      child: Center(
+                                        child: GestureDetector(
+                                          onTap: () {
+                                            showDialog(
+                                              context: context,
+                                              builder:
+                                                  (_) => Dialog(
+                                                    child: InteractiveViewer(
+                                                      child:
+                                                          product.imageUrl !=
+                                                                  null
+                                                              ? Image.network(
+                                                                product
+                                                                    .imageUrl!,
+                                                                fit:
+                                                                    BoxFit
+                                                                        .contain,
+                                                              )
+                                                              : Image.memory(
+                                                                product.imageBytes ??
+                                                                    Uint8List(
+                                                                      0,
+                                                                    ),
+                                                                fit:
+                                                                    BoxFit
+                                                                        .contain,
+                                                              ),
                                                     ),
-                                                    backgroundColor:
+                                                  ),
+                                            );
+                                          },
+                                          child: ClipRRect(
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                            child:
+                                                product.imageUrl != null
+                                                    ? Image.network(
+                                                      product.imageUrl!,
+                                                      width: 64,
+                                                      height: 40,
+                                                      fit: BoxFit.cover,
+                                                    )
+                                                    : (product.imageBytes !=
+                                                            null
+                                                        ? Image.memory(
+                                                          product.imageBytes!,
+                                                          width: 64,
+                                                          height: 40,
+                                                          fit: BoxFit.cover,
+                                                        )
+                                                        : const SizedBox(
+                                                          width: 64,
+                                                          height: 40,
+                                                        )),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 3,
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 14,
+                                          horizontal: 8,
+                                        ),
+                                        child: Text(
+                                          product.name,
+                                          textAlign: TextAlign.center,
+                                          style: const TextStyle(fontSize: 16),
+                                        ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 2,
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 14,
+                                          horizontal: 8,
+                                        ),
+                                        child: Text(
+                                          product.description,
+                                          textAlign: TextAlign.center,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(fontSize: 16),
+                                        ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 1,
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Container(
+                                            decoration: BoxDecoration(
+                                              color: Colors.blue.shade50,
+                                              borderRadius:
+                                                  BorderRadius.circular(6),
+                                              border: Border.all(
+                                                color: Colors.blue.shade200,
+                                              ),
+                                            ),
+                                            child: IconButton(
+                                              onPressed:
+                                                  () => _showAddProductDialog(
+                                                    product: product,
+                                                    index: index,
+                                                  ),
+                                              icon: Icon(
+                                                Icons.edit_outlined,
+                                                size: 18,
+                                                color: Colors.blue.shade700,
+                                              ),
+                                              padding: const EdgeInsets.all(8),
+                                              constraints: const BoxConstraints(
+                                                minWidth: 36,
+                                                minHeight: 36,
+                                              ),
+                                              tooltip: 'Edit',
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Container(
+                                            decoration: BoxDecoration(
+                                              color: Colors.orange.shade50,
+                                              borderRadius:
+                                                  BorderRadius.circular(6),
+                                              border: Border.all(
+                                                color: Colors.orange.shade200,
+                                              ),
+                                            ),
+                                            child: IconButton(
+                                              onPressed: () async {
+                                                final int id =
+                                                    (index >= 0 &&
+                                                            index <
+                                                                _productIds
+                                                                    .length)
+                                                        ? _productIds[index]
+                                                        : 0;
+                                                if (id == 0) return;
+                                                final bool wasArchived =
+                                                    _showArchived;
+                                                final bool ok =
+                                                    wasArchived
+                                                        ? await ApiService.restoreProduct(
+                                                          id,
+                                                        )
+                                                        : await ApiService.archiveProduct(
+                                                          id,
+                                                        );
+                                                if (ok) {
+                                                  await _fetchProducts();
+                                                  ScaffoldMessenger.of(
+                                                    context,
+                                                  ).showSnackBar(
+                                                    SnackBar(
+                                                      content: Text(
                                                         wasArchived
-                                                            ? Colors.green
-                                                            : Colors.orange,
-                                                  ),
-                                                );
-                                              } else {
-                                                ScaffoldMessenger.of(
-                                                  context,
-                                                ).showSnackBar(
-                                                  SnackBar(
-                                                    content: Text(
-                                                      wasArchived
-                                                          ? 'Failed to restore product'
-                                                          : 'Failed to archive product',
+                                                            ? 'Product restored'
+                                                            : 'Product archived',
+                                                      ),
+                                                      backgroundColor:
+                                                          wasArchived
+                                                              ? Colors.green
+                                                              : Colors.orange,
                                                     ),
-                                                    backgroundColor: Colors.red,
-                                                  ),
-                                                );
-                                              }
-                                            },
-                                            icon: Icon(
-                                              _showArchived
-                                                  ? Icons.restore_outlined
-                                                  : Icons.archive_outlined,
-                                              size: 18,
-                                              color: Colors.orange,
-                                            ),
-                                            padding: const EdgeInsets.all(8),
-                                            constraints: const BoxConstraints(
-                                              minWidth: 36,
-                                              minHeight: 36,
-                                            ),
-                                            tooltip:
+                                                  );
+                                                } else {
+                                                  ScaffoldMessenger.of(
+                                                    context,
+                                                  ).showSnackBar(
+                                                    SnackBar(
+                                                      content: Text(
+                                                        wasArchived
+                                                            ? 'Failed to restore product'
+                                                            : 'Failed to archive product',
+                                                      ),
+                                                      backgroundColor:
+                                                          Colors.red,
+                                                    ),
+                                                  );
+                                                }
+                                              },
+                                              icon: Icon(
                                                 _showArchived
-                                                    ? 'Restore'
-                                                    : 'Archive',
+                                                    ? Icons.restore_outlined
+                                                    : Icons.archive_outlined,
+                                                size: 18,
+                                                color: Colors.orange,
+                                              ),
+                                              padding: const EdgeInsets.all(8),
+                                              constraints: const BoxConstraints(
+                                                minWidth: 36,
+                                                minHeight: 36,
+                                              ),
+                                              tooltip:
+                                                  _showArchived
+                                                      ? 'Restore'
+                                                      : 'Archive',
+                                            ),
                                           ),
-                                        ),
-                                      ],
+                                        ],
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                              Divider(height: 1, color: Colors.grey.shade200),
-                            ],
-                          );
-                        }),
+                                  ],
+                                ),
+                                Divider(height: 1, color: Colors.grey.shade200),
+                              ],
+                            );
+                          }),
                       ],
                     ),
                   ),

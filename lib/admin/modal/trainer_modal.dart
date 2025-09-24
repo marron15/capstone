@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'dart:ui';
 
 class TrainerModal {
@@ -201,11 +202,26 @@ class TrainerModal {
                                           decoration: _inputDecoration(
                                             'Contact Number',
                                           ),
-                                          validator:
-                                              (value) =>
-                                                  value == null || value.isEmpty
-                                                      ? 'Please enter contact number'
-                                                      : null,
+                                          inputFormatters: [
+                                            FilteringTextInputFormatter
+                                                .digitsOnly,
+                                            LengthLimitingTextInputFormatter(
+                                              11,
+                                            ),
+                                          ],
+                                          keyboardType: TextInputType.number,
+                                          validator: (value) {
+                                            final String v =
+                                                (value ?? '').trim();
+                                            if (v.isEmpty)
+                                              return 'Please enter contact number';
+                                            final bool isValid = RegExp(
+                                              r'^\d{11}$',
+                                            ).hasMatch(v);
+                                            return isValid
+                                                ? null
+                                                : 'Contact number must be exactly 11 digits';
+                                          },
                                         ),
                                       ),
                                     ],
@@ -436,11 +452,22 @@ class TrainerModal {
                                 controller: contactNumberController,
                                 style: const TextStyle(color: Colors.white),
                                 decoration: _inputDecoration('Contact Number'),
-                                validator:
-                                    (value) =>
-                                        value == null || value.isEmpty
-                                            ? 'Please enter contact number'
-                                            : null,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.digitsOnly,
+                                  LengthLimitingTextInputFormatter(11),
+                                ],
+                                keyboardType: TextInputType.number,
+                                validator: (value) {
+                                  final String v = (value ?? '').trim();
+                                  if (v.isEmpty)
+                                    return 'Please enter contact number';
+                                  final bool isValid = RegExp(
+                                    r'^\d{11}$',
+                                  ).hasMatch(v);
+                                  return isValid
+                                      ? null
+                                      : 'Contact number must be exactly 11 digits';
+                                },
                               ),
                               const SizedBox(height: 24),
                               Row(

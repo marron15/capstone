@@ -25,6 +25,58 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
 
   TextEditingController searchController = TextEditingController();
 
+  Widget _buildArchiveEmpty({
+    required String title,
+    required String helper,
+    required String actionLabel,
+    required VoidCallback onAction,
+  }) {
+    return Card(
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(72),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.inventory_2_outlined,
+              size: 64,
+              color: Colors.black.withValues(alpha: 0.35),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              title,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              helper,
+              style: const TextStyle(fontSize: 14, color: Colors.black54),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: onAction,
+              icon: const Icon(Icons.people_outline, size: 18),
+              label: Text(actionLabel),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFEFF3FF),
+                foregroundColor: Colors.black87,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(22),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -759,40 +811,52 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                           padding: const EdgeInsets.all(24),
                           child:
                               _filteredAdmins.isEmpty
-                                  ? Card(
-                                    child: Container(
-                                      width: double.infinity,
-                                      padding: const EdgeInsets.all(48),
-                                      child: Column(
-                                        children: [
-                                          const Icon(
-                                            Icons.admin_panel_settings_outlined,
-                                            size: 64,
-                                            color: Colors.white70,
+                                  ? (_showArchived
+                                      ? _buildArchiveEmpty(
+                                        title: 'No archived admins',
+                                        helper:
+                                            'Archived admins will appear here',
+                                        actionLabel: 'View Active Admins',
+                                        onAction: () {
+                                          setState(() => _showArchived = false);
+                                          _updateFilteredAdmins();
+                                        },
+                                      )
+                                      : Card(
+                                        child: Container(
+                                          width: double.infinity,
+                                          padding: const EdgeInsets.all(48),
+                                          child: Column(
+                                            children: [
+                                              const Icon(
+                                                Icons
+                                                    .admin_panel_settings_outlined,
+                                                size: 64,
+                                                color: Colors.white70,
+                                              ),
+                                              const SizedBox(height: 16),
+                                              const Text(
+                                                'No admins found',
+                                                style: TextStyle(
+                                                  fontSize: 18,
+                                                  color: Colors.white70,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 8),
+                                              Text(
+                                                searchController.text.isNotEmpty
+                                                    ? 'Try adjusting your search criteria'
+                                                    : 'Add your first admin to get started',
+                                                style: const TextStyle(
+                                                  fontSize: 14,
+                                                  color: Colors.white60,
+                                                ),
+                                              ),
+                                            ],
                                           ),
-                                          const SizedBox(height: 16),
-                                          const Text(
-                                            'No admins found',
-                                            style: TextStyle(
-                                              fontSize: 18,
-                                              color: Colors.white70,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 8),
-                                          Text(
-                                            searchController.text.isNotEmpty
-                                                ? 'Try adjusting your search criteria'
-                                                : 'Add your first admin to get started',
-                                            style: const TextStyle(
-                                              fontSize: 14,
-                                              color: Colors.white60,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  )
+                                        ),
+                                      ))
                                   : isMobile
                                   ? Column(
                                     children:
@@ -815,7 +879,18 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                                           );
                                         }).toList(),
                                   )
-                                  : _buildDesktopTable(),
+                                  : (_showArchived && _filteredAdmins.isEmpty
+                                      ? _buildArchiveEmpty(
+                                        title: 'No archived admins',
+                                        helper:
+                                            'Archived admins will appear here',
+                                        actionLabel: 'View Active Admins',
+                                        onAction: () {
+                                          setState(() => _showArchived = false);
+                                          _updateFilteredAdmins();
+                                        },
+                                      )
+                                      : _buildDesktopTable()),
                         ),
               ),
             ],

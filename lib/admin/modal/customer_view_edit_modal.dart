@@ -136,6 +136,8 @@ class CustomerViewEditModal {
     String? errorMessage;
     DateTime? selectedDate;
     // Image-related state removed
+    String? contactError;
+    String? emergencyPhoneError;
 
     // Transaction-related state removed
 
@@ -181,30 +183,32 @@ class CustomerViewEditModal {
       });
 
       try {
-        // Validate contact number: exactly 11 digits
+        // Validate contact number and emergency number: exactly 11 digits
         final String phone = contactController.text.trim();
-        if (!RegExp(r'^\d+$').hasMatch(phone)) {
+        final String emergencyPhone = emergencyPhoneController.text.trim();
+        String? localContactError;
+        String? localEmergencyError;
+        if (!RegExp(r'^\d{11}$').hasMatch(phone)) {
+          localContactError = 'Contact number must be exactly 11 digits';
+        }
+        if (emergencyPhone.isNotEmpty &&
+            !RegExp(r'^\d{11}$').hasMatch(emergencyPhone)) {
+          localEmergencyError =
+              'Emergency contact number must be exactly 11 digits';
+        }
+        if (localContactError != null || localEmergencyError != null) {
           setModalState(() {
             isLoading = false;
-            errorMessage = 'Contact number must contain digits only';
+            contactError = localContactError;
+            emergencyPhoneError = localEmergencyError;
           });
           return;
         }
-        if (phone.length > 11) {
-          setModalState(() {
-            isLoading = false;
-            errorMessage =
-                'Contact number exceeded (${phone.length}) digits. Use 11 digits only.';
-          });
-          return;
-        }
-        if (phone.length < 11) {
-          setModalState(() {
-            isLoading = false;
-            errorMessage = 'Contact number must be exactly 11 digits';
-          });
-          return;
-        }
+        // Clear errors if valid
+        setModalState(() {
+          contactError = null;
+          emergencyPhoneError = null;
+        });
         // Prepare update data
         final Map<String, dynamic> updateData = {
           'first_name': firstNameController.text.trim(),
@@ -399,6 +403,7 @@ class CustomerViewEditModal {
       bool isReadOnly = false,
       VoidCallback? onTap,
       bool isRequired = false,
+      String? fieldError,
     }) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -472,6 +477,36 @@ class CustomerViewEditModal {
                       : null,
             ),
           ),
+          if (fieldError != null) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.red.withAlpha((0.14 * 255).toInt()),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.red.withAlpha((0.45 * 255).toInt()),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.red, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      fieldError,
+                      style: const TextStyle(
+                        color: Colors.red,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       );
     }
@@ -888,6 +923,7 @@ class CustomerViewEditModal {
                                                   child: buildFormField(
                                                     "Contact Number",
                                                     contactController,
+                                                    fieldError: contactError,
                                                   ),
                                                 ),
                                               ],
@@ -1186,6 +1222,8 @@ class CustomerViewEditModal {
                                                   child: buildFormField(
                                                     "Emergency Contact Phone",
                                                     emergencyPhoneController,
+                                                    fieldError:
+                                                        emergencyPhoneError,
                                                   ),
                                                 ),
                                               ],
