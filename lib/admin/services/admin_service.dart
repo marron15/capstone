@@ -4,7 +4,8 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AdminService {
-  static const String baseUrl = 'http://localhost/gym_api/admin_account';
+  // Use your computer's IP address for mobile testing instead of localhost
+  static const String baseUrl = 'http://192.168.100.220/gym_api/admin_account';
 
   // Store admin data locally
   static const String _adminKey = 'admin_data';
@@ -16,7 +17,6 @@ class AdminService {
     required String firstName,
     required String lastName,
     String? middleName,
-    required String email,
     required String password,
     String? dateOfBirth,
     String? phoneNumber,
@@ -37,7 +37,6 @@ class AdminService {
       Map<String, dynamic> requestBody = {
         'first_name': firstName,
         'last_name': lastName,
-        'email_address': email,
         'password': password,
         'created_by': 'system',
       };
@@ -230,7 +229,6 @@ class AdminService {
         'middle_name': data['middleName'] ?? data['middle_name'],
         'last_name': data['lastName'] ?? data['last_name'],
         'date_of_birth': data['dateOfBirth'] ?? data['date_of_birth'],
-        'email_address': data['emailAddress'] ?? data['email_address'],
         'phone_number': data['phoneNumber'] ?? data['phone_number'],
         'updated_by': data['updatedBy'] ?? 'system',
         'updated_at': data['updatedAt'] ?? DateTime.now().toIso8601String(),

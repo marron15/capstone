@@ -3,14 +3,17 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 
 class MembershipService {
-  // Use Android emulator host when running on Android, else localhost
+  // Use computer's IP for mobile testing, localhost for web
   static String _apiHost() {
     if (kIsWeb) return 'localhost';
     try {
-      if (defaultTargetPlatform == TargetPlatform.android) return '10.0.2.2';
-      return 'localhost';
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        // Use computer's IP for real device testing
+        return '192.168.100.220'; // Replace with your computer's IP
+      }
+      return '192.168.100.220'; // Use computer's IP for mobile testing
     } catch (_) {
-      return 'localhost';
+      return '192.168.100.220'; // Fallback to computer's IP
     }
   }
 

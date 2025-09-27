@@ -40,26 +40,27 @@ class AdminProfileTable extends StatelessWidget {
   // Mobile table row (stacked layout)
   Widget _buildMobileTableRow(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header row with name and actions
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
                   child: Column(
@@ -68,74 +69,74 @@ class AdminProfileTable extends StatelessWidget {
                       Text(
                         _getFullName(),
                         style: const TextStyle(
-                          fontSize: 16,
+                          fontSize: 18,
                           fontWeight: FontWeight.bold,
                           color: Colors.black87,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 6),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
+                          horizontal: 12,
+                          vertical: 4,
                         ),
                         decoration: BoxDecoration(
                           color: Colors.blue.shade50,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(16),
                           border: Border.all(color: Colors.blue.shade200),
                         ),
                         child: const Text(
                           'Administrator',
                           style: TextStyle(
-                            fontSize: 10,
+                            fontSize: 11,
                             color: Colors.blue,
-                            fontWeight: FontWeight.w500,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
                     ],
                   ),
                 ),
+                const SizedBox(width: 12),
                 _buildActionButtons(context, true),
               ],
             ),
-            const SizedBox(height: 12),
-            // Info rows
-            _buildInfoRow(
-              'Email',
-              admin['email_address'] ?? admin['email'] ?? 'N/A',
-              Icons.email_outlined,
-              Colors.blue,
-            ),
-            const SizedBox(height: 8),
-            _buildInfoRow(
-              'Contact',
-              admin['phone_number'] ?? admin['contactNumber'] ?? 'N/A',
-              Icons.phone_outlined,
-              Colors.green,
-            ),
-            const SizedBox(height: 8),
-            _buildInfoRow(
-              'Date of Birth',
-              admin['date_of_birth'] ?? admin['dateOfBirth'] ?? 'N/A',
-              Icons.cake_outlined,
-              Colors.purple,
-            ),
-            const SizedBox(height: 8),
-            _buildInfoRow(
-              'Status',
-              (admin['status'] ?? 'active').toString().toLowerCase() ==
-                      'inactive'
-                  ? 'Inactive'
-                  : 'Active',
-              (admin['status'] ?? 'active').toString().toLowerCase() ==
-                      'inactive'
-                  ? Icons.archive_outlined
-                  : Icons.check_circle_outline,
-              (admin['status'] ?? 'active').toString().toLowerCase() ==
-                      'inactive'
-                  ? Colors.orange
-                  : Colors.green,
+            const SizedBox(height: 20),
+            // Info grid - 2 cards centered for good balance
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Contact card
+                Expanded(
+                  flex: 1,
+                  child: _buildInfoCard(
+                    'Contact',
+                    admin['phone_number'] ?? admin['contactNumber'] ?? 'N/A',
+                    Icons.phone_outlined,
+                    Colors.green,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                // Status card
+                Expanded(
+                  flex: 1,
+                  child: _buildInfoCard(
+                    'Status',
+                    (admin['status'] ?? 'active').toString().toLowerCase() ==
+                            'inactive'
+                        ? 'Inactive'
+                        : 'Active',
+                    (admin['status'] ?? 'active').toString().toLowerCase() ==
+                            'inactive'
+                        ? Icons.archive_outlined
+                        : Icons.check_circle_outline,
+                    (admin['status'] ?? 'active').toString().toLowerCase() ==
+                            'inactive'
+                        ? Colors.orange
+                        : Colors.green,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -162,73 +163,66 @@ class AdminProfileTable extends StatelessWidget {
             // Name column
             Expanded(
               flex: 2,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  CircleAvatar(
-                    radius: 18,
-                    backgroundColor: Colors.blue.shade100,
-                    child: Text(
-                      _getInitials(),
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blue.shade700,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          _getFullName(),
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.shade50,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.blue.shade200),
-                          ),
-                          child: const Text(
-                            'Administrator',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: Colors.blue,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // Email column
-            Expanded(
-              flex: 2,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: Text(
-                  admin['email_address'] ?? admin['email'] ?? 'N/A',
-                  style: const TextStyle(fontSize: 16, color: Colors.black87),
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
+                child: Center(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      CircleAvatar(
+                        radius: 18,
+                        backgroundColor: Colors.blue.shade100,
+                        child: Text(
+                          _getInitials(),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue.shade700,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            _getFullName(),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
+                              height: 1.2,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.shade50,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.blue.shade200),
+                            ),
+                            child: const Text(
+                              'Administrator',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: Colors.blue,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -237,11 +231,8 @@ class AdminProfileTable extends StatelessWidget {
               flex: 1,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: Text(
+                child: _buildPhoneNumberButton(
                   admin['phone_number'] ?? admin['contactNumber'] ?? 'N/A',
-                  style: const TextStyle(fontSize: 16, color: Colors.black87),
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
                 ),
               ),
             ),
@@ -270,9 +261,23 @@ class AdminProfileTable extends StatelessWidget {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.green.shade50,
+                      color:
+                          (admin['status'] ?? 'active')
+                                      .toString()
+                                      .toLowerCase() ==
+                                  'inactive'
+                              ? Colors.orange.shade50
+                              : Colors.green.shade50,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.green.shade200),
+                      border: Border.all(
+                        color:
+                            (admin['status'] ?? 'active')
+                                        .toString()
+                                        .toLowerCase() ==
+                                    'inactive'
+                                ? Colors.orange.shade200
+                                : Colors.green.shade200,
+                      ),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -281,7 +286,13 @@ class AdminProfileTable extends StatelessWidget {
                           width: 6,
                           height: 6,
                           decoration: BoxDecoration(
-                            color: Colors.green.shade600,
+                            color:
+                                (admin['status'] ?? 'active')
+                                            .toString()
+                                            .toLowerCase() ==
+                                        'inactive'
+                                    ? Colors.orange.shade600
+                                    : Colors.green.shade600,
                             shape: BoxShape.circle,
                           ),
                         ),
@@ -300,8 +311,8 @@ class AdminProfileTable extends StatelessWidget {
                                             .toString()
                                             .toLowerCase() ==
                                         'inactive'
-                                    ? Colors.orange
-                                    : Colors.green,
+                                    ? Colors.orange.shade700
+                                    : Colors.green.shade700,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -325,50 +336,69 @@ class AdminProfileTable extends StatelessWidget {
     );
   }
 
-  // Info row for mobile view
-  Widget _buildInfoRow(String label, String value, IconData icon, Color color) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(4),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: Icon(icon, size: 14, color: color),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+  // Info card for mobile view (balanced layout)
+  Widget _buildInfoCard(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
+    return Container(
+      height: 80, // Increased height to prevent overflow
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
             children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 10,
-                  color: Colors.grey.shade600,
-                  fontWeight: FontWeight.w500,
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
                 ),
+                child: Icon(icon, size: 16, color: color),
               ),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Colors.black87,
-                  fontWeight: FontWeight.w500,
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: color.withValues(alpha: 0.8),
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ],
           ),
-        ),
-      ],
+          Flexible(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 13,
+                color: Colors.black87,
+                fontWeight: FontWeight.w500,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   // Action buttons
   Widget _buildActionButtons(BuildContext context, bool isMobile) {
-    final size = 36.0;
-    final iconSize = 18.0;
+    final size = isMobile ? 40.0 : 36.0;
+    final iconSize = isMobile ? 20.0 : 18.0;
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -376,8 +406,15 @@ class AdminProfileTable extends StatelessWidget {
         Container(
           decoration: BoxDecoration(
             color: Colors.blue.shade50,
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(8),
             border: Border.all(color: Colors.blue.shade200),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.blue.withValues(alpha: 0.1),
+                blurRadius: 4,
+                offset: const Offset(0, 1),
+              ),
+            ],
           ),
           child: IconButton(
             onPressed: () => _handleEdit(context),
@@ -391,7 +428,7 @@ class AdminProfileTable extends StatelessWidget {
             tooltip: 'Edit Admin',
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 10),
         Container(
           decoration: BoxDecoration(
             color:
@@ -399,7 +436,7 @@ class AdminProfileTable extends StatelessWidget {
                         'inactive'
                     ? Colors.green.shade50
                     : Colors.orange.shade50,
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(8),
             border: Border.all(
               color:
                   (admin['status'] ?? 'active').toString().toLowerCase() ==
@@ -407,6 +444,19 @@ class AdminProfileTable extends StatelessWidget {
                       ? Colors.green.shade200
                       : Colors.orange.shade200,
             ),
+            boxShadow: [
+              BoxShadow(
+                color: ((admin['status'] ?? 'active')
+                                .toString()
+                                .toLowerCase() ==
+                            'inactive'
+                        ? Colors.green
+                        : Colors.orange)
+                    .withValues(alpha: 0.1),
+                blurRadius: 4,
+                offset: const Offset(0, 1),
+              ),
+            ],
           ),
           child: IconButton(
             onPressed: () => _handleArchiveRestore(context),
@@ -622,6 +672,55 @@ class AdminProfileTable extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+
+  // Build styled phone number button for desktop view
+  Widget _buildPhoneNumberButton(String phoneNumber) {
+    if (phoneNumber == 'N/A' || phoneNumber.isEmpty) {
+      return Center(
+        child: Text(
+          'N/A',
+          style: TextStyle(
+            fontSize: 16,
+            color: Colors.grey.shade500,
+            fontStyle: FontStyle.italic,
+          ),
+        ),
+      );
+    }
+
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: const Color(0xFFE8F5E8), // Light green background
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: const Color(0xFF4CAF50).withValues(alpha: 0.3),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.phone,
+              size: 16,
+              color: const Color(0xFF2E7D32), // Darker green icon
+            ),
+            const SizedBox(width: 6),
+            Text(
+              phoneNumber,
+              style: const TextStyle(
+                fontSize: 14,
+                color: Color(0xFF2E7D32), // Darker green text
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

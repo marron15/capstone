@@ -14,7 +14,6 @@ class AdminModal {
     final TextEditingController firstNameController = TextEditingController();
     final TextEditingController middleNameController = TextEditingController();
     final TextEditingController lastNameController = TextEditingController();
-    final TextEditingController emailController = TextEditingController();
     final TextEditingController contactNumberController =
         TextEditingController();
     final TextEditingController passwordController = TextEditingController();
@@ -59,18 +58,9 @@ class AdminModal {
       // Basic validation - check for empty fields
       if (firstNameController.text.trim().isEmpty ||
           lastNameController.text.trim().isEmpty ||
-          emailController.text.trim().isEmpty ||
           contactNumberController.text.trim().isEmpty ||
-          passwordController.text.isEmpty ||
-          dateOfBirthController.text.isEmpty) {
+          passwordController.text.isEmpty) {
         validationError = 'Please fill all required fields correctly';
-        return false;
-      }
-
-      // Email validation
-      final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-      if (!emailRegex.hasMatch(emailController.text.trim())) {
-        validationError = 'Please enter a valid email address';
         return false;
       }
 
@@ -130,7 +120,6 @@ class AdminModal {
           firstName: firstNameController.text.trim(),
           middleName: middleNameController.text.trim(),
           lastName: lastNameController.text.trim(),
-          email: emailController.text.trim(),
           password: passwordController.text,
           dateOfBirth: formattedDate,
           phoneNumber: contactNumberController.text.trim(),
@@ -412,17 +401,11 @@ class AdminModal {
                                           ),
                                           sized(
                                             buildFormField(
-                                              "Date of Birth:",
+                                              "Date of Birth (Optional):",
                                               dateOfBirthController,
                                               isReadOnly: true,
                                               onTap:
                                                   () => pickDate(setModalState),
-                                            ),
-                                          ),
-                                          sized(
-                                            buildFormField(
-                                              "Email:",
-                                              emailController,
                                             ),
                                           ),
                                           sized(

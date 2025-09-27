@@ -40,7 +40,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'RNR Fitness App',
+      title: 'RNR Fitness Gym',
       theme: _buildTheme(),
       initialRoute: '/',
       routes: {

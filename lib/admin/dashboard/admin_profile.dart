@@ -215,10 +215,6 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                 (admin['last_name'] ?? admin['lastName'] ?? '')
                     .toString()
                     .toLowerCase();
-            final email =
-                (admin['email_address'] ?? admin['email'] ?? '')
-                    .toString()
-                    .toLowerCase();
             final phone =
                 (admin['phone_number'] ?? admin['contactNumber'] ?? '')
                     .toString()
@@ -231,11 +227,17 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
             return firstName.contains(query) ||
                 middleName.contains(query) ||
                 lastName.contains(query) ||
-                email.contains(query) ||
                 phone.contains(query) ||
                 dateOfBirth.contains(query);
           }).toList();
     }
+  }
+
+  // Recompute filters and trigger UI update
+  void _recomputeFilters() {
+    setState(() {
+      _updateFilteredAdmins();
+    });
   }
 
   // Update filtered admins from external source (like AdminProfileTable)
@@ -292,22 +294,6 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                     child: Text(
                       'Name & Role',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.grey.shade800,
-                        letterSpacing: 0.5,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: Text(
-                      'Email',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
@@ -397,7 +383,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
               searchController: searchController,
               admins: _admins,
               updateFilteredAdmins: _setFilteredAdmins,
-              recomputeFilters: _updateFilteredAdmins,
+              recomputeFilters: _recomputeFilters,
             );
           }),
         ],
@@ -422,16 +408,50 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
       drawer: const SideNav(width: _drawerWidth),
       onDrawerChanged: (bool isOpen) => setState(() => _isDrawerOpen = isOpen),
       appBar: AppBar(
-        title: const Center(child: Text('Admin Profiles')),
+        title: const Center(child: Text('Admin')),
         foregroundColor: Colors.white,
         backgroundColor: Colors.black,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _refreshAdmins,
-            tooltip: 'Refresh',
-          ),
-        ],
+        actions:
+            isMobile
+                ? [
+                  Container(
+                    width: 200,
+                    height: 36,
+                    margin: const EdgeInsets.only(right: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: TextField(
+                      controller: searchController,
+                      onChanged: _filterAdmins,
+                      textAlignVertical: TextAlignVertical.center,
+                      style: const TextStyle(fontSize: 14),
+                      decoration: const InputDecoration(
+                        hintText: 'Search',
+                        hintStyle: TextStyle(fontSize: 14),
+                        prefixIcon: Icon(
+                          Icons.search,
+                          color: Colors.grey,
+                          size: 18,
+                        ),
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        isDense: true,
+                      ),
+                    ),
+                  ),
+                ]
+                : [
+                  IconButton(
+                    icon: const Icon(Icons.refresh),
+                    onPressed: _refreshAdmins,
+                    tooltip: 'Refresh',
+                  ),
+                ],
       ),
       body: AnimatedContainer(
         duration: const Duration(milliseconds: 280),
@@ -447,7 +467,6 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                height: isMobile ? 120 : null,
                 padding: const EdgeInsets.all(16),
                 color: Colors.transparent,
                 child:
@@ -455,146 +474,132 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                         ? Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
+                            // First row with Export and View Archives buttons
                             Row(
                               children: [
                                 // Export
-                                ElevatedButton.icon(
-                                  onPressed: _exportAdmins,
-                                  icon: const Icon(Icons.table_view, size: 16),
-                                  label: const Text('Export'),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.white,
-                                    foregroundColor: Colors.black87,
-                                    elevation: 0,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(20),
+                                Expanded(
+                                  child: ElevatedButton.icon(
+                                    onPressed: _exportAdmins,
+                                    icon: const Icon(
+                                      Icons.table_view,
+                                      size: 16,
                                     ),
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 14,
-                                      vertical: 8,
-                                    ),
-                                  ).copyWith(
-                                    side: WidgetStateProperty.resolveWith(
-                                      (states) => BorderSide(
-                                        color:
-                                            states.contains(WidgetState.hovered)
-                                                ? hoverAccent
-                                                : Colors.black26,
+                                    label: const Text('Export'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.white,
+                                      foregroundColor: Colors.black87,
+                                      elevation: 0,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(20),
                                       ),
-                                    ),
-                                  ),
-                                ),
-                                const Spacer(),
-                                // View Archives toggle
-                                ElevatedButton.icon(
-                                  onPressed: () {
-                                    setState(() {
-                                      _showArchived = !_showArchived;
-                                      _updateFilteredAdmins();
-                                    });
-                                  },
-                                  icon: Icon(
-                                    _showArchived
-                                        ? Icons.people
-                                        : Icons.archive,
-                                    size: 16,
-                                  ),
-                                  label: Text(
-                                    _showArchived
-                                        ? 'View Active'
-                                        : 'View Archives',
-                                  ),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.white,
-                                    foregroundColor: Colors.black87,
-                                    elevation: 0,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 14,
-                                      vertical: 8,
-                                    ),
-                                  ).copyWith(
-                                    side: WidgetStateProperty.resolveWith(
-                                      (states) => BorderSide(
-                                        color:
-                                            states.contains(WidgetState.hovered)
-                                                ? hoverAccent
-                                                : Colors.black26,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 8,
+                                      ),
+                                    ).copyWith(
+                                      side: WidgetStateProperty.resolveWith(
+                                        (states) => BorderSide(
+                                          color:
+                                              states.contains(
+                                                    WidgetState.hovered,
+                                                  )
+                                                  ? hoverAccent
+                                                  : Colors.black26,
+                                        ),
                                       ),
                                     ),
                                   ),
                                 ),
                                 const SizedBox(width: 8),
-                                // New Admin
-                                ElevatedButton(
-                                  onPressed: () {
-                                    AdminModal.showAddAdminModal(
-                                      context,
-                                      _addAdmin,
-                                    );
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.white,
-                                    foregroundColor: Colors.blue,
-                                    elevation: 0,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(20),
+                                // View Archives toggle
+                                Expanded(
+                                  child: ElevatedButton.icon(
+                                    onPressed: () {
+                                      setState(() {
+                                        _showArchived = !_showArchived;
+                                        _updateFilteredAdmins();
+                                      });
+                                    },
+                                    icon: Icon(
+                                      _showArchived
+                                          ? Icons.people
+                                          : Icons.archive,
+                                      size: 16,
                                     ),
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 8,
+                                    label: Text(
+                                      _showArchived
+                                          ? 'View Active'
+                                          : 'View Archives',
+                                      style: const TextStyle(fontSize: 12),
                                     ),
-                                  ).copyWith(
-                                    side: WidgetStateProperty.resolveWith(
-                                      (states) => BorderSide(
-                                        color:
-                                            states.contains(WidgetState.hovered)
-                                                ? hoverAccent
-                                                : Colors.black26,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.white,
+                                      foregroundColor: Colors.black87,
+                                      elevation: 0,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 8,
+                                      ),
+                                    ).copyWith(
+                                      side: WidgetStateProperty.resolveWith(
+                                        (states) => BorderSide(
+                                          color:
+                                              states.contains(
+                                                    WidgetState.hovered,
+                                                  )
+                                                  ? hoverAccent
+                                                  : Colors.black26,
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                  child: const Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(Icons.add, size: 16),
-                                      SizedBox(width: 4),
-                                      Text(
-                                        'New Admin',
-                                        style: TextStyle(fontSize: 14),
-                                      ),
-                                    ],
                                   ),
                                 ),
                               ],
                             ),
                             const SizedBox(height: 8),
-                            Container(
-                              width: double.infinity,
-                              height: 36,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(18),
-                              ),
-                              child: TextField(
-                                controller: searchController,
-                                onChanged: _filterAdmins,
-                                decoration: const InputDecoration(
-                                  hintText: 'Search',
-                                  prefixIcon: Icon(
-                                    Icons.search,
-                                    color: Colors.grey,
-                                    size: 15,
+                            // Second row with New Admin button
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: ElevatedButton.icon(
+                                    onPressed: () {
+                                      AdminModal.showAddAdminModal(
+                                        context,
+                                        _addAdmin,
+                                      );
+                                    },
+                                    icon: const Icon(Icons.add, size: 16),
+                                    label: const Text('New Admin'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.white,
+                                      foregroundColor: Colors.blue,
+                                      elevation: 0,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 8,
+                                      ),
+                                    ).copyWith(
+                                      side: WidgetStateProperty.resolveWith(
+                                        (states) => BorderSide(
+                                          color:
+                                              states.contains(
+                                                    WidgetState.hovered,
+                                                  )
+                                                  ? hoverAccent
+                                                  : Colors.black26,
+                                        ),
+                                      ),
+                                    ),
                                   ),
-                                  border: InputBorder.none,
-                                  contentPadding: EdgeInsets.symmetric(
-                                    vertical: 0,
-                                  ),
-                                  isDense: true,
                                 ),
-                              ),
+                              ],
                             ),
                           ],
                         )
@@ -874,8 +879,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                                             admins: _admins,
                                             updateFilteredAdmins:
                                                 _setFilteredAdmins,
-                                            recomputeFilters:
-                                                _updateFilteredAdmins,
+                                            recomputeFilters: _recomputeFilters,
                                           );
                                         }).toList(),
                                   )

@@ -145,13 +145,6 @@ class _TrainersPageState extends State<TrainersPage> {
     });
   }
 
-  void _removeTrainer(int index) {
-    setState(() {
-      _trainers.removeAt(index);
-      _filterTrainers(searchController.text);
-    });
-  }
-
   void _filterTrainers(String query) {
     setState(() {
       final lowerQuery = query.toLowerCase();
@@ -174,6 +167,9 @@ class _TrainersPageState extends State<TrainersPage> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 768;
+
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 245, 245, 245),
       drawer: const SideNav(width: _drawerWidth),
@@ -183,6 +179,41 @@ class _TrainersPageState extends State<TrainersPage> {
         foregroundColor: Colors.white,
         backgroundColor: Colors.black,
         elevation: 0,
+        actions:
+            isMobile
+                ? [
+                  Container(
+                    width: 200,
+                    height: 36,
+                    margin: const EdgeInsets.only(right: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: TextField(
+                      controller: searchController,
+                      onChanged: _filterTrainers,
+                      textAlignVertical: TextAlignVertical.center,
+                      style: const TextStyle(fontSize: 14),
+                      decoration: const InputDecoration(
+                        hintText: 'Search',
+                        hintStyle: TextStyle(fontSize: 14),
+                        prefixIcon: Icon(
+                          Icons.search,
+                          color: Colors.grey,
+                          size: 18,
+                        ),
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        isDense: true,
+                      ),
+                    ),
+                  ),
+                ]
+                : null,
       ),
       body: AnimatedContainer(
         duration: const Duration(milliseconds: 280),
@@ -194,578 +225,205 @@ class _TrainersPageState extends State<TrainersPage> {
         ),
         child: Container(
           decoration: const BoxDecoration(color: Colors.white),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              if (constraints.maxWidth < 600) {
-                // Mobile layout: vertical cards for each trainer
-                return ListView(
-                  padding: const EdgeInsets.all(16),
-                  children: [
-                    if (_isLoading) const LinearProgressIndicator(minHeight: 2),
-                    Row(
-                      children: [
-                        ElevatedButton(
-                          onPressed: () {
-                            TrainerModal.showAddTrainerModal(
-                              context,
-                              _addTrainer,
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: Colors.blue,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
-                            ),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.add, size: 16),
-                              SizedBox(width: 4),
-                              Text(
-                                'New Trainer',
-                                style: TextStyle(fontSize: 14),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        ElevatedButton.icon(
-                          onPressed:
-                              () => exportTrainersToExcel(
-                                context,
-                                _filteredTrainers,
-                              ),
-                          icon: const Icon(Icons.table_chart_rounded, size: 16),
-                          label: const Text('Export'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.teal,
-                            foregroundColor: Colors.white,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 8,
-                            ),
-                          ),
-                        ),
-                        const Spacer(),
-                        Container(
-                          width: 220,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(18),
-                          ),
-                          child: TextField(
-                            controller: searchController,
-                            onChanged: _filterTrainers,
-                            decoration: const InputDecoration(
-                              hintText: 'Search',
-                              prefixIcon: Icon(
-                                Icons.search,
-                                color: Colors.grey,
-                                size: 20,
-                              ),
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.symmetric(vertical: 8),
-                              isDense: true,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    if (_showArchived && _filteredTrainers.isEmpty)
-                      _buildArchiveEmpty(
-                        title: 'No archived trainers',
-                        helper: 'Archived trainers will appear here',
-                        actionLabel: 'View Active Trainers',
-                        onAction: () {
-                          setState(() => _showArchived = false);
-                          _filterTrainers(searchController.text);
-                        },
-                      )
-                    else
-                      ..._filteredTrainers.asMap().entries.map((entry) {
-                        int index = entry.key;
-                        var trainer = entry.value;
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 2,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 18,
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+          child:
+              isMobile
+                  ? Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        color: Colors.transparent,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            // First row with Export and View Archives buttons
+                            Row(
                               children: [
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      '${trainer['firstName'] ?? ''} ${trainer['lastName'] ?? ''}',
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16,
+                                // Export
+                                Expanded(
+                                  child: ElevatedButton.icon(
+                                    onPressed:
+                                        () => exportTrainersToExcel(
+                                          context,
+                                          _filteredTrainers,
+                                        ),
+                                    icon: const Icon(
+                                      Icons.table_view,
+                                      size: 16,
+                                    ),
+                                    label: const Text('Export'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.white,
+                                      foregroundColor: Colors.black87,
+                                      elevation: 0,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 8,
+                                      ),
+                                    ).copyWith(
+                                      side: WidgetStateProperty.resolveWith(
+                                        (states) => BorderSide(
+                                          color:
+                                              states.contains(
+                                                    WidgetState.hovered,
+                                                  )
+                                                  ? const Color(0xFFFFA812)
+                                                  : Colors.black26,
+                                        ),
                                       ),
                                     ),
-                                    Row(
-                                      children: [
-                                        IconButton(
-                                          icon: const Icon(
-                                            Icons.edit,
-                                            color: Colors.blue,
-                                          ),
-                                          onPressed: () {
-                                            TrainerModal.showEditTrainerModal(
-                                              context,
-                                              trainer,
-                                              (updatedTrainer) {
-                                                _editTrainer(
-                                                  index,
-                                                  updatedTrainer,
-                                                );
-                                              },
-                                            );
-                                          },
-                                        ),
-                                        IconButton(
-                                          icon: const Icon(
-                                            Icons.delete,
-                                            color: Colors.red,
-                                          ),
-                                          onPressed: () {
-                                            showDialog(
-                                              context: context,
-                                              builder: (BuildContext context) {
-                                                return AlertDialog(
-                                                  title: const Text(
-                                                    'Delete Trainer',
-                                                  ),
-                                                  content: const Text(
-                                                    'Are you sure you want to delete this trainer?',
-                                                  ),
-                                                  actions: [
-                                                    TextButton(
-                                                      onPressed: () {
-                                                        Navigator.of(
-                                                          context,
-                                                        ).pop();
-                                                      },
-                                                      child: const Text(
-                                                        'Cancel',
-                                                      ),
-                                                    ),
-                                                    TextButton(
-                                                      onPressed: () {
-                                                        _removeTrainer(index);
-                                                        Navigator.of(
-                                                          context,
-                                                        ).pop();
-                                                      },
-                                                      child: const Text(
-                                                        'Delete',
-                                                        style: TextStyle(
-                                                          color: Colors.red,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ],
-                                                );
-                                              },
-                                            );
-                                          },
-                                        ),
-                                      ],
-                                    ),
-                                  ],
+                                  ),
                                 ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  trainer['contactNumber'] ?? '',
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.black87,
+                                const SizedBox(width: 8),
+                                // View Archives toggle
+                                Expanded(
+                                  child: ElevatedButton.icon(
+                                    onPressed: () {
+                                      setState(() {
+                                        _showArchived = !_showArchived;
+                                        _filterTrainers(searchController.text);
+                                      });
+                                    },
+                                    icon: Icon(
+                                      _showArchived
+                                          ? Icons.people
+                                          : Icons.archive,
+                                      size: 16,
+                                    ),
+                                    label: Text(
+                                      _showArchived
+                                          ? 'View Active'
+                                          : 'View Archives',
+                                      style: const TextStyle(fontSize: 12),
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.white,
+                                      foregroundColor: Colors.black87,
+                                      elevation: 0,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 8,
+                                      ),
+                                    ).copyWith(
+                                      side: WidgetStateProperty.resolveWith(
+                                        (states) => BorderSide(
+                                          color:
+                                              states.contains(
+                                                    WidgetState.hovered,
+                                                  )
+                                                  ? const Color(0xFFFFA812)
+                                                  : Colors.black26,
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
-                          ),
-                        );
-                      }),
-                  ],
-                );
-              } else {
-                // Desktop/tablet layout: styled like customers table
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                'Trainers',
-                                style: TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.black,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              if (_isLoading)
-                                const Expanded(
-                                  child: Padding(
-                                    padding: EdgeInsets.only(right: 12),
-                                    child: LinearProgressIndicator(
-                                      minHeight: 2,
-                                    ),
-                                  ),
-                                ),
-                              // Search styled like customers
-                              SizedBox(
-                                width: 560,
-                                height: 42,
-                                child: TextField(
-                                  controller: searchController,
-                                  onChanged: _filterTrainers,
-                                  style: const TextStyle(color: Colors.black87),
-                                  decoration: InputDecoration(
-                                    hintText: 'Search',
-                                    prefixIcon: const Icon(
-                                      Icons.search,
-                                      size: 20,
-                                      color: Colors.black54,
-                                    ),
-                                    filled: true,
-                                    fillColor: Colors.white,
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      borderSide: const BorderSide(
-                                        color: Colors.black26,
+                            const SizedBox(height: 8),
+                            // Second row with New Trainer button
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: ElevatedButton.icon(
+                                    onPressed: () {
+                                      TrainerModal.showAddTrainerModal(
+                                        context,
+                                        _addTrainer,
+                                      );
+                                    },
+                                    icon: const Icon(Icons.add, size: 16),
+                                    label: const Text('New Trainer'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.white,
+                                      foregroundColor: Colors.blue,
+                                      elevation: 0,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 8,
+                                      ),
+                                    ).copyWith(
+                                      side: WidgetStateProperty.resolveWith(
+                                        (states) => BorderSide(
+                                          color:
+                                              states.contains(
+                                                    WidgetState.hovered,
+                                                  )
+                                                  ? const Color(0xFFFFA812)
+                                                  : Colors.black26,
+                                        ),
                                       ),
                                     ),
-                                    contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 0,
-                                    ),
-                                    isDense: true,
                                   ),
                                 ),
-                              ),
-                              const SizedBox(width: 12),
-                              // Export button (Excel icon + text)
-                              OutlinedButton.icon(
-                                onPressed:
-                                    () => exportTrainersToExcel(
-                                      context,
-                                      _filteredTrainers,
-                                    ),
-                                icon: const Icon(
-                                  Icons.table_chart_rounded,
-                                  color: Colors.teal,
-                                  size: 20,
-                                ),
-                                label: const Text('Export'),
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: Colors.black87,
-                                  side: const BorderSide(color: Colors.black26),
-                                  backgroundColor: Colors.white,
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      Expanded(
+                        child: ListView(
+                          padding: const EdgeInsets.all(16),
+                          children: [
+                            if (_isLoading)
+                              const LinearProgressIndicator(minHeight: 2),
+                            if (_showArchived && _filteredTrainers.isEmpty)
+                              _buildArchiveEmpty(
+                                title: 'No archived trainers',
+                                helper: 'Archived trainers will appear here',
+                                actionLabel: 'View Active Trainers',
+                                onAction: () {
+                                  setState(() => _showArchived = false);
+                                  _filterTrainers(searchController.text);
+                                },
+                              )
+                            else
+                              ..._filteredTrainers.asMap().entries.map((entry) {
+                                int index = entry.key;
+                                var trainer = entry.value;
+                                return Card(
+                                  margin: const EdgeInsets.only(bottom: 16),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 14,
-                                    vertical: 10,
-                                  ),
-                                ).copyWith(
-                                  side: WidgetStateProperty.resolveWith(
-                                    (states) => BorderSide(
-                                      color:
-                                          states.contains(WidgetState.hovered)
-                                              ? const Color(0xFFFFA812)
-                                              : Colors.black26,
+                                  elevation: 2,
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 18,
                                     ),
-                                  ),
-                                ),
-                              ),
-                              const Spacer(),
-                              // Archived Trainers toggle
-                              ElevatedButton.icon(
-                                onPressed: () {
-                                  setState(
-                                    () => _showArchived = !_showArchived,
-                                  );
-                                  _filterTrainers(searchController.text);
-                                },
-                                icon: Icon(
-                                  _showArchived
-                                      ? Icons.inventory_2
-                                      : Icons.inventory_2_outlined,
-                                  size: 18,
-                                ),
-                                label: Text(
-                                  _showArchived
-                                      ? 'Show Active Trainers'
-                                      : 'Archived Trainers',
-                                ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.white,
-                                  foregroundColor: Colors.black87,
-                                  elevation: 1,
-                                  side: const BorderSide(color: Colors.black26),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(22),
-                                  ),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 10,
-                                  ),
-                                ).copyWith(
-                                  side: WidgetStateProperty.resolveWith(
-                                    (states) => BorderSide(
-                                      color:
-                                          states.contains(WidgetState.hovered)
-                                              ? const Color(0xFFFFA812)
-                                              : Colors.black26,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              // New Trainer pill button
-                              ElevatedButton.icon(
-                                onPressed: () {
-                                  TrainerModal.showAddTrainerModal(
-                                    context,
-                                    _addTrainer,
-                                  );
-                                },
-                                icon: const Icon(Icons.add, size: 18),
-                                label: const Text('New Trainer'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.white,
-                                  foregroundColor: Colors.black87,
-                                  elevation: 1,
-                                  side: const BorderSide(color: Colors.black26),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(22),
-                                  ),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 10,
-                                  ),
-                                ).copyWith(
-                                  side: WidgetStateProperty.resolveWith(
-                                    (states) => BorderSide(
-                                      color:
-                                          states.contains(WidgetState.hovered)
-                                              ? const Color(0xFFFFA812)
-                                              : Colors.black26,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    Expanded(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.1),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            children: [
-                              // Header Row styled like admin_profile/customers (larger text)
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 18,
-                                  horizontal: 16,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey.shade100,
-                                  borderRadius: const BorderRadius.only(
-                                    topLeft: Radius.circular(12),
-                                    topRight: Radius.circular(12),
-                                  ),
-                                  border: Border(
-                                    bottom: BorderSide(
-                                      color: Colors.grey.shade300,
-                                      width: 2,
-                                    ),
-                                  ),
-                                ),
-                                child: const Row(
-                                  children: [
-                                    Expanded(
-                                      flex: 3,
-                                      child: Text(
-                                        'First Name',
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.w700,
-                                          letterSpacing: 0.5,
-                                        ),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      flex: 3,
-                                      child: Text(
-                                        'Last Name',
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.w700,
-                                          letterSpacing: 0.5,
-                                        ),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      flex: 4,
-                                      child: Text(
-                                        'Contact Number',
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.w700,
-                                          letterSpacing: 0.5,
-                                        ),
-                                      ),
-                                    ),
-                                    SizedBox(
-                                      width: 160,
-                                      child: Text(
-                                        'Actions',
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.w700,
-                                          letterSpacing: 0.5,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              // Data Rows
-                              if (_showArchived && _filteredTrainers.isEmpty)
-                                _buildArchiveEmpty(
-                                  title: 'No archived trainers',
-                                  helper: 'Archived trainers will appear here',
-                                  actionLabel: 'Show Active Trainers',
-                                  onAction: () {
-                                    setState(() => _showArchived = false);
-                                    _filterTrainers(searchController.text);
-                                  },
-                                )
-                              else
-                                ..._filteredTrainers.asMap().entries.map((
-                                  entry,
-                                ) {
-                                  int index = entry.key;
-                                  var trainer = entry.value;
-                                  return Column(
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            flex: 3,
-                                            child: Padding(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    vertical: 14,
-                                                    horizontal: 8,
-                                                  ),
-                                              child: Text(
-                                                trainer['firstName'] ?? '',
-                                                textAlign: TextAlign.center,
-                                                style: const TextStyle(
-                                                  fontSize: 16,
-                                                ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text(
+                                              '${trainer['firstName'] ?? ''} ${trainer['lastName'] ?? ''}',
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 16,
                                               ),
                                             ),
-                                          ),
-                                          Expanded(
-                                            flex: 3,
-                                            child: Padding(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    vertical: 14,
-                                                    horizontal: 8,
-                                                  ),
-                                              child: Text(
-                                                trainer['lastName'] ?? '',
-                                                textAlign: TextAlign.center,
-                                                style: const TextStyle(
-                                                  fontSize: 16,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                          Expanded(
-                                            flex: 4,
-                                            child: Padding(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    vertical: 14,
-                                                    horizontal: 8,
-                                                  ),
-                                              child: Text(
-                                                trainer['contactNumber'] ?? '',
-                                                textAlign: TextAlign.center,
-                                                style: const TextStyle(
-                                                  fontSize: 16,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                          SizedBox(
-                                            width: 200,
-                                            child: Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
+                                            Row(
                                               children: [
-                                                // Edit icon
+                                                // Edit button
                                                 Container(
                                                   decoration: BoxDecoration(
                                                     color: Colors.blue.shade50,
                                                     borderRadius:
                                                         BorderRadius.circular(
-                                                          6,
+                                                          8,
                                                         ),
                                                     border: Border.all(
                                                       color:
@@ -773,6 +431,11 @@ class _TrainersPageState extends State<TrainersPage> {
                                                     ),
                                                   ),
                                                   child: IconButton(
+                                                    icon: const Icon(
+                                                      Icons.edit_outlined,
+                                                      color: Colors.blue,
+                                                      size: 18,
+                                                    ),
                                                     onPressed: () {
                                                       TrainerModal.showEditTrainerModal(
                                                         context,
@@ -785,12 +448,6 @@ class _TrainersPageState extends State<TrainersPage> {
                                                         },
                                                       );
                                                     },
-                                                    icon: Icon(
-                                                      Icons.edit_outlined,
-                                                      size: 18,
-                                                      color:
-                                                          Colors.blue.shade700,
-                                                    ),
                                                     padding:
                                                         const EdgeInsets.all(8),
                                                     constraints:
@@ -798,102 +455,39 @@ class _TrainersPageState extends State<TrainersPage> {
                                                           minWidth: 36,
                                                           minHeight: 36,
                                                         ),
-                                                    tooltip: 'Edit',
+                                                    tooltip: 'Edit Trainer',
                                                   ),
                                                 ),
                                                 const SizedBox(width: 8),
-                                                // Archive/Restore control
-                                                Container(
-                                                  child: Builder(
-                                                    builder: (context) {
-                                                      final String idStr =
-                                                          trainer['id'] ?? '0';
-                                                      final int id =
-                                                          int.tryParse(idStr) ??
-                                                          0;
-                                                      final bool isArchived =
-                                                          (trainer['status'] ??
-                                                                  '')
-                                                              .toLowerCase() ==
-                                                          'inactive';
-                                                      if (isArchived) {
-                                                        return Container(
-                                                          decoration: BoxDecoration(
-                                                            color:
-                                                                Colors
-                                                                    .green
-                                                                    .shade50,
-                                                            borderRadius:
-                                                                BorderRadius.circular(
-                                                                  6,
-                                                                ),
-                                                            border: Border.all(
-                                                              color:
-                                                                  Colors
-                                                                      .green
-                                                                      .shade200,
-                                                            ),
-                                                          ),
-                                                          child: IconButton(
-                                                            onPressed: () async {
-                                                              setState(
-                                                                () =>
-                                                                    _isLoading =
-                                                                        true,
-                                                              );
-                                                              final bool ok =
-                                                                  await ApiService.restoreTrainer(
-                                                                    id,
-                                                                  );
-                                                              if (mounted) {
-                                                                await _loadTrainers();
-                                                                ScaffoldMessenger.of(
-                                                                  context,
-                                                                ).showSnackBar(
-                                                                  SnackBar(
-                                                                    content: Text(
-                                                                      ok
-                                                                          ? 'Trainer restored'
-                                                                          : 'Action failed',
-                                                                    ),
-                                                                  ),
-                                                                );
-                                                              }
-                                                            },
-                                                            icon: const Icon(
-                                                              Icons
-                                                                  .restore_outlined,
-                                                              size: 18,
-                                                              color:
-                                                                  Colors.green,
-                                                            ),
-                                                            padding:
-                                                                const EdgeInsets.all(
-                                                                  8,
-                                                                ),
-                                                            constraints:
-                                                                const BoxConstraints(
-                                                                  minWidth: 36,
-                                                                  minHeight: 36,
-                                                                ),
-                                                            tooltip: 'Restore',
-                                                          ),
-                                                        );
-                                                      }
+                                                // Archive/Restore button
+                                                Builder(
+                                                  builder: (context) {
+                                                    final String idStr =
+                                                        trainer['id'] ?? '0';
+                                                    final int id =
+                                                        int.tryParse(idStr) ??
+                                                        0;
+                                                    final bool isArchived =
+                                                        (trainer['status'] ??
+                                                                '')
+                                                            .toLowerCase() ==
+                                                        'inactive';
+
+                                                    if (isArchived) {
                                                       return Container(
                                                         decoration: BoxDecoration(
                                                           color:
                                                               Colors
-                                                                  .orange
+                                                                  .green
                                                                   .shade50,
                                                           borderRadius:
                                                               BorderRadius.circular(
-                                                                6,
+                                                                8,
                                                               ),
                                                           border: Border.all(
                                                             color:
                                                                 Colors
-                                                                    .orange
+                                                                    .green
                                                                     .shade200,
                                                           ),
                                                         ),
@@ -905,7 +499,7 @@ class _TrainersPageState extends State<TrainersPage> {
                                                                       true,
                                                             );
                                                             final bool ok =
-                                                                await ApiService.archiveTrainer(
+                                                                await ApiService.restoreTrainer(
                                                                   id,
                                                                 );
                                                             if (mounted) {
@@ -916,7 +510,7 @@ class _TrainersPageState extends State<TrainersPage> {
                                                                 SnackBar(
                                                                   content: Text(
                                                                     ok
-                                                                        ? 'Trainer archived'
+                                                                        ? 'Trainer restored'
                                                                         : 'Action failed',
                                                                   ),
                                                                 ),
@@ -925,10 +519,9 @@ class _TrainersPageState extends State<TrainersPage> {
                                                           },
                                                           icon: const Icon(
                                                             Icons
-                                                                .archive_outlined,
+                                                                .restore_outlined,
                                                             size: 18,
-                                                            color:
-                                                                Colors.orange,
+                                                            color: Colors.green,
                                                           ),
                                                           padding:
                                                               const EdgeInsets.all(
@@ -939,34 +532,772 @@ class _TrainersPageState extends State<TrainersPage> {
                                                                 minWidth: 36,
                                                                 minHeight: 36,
                                                               ),
-                                                          tooltip: 'Archive',
+                                                          tooltip:
+                                                              'Restore Trainer',
                                                         ),
                                                       );
-                                                    },
-                                                  ),
+                                                    }
+
+                                                    return Container(
+                                                      decoration: BoxDecoration(
+                                                        color:
+                                                            Colors
+                                                                .orange
+                                                                .shade50,
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              8,
+                                                            ),
+                                                        border: Border.all(
+                                                          color:
+                                                              Colors
+                                                                  .orange
+                                                                  .shade200,
+                                                        ),
+                                                      ),
+                                                      child: IconButton(
+                                                        onPressed: () async {
+                                                          setState(
+                                                            () =>
+                                                                _isLoading =
+                                                                    true,
+                                                          );
+                                                          final bool ok =
+                                                              await ApiService.archiveTrainer(
+                                                                id,
+                                                              );
+                                                          if (mounted) {
+                                                            await _loadTrainers();
+                                                            ScaffoldMessenger.of(
+                                                              context,
+                                                            ).showSnackBar(
+                                                              SnackBar(
+                                                                content: Text(
+                                                                  ok
+                                                                      ? 'Trainer archived'
+                                                                      : 'Action failed',
+                                                                ),
+                                                              ),
+                                                            );
+                                                          }
+                                                        },
+                                                        icon: const Icon(
+                                                          Icons
+                                                              .archive_outlined,
+                                                          size: 18,
+                                                          color: Colors.orange,
+                                                        ),
+                                                        padding:
+                                                            const EdgeInsets.all(
+                                                              8,
+                                                            ),
+                                                        constraints:
+                                                            const BoxConstraints(
+                                                              minWidth: 36,
+                                                              minHeight: 36,
+                                                            ),
+                                                        tooltip:
+                                                            'Archive Trainer',
+                                                      ),
+                                                    );
+                                                  },
                                                 ),
                                               ],
                                             ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 12),
+                                        // Enhanced contact display
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 8,
                                           ),
-                                        ],
+                                          decoration: BoxDecoration(
+                                            color: Colors.green.shade50,
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                            border: Border.all(
+                                              color: Colors.green.shade200,
+                                            ),
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              Container(
+                                                padding: const EdgeInsets.all(
+                                                  6,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.green.shade100,
+                                                  borderRadius:
+                                                      BorderRadius.circular(6),
+                                                ),
+                                                child: Icon(
+                                                  Icons.phone_outlined,
+                                                  size: 16,
+                                                  color: Colors.green.shade700,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 10),
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      'Contact',
+                                                      style: TextStyle(
+                                                        fontSize: 11,
+                                                        color:
+                                                            Colors
+                                                                .green
+                                                                .shade700,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 2),
+                                                    Text(
+                                                      trainer['contactNumber'] ??
+                                                          'N/A',
+                                                      style: const TextStyle(
+                                                        fontSize: 13,
+                                                        color: Colors.black87,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              }),
+                          ],
+                        ),
+                      ),
+                    ],
+                  )
+                  : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          children: [
+                            Row(
+                              children: [
+                                Text(
+                                  'Trainers',
+                                  style: TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                // Search styled like admin_profile
+                                SizedBox(
+                                  width: 560,
+                                  height: 42,
+                                  child: TextField(
+                                    controller: searchController,
+                                    onChanged: _filterTrainers,
+                                    style: const TextStyle(
+                                      color: Colors.black87,
+                                    ),
+                                    decoration: InputDecoration(
+                                      hintText: 'Search',
+                                      prefixIcon: const Icon(
+                                        Icons.search,
+                                        size: 20,
+                                        color: Colors.black54,
                                       ),
-                                      Divider(
-                                        height: 1,
-                                        color: Colors.grey.shade200,
+                                      filled: true,
+                                      fillColor: Colors.white,
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: const BorderSide(
+                                          color: Colors.black26,
+                                        ),
+                                      ),
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 0,
+                                          ),
+                                      isDense: true,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                // Export button (Excel icon + text)
+                                OutlinedButton.icon(
+                                  onPressed:
+                                      () => exportTrainersToExcel(
+                                        context,
+                                        _filteredTrainers,
+                                      ),
+                                  icon: const Icon(
+                                    Icons.table_chart_rounded,
+                                    color: Colors.teal,
+                                    size: 20,
+                                  ),
+                                  label: const Text('Export'),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: Colors.black87,
+                                    side: const BorderSide(
+                                      color: Colors.black26,
+                                    ),
+                                    backgroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                      vertical: 10,
+                                    ),
+                                  ).copyWith(
+                                    side: WidgetStateProperty.resolveWith(
+                                      (states) => BorderSide(
+                                        color:
+                                            states.contains(WidgetState.hovered)
+                                                ? const Color(0xFFFFA812)
+                                                : Colors.black26,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const Spacer(),
+                                // Archived Trainers toggle
+                                ElevatedButton.icon(
+                                  onPressed: () {
+                                    setState(
+                                      () => _showArchived = !_showArchived,
+                                    );
+                                    _filterTrainers(searchController.text);
+                                  },
+                                  icon: Icon(
+                                    _showArchived
+                                        ? Icons.inventory_2
+                                        : Icons.inventory_2_outlined,
+                                    size: 18,
+                                  ),
+                                  label: Text(
+                                    _showArchived
+                                        ? 'Show Active Trainers'
+                                        : 'Archived Trainers',
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.white,
+                                    foregroundColor: Colors.black87,
+                                    elevation: 1,
+                                    side: const BorderSide(
+                                      color: Colors.black26,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(22),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 10,
+                                    ),
+                                  ).copyWith(
+                                    side: WidgetStateProperty.resolveWith(
+                                      (states) => BorderSide(
+                                        color:
+                                            states.contains(WidgetState.hovered)
+                                                ? const Color(0xFFFFA812)
+                                                : Colors.black26,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                // New Trainer pill button
+                                ElevatedButton.icon(
+                                  onPressed: () {
+                                    TrainerModal.showAddTrainerModal(
+                                      context,
+                                      _addTrainer,
+                                    );
+                                  },
+                                  icon: const Icon(Icons.add, size: 18),
+                                  label: const Text('New Trainer'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.white,
+                                    foregroundColor: Colors.black87,
+                                    elevation: 1,
+                                    side: const BorderSide(
+                                      color: Colors.black26,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(22),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 10,
+                                    ),
+                                  ).copyWith(
+                                    side: WidgetStateProperty.resolveWith(
+                                      (states) => BorderSide(
+                                        color:
+                                            states.contains(WidgetState.hovered)
+                                                ? const Color(0xFFFFA812)
+                                                : Colors.black26,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      Expanded(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.1),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              children: [
+                                // Header Row styled like admin_profile/customers (larger text)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 18,
+                                    horizontal: 16,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.shade100,
+                                    borderRadius: const BorderRadius.only(
+                                      topLeft: Radius.circular(12),
+                                      topRight: Radius.circular(12),
+                                    ),
+                                    border: Border(
+                                      bottom: BorderSide(
+                                        color: Colors.grey.shade300,
+                                        width: 2,
+                                      ),
+                                    ),
+                                  ),
+                                  child: const Row(
+                                    children: [
+                                      Expanded(
+                                        flex: 3,
+                                        child: Text(
+                                          'First Name',
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.w700,
+                                            letterSpacing: 0.5,
+                                          ),
+                                        ),
+                                      ),
+                                      Expanded(
+                                        flex: 3,
+                                        child: Text(
+                                          'Last Name',
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.w700,
+                                            letterSpacing: 0.5,
+                                          ),
+                                        ),
+                                      ),
+                                      Expanded(
+                                        flex: 4,
+                                        child: Text(
+                                          'Contact Number',
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.w700,
+                                            letterSpacing: 0.5,
+                                          ),
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        width: 160,
+                                        child: Text(
+                                          'Actions',
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.w700,
+                                            letterSpacing: 0.5,
+                                          ),
+                                        ),
                                       ),
                                     ],
-                                  );
-                                }),
-                            ],
+                                  ),
+                                ),
+                                // Data Rows
+                                if (_showArchived && _filteredTrainers.isEmpty)
+                                  _buildArchiveEmpty(
+                                    title: 'No archived trainers',
+                                    helper:
+                                        'Archived trainers will appear here',
+                                    actionLabel: 'Show Active Trainers',
+                                    onAction: () {
+                                      setState(() => _showArchived = false);
+                                      _filterTrainers(searchController.text);
+                                    },
+                                  )
+                                else
+                                  ..._filteredTrainers.asMap().entries.map((
+                                    entry,
+                                  ) {
+                                    int index = entry.key;
+                                    var trainer = entry.value;
+                                    return Column(
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              flex: 3,
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      vertical: 14,
+                                                      horizontal: 8,
+                                                    ),
+                                                child: Text(
+                                                  trainer['firstName'] ?? '',
+                                                  textAlign: TextAlign.center,
+                                                  style: const TextStyle(
+                                                    fontSize: 16,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            Expanded(
+                                              flex: 3,
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      vertical: 14,
+                                                      horizontal: 8,
+                                                    ),
+                                                child: Text(
+                                                  trainer['lastName'] ?? '',
+                                                  textAlign: TextAlign.center,
+                                                  style: const TextStyle(
+                                                    fontSize: 16,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            Expanded(
+                                              flex: 4,
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      vertical: 14,
+                                                      horizontal: 8,
+                                                    ),
+                                                child: _buildPhoneNumberButton(
+                                                  trainer['contactNumber'] ??
+                                                      'N/A',
+                                                ),
+                                              ),
+                                            ),
+                                            SizedBox(
+                                              width: 200,
+                                              child: Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: [
+                                                  // Edit icon
+                                                  Container(
+                                                    decoration: BoxDecoration(
+                                                      color:
+                                                          Colors.blue.shade50,
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            6,
+                                                          ),
+                                                      border: Border.all(
+                                                        color:
+                                                            Colors
+                                                                .blue
+                                                                .shade200,
+                                                      ),
+                                                    ),
+                                                    child: IconButton(
+                                                      onPressed: () {
+                                                        TrainerModal.showEditTrainerModal(
+                                                          context,
+                                                          trainer,
+                                                          (updatedTrainer) {
+                                                            _editTrainer(
+                                                              index,
+                                                              updatedTrainer,
+                                                            );
+                                                          },
+                                                        );
+                                                      },
+                                                      icon: Icon(
+                                                        Icons.edit_outlined,
+                                                        size: 18,
+                                                        color:
+                                                            Colors
+                                                                .blue
+                                                                .shade700,
+                                                      ),
+                                                      padding:
+                                                          const EdgeInsets.all(
+                                                            8,
+                                                          ),
+                                                      constraints:
+                                                          const BoxConstraints(
+                                                            minWidth: 36,
+                                                            minHeight: 36,
+                                                          ),
+                                                      tooltip: 'Edit',
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  // Archive/Restore control
+                                                  Container(
+                                                    child: Builder(
+                                                      builder: (context) {
+                                                        final String idStr =
+                                                            trainer['id'] ??
+                                                            '0';
+                                                        final int id =
+                                                            int.tryParse(
+                                                              idStr,
+                                                            ) ??
+                                                            0;
+                                                        final bool isArchived =
+                                                            (trainer['status'] ??
+                                                                    '')
+                                                                .toLowerCase() ==
+                                                            'inactive';
+                                                        if (isArchived) {
+                                                          return Container(
+                                                            decoration: BoxDecoration(
+                                                              color:
+                                                                  Colors
+                                                                      .green
+                                                                      .shade50,
+                                                              borderRadius:
+                                                                  BorderRadius.circular(
+                                                                    6,
+                                                                  ),
+                                                              border: Border.all(
+                                                                color:
+                                                                    Colors
+                                                                        .green
+                                                                        .shade200,
+                                                              ),
+                                                            ),
+                                                            child: IconButton(
+                                                              onPressed: () async {
+                                                                setState(
+                                                                  () =>
+                                                                      _isLoading =
+                                                                          true,
+                                                                );
+                                                                final bool ok =
+                                                                    await ApiService.restoreTrainer(
+                                                                      id,
+                                                                    );
+                                                                if (mounted) {
+                                                                  await _loadTrainers();
+                                                                  ScaffoldMessenger.of(
+                                                                    context,
+                                                                  ).showSnackBar(
+                                                                    SnackBar(
+                                                                      content: Text(
+                                                                        ok
+                                                                            ? 'Trainer restored'
+                                                                            : 'Action failed',
+                                                                      ),
+                                                                    ),
+                                                                  );
+                                                                }
+                                                              },
+                                                              icon: const Icon(
+                                                                Icons
+                                                                    .restore_outlined,
+                                                                size: 18,
+                                                                color:
+                                                                    Colors
+                                                                        .green,
+                                                              ),
+                                                              padding:
+                                                                  const EdgeInsets.all(
+                                                                    8,
+                                                                  ),
+                                                              constraints:
+                                                                  const BoxConstraints(
+                                                                    minWidth:
+                                                                        36,
+                                                                    minHeight:
+                                                                        36,
+                                                                  ),
+                                                              tooltip:
+                                                                  'Restore',
+                                                            ),
+                                                          );
+                                                        }
+                                                        return Container(
+                                                          decoration: BoxDecoration(
+                                                            color:
+                                                                Colors
+                                                                    .orange
+                                                                    .shade50,
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  6,
+                                                                ),
+                                                            border: Border.all(
+                                                              color:
+                                                                  Colors
+                                                                      .orange
+                                                                      .shade200,
+                                                            ),
+                                                          ),
+                                                          child: IconButton(
+                                                            onPressed: () async {
+                                                              setState(
+                                                                () =>
+                                                                    _isLoading =
+                                                                        true,
+                                                              );
+                                                              final bool ok =
+                                                                  await ApiService.archiveTrainer(
+                                                                    id,
+                                                                  );
+                                                              if (mounted) {
+                                                                await _loadTrainers();
+                                                                ScaffoldMessenger.of(
+                                                                  context,
+                                                                ).showSnackBar(
+                                                                  SnackBar(
+                                                                    content: Text(
+                                                                      ok
+                                                                          ? 'Trainer archived'
+                                                                          : 'Action failed',
+                                                                    ),
+                                                                  ),
+                                                                );
+                                                              }
+                                                            },
+                                                            icon: const Icon(
+                                                              Icons
+                                                                  .archive_outlined,
+                                                              size: 18,
+                                                              color:
+                                                                  Colors.orange,
+                                                            ),
+                                                            padding:
+                                                                const EdgeInsets.all(
+                                                                  8,
+                                                                ),
+                                                            constraints:
+                                                                const BoxConstraints(
+                                                                  minWidth: 36,
+                                                                  minHeight: 36,
+                                                                ),
+                                                            tooltip: 'Archive',
+                                                          ),
+                                                        );
+                                                      },
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        Divider(
+                                          height: 1,
+                                          color: Colors.grey.shade200,
+                                        ),
+                                      ],
+                                    );
+                                  }),
+                              ],
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
-                );
-              }
-            },
+                    ],
+                  ),
+        ),
+      ),
+    );
+  }
+
+  // Build styled phone number button for desktop view
+  Widget _buildPhoneNumberButton(String phoneNumber) {
+    if (phoneNumber == 'N/A' || phoneNumber.isEmpty) {
+      return Center(
+        child: Text(
+          'N/A',
+          style: TextStyle(
+            fontSize: 16,
+            color: Colors.grey.shade500,
+            fontStyle: FontStyle.italic,
           ),
+        ),
+      );
+    }
+
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: const Color(0xFFE8F5E8), // Light green background
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: const Color(0xFF4CAF50).withValues(alpha: 0.3),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.phone,
+              size: 16,
+              color: const Color(0xFF2E7D32), // Darker green icon
+            ),
+            const SizedBox(width: 6),
+            Text(
+              phoneNumber,
+              style: const TextStyle(
+                fontSize: 14,
+                color: Color(0xFF2E7D32), // Darker green text
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ),
       ),
     );
