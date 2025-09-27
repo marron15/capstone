@@ -418,25 +418,22 @@ class _CustomersPageState extends State<CustomersPage> {
     ).then((result) {
       if (result != null && result['success'] == true) {
         final data = result['customerData'] as Map<String, dynamic>;
-        // UI-only insertion so table updates immediately; backend can sync later
-        setState(() {
-          _customers.add({
-            'name': data['name'] ?? '',
-            'contactNumber': data['contactNumber'] ?? 'Not provided',
-            'membershipType': data['membershipType'] ?? 'Monthly',
-            'expirationDate': data['expirationDate'] as DateTime,
-            'startDate': data['startDate'] as DateTime? ?? DateTime.now(),
-            'email': data['email'] ?? '',
-            'fullName': data['fullName'] ?? '',
-            'birthdate': data['birthdate'],
-            'address': data['address'],
-            'emergencyContactName': data['emergencyContactName'],
-            'emergencyContactPhone': data['emergencyContactPhone'],
-            'customerId': data['customerId'],
-          });
-        });
+
+        // Show enhanced success modal
+        _showCustomerSuccessModal(data);
+
+        // Refresh the customer list from the server
+        _loadCustomers();
       }
     });
+  }
+
+  void _showCustomerSuccessModal(Map<String, dynamic> customerData) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => _CustomerSuccessModal(customerData: customerData),
+    );
   }
 
   @override
@@ -1555,6 +1552,280 @@ class _CustomersPageState extends State<CustomersPage> {
           );
         }
       },
+    );
+  }
+}
+
+class _CustomerSuccessModal extends StatefulWidget {
+  final Map<String, dynamic> customerData;
+
+  const _CustomerSuccessModal({required this.customerData});
+
+  @override
+  State<_CustomerSuccessModal> createState() => _CustomerSuccessModalState();
+}
+
+class _CustomerSuccessModalState extends State<_CustomerSuccessModal>
+    with TickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _fadeAnimation;
+  late AnimationController _iconController;
+  late Animation<double> _iconScaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Main animation controller
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+
+    _scaleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.elasticOut),
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+      ),
+    );
+
+    // Icon animation controller
+    _iconController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+
+    _iconScaleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _iconController, curve: Curves.elasticOut),
+    );
+
+    // Start animations
+    _animationController.forward();
+    Future.delayed(const Duration(milliseconds: 200), () {
+      if (mounted) {
+        _iconController.forward();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    _iconController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: FadeTransition(
+        opacity: _fadeAnimation,
+        child: ScaleTransition(
+          scale: _scaleAnimation,
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 400),
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Animated success icon
+                ScaleTransition(
+                  scale: _iconScaleAnimation,
+                  child: Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.green.shade100,
+                      border: Border.all(
+                        color: Colors.green.shade300,
+                        width: 2,
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.check_circle,
+                      color: Colors.green.shade600,
+                      size: 32,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Title with animation
+                FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: const Text(
+                    'Customer Added Successfully!',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Success message
+                FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: Text(
+                    'Customer "${widget.customerData['name'] ?? 'Unknown'}" has been registered in the database with ${widget.customerData['membershipType'] ?? 'Monthly'} membership.',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.black54,
+                      height: 1.4,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Customer details card
+                FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade200, width: 1),
+                    ),
+                    child: Column(
+                      children: [
+                        // Login credentials
+                        _buildInfoRow(
+                          icon: Icons.check_circle_outline,
+                          iconColor: Colors.green.shade600,
+                          text:
+                              widget.customerData['email'] != null &&
+                                      widget.customerData['email']
+                                          .toString()
+                                          .isNotEmpty
+                                  ? 'The customer can now log in using their email and password.'
+                                  : 'The customer can now log in using their contact number and password.',
+                          textColor: Colors.green.shade700,
+                          isBold: true,
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Email (only show if provided)
+                        if (widget.customerData['email'] != null &&
+                            widget.customerData['email']
+                                .toString()
+                                .isNotEmpty) ...[
+                          _buildInfoRow(
+                            icon: Icons.email_outlined,
+                            iconColor: Colors.blue.shade600,
+                            text: 'Email: ${widget.customerData['email']}',
+                            textColor: Colors.black87,
+                          ),
+                        ],
+                        if (widget.customerData['email'] != null &&
+                            widget.customerData['email'].toString().isNotEmpty)
+                          const SizedBox(height: 8),
+
+                        // Password
+                        _buildInfoRow(
+                          icon: Icons.key_outlined,
+                          iconColor: Colors.orange.shade600,
+                          text: 'Password: [As set during registration]',
+                          textColor: Colors.black87,
+                        ),
+
+                        // Membership info
+                        if (widget.customerData['membershipType'] != null) ...[
+                          const SizedBox(height: 8),
+                          _buildInfoRow(
+                            icon: Icons.card_membership,
+                            iconColor: Colors.purple.shade600,
+                            text:
+                                'Membership: ${widget.customerData['membershipType']}',
+                            textColor: Colors.black87,
+                            isBold: true,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // OK button with animation
+                FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue.shade600,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: const Text(
+                        'OK',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoRow({
+    required IconData icon,
+    required Color iconColor,
+    required String text,
+    required Color textColor,
+    bool isBold = false,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, color: iconColor, size: 16),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            text,
+            style: TextStyle(
+              fontSize: 12,
+              color: textColor,
+              fontWeight: isBold ? FontWeight.w600 : FontWeight.normal,
+              height: 1.2,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

@@ -283,7 +283,7 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
         firstName: firstName,
         lastName: lastName,
         middleName: middleName.isNotEmpty ? middleName : null,
-        email: email,
+        email: email.isNotEmpty ? email : null,
         password: password,
         birthdate: birthdate,
         phoneNumber: contact.isNotEmpty ? contact : null,
@@ -393,60 +393,6 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
                   customerId, // Store the customer ID from API response
             },
           });
-        }
-
-        // Show success dialog
-        if (mounted) {
-          showDialog(
-            context: context,
-            builder:
-                (context) => AlertDialog(
-                  title: const Text('Customer Added Successfully!'),
-                  content: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Customer "$firstName $lastName" has been registered in the database with $_selectedMembershipType membership.',
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        '✅ The customer can now log in using their email and password.',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.green,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '📧 Email: $email',
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                      const Text(
-                        '🔑 Password: [As set during registration]',
-                        style: TextStyle(fontSize: 12),
-                      ),
-                      if (membershipCreated) ...[
-                        const SizedBox(height: 8),
-                        const Text(
-                          '🎫 Membership has been created and is active.',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.blue,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('OK'),
-                    ),
-                  ],
-                ),
-          );
         }
       } else {
         // API call failed
@@ -1457,7 +1403,7 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
                                   focusNode: _emailFocus,
                                   style: const TextStyle(color: Colors.white),
                                   decoration: _inputDecoration(
-                                    label: 'Email',
+                                    label: 'Email (Optional)',
                                     icon: Icons.email_outlined,
                                     focusNode: _emailFocus,
                                     hintText: 'example@email.com',
@@ -1628,15 +1574,7 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
                                                       });
                                                       hasError = true;
                                                     }
-                                                    if (_emailController.text
-                                                        .trim()
-                                                        .isEmpty) {
-                                                      setState(() {
-                                                        _emailError =
-                                                            'Email is required.';
-                                                      });
-                                                      hasError = true;
-                                                    }
+                                                    // Email is now optional, so we skip the empty check
                                                     if (_passwordController
                                                         .text
                                                         .isEmpty) {
@@ -1647,7 +1585,7 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
                                                       hasError = true;
                                                     }
 
-                                                    // Additional email validation
+                                                    // Additional email validation (only if email is provided)
                                                     if (_emailController.text
                                                             .trim()
                                                             .isNotEmpty &&

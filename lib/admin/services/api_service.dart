@@ -66,7 +66,7 @@ class ApiService {
     required String firstName,
     required String lastName,
     String? middleName,
-    required String email,
+    String? email,
     required String password,
     String? birthdate,
     String? phoneNumber,
@@ -101,10 +101,14 @@ class ApiService {
       final Map<String, dynamic> requestBody = {
         'first_name': firstName,
         'last_name': lastName,
-        'email': email,
         'password': password,
         'created_by': 'admin', // Mark as admin-created customer
       };
+
+      // Add email only if provided
+      if (email != null && email.trim().isNotEmpty) {
+        requestBody['email'] = email;
+      }
 
       // Add optional fields if they exist
       if (middleName != null && middleName.trim().isNotEmpty) {
