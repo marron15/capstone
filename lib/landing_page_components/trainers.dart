@@ -20,11 +20,13 @@ class _TrainersSectionState extends State<TrainersSection> {
   bool _isLoading = false;
   int _pageIndex = 0;
   int _slideDir = 0;
+  PageController? _pageController; // for narrow screens
 
   @override
   void initState() {
     super.initState();
     _load();
+    _pageController = PageController(viewportFraction: 0.88);
   }
 
   Future<void> _load() async {
@@ -106,6 +108,74 @@ class _TrainersSectionState extends State<TrainersSection> {
                 endExclusive,
               );
 
+              if (narrow) {
+                // Dedicated swipeable PageView on narrow screens
+                return Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isSmallScreen ? 20 : screenWidth * 0.08,
+                  ),
+                  child: Column(
+                    children: [
+                      SizedBox(
+                        height: isSmallScreen ? 220 : 240,
+                        child: PageView.builder(
+                          controller: _pageController,
+                          itemCount: _trainers.length,
+                          onPageChanged: (i) => setState(() => _pageIndex = i),
+                          itemBuilder: (context, i) {
+                            final t = _trainers[i];
+                            final String first = t['firstName'] ?? '';
+                            final String last = t['lastName'] ?? '';
+                            final String contact = t['contactNumber'] ?? '';
+                            return Padding(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: isSmallScreen ? 8 : 12,
+                                vertical: 12,
+                              ),
+                              child: _TrainerCard(
+                                name: '${first.trim()} ${last.trim()}'.trim(),
+                                contact: contact,
+                                isMobile: true,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      if (_trainers.length > 1) ...[
+                        const SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: List.generate(_trainers.length, (i) {
+                            final bool active = i == _pageIndex;
+                            return GestureDetector(
+                              onTap: () {
+                                _pageController?.animateToPage(
+                                  i,
+                                  duration: const Duration(milliseconds: 300),
+                                  curve: Curves.easeInOut,
+                                );
+                              },
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                margin: const EdgeInsets.symmetric(
+                                  horizontal: 4,
+                                ),
+                                width: active ? 12 : 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: active ? Colors.white : Colors.white54,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ),
+                            );
+                          }),
+                        ),
+                      ],
+                    ],
+                  ),
+                );
+              }
+
               return Padding(
                 padding: EdgeInsets.symmetric(
                   horizontal: isSmallScreen ? 12 : screenWidth * 0.06,
@@ -160,6 +230,7 @@ class _TrainersSectionState extends State<TrainersSection> {
                                     name:
                                         '${first.trim()} ${last.trim()}'.trim(),
                                     contact: contact,
+                                    isMobile: false,
                                   ),
                                 );
                               }).toList(),
@@ -254,8 +325,13 @@ class _TrainersSectionState extends State<TrainersSection> {
 class _TrainerCard extends StatefulWidget {
   final String name;
   final String contact;
+  final bool isMobile;
 
-  const _TrainerCard({required this.name, required this.contact});
+  const _TrainerCard({
+    required this.name,
+    required this.contact,
+    this.isMobile = false,
+  });
 
   @override
   State<_TrainerCard> createState() => _TrainerCardState();
@@ -268,14 +344,130 @@ class _TrainerCardState extends State<_TrainerCard> {
   Widget build(BuildContext context) {
     final String name = widget.name;
     final String contact = widget.contact;
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final bool isMobile = widget.isMobile;
+
+    if (isMobile) {
+      // Mobile-optimized layout based on the first image
+      final double cardWidth = (screenWidth * 0.9).clamp(280.0, 360.0);
+      final double cardHeight = 180;
+
+      return Center(
+        child: Container(
+          width: cardWidth,
+          height: cardHeight,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF2A2A2A), Color(0xFF1A1A1A)],
+            ),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.white30, width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.6),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+              BoxShadow(
+                color: Colors.white.withValues(alpha: 0.05),
+                blurRadius: 1,
+                offset: const Offset(0, 1),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Trainer name - prominent and centered
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Text(
+                  name,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 22,
+                    letterSpacing: 0.5,
+                    height: 1.2,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Contact info - styled like the first image
+              if (contact.isNotEmpty)
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 20),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(25),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.phone,
+                          size: 18,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        contact,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Desktop/tablet layout
+    final bool compact = screenWidth < 420;
+    final double cardWidth =
+        compact ? (screenWidth * 0.86).clamp(250.0, 340.0) : 320;
+    final double nameFont = compact ? 17 : 19;
+    final double phoneFont = compact ? 12 : 13.5;
+    final EdgeInsets cardPadding = EdgeInsets.symmetric(
+      horizontal: compact ? 16 : 18,
+      vertical: compact ? 14 : 16,
+    );
+
     return Center(
       child: MouseRegion(
         onEnter: (_) => setState(() => _isHovering = true),
         onExit: (_) => setState(() => _isHovering = false),
         cursor: SystemMouseCursors.basic,
         child: Container(
-          width: 320,
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+          width: cardWidth,
+          padding: cardPadding,
           decoration: BoxDecoration(
             gradient: const LinearGradient(
               begin: Alignment.topLeft,
@@ -314,10 +506,10 @@ class _TrainerCardState extends State<_TrainerCard> {
               Text(
                 name,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
-                  fontSize: 19,
+                  fontSize: nameFont,
                   letterSpacing: 0.2,
                 ),
               ),
@@ -341,9 +533,9 @@ class _TrainerCardState extends State<_TrainerCard> {
                       const SizedBox(width: 6),
                       Text(
                         contact,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: Colors.white70,
-                          fontSize: 13.5,
+                          fontSize: phoneFont,
                         ),
                       ),
                     ],

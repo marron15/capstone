@@ -349,7 +349,8 @@ class _LandingPageState extends State<LandingPage>
           padding: EdgeInsets.zero,
 
           children: [
-            SizedBox(height: 150),
+            const _DrawerHeaderSection(),
+            const SizedBox(height: 24),
             _DrawerNavItem(
               icon: Icons.account_circle,
 
@@ -362,24 +363,6 @@ class _LandingPageState extends State<LandingPage>
                   context,
 
                   MaterialPageRoute(builder: (context) => ProfilePage()),
-                );
-              },
-            ),
-
-            _DrawerNavItem(
-              icon: Icons.home,
-
-              label: 'Home',
-
-              onTap: () {
-                Navigator.pop(context);
-
-                _scrollController.animateTo(
-                  0.0,
-
-                  duration: const Duration(milliseconds: 500),
-
-                  curve: Curves.easeInOut,
                 );
               },
             ),
@@ -443,6 +426,31 @@ class _LandingPageState extends State<LandingPage>
                 _scrollToSection(5);
               },
             ),
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white24, width: 1),
+                ),
+                child: Row(
+                  children: const [
+                    Icon(Icons.location_on, color: Colors.white70, size: 18),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '875 Rizal Ave West Tapinac, Olongapo City',
+                        style: TextStyle(color: Colors.white70, fontSize: 12),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
           ],
         ),
       ),
@@ -485,689 +493,774 @@ class _LandingPageState extends State<LandingPage>
                 Container(color: Colors.black.withAlpha((0.4 * 255).toInt())),
 
                 SafeArea(
-                  child: SingleChildScrollView(
-                    controller: _scrollController,
-
-                    physics: const BouncingScrollPhysics(),
-
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-
-                      children: [
-                        Container(
-                          width: double.infinity,
-
-                          padding: EdgeInsets.symmetric(
-                            horizontal:
-                                isSmallScreen ? 20.0 : screenSize.width * 0.1,
-
-                            vertical: screenSize.height * 0.06,
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      return SingleChildScrollView(
+                        controller: _scrollController,
+                        physics: const ClampingScrollPhysics(),
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minHeight: constraints.maxHeight,
                           ),
-
                           child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Animated Hero Title
-                              AnimatedBuilder(
-                                animation: _heroAnimation,
-                                builder: (context, child) {
-                                  return Transform.scale(
-                                    scale: 0.8 + (0.2 * _heroAnimation.value),
-                                    child: FadeTransition(
-                                      opacity: _heroAnimation,
-                                      child: SlideTransition(
-                                        position: Tween<Offset>(
-                                          begin: const Offset(0, 0.5),
-                                          end: Offset.zero,
-                                        ).animate(
-                                          CurvedAnimation(
-                                            parent: _heroController,
-                                            curve: Curves.easeOutCubic,
-                                          ),
-                                        ),
-                                        child: Text(
-                                          'Welcome to RNR FITNESS GYM',
-                                          textAlign: TextAlign.center,
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize:
-                                                (isSmallScreen
-                                                    ? (screenSize.width * 0.10)
-                                                        .clamp(28.0, 38.0)
-                                                    : (screenSize.width * 0.06)
-                                                        .clamp(32.0, 48.0)),
-                                            fontWeight: FontWeight.w900,
-                                            height: 1.1,
-                                            letterSpacing: 1.2,
-                                            shadows: [
-                                              Shadow(
-                                                color: Colors.black.withValues(
-                                                  alpha: 0.5,
+                              Container(
+                                width: double.infinity,
+
+                                padding: EdgeInsets.symmetric(
+                                  horizontal:
+                                      isSmallScreen
+                                          ? 20.0
+                                          : screenSize.width * 0.1,
+
+                                  vertical: screenSize.height * 0.06,
+                                ),
+
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+
+                                  children: [
+                                    // Animated Hero Title
+                                    AnimatedBuilder(
+                                      animation: _heroAnimation,
+                                      builder: (context, child) {
+                                        return Transform.scale(
+                                          scale:
+                                              0.8 +
+                                              (0.2 * _heroAnimation.value),
+                                          child: FadeTransition(
+                                            opacity: _heroAnimation,
+                                            child: SlideTransition(
+                                              position: Tween<Offset>(
+                                                begin: const Offset(0, 0.5),
+                                                end: Offset.zero,
+                                              ).animate(
+                                                CurvedAnimation(
+                                                  parent: _heroController,
+                                                  curve: Curves.easeOutCubic,
                                                 ),
-                                                offset: const Offset(0, 2),
-                                                blurRadius: 4,
                                               ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-
-                              SizedBox(height: screenSize.height * 0.02),
-
-                              // Conditional content based on login status
-                              AnimatedBuilder(
-                                animation: unifiedAuthState,
-
-                                builder: (context, child) {
-                                  if (unifiedAuthState.isCustomerLoggedIn) {
-                                    // Show membership information when logged in
-
-                                    return Column(
-                                      children: [
-                                        Text(
-                                          'Welcome back, ${unifiedAuthState.customerName ?? 'Member'}!',
-
-                                          style: TextStyle(
-                                            color: Colors.white,
-
-                                            fontSize:
-                                                (isSmallScreen
-                                                    ? (screenSize.width * 0.048)
-                                                        .clamp(15.0, 22.0)
-                                                    : (screenSize.width * 0.032)
-                                                        .clamp(16.0, 26.0)),
-
-                                            fontWeight: FontWeight.w700,
-
-                                            height: 1.5,
-                                          ),
-                                        ),
-
-                                        SizedBox(
-                                          height: screenSize.height * 0.02,
-                                        ),
-
-                                        if (unifiedAuthState.membershipData !=
-                                            null) ...[
-                                          Container(
-                                            width: double.infinity,
-
-                                            constraints: BoxConstraints(
-                                              maxWidth:
-                                                  isSmallScreen ? 320 : 400,
-                                            ),
-
-                                            padding: EdgeInsets.all(20),
-
-                                            decoration: BoxDecoration(
-                                              gradient: LinearGradient(
-                                                begin: Alignment.topLeft,
-                                                end: Alignment.bottomRight,
-                                                colors: [
-                                                  Colors.black.withValues(
-                                                    alpha: 0.60,
-                                                  ),
-                                                  Colors.black.withValues(
-                                                    alpha: 0.45,
-                                                  ),
-                                                ],
-                                              ),
-
-                                              borderRadius:
-                                                  BorderRadius.circular(16),
-
-                                              border: Border.all(
-                                                color: Colors.white.withValues(
-                                                  alpha: 0.22,
-                                                ),
-                                                width: 1.5,
-                                              ),
-
-                                              boxShadow: [
-                                                BoxShadow(
-                                                  color: Colors.black
-                                                      .withValues(alpha: 0.35),
-                                                  blurRadius: 18,
-                                                  spreadRadius: 1,
-                                                  offset: Offset(0, 10),
-                                                ),
-                                              ],
-                                            ),
-
-                                            child: Column(
-                                              children: [
-                                                // Header with membership type and status
-                                                Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment
-                                                          .spaceBetween,
-
-                                                  children: [
-                                                    Expanded(
-                                                      child: Text(
-                                                        '${unifiedAuthState.membershipData!.membershipType} Membership',
-
-                                                        style: TextStyle(
-                                                          color: const Color(
-                                                            0xFFFFA812,
+                                              child: Text(
+                                                'Welcome to RNR FITNESS GYM',
+                                                textAlign: TextAlign.center,
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize:
+                                                      (isSmallScreen
+                                                          ? (screenSize.width *
+                                                                  0.10)
+                                                              .clamp(28.0, 38.0)
+                                                          : (screenSize.width *
+                                                                  0.06)
+                                                              .clamp(
+                                                                32.0,
+                                                                48.0,
+                                                              )),
+                                                  fontWeight: FontWeight.w900,
+                                                  height: 1.1,
+                                                  letterSpacing: 1.2,
+                                                  shadows: [
+                                                    Shadow(
+                                                      color: Colors.black
+                                                          .withValues(
+                                                            alpha: 0.5,
                                                           ),
-
-                                                          fontSize:
-                                                              (isSmallScreen
-                                                                  ? (screenSize
-                                                                              .width *
-                                                                          0.045)
-                                                                      .clamp(
-                                                                        16.0,
-
-                                                                        22.0,
-                                                                      )
-                                                                  : (screenSize
-                                                                              .width *
-                                                                          0.03)
-                                                                      .clamp(
-                                                                        18.0,
-
-                                                                        26.0,
-                                                                      )),
-
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                        ),
+                                                      offset: const Offset(
+                                                        0,
+                                                        2,
                                                       ),
-                                                    ),
-
-                                                    Container(
-                                                      padding:
-                                                          EdgeInsets.symmetric(
-                                                            horizontal: 12,
-
-                                                            vertical: 6,
-                                                          ),
-
-                                                      decoration: BoxDecoration(
-                                                        color:
-                                                            _isMembershipActive(
-                                                                  unifiedAuthState
-                                                                      .membershipData!
-                                                                      .expirationDate,
-                                                                )
-                                                                ? Colors.green
-                                                                    .withValues(
-                                                                      alpha:
-                                                                          0.9,
-                                                                    )
-                                                                : Colors.red
-                                                                    .withValues(
-                                                                      alpha:
-                                                                          0.9,
-                                                                    ),
-
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                              20,
-                                                            ),
-
-                                                        boxShadow: [
-                                                          BoxShadow(
-                                                            color: (_isMembershipActive(
-                                                                      unifiedAuthState
-                                                                          .membershipData!
-                                                                          .expirationDate,
-                                                                    )
-                                                                    ? Colors
-                                                                        .green
-                                                                    : Colors
-                                                                        .red)
-                                                                .withValues(
-                                                                  alpha: 0.4,
-                                                                ),
-
-                                                            blurRadius: 8,
-
-                                                            spreadRadius: 1,
-                                                          ),
-                                                        ],
-                                                      ),
-
-                                                      child: Row(
-                                                        mainAxisSize:
-                                                            MainAxisSize.min,
-
-                                                        children: [
-                                                          Icon(
-                                                            _isMembershipActive(
-                                                                  unifiedAuthState
-                                                                      .membershipData!
-                                                                      .expirationDate,
-                                                                )
-                                                                ? Icons
-                                                                    .check_circle
-                                                                : Icons.warning,
-
-                                                            color: Colors.white,
-
-                                                            size: 16,
-                                                          ),
-
-                                                          SizedBox(width: 6),
-
-                                                          Text(
-                                                            _isMembershipActive(
-                                                                  unifiedAuthState
-                                                                      .membershipData!
-                                                                      .expirationDate,
-                                                                )
-                                                                ? 'Active'
-                                                                : 'Expired',
-
-                                                            style: TextStyle(
-                                                              color:
-                                                                  Colors.white,
-
-                                                              fontSize: 12,
-
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold,
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      ),
+                                                      blurRadius: 4,
                                                     ),
                                                   ],
                                                 ),
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
 
-                                                SizedBox(height: 16),
+                                    SizedBox(height: screenSize.height * 0.02),
 
-                                                // Progress bar showing time remaining
-                                                if (_isMembershipActive(
-                                                  unifiedAuthState
-                                                      .membershipData!
-                                                      .expirationDate,
-                                                )) ...[
-                                                  Column(
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment
-                                                            .start,
+                                    // Conditional content based on login status
+                                    AnimatedBuilder(
+                                      animation: unifiedAuthState,
 
+                                      builder: (context, child) {
+                                        if (unifiedAuthState
+                                            .isCustomerLoggedIn) {
+                                          // Show membership information when logged in
+
+                                          return Column(
+                                            children: [
+                                              Text(
+                                                'Welcome back, ${unifiedAuthState.customerName ?? 'Member'}!',
+
+                                                style: TextStyle(
+                                                  color: Colors.white,
+
+                                                  fontSize:
+                                                      (isSmallScreen
+                                                          ? (screenSize.width *
+                                                                  0.048)
+                                                              .clamp(15.0, 22.0)
+                                                          : (screenSize.width *
+                                                                  0.032)
+                                                              .clamp(
+                                                                16.0,
+                                                                26.0,
+                                                              )),
+
+                                                  fontWeight: FontWeight.w700,
+
+                                                  height: 1.5,
+                                                ),
+                                              ),
+
+                                              SizedBox(
+                                                height:
+                                                    screenSize.height * 0.02,
+                                              ),
+
+                                              if (unifiedAuthState
+                                                      .membershipData !=
+                                                  null) ...[
+                                                Container(
+                                                  width: double.infinity,
+
+                                                  constraints: BoxConstraints(
+                                                    maxWidth:
+                                                        isSmallScreen
+                                                            ? 320
+                                                            : 400,
+                                                  ),
+
+                                                  padding: EdgeInsets.all(20),
+
+                                                  decoration: BoxDecoration(
+                                                    gradient: LinearGradient(
+                                                      begin: Alignment.topLeft,
+                                                      end:
+                                                          Alignment.bottomRight,
+                                                      colors: [
+                                                        Colors.black.withValues(
+                                                          alpha: 0.60,
+                                                        ),
+                                                        Colors.black.withValues(
+                                                          alpha: 0.45,
+                                                        ),
+                                                      ],
+                                                    ),
+
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          16,
+                                                        ),
+
+                                                    border: Border.all(
+                                                      color: Colors.white
+                                                          .withValues(
+                                                            alpha: 0.22,
+                                                          ),
+                                                      width: 1.5,
+                                                    ),
+
+                                                    boxShadow: [
+                                                      BoxShadow(
+                                                        color: Colors.black
+                                                            .withValues(
+                                                              alpha: 0.35,
+                                                            ),
+                                                        blurRadius: 18,
+                                                        spreadRadius: 1,
+                                                        offset: Offset(0, 10),
+                                                      ),
+                                                    ],
+                                                  ),
+
+                                                  child: Column(
                                                     children: [
+                                                      // Header with membership type and status
                                                       Row(
                                                         mainAxisAlignment:
                                                             MainAxisAlignment
                                                                 .spaceBetween,
 
                                                         children: [
-                                                          Text(
-                                                            'Time Remaining',
+                                                          Expanded(
+                                                            child: Text(
+                                                              '${unifiedAuthState.membershipData!.membershipType} Membership',
 
-                                                            style: TextStyle(
-                                                              color:
-                                                                  Colors
-                                                                      .white70,
+                                                              style: TextStyle(
+                                                                color:
+                                                                    const Color(
+                                                                      0xFFFFA812,
+                                                                    ),
 
-                                                              fontSize: 12,
+                                                                fontSize:
+                                                                    (isSmallScreen
+                                                                        ? (screenSize.width *
+                                                                                0.045)
+                                                                            .clamp(
+                                                                              16.0,
 
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w500,
+                                                                              22.0,
+                                                                            )
+                                                                        : (screenSize.width *
+                                                                                0.03)
+                                                                            .clamp(
+                                                                              18.0,
+
+                                                                              26.0,
+                                                                            )),
+
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                              ),
                                                             ),
                                                           ),
 
-                                                          Text(
-                                                            _getTimeRemaining(
-                                                              unifiedAuthState
-                                                                  .membershipData!
-                                                                  .expirationDate,
-                                                            ),
+                                                          Container(
+                                                            padding:
+                                                                EdgeInsets.symmetric(
+                                                                  horizontal:
+                                                                      12,
 
-                                                            style: TextStyle(
+                                                                  vertical: 6,
+                                                                ),
+
+                                                            decoration: BoxDecoration(
                                                               color:
-                                                                  const Color(
-                                                                    0xFFFFA812,
+                                                                  _isMembershipActive(
+                                                                        unifiedAuthState
+                                                                            .membershipData!
+                                                                            .expirationDate,
+                                                                      )
+                                                                      ? Colors
+                                                                          .green
+                                                                          .withValues(
+                                                                            alpha:
+                                                                                0.9,
+                                                                          )
+                                                                      : Colors
+                                                                          .red
+                                                                          .withValues(
+                                                                            alpha:
+                                                                                0.9,
+                                                                          ),
+
+                                                              borderRadius:
+                                                                  BorderRadius.circular(
+                                                                    20,
                                                                   ),
 
-                                                              fontSize: 12,
+                                                              boxShadow: [
+                                                                BoxShadow(
+                                                                  color: (_isMembershipActive(
+                                                                            unifiedAuthState.membershipData!.expirationDate,
+                                                                          )
+                                                                          ? Colors
+                                                                              .green
+                                                                          : Colors
+                                                                              .red)
+                                                                      .withValues(
+                                                                        alpha:
+                                                                            0.4,
+                                                                      ),
 
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold,
+                                                                  blurRadius: 8,
+
+                                                                  spreadRadius:
+                                                                      1,
+                                                                ),
+                                                              ],
+                                                            ),
+
+                                                            child: Row(
+                                                              mainAxisSize:
+                                                                  MainAxisSize
+                                                                      .min,
+
+                                                              children: [
+                                                                Icon(
+                                                                  _isMembershipActive(
+                                                                        unifiedAuthState
+                                                                            .membershipData!
+                                                                            .expirationDate,
+                                                                      )
+                                                                      ? Icons
+                                                                          .check_circle
+                                                                      : Icons
+                                                                          .warning,
+
+                                                                  color:
+                                                                      Colors
+                                                                          .white,
+
+                                                                  size: 16,
+                                                                ),
+
+                                                                SizedBox(
+                                                                  width: 6,
+                                                                ),
+
+                                                                Text(
+                                                                  _isMembershipActive(
+                                                                        unifiedAuthState
+                                                                            .membershipData!
+                                                                            .expirationDate,
+                                                                      )
+                                                                      ? 'Active'
+                                                                      : 'Expired',
+
+                                                                  style: TextStyle(
+                                                                    color:
+                                                                        Colors
+                                                                            .white,
+
+                                                                    fontSize:
+                                                                        12,
+
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .bold,
+                                                                  ),
+                                                                ),
+                                                              ],
                                                             ),
                                                           ),
                                                         ],
                                                       ),
 
-                                                      SizedBox(height: 8),
+                                                      SizedBox(height: 16),
 
-                                                      LinearProgressIndicator(
-                                                        value: _getMembershipProgress(
-                                                          unifiedAuthState
-                                                              .membershipData!
-                                                              .startDate,
+                                                      // Progress bar showing time remaining
+                                                      if (_isMembershipActive(
+                                                        unifiedAuthState
+                                                            .membershipData!
+                                                            .expirationDate,
+                                                      )) ...[
+                                                        Column(
+                                                          crossAxisAlignment:
+                                                              CrossAxisAlignment
+                                                                  .start,
 
-                                                          unifiedAuthState
-                                                              .membershipData!
-                                                              .expirationDate,
-                                                        ),
+                                                          children: [
+                                                            Row(
+                                                              mainAxisAlignment:
+                                                                  MainAxisAlignment
+                                                                      .spaceBetween,
 
-                                                        backgroundColor: Colors
-                                                            .white
-                                                            .withValues(
-                                                              alpha: 0.8,
+                                                              children: [
+                                                                Text(
+                                                                  'Time Remaining',
+
+                                                                  style: TextStyle(
+                                                                    color:
+                                                                        Colors
+                                                                            .white70,
+
+                                                                    fontSize:
+                                                                        12,
+
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .w500,
+                                                                  ),
+                                                                ),
+
+                                                                Text(
+                                                                  _getTimeRemaining(
+                                                                    unifiedAuthState
+                                                                        .membershipData!
+                                                                        .expirationDate,
+                                                                  ),
+
+                                                                  style: TextStyle(
+                                                                    color: const Color(
+                                                                      0xFFFFA812,
+                                                                    ),
+
+                                                                    fontSize:
+                                                                        12,
+
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .bold,
+                                                                  ),
+                                                                ),
+                                                              ],
                                                             ),
 
-                                                        valueColor:
-                                                            AlwaysStoppedAnimation<
-                                                              Color
-                                                            >(
+                                                            SizedBox(height: 8),
+
+                                                            LinearProgressIndicator(
+                                                              value: _getMembershipProgress(
+                                                                unifiedAuthState
+                                                                    .membershipData!
+                                                                    .startDate,
+
+                                                                unifiedAuthState
+                                                                    .membershipData!
+                                                                    .expirationDate,
+                                                              ),
+
+                                                              backgroundColor:
+                                                                  Colors.white
+                                                                      .withValues(
+                                                                        alpha:
+                                                                            0.8,
+                                                                      ),
+
+                                                              valueColor:
+                                                                  AlwaysStoppedAnimation<
+                                                                    Color
+                                                                  >(
+                                                                    const Color(
+                                                                      0xFFFFA812,
+                                                                    ),
+                                                                  ),
+
+                                                              minHeight: 6,
+
+                                                              borderRadius:
+                                                                  BorderRadius.circular(
+                                                                    3,
+                                                                  ),
+                                                            ),
+                                                          ],
+                                                        ),
+
+                                                        SizedBox(height: 16),
+                                                      ],
+
+                                                      // Dates section
+                                                      Container(
+                                                        padding: EdgeInsets.all(
+                                                          16,
+                                                        ),
+
+                                                        decoration: BoxDecoration(
+                                                          color: Colors.white
+                                                              .withValues(
+                                                                alpha: 0.1,
+                                                              ),
+
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                12,
+                                                              ),
+
+                                                          border: Border.all(
+                                                            color: Colors.white
+                                                                .withValues(
+                                                                  alpha: 0.2,
+                                                                ),
+
+                                                            width: 1,
+                                                          ),
+                                                        ),
+
+                                                        child: Column(
+                                                          children: [
+                                                            _buildDateRow(
+                                                              'Start Date',
+
+                                                              _formatDate(
+                                                                unifiedAuthState
+                                                                    .membershipData!
+                                                                    .startDate,
+                                                              ),
+
+                                                              Icons
+                                                                  .calendar_today,
+
                                                               const Color(
                                                                 0xFFFFA812,
                                                               ),
+
+                                                              isSmallScreen,
+
+                                                              screenSize,
                                                             ),
 
-                                                        minHeight: 6,
-
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                              3,
+                                                            SizedBox(
+                                                              height: 12,
                                                             ),
-                                                      ),
-                                                    ],
-                                                  ),
 
-                                                  SizedBox(height: 16),
-                                                ],
+                                                            _buildDateRow(
+                                                              'Expires',
 
-                                                // Dates section
-                                                Container(
-                                                  padding: EdgeInsets.all(16),
+                                                              _formatDate(
+                                                                unifiedAuthState
+                                                                    .membershipData!
+                                                                    .expirationDate,
+                                                              ),
 
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.white
-                                                        .withValues(alpha: 0.1),
+                                                              Icons.event_busy,
 
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          12,
+                                                              const Color(
+                                                                0xFFFFA812,
+                                                              ),
+
+                                                              isSmallScreen,
+
+                                                              screenSize,
+                                                            ),
+                                                          ],
                                                         ),
-
-                                                    border: Border.all(
-                                                      color: Colors.white
-                                                          .withValues(
-                                                            alpha: 0.2,
-                                                          ),
-
-                                                      width: 1,
-                                                    ),
-                                                  ),
-
-                                                  child: Column(
-                                                    children: [
-                                                      _buildDateRow(
-                                                        'Start Date',
-
-                                                        _formatDate(
-                                                          unifiedAuthState
-                                                              .membershipData!
-                                                              .startDate,
-                                                        ),
-
-                                                        Icons.calendar_today,
-
-                                                        const Color(0xFFFFA812),
-
-                                                        isSmallScreen,
-
-                                                        screenSize,
                                                       ),
 
-                                                      SizedBox(height: 12),
+                                                      SizedBox(height: 16),
 
-                                                      _buildDateRow(
-                                                        'Expires',
+                                                      // Membership statistics
+                                                      if (_isMembershipActive(
+                                                        unifiedAuthState
+                                                            .membershipData!
+                                                            .expirationDate,
+                                                      )) ...[
+                                                        Container(
+                                                          padding:
+                                                              EdgeInsets.all(
+                                                                16,
+                                                              ),
 
-                                                        _formatDate(
-                                                          unifiedAuthState
-                                                              .membershipData!
-                                                              .expirationDate,
-                                                        ),
-
-                                                        Icons.event_busy,
-
-                                                        const Color(0xFFFFA812),
-
-                                                        isSmallScreen,
-
-                                                        screenSize,
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-
-                                                SizedBox(height: 16),
-
-                                                // Membership statistics
-                                                if (_isMembershipActive(
-                                                  unifiedAuthState
-                                                      .membershipData!
-                                                      .expirationDate,
-                                                )) ...[
-                                                  Container(
-                                                    padding: EdgeInsets.all(16),
-
-                                                    decoration: BoxDecoration(
-                                                      color: const Color(
-                                                        0xFFFFA812,
-                                                      ).withValues(alpha: 0.1),
-
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                            12,
-                                                          ),
-
-                                                      border: Border.all(
-                                                        color: const Color(
-                                                          0xFFFFA812,
-                                                        ).withValues(
-                                                          alpha: 0.25,
-                                                        ),
-
-                                                        width: 1,
-                                                      ),
-                                                    ),
-
-                                                    child: Row(
-                                                      children: [
-                                                        Expanded(
-                                                          child: _buildStatItem(
-                                                            'Days Used',
-
-                                                            '${_getDaysUsed(unifiedAuthState.membershipData!.startDate)}',
-
-                                                            Icons.timer,
-
-                                                            const Color(
+                                                          decoration: BoxDecoration(
+                                                            color: const Color(
                                                               0xFFFFA812,
+                                                            ).withValues(
+                                                              alpha: 0.1,
                                                             ),
+
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  12,
+                                                                ),
+
+                                                            border: Border.all(
+                                                              color:
+                                                                  const Color(
+                                                                    0xFFFFA812,
+                                                                  ).withValues(
+                                                                    alpha: 0.25,
+                                                                  ),
+
+                                                              width: 1,
+                                                            ),
+                                                          ),
+
+                                                          child: Row(
+                                                            children: [
+                                                              Expanded(
+                                                                child: _buildStatItem(
+                                                                  'Days Used',
+
+                                                                  '${_getDaysUsed(unifiedAuthState.membershipData!.startDate)}',
+
+                                                                  Icons.timer,
+
+                                                                  const Color(
+                                                                    0xFFFFA812,
+                                                                  ),
+                                                                ),
+                                                              ),
+
+                                                              Expanded(
+                                                                child: _buildStatItem(
+                                                                  'Days Left',
+
+                                                                  '${_getDaysLeft(unifiedAuthState.membershipData!.expirationDate)}',
+
+                                                                  Icons
+                                                                      .schedule,
+
+                                                                  const Color(
+                                                                    0xFFFFA812,
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                            ],
                                                           ),
                                                         ),
 
-                                                        Expanded(
-                                                          child: _buildStatItem(
-                                                            'Days Left',
-
-                                                            '${_getDaysLeft(unifiedAuthState.membershipData!.expirationDate)}',
-
-                                                            Icons.schedule,
-
-                                                            const Color(
-                                                              0xFFFFA812,
-                                                            ),
-                                                          ),
-                                                        ),
+                                                        SizedBox(height: 16),
                                                       ],
-                                                    ),
-                                                  ),
 
-                                                  SizedBox(height: 16),
-                                                ],
-
-                                                // Membership benefits
-                                                Container(
-                                                  padding: EdgeInsets.all(16),
-
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.black
-                                                        .withValues(
-                                                          alpha: 0.25,
+                                                      // Membership benefits
+                                                      Container(
+                                                        padding: EdgeInsets.all(
+                                                          16,
                                                         ),
 
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          12,
-                                                        ),
+                                                        decoration: BoxDecoration(
+                                                          color: Colors.black
+                                                              .withValues(
+                                                                alpha: 0.25,
+                                                              ),
 
-                                                    border: Border.all(
-                                                      color: Colors.white
-                                                          .withValues(
-                                                            alpha: 0.15,
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                12,
+                                                              ),
+
+                                                          border: Border.all(
+                                                            color: Colors.white
+                                                                .withValues(
+                                                                  alpha: 0.15,
+                                                                ),
+
+                                                            width: 1,
                                                           ),
+                                                        ),
 
-                                                      width: 1,
-                                                    ),
-                                                  ),
+                                                        child: Column(
+                                                          crossAxisAlignment:
+                                                              CrossAxisAlignment
+                                                                  .start,
 
-                                                  child: Column(
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment
-                                                            .start,
+                                                          children: [
+                                                            // Removed Membership Benefits section
+                                                          ],
+                                                        ),
+                                                      ),
 
-                                                    children: [
-                                                      // Removed Membership Benefits section
+                                                      SizedBox(height: 16),
                                                     ],
                                                   ),
                                                 ),
+                                              ] else ...[
+                                                Text(
+                                                  'Loading membership details...',
 
-                                                SizedBox(height: 16),
+                                                  style: TextStyle(
+                                                    color: Colors.white70,
+
+                                                    fontSize:
+                                                        (isSmallScreen
+                                                            ? (screenSize
+                                                                        .width *
+                                                                    0.035)
+                                                                .clamp(
+                                                                  12.0,
+                                                                  18.0,
+                                                                )
+                                                            : (screenSize
+                                                                        .width *
+                                                                    0.024)
+                                                                .clamp(
+                                                                  14.0,
+                                                                  22.0,
+                                                                )),
+                                                  ),
+                                                ),
                                               ],
-                                            ),
-                                          ),
-                                        ] else ...[
-                                          Text(
-                                            'Loading membership details...',
+                                            ],
+                                          );
+                                        } else {
+                                          // Show login prompt when not logged in
 
-                                            style: TextStyle(
-                                              color: Colors.white70,
+                                          return Column(
+                                            children: [
+                                              Text(
+                                                'Login to Track your Membership',
 
-                                              fontSize:
-                                                  (isSmallScreen
-                                                      ? (screenSize.width *
-                                                              0.035)
-                                                          .clamp(12.0, 18.0)
-                                                      : (screenSize.width *
-                                                              0.024)
-                                                          .clamp(14.0, 22.0)),
-                                            ),
-                                          ),
-                                        ],
-                                      ],
-                                    );
-                                  } else {
-                                    // Show login prompt when not logged in
+                                                style: TextStyle(
+                                                  color: Colors.white,
 
-                                    return Column(
-                                      children: [
-                                        Text(
-                                          'Login to Track your Membership',
+                                                  fontSize:
+                                                      (isSmallScreen
+                                                          ? (screenSize.width *
+                                                                  0.048)
+                                                              .clamp(15.0, 22.0)
+                                                          : (screenSize.width *
+                                                                  0.032)
+                                                              .clamp(
+                                                                16.0,
+                                                                26.0,
+                                                              )),
 
-                                          style: TextStyle(
-                                            color: Colors.white,
+                                                  fontWeight: FontWeight.w500,
 
-                                            fontSize:
-                                                (isSmallScreen
-                                                    ? (screenSize.width * 0.048)
-                                                        .clamp(15.0, 22.0)
-                                                    : (screenSize.width * 0.032)
-                                                        .clamp(16.0, 26.0)),
+                                                  height: 1.5,
+                                                ),
+                                              ),
 
-                                            fontWeight: FontWeight.w500,
+                                              SizedBox(
+                                                height:
+                                                    screenSize.height * 0.012,
+                                              ),
+                                            ],
+                                          );
+                                        }
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ),
 
-                                            height: 1.5,
-                                          ),
-                                        ),
+                              SizedBox(height: screenSize.height * 0.06),
 
-                                        SizedBox(
-                                          height: screenSize.height * 0.012,
-                                        ),
-                                      ],
-                                    );
-                                  }
-                                },
+                              EquipmentImagesSection(
+                                key: _equipmentImagesKey,
+
+                                isSmallScreen: isSmallScreen,
+
+                                screenWidth: screenSize.width,
+
+                                screenHeight: screenSize.height,
+                              ),
+
+                              SizedBox(height: screenSize.height * 0.06),
+
+                              ServicesSection(
+                                key: _servicesKey,
+
+                                isSmallScreen: isSmallScreen,
+
+                                screenWidth: screenSize.width,
+
+                                screenHeight: screenSize.height,
+                              ),
+
+                              SizedBox(height: screenSize.height * 0.06),
+
+                              ProductsSection(
+                                key: _productsKey,
+
+                                isSmallScreen: isSmallScreen,
+
+                                screenWidth: screenSize.width,
+
+                                screenHeight: screenSize.height,
+                              ),
+
+                              SizedBox(height: screenSize.height * 0.06),
+
+                              TrainersSection(
+                                key: _trainersKey,
+
+                                isSmallScreen: isSmallScreen,
+
+                                screenWidth: screenSize.width,
+                              ),
+
+                              SizedBox(height: screenSize.height * 0.06),
+
+                              Footer(
+                                isSmallScreen: isSmallScreen,
+                                screenWidth: screenSize.width,
+                              ),
+                              // Add bottom padding to ensure proper spacing
+                              SizedBox(
+                                height: MediaQuery.of(context).padding.bottom,
                               ),
                             ],
                           ),
                         ),
-
-                        SizedBox(height: screenSize.height * 0.06),
-
-                        EquipmentImagesSection(
-                          key: _equipmentImagesKey,
-
-                          isSmallScreen: isSmallScreen,
-
-                          screenWidth: screenSize.width,
-
-                          screenHeight: screenSize.height,
-                        ),
-
-                        SizedBox(height: screenSize.height * 0.06),
-
-                        ServicesSection(
-                          key: _servicesKey,
-
-                          isSmallScreen: isSmallScreen,
-
-                          screenWidth: screenSize.width,
-
-                          screenHeight: screenSize.height,
-                        ),
-
-                        SizedBox(height: screenSize.height * 0.06),
-
-                        ProductsSection(
-                          key: _productsKey,
-
-                          isSmallScreen: isSmallScreen,
-
-                          screenWidth: screenSize.width,
-
-                          screenHeight: screenSize.height,
-                        ),
-
-                        SizedBox(height: screenSize.height * 0.06),
-
-                        TrainersSection(
-                          key: _trainersKey,
-
-                          isSmallScreen: isSmallScreen,
-
-                          screenWidth: screenSize.width,
-                        ),
-
-                        SizedBox(height: screenSize.height * 0.06),
-
-                        Footer(
-                          isSmallScreen: isSmallScreen,
-
-                          screenWidth: screenSize.width,
-                        ),
-                      ],
-                    ),
+                      );
+                    },
                   ),
                 ),
                 // Scroll-to-top button (right middle, larger)
@@ -1227,14 +1320,52 @@ class _DrawerNavItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       leading: Icon(icon, color: Colors.white),
-
       title: Text(
         label,
-
         style: const TextStyle(color: Colors.white, fontSize: 16),
       ),
-
+      trailing: const Icon(Icons.chevron_right, color: Colors.white70),
       onTap: onTap,
+    );
+  }
+}
+
+class _DrawerHeaderSection extends StatelessWidget {
+  const _DrawerHeaderSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF111111), Color(0xFF1E1E1E)],
+        ),
+        border: Border(bottom: BorderSide(color: Colors.white24, width: 1)),
+      ),
+      child: Row(
+        children: [
+          Image.asset('assets/images/RNR1.png', width: 40, height: 40),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Text(
+              'RNR Fitness Gym',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 16,
+              ),
+            ),
+          ),
+          IconButton(
+            tooltip: 'Close',
+            onPressed: () => Navigator.of(context).maybePop(),
+            icon: const Icon(Icons.close, color: Colors.white70),
+          ),
+        ],
+      ),
     );
   }
 }

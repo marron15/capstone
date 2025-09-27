@@ -352,7 +352,7 @@ class _LoginChoicePageState extends State<LoginChoicePage>
                                     color: Colors.white,
                                   ),
                                 ),
-                                SizedBox(height: 10),
+                                SizedBox(height: 15),
                                 Text(
                                   'Access memberships, trainers, and services.',
                                   style: TextStyle(
@@ -365,9 +365,9 @@ class _LoginChoicePageState extends State<LoginChoicePage>
                           ),
                         ),
 
-                        const SizedBox(height: 32),
+                        const SizedBox(height: 68),
 
-                        // Side by side containers
+                        // Choice containers responsive layout
                         AnimatedBuilder(
                           animation: _fadeAnimation,
                           builder: (context, child) {
@@ -381,70 +381,82 @@ class _LoginChoicePageState extends State<LoginChoicePage>
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 16,
                                     ),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        // Customer Container (Left)
-                                        SizedBox(
-                                          width: 180,
-                                          child: _ChoiceContainer(
-                                            onTap: () {
-                                              Navigator.pushNamed(
-                                                context,
-                                                '/customer-landing',
-                                              );
-                                            },
-                                            icon: Icons.person_outline,
-                                            title: 'Are you Customer?',
-                                            subtitle:
-                                                'Access gym services and membership',
-                                            gradient: const LinearGradient(
-                                              colors: [
-                                                Color(0xFF36454F),
-                                                Color(0xFF111111),
-                                              ],
-                                              begin: Alignment.topLeft,
-                                              end: Alignment.bottomRight,
+                                    child: LayoutBuilder(
+                                      builder: (context, constraints) {
+                                        // Keep two columns when space allows
+                                        const double gap = 40;
+                                        final double maxWidth =
+                                            constraints.maxWidth;
+                                        final double twoColWidth =
+                                            (maxWidth - gap) / 2;
+                                        final bool forceSingleColumn =
+                                            maxWidth < 300;
+                                        final double cardWidth =
+                                            forceSingleColumn
+                                                ? maxWidth
+                                                : twoColWidth.clamp(150, 210);
+                                        return Wrap(
+                                          alignment: WrapAlignment.center,
+                                          spacing: gap,
+                                          runSpacing: 30,
+                                          children: [
+                                            SizedBox(
+                                              width: cardWidth,
+                                              child: _ChoiceContainer(
+                                                onTap: () {
+                                                  Navigator.pushNamed(
+                                                    context,
+                                                    '/customer-landing',
+                                                  );
+                                                },
+                                                icon: Icons.person_outline,
+                                                title: 'Are you Customer?',
+                                                subtitle:
+                                                    'Access gym services and membership',
+                                                gradient: const LinearGradient(
+                                                  colors: [
+                                                    Color(0xFF36454F),
+                                                    Color(0xFF111111),
+                                                  ],
+                                                  begin: Alignment.topLeft,
+                                                  end: Alignment.bottomRight,
+                                                ),
+                                                textColor: Colors.white,
+                                                iconColor: Colors.white,
+                                                subtitleColor: Colors.white,
+                                              ),
                                             ),
-                                            textColor: Colors.white,
-                                            iconColor: Colors.white,
-                                            subtitleColor: Colors.white,
-                                          ),
-                                        ),
-
-                                        const SizedBox(width: 24),
-
-                                        // Admin Container (Right)
-                                        SizedBox(
-                                          width: 180,
-                                          child: _ChoiceContainer(
-                                            onTap: () {
-                                              Navigator.pushNamed(
-                                                context,
-                                                '/admin-login',
-                                              );
-                                            },
-                                            icon:
-                                                Icons
-                                                    .admin_panel_settings_outlined,
-                                            title: 'Are you Admin?',
-                                            subtitle:
-                                                'Manage gym operations and members',
-                                            gradient: const LinearGradient(
-                                              colors: [
-                                                Color(0xFF36454F),
-                                                Color(0xFF111111),
-                                              ],
-                                              begin: Alignment.topLeft,
-                                              end: Alignment.bottomRight,
+                                            SizedBox(
+                                              width: cardWidth,
+                                              child: _ChoiceContainer(
+                                                onTap: () {
+                                                  Navigator.pushNamed(
+                                                    context,
+                                                    '/admin-login',
+                                                  );
+                                                },
+                                                icon:
+                                                    Icons
+                                                        .admin_panel_settings_outlined,
+                                                title: 'Are you Admin?',
+                                                subtitle:
+                                                    'Manage gym operations and members',
+                                                gradient: const LinearGradient(
+                                                  colors: [
+                                                    Color(0xFF36454F),
+                                                    Color(0xFF111111),
+                                                  ],
+                                                  begin: Alignment.topLeft,
+                                                  end: Alignment.bottomRight,
+                                                ),
+                                                textColor: Colors.white,
+                                                iconColor: Colors.white,
+                                                subtitleColor: Colors.white,
+                                              ),
                                             ),
-                                            textColor: Colors.white,
-                                            iconColor: Colors.white,
-                                            subtitleColor: Colors.white,
-                                          ),
-                                        ),
-                                      ],
+                                          ],
+                                        );
+                                      },
                                     ),
                                   ),
                                 ),
@@ -453,26 +465,27 @@ class _LoginChoicePageState extends State<LoginChoicePage>
                           },
                         ),
 
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 50),
 
-                        // Benefits row
+                        // Benefits row (wraps on small screens)
                         Align(
                           alignment: Alignment.center,
                           child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
+                            child: Wrap(
+                              alignment: WrapAlignment.center,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              spacing: 18,
+                              runSpacing: 12,
                               children: const [
                                 _BenefitChip(
                                   icon: Icons.water_drop,
                                   label: 'Free Water',
                                 ),
-                                SizedBox(width: 18),
                                 _BenefitChip(
                                   icon: Icons.fitness_center,
                                   label: 'Quality Equipment',
                                 ),
-                                SizedBox(width: 18),
                                 _BenefitChip(
                                   icon: Icons.people,
                                   label: 'Welcoming Environment',
@@ -659,6 +672,8 @@ class _BenefitChipState extends State<_BenefitChip> {
 
   @override
   Widget build(BuildContext context) {
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final double maxChipWidth = screenWidth * 0.9 - 32; // account for margins
     final Color hoverAccent = const Color(0xFFFFA812);
     final Color textColor = _isHovering ? hoverAccent : Colors.black87;
     final Color iconColor = Colors.black87; // Keep icon always black
@@ -667,31 +682,41 @@ class _BenefitChipState extends State<_BenefitChip> {
       onEnter: (_) => setState(() => _isHovering = true),
       onExit: (_) => setState(() => _isHovering = false),
       cursor: SystemMouseCursors.click,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeInOut,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withAlpha((0.15 * 255).toInt()),
-              blurRadius: 14,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(widget.icon, size: 18, color: iconColor),
-            const SizedBox(width: 8),
-            Text(
-              widget.label,
-              style: TextStyle(color: textColor, fontWeight: FontWeight.w600),
-            ),
-          ],
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: maxChipWidth.clamp(140, 320)),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeInOut,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withAlpha((0.15 * 255).toInt()),
+                blurRadius: 14,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(widget.icon, size: 18, color: iconColor),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  widget.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: textColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -777,6 +802,9 @@ class _ChoiceContainerState extends State<_ChoiceContainer> {
 
   @override
   Widget build(BuildContext context) {
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final bool isCompact = screenWidth < 420;
+    final double containerHeight = isCompact ? 220 : 280;
     final Color baseBg = Colors.black;
     final Color hoverAccent = const Color(0xFFFFA812);
     final Color backgroundColor = baseBg; // keep container black always
@@ -793,7 +821,7 @@ class _ChoiceContainerState extends State<_ChoiceContainer> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
           curve: Curves.easeInOut,
-          height: 240,
+          height: containerHeight,
           clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
             color: backgroundColor,
@@ -822,24 +850,29 @@ class _ChoiceContainerState extends State<_ChoiceContainer> {
               splashColor: Colors.transparent,
               highlightColor: Colors.transparent,
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.all(isCompact ? 14 : 16),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
+                    const Spacer(),
                     Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: EdgeInsets.all(isCompact ? 10 : 12),
                       decoration: BoxDecoration(
                         color: iconColor.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      child: Icon(widget.icon, color: iconColor, size: 40),
+                      child: Icon(
+                        widget.icon,
+                        color: iconColor,
+                        size: isCompact ? 36 : 40,
+                      ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 16),
                     Text(
                       widget.title,
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: isCompact ? 16 : 20,
                         fontWeight: FontWeight.w700,
                         color: foregroundTextColor,
                         letterSpacing: 0.3,
@@ -847,12 +880,12 @@ class _ChoiceContainerState extends State<_ChoiceContainer> {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 12),
                     Text(
                       widget.subtitle,
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: isCompact ? 11 : 12,
                         fontWeight: FontWeight.w400,
                         color: subtitleColor.withValues(alpha: 0.9),
                         letterSpacing: 0.2,
@@ -860,13 +893,14 @@ class _ChoiceContainerState extends State<_ChoiceContainer> {
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 8),
+                    const Spacer(),
                     Icon(
                       Icons.arrow_forward_ios,
                       color: (_isHovering ? hoverAccent : Colors.white)
                           .withValues(alpha: 0.9),
-                      size: 16,
+                      size: isCompact ? 14 : 16,
                     ),
+                    const Spacer(),
                   ],
                 ),
               ),
