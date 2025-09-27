@@ -8,6 +8,7 @@ import 'admin/dashboard/trainers.dart';
 import 'admin/dashboard/customers.dart';
 import 'admin/dashboard/admin_products.dart';
 import 'services/unified_auth_state.dart';
+import 'services/auth_guard.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -63,11 +64,16 @@ class MyApp extends StatelessWidget {
             ),
         '/admin-login': (context) => const LoginPage(checkLoginStatus: false),
         '/customer-landing': (context) => const LandingPage(),
-        '/admin-dashboard': (context) => const AdminProfilePage(),
-        '/admin-statistics': (context) => const StatisticPage(),
-        '/admin-trainers': (context) => const TrainersPage(),
-        '/admin-customers': (context) => const CustomersPage(),
-        '/admin-products': (context) => const AdminProductsPage(),
+        '/admin-dashboard':
+            (context) => const AdminAuthGuard(child: AdminProfilePage()),
+        '/admin-statistics':
+            (context) => const AdminAuthGuard(child: StatisticPage()),
+        '/admin-trainers':
+            (context) => const AdminAuthGuard(child: TrainersPage()),
+        '/admin-customers':
+            (context) => const AdminAuthGuard(child: CustomersPage()),
+        '/admin-products':
+            (context) => const AdminAuthGuard(child: AdminProductsPage()),
       },
       debugShowCheckedModeBanner: false,
     );
