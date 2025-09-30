@@ -31,8 +31,7 @@ class MembershipService {
 
       final Map<String, dynamic> responseData = json.decode(response.body);
 
-      // Debug logging
-      debugPrint('🔍 Membership API Response: $responseData');
+      // Avoid logging full membership payload
 
       if (response.statusCode == 200 && responseData['success'] == true) {
         return MembershipResult(
@@ -49,6 +48,7 @@ class MembershipService {
         );
       }
     } catch (e) {
+      debugPrint('Membership API error: $e');
       return MembershipResult(
         success: false,
         message: 'Network error: ${e.toString()}',

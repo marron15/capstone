@@ -199,8 +199,7 @@ class _CustomersPageState extends State<CustomersPage> {
   }
 
   Future<void> _loadCustomers() async {
-    debugPrint('_loadCustomers: Starting to load customers...');
-    debugPrint('_loadCustomers: Current customers count: ${_customers.length}');
+    // Start loading customers
 
     setState(() {
       _isLoading = true;
@@ -209,13 +208,11 @@ class _CustomersPageState extends State<CustomersPage> {
 
     try {
       // Load active customers only (with passwords for admin editing)
-      debugPrint(
-        '_loadCustomers: Calling API to get active customers with passwords...',
-      );
+      // Fetch active customers with passwords for admin editing
       final result = await ApiService.getCustomersByStatusWithPasswords(
         status: 'active',
       );
-      debugPrint('_loadCustomers: API result: $result');
+      // Avoid logging the entire result payload
 
       if (result['success'] == true && result['data'] != null) {
         List<Map<String, dynamic>> loadedCustomers = [];
@@ -226,15 +223,10 @@ class _CustomersPageState extends State<CustomersPage> {
           loadedCustomers.add(customer);
         }
 
-        debugPrint(
-          '_loadCustomers: Loaded ${loadedCustomers.length} active customers',
-        );
-        debugPrint(
-          '_loadCustomers: First customer name: ${loadedCustomers.isNotEmpty ? loadedCustomers.first['name'] : 'No customers'}',
-        );
+        // Loaded active customers count
 
         // Load archived customers
-        debugPrint('_loadCustomers: Loading archived customers...');
+        // Loading archived customers
         // Backend marks archived customers as "inactive"
         final archivedResult = await ApiService.getCustomersByStatus(
           status: 'inactive',
@@ -248,9 +240,7 @@ class _CustomersPageState extends State<CustomersPage> {
             final customer = _convertCustomerData(customerData);
             loadedArchivedCustomers.add(customer);
           }
-          debugPrint(
-            '_loadCustomers: Loaded ${loadedArchivedCustomers.length} archived customers',
-          );
+          // Loaded archived customers count
         }
 
         if (mounted) {
@@ -261,16 +251,9 @@ class _CustomersPageState extends State<CustomersPage> {
           });
 
           _sortCustomersByExpiration();
-          debugPrint('_loadCustomers: Customer lists updated successfully');
-          debugPrint(
-            '_loadCustomers: Final active customers count: ${_customers.length}',
-          );
-          debugPrint(
-            '_loadCustomers: Final archived customers count: ${_archivedCustomers.length}',
-          );
         }
       } else {
-        debugPrint('_loadCustomers: API failed: ${result['message']}');
+        debugPrint('_loadCustomers failed: ${result['message']}');
         if (mounted) {
           setState(() {
             _errorMessage = result['message'] ?? 'Failed to load customers';
@@ -279,7 +262,7 @@ class _CustomersPageState extends State<CustomersPage> {
         }
       }
     } catch (e) {
-      debugPrint('_loadCustomers: Error: $e');
+      debugPrint('_loadCustomers error: $e');
       if (mounted) {
         setState(() {
           _errorMessage = 'Error loading customers: $e';
@@ -1690,17 +1673,13 @@ class _CustomersPageState extends State<CustomersPage> {
                                           ),
                                           child: IconButton(
                                             onPressed: () async {
-                                              debugPrint(
-                                                'Desktop: Opening customer modal for: ${customer['name']}',
-                                              );
+                                              // Open customer modal
                                               final result =
                                                   await CustomerViewEditModal.showCustomerModal(
                                                     context,
                                                     customer,
                                                   );
-                                              debugPrint(
-                                                'Desktop: Modal result: $result',
-                                              );
+                                              // Modal result handled below
                                               if (result == true && mounted) {
                                                 setState(() {});
                                               }

@@ -51,8 +51,7 @@ class AdminService {
         requestBody['phone_number'] = phoneNumber;
       }
 
-      debugPrint('🔄 Creating admin account...');
-      debugPrint('📡 Request body: $requestBody');
+      // Creating admin account
 
       final response = await http.post(
         Uri.parse('$baseUrl/Signup.php'),
@@ -60,8 +59,7 @@ class AdminService {
         body: jsonEncode(requestBody),
       );
 
-      debugPrint('📡 Response status: ${response.statusCode}');
-      debugPrint('📡 Response body: ${response.body}');
+      // Do not log response body to avoid leaking sensitive data
 
       if (response.statusCode == 200) {
         final result = jsonDecode(response.body);
@@ -76,7 +74,7 @@ class AdminService {
             );
           }
 
-          debugPrint('✅ Admin created successfully');
+          // Admin created
           return result;
         } else {
           debugPrint('❌ Admin creation failed: ${result['message']}');
@@ -84,7 +82,7 @@ class AdminService {
         }
       } else {
         // Gracefully handle error payloads (e.g., 400/401) and surface backend message
-        debugPrint('❌ HTTP error: ${response.statusCode}');
+        debugPrint('❌ Admin signup HTTP error: ${response.statusCode}');
         try {
           final decoded = jsonDecode(response.body);
           if (decoded is Map<String, dynamic>) {
@@ -103,7 +101,7 @@ class AdminService {
         };
       }
     } catch (e) {
-      debugPrint('❌ Error creating admin: $e');
+      debugPrint('❌ Exception creating admin: $e');
       return {'success': false, 'message': 'Error creating admin: $e'};
     }
   }
@@ -114,7 +112,7 @@ class AdminService {
     required String password,
   }) async {
     try {
-      debugPrint('🔄 Logging in admin...');
+      // Logging in admin
 
       final response = await http.post(
         Uri.parse('$baseUrl/Login.php'),
@@ -122,8 +120,7 @@ class AdminService {
         body: jsonEncode({'phone_number': contactNumber, 'password': password}),
       );
 
-      debugPrint('📡 Response status: ${response.statusCode}');
-      debugPrint('📡 Response body: ${response.body}');
+      // Avoid logging full response body
 
       if (response.statusCode == 200) {
         final result = jsonDecode(response.body);
@@ -138,14 +135,14 @@ class AdminService {
             );
           }
 
-          debugPrint('✅ Admin login successful');
+          // Admin login successful
           return result;
         } else {
           debugPrint('❌ Admin login failed: ${result['message']}');
           return result;
         }
       } else {
-        debugPrint('❌ HTTP error: ${response.statusCode}');
+        debugPrint('❌ Admin login HTTP error: ${response.statusCode}');
         // Parse server error to show which field is wrong
         try {
           final decoded = jsonDecode(response.body);
@@ -166,7 +163,7 @@ class AdminService {
         };
       }
     } catch (e) {
-      debugPrint('❌ Error logging in admin: $e');
+      debugPrint('❌ Exception logging in admin: $e');
       return {'success': false, 'message': 'Error logging in admin: $e'};
     }
   }
@@ -239,8 +236,7 @@ class AdminService {
         mappedData['password'] = data['password'];
       }
 
-      debugPrint('🔄 Updating admin with ID: $id');
-      debugPrint('📡 Request data: $mappedData');
+      // Updating admin
 
       final response = await http.post(
         Uri.parse('$baseUrl/updateAdminByID.php'),
@@ -248,8 +244,7 @@ class AdminService {
         body: jsonEncode(mappedData),
       );
 
-      debugPrint('📡 Response status: ${response.statusCode}');
-      debugPrint('📡 Response body: ${response.body}');
+      // Hidden response body
 
       if (response.statusCode == 200) {
         final result = jsonDecode(response.body);
@@ -266,7 +261,7 @@ class AdminService {
   // Archive admin (soft delete)
   static Future<bool> deleteAdmin(int id) async {
     try {
-      debugPrint('🔄 Archiving admin with ID: $id');
+      // Archiving admin with ID
 
       final response = await http.post(
         Uri.parse('$baseUrl/deleteAdminByID.php'),
@@ -274,8 +269,7 @@ class AdminService {
         body: jsonEncode({'id': id}),
       );
 
-      debugPrint('📡 Response status: ${response.statusCode}');
-      debugPrint('📡 Response body: ${response.body}');
+      // Hidden response body
 
       if (response.statusCode == 200) {
         final result = jsonDecode(response.body);

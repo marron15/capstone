@@ -12,14 +12,7 @@ class CustomerViewEditModal {
     BuildContext context,
     Map<String, dynamic> customer,
   ) async {
-    // Debug: Log customer data
-    debugPrint('Customer data passed to modal: $customer');
-    debugPrint('Customer keys: ${customer.keys.join(', ')}');
-    debugPrint('Customer ID field: ${customer['customer_id']}');
-    debugPrint('Customer ID field (id): ${customer['id']}');
-    debugPrint(
-      'Customer ID field type: ${customer['customer_id']?.runtimeType}',
-    );
+    // Avoid logging customer data in console
 
     // Force portrait orientation while the modal is open
     await SystemChrome.setPreferredOrientations([
@@ -242,18 +235,7 @@ class CustomerViewEditModal {
           return;
         }
 
-        // Debug: Log the customer ID being used
-        debugPrint(
-          'Using customer ID: $customerId (type: ${customerId.runtimeType})',
-        );
-        debugPrint('Update data being sent: $updateData');
-        debugPrint('Password field value: "${passwordController.text}"');
-        debugPrint(
-          'Password field trimmed: "${passwordController.text.trim()}"',
-        );
-        debugPrint(
-          'Password field is empty: ${passwordController.text.trim().isEmpty}',
-        );
+        // Do not log sensitive update payloads
 
         // Add address details to update data
         final hasAnyAddress =
@@ -295,9 +277,7 @@ class CustomerViewEditModal {
           },
         );
 
-        debugPrint('Update customer API response: $result');
-        debugPrint('API response success: ${result['success']}');
-        debugPrint('API response message: ${result['message']}');
+        // Handle API response without logging full payload
 
         if (result['success'] == true) {
           // Success - update local customer data with new values
@@ -314,9 +294,7 @@ class CustomerViewEditModal {
 
           // Update password if it was changed (don't store plain text in local data)
           if (passwordController.text.trim().isNotEmpty) {
-            // Don't store the plain text password in local customer data for security
-            // The password is only sent to backend and hashed there
-            debugPrint('Password was updated (hashed in database)');
+            // Password updated (hashed on backend)
           }
 
           // Update address details if they were changed
@@ -357,9 +335,7 @@ class CustomerViewEditModal {
           customer['expiration_date'] =
               '${newExpirationDate.year.toString().padLeft(4, '0')}-${newExpirationDate.month.toString().padLeft(2, '0')}-${newExpirationDate.day.toString().padLeft(2, '0')}';
 
-          // Debug: Log updated customer data
-          debugPrint('Customer data after update: $customer');
-          debugPrint('Updated password: ${customer['password']}');
+          // Do not log updated customer data
 
           // Reset state
           setModalState(() {

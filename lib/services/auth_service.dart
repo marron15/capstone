@@ -36,9 +36,7 @@ class AuthService {
 
       final Map<String, dynamic> responseData = json.decode(response.body);
 
-      // Debug logging
-      debugPrint('🔍 Login API Response: $responseData');
-      debugPrint('🔍 Customer data: ${responseData['data']}');
+      // Avoid logging sensitive customer data
 
       if (response.statusCode == 200 && responseData['success'] == true) {
         // Enrich address if backend doesn't include it in `data.address`
@@ -62,6 +60,7 @@ class AuthService {
         );
       }
     } catch (e) {
+      debugPrint('Login API error: $e');
       return LoginResult(
         success: false,
         message: 'Network error: ${e.toString()}',
@@ -102,6 +101,7 @@ class AuthService {
         );
       }
     } catch (e) {
+      debugPrint('Signup API error: $e');
       return SignupResult(
         success: false,
         message: 'Network error: ${e.toString()}',
@@ -129,6 +129,7 @@ class AuthService {
         );
       }
     } catch (e) {
+      debugPrint('Logout API error: $e');
       return LogoutResult(
         success: false,
         message: 'Network error: ${e.toString()}',
@@ -140,11 +141,25 @@ class AuthService {
     try {
       final response = await http.post(
         Uri.parse('$_customersBase/ValidateToken.php'),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
         body: json.encode({'token': token}),
       );
-
-      final Map<String, dynamic> responseData = json.decode(response.body);
+      Map<String, dynamic>? responseData;
+      try {
+        responseData = json.decode(response.body) as Map<String, dynamic>;
+      } catch (e) {
+        debugPrint(
+          'ValidateToken non-JSON response (${response.statusCode}): ${response.body.substring(0, response.body.length.clamp(0, 500))}',
+        );
+        return TokenValidationResult(
+          success: false,
+          message: 'Token validation failed: non-JSON response',
+          customerData: null,
+        );
+      }
 
       if (response.statusCode == 200 && responseData['success'] == true) {
         CustomerData customer = CustomerData.fromJson(responseData['data']);
@@ -165,6 +180,7 @@ class AuthService {
         );
       }
     } catch (e) {
+      debugPrint('ValidateToken API error: $e');
       return TokenValidationResult(
         success: false,
         message: 'Network error: ${e.toString()}',
@@ -206,6 +222,7 @@ class AuthService {
         );
       }
     } catch (e) {
+      debugPrint('RefreshToken API error: $e');
       return RefreshTokenResult(
         success: false,
         message: 'Network error: ${e.toString()}',
@@ -241,6 +258,7 @@ class AuthService {
         );
       }
     } catch (e) {
+      debugPrint('GetProfile API error: $e');
       return ProfileDataResult(
         success: false,
         message: 'Network error: ${e.toString()}',
@@ -276,6 +294,7 @@ class AuthService {
         );
       }
     } catch (e) {
+      debugPrint('UpdateProfile API error: $e');
       return ProfileUpdateResult(
         success: false,
         message: 'Network error: ${e.toString()}',
@@ -417,12 +436,6 @@ class CustomerData {
   }
 
   factory CustomerData.fromJson(Map<String, dynamic> json) {
-    // Debug: Print the exact types we're receiving
-    print('🔍 CustomerData.fromJson received: $json');
-    json.forEach((key, value) {
-      print('🔍 $key: ${value.runtimeType} = $value');
-    });
-
     return CustomerData(
       customerId: _safeInt(json['customer_id'] ?? json['id']),
       email: _safeString(json['email']) ?? '',

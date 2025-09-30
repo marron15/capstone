@@ -144,8 +144,7 @@ class ApiService {
         requestBody['expiration_date'] = expirationDate;
       }
 
-      debugPrint('Sending signup request to: $signupEndpoint');
-      debugPrint('Request body: ${jsonEncode(requestBody)}');
+      // Signup request
 
       final response = await http.post(
         Uri.parse(signupEndpoint),
@@ -156,8 +155,7 @@ class ApiService {
         body: jsonEncode(requestBody),
       );
 
-      debugPrint('Response status: ${response.statusCode}');
-      debugPrint('Response body: ${response.body}');
+      // Hide response body to avoid leaking data
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
@@ -210,8 +208,6 @@ class ApiService {
   // Fetch all customers from the database (without passwords)
   static Future<Map<String, dynamic>> getAllCustomers() async {
     try {
-      debugPrint('Fetching customers from: $getAllCustomersEndpoint');
-
       final response = await http.get(
         Uri.parse(getAllCustomersEndpoint),
         headers: {
@@ -220,8 +216,7 @@ class ApiService {
         },
       );
 
-      debugPrint('Response status: ${response.statusCode}');
-      debugPrint('Response body: ${response.body}');
+      // Hide response details in console
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
@@ -407,8 +402,7 @@ class ApiService {
         body: body,
       );
 
-      debugPrint('insertProduct JSON status: ${res.statusCode}');
-      debugPrint('insertProduct JSON body: ${res.body}');
+      // Hide insertProduct raw response
 
       if (res.statusCode == 200) {
         try {
@@ -427,8 +421,7 @@ class ApiService {
         headers: {'Accept': 'application/json'},
         body: {'name': name, 'description': description, 'img': dataUrl},
       );
-      debugPrint('insertProduct FORM status: ${resForm.statusCode}');
-      debugPrint('insertProduct FORM body: ${resForm.body}');
+      // Hide insertProduct form raw response
       if (resForm.statusCode == 200) {
         try {
           final Map<String, dynamic> parsed =
@@ -480,8 +473,7 @@ class ApiService {
         },
         body: jsonEncode({'id': id}),
       );
-      debugPrint('archiveProduct JSON status: ${res.statusCode}');
-      debugPrint('archiveProduct JSON body: ${res.body}');
+      // Hide archiveProduct raw response
       if (res.statusCode == 200) {
         try {
           final parsed = jsonDecode(res.body);
@@ -694,9 +686,7 @@ class ApiService {
   // Fetch all customers with passwords (admin access)
   static Future<Map<String, dynamic>> getAllCustomersWithPasswords() async {
     try {
-      debugPrint(
-        'Fetching customers with passwords from: $getAllCustomersByAdminEndpoint',
-      );
+      // Fetching customers with passwords
 
       final response = await http.get(
         Uri.parse(getAllCustomersByAdminEndpoint),
@@ -706,8 +696,7 @@ class ApiService {
         },
       );
 
-      debugPrint('Response status: ${response.statusCode}');
-      debugPrint('Response body: ${response.body}');
+      // Hide raw response
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
@@ -971,9 +960,7 @@ class ApiService {
           'country': country,
         },
       );
-      debugPrint(
-        'insertAddress status: ${response.statusCode} body: ${response.body}',
-      );
+      // Hide raw address insertion response
 
       if (response.statusCode == 200) {
         try {
@@ -1015,9 +1002,7 @@ class ApiService {
           'country': country,
         },
       );
-      debugPrint(
-        'updateAddress status: ${response.statusCode} body: ${response.body}',
-      );
+      // Hide raw address update response
 
       if (response.statusCode == 200) {
         try {

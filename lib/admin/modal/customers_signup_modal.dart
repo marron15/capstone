@@ -278,7 +278,7 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
       // Call the API to create customer
       String password = _passwordController.text;
 
-      debugPrint('🔄 Creating customer account...');
+      // Creating customer account
       final result = await ApiService.signupCustomer(
         firstName: firstName,
         lastName: lastName,
@@ -322,7 +322,7 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
             )[0], // Format as YYYY-MM-DD
       );
 
-      debugPrint('📡 API Response: $result');
+      // Avoid logging full API response
 
       if (result['success'] == true && mounted) {
         // Get customer ID from response (support multiple shapes)
@@ -333,9 +333,8 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
             result['data']?['id'];
         final int? customerId =
             rawId is int ? rawId : int.tryParse(rawId?.toString() ?? '');
-        final membershipCreated = result['membership_created'] ?? false;
 
-        debugPrint('✅ Customer created successfully with ID: $customerId');
+        // Customer created
 
         // If we have a valid customer id and address fields, insert address record
         if (customerId != null) {
@@ -371,7 +370,7 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
             );
           }
         }
-        debugPrint('🎫 Membership created: $membershipCreated');
+        // Membership creation result is handled via createMembershipForCustomer
 
         if (mounted) {
           Navigator.of(context).pop({

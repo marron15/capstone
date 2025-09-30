@@ -14,8 +14,6 @@ import '../services/unified_auth_state.dart';
 
 import 'footer.dart';
 
-import '../User Profile/profile.dart';
-
 class LandingPage extends StatefulWidget {
   const LandingPage({Key? key}) : super(key: key);
 
@@ -359,11 +357,7 @@ class _LandingPageState extends State<LandingPage>
               onTap: () {
                 Navigator.pop(context);
 
-                Navigator.push(
-                  context,
-
-                  MaterialPageRoute(builder: (context) => ProfilePage()),
-                );
+                Navigator.pushNamed(context, '/customer-profile');
               },
             ),
 
@@ -465,11 +459,7 @@ class _LandingPageState extends State<LandingPage>
                 onNavTap: _scrollToSection,
 
                 onProfileTap: () {
-                  Navigator.push(
-                    context,
-
-                    MaterialPageRoute(builder: (context) => ProfilePage()),
-                  );
+                  Navigator.pushNamed(context, '/customer-profile');
                 },
               ),
             ),

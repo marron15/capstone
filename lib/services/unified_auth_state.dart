@@ -46,7 +46,6 @@ class UnifiedAuthState extends ChangeNotifier {
 
   // Initialize auth state from storage
   Future<void> initializeFromStorage() async {
-    print('🔄 Initializing unified auth from storage...');
     try {
       final prefs = await SharedPreferences.getInstance();
 
@@ -59,23 +58,19 @@ class UnifiedAuthState extends ChangeNotifier {
       final adminData = prefs.getString('admin_data');
 
       if (customerAccessToken != null) {
-        print('🔍 Found customer tokens, validating...');
         await _validateAndRestoreCustomerAuth(
           customerAccessToken,
           customerRefreshToken,
         );
       } else if (adminToken != null && adminData != null) {
-        print('🔍 Found admin tokens, validating...');
         await _validateAndRestoreAdminAuth(adminToken, adminData);
-      } else {
-        print('❌ No stored tokens found');
-      }
+      } else {}
 
       _isInitialized = true;
       notifyListeners();
-      print('✅ Unified auth initialization complete - User type: $_userType');
+      // Initialization complete
     } catch (e) {
-      print('❌ Failed to initialize unified auth from storage: $e');
+      debugPrint('Auth init error: $e');
       await _clearAllTokens();
       _isInitialized = true;
       notifyListeners();
@@ -146,17 +141,15 @@ class UnifiedAuthState extends ChangeNotifier {
     if (accessToken == null) return;
 
     try {
-      print('🔍 Validating customer token with backend...');
+      // Validate token with backend
       final validationResult = await _validateCustomerTokenWithBackend(
         accessToken,
       );
-      print('🔍 Customer validation result: $validationResult');
+      // Validation result processed below
 
       if (validationResult != null && validationResult['success'] == true) {
         final customerData = validationResult['data'];
-        print(
-          '✅ Customer token valid! Restoring customer: ${customerData['email']}',
-        );
+        // Customer token valid
 
         _userType = UserType.customer;
         _customerId = customerData['customer_id'];
@@ -168,16 +161,15 @@ class UnifiedAuthState extends ChangeNotifier {
         // Fetch membership data when restoring auth state
         await _fetchMembershipData(customerData['customer_id']);
 
-        print('✅ Customer auth state restored successfully');
+        // Customer auth restored
       } else if (refreshToken != null) {
-        print('🔄 Customer access token invalid, trying refresh token...');
+        // Try refresh token
         await _tryRefreshCustomerToken(refreshToken);
       } else {
-        print('❌ No valid customer tokens available');
         await _clearCustomerTokens();
       }
     } catch (e) {
-      print('❌ Customer token validation failed: $e');
+      debugPrint('Customer token validation failed: $e');
       await _clearCustomerTokens();
     }
   }
@@ -190,7 +182,6 @@ class UnifiedAuthState extends ChangeNotifier {
     if (accessToken == null || adminDataString == null) return;
 
     try {
-      print('🔍 Validating admin token...');
       final adminData = jsonDecode(adminDataString);
 
       // For now, we'll assume admin tokens are valid if they exist
@@ -199,9 +190,9 @@ class UnifiedAuthState extends ChangeNotifier {
       _adminData = adminData;
       _adminAccessToken = accessToken;
 
-      print('✅ Admin auth state restored successfully');
+      // Admin auth restored
     } catch (e) {
-      print('❌ Admin token validation failed: $e');
+      debugPrint('Admin token validation failed: $e');
       await _clearAdminTokens();
     }
   }
@@ -236,7 +227,7 @@ class UnifiedAuthState extends ChangeNotifier {
             try {
               birthdateObj = DateTime.parse(result.customerData!.birthdate!);
             } catch (e) {
-              print('Error parsing birthdate: $e');
+              debugPrint('Birthdate parse error: $e');
             }
           }
 
@@ -332,13 +323,12 @@ class UnifiedAuthState extends ChangeNotifier {
           await MembershipService.getMembershipByCustomerId(customerId);
       if (membershipResult.success && membershipResult.membershipData != null) {
         _membershipData = membershipResult.membershipData;
-        print('✅ Membership data fetched: ${_membershipData?.membershipType}');
+        // Membership data fetched
       } else {
-        print('⚠️ No membership data found for customer $customerId');
         _membershipData = null;
       }
     } catch (e) {
-      print('❌ Failed to fetch membership data: $e');
+      debugPrint('Membership fetch error: $e');
       _membershipData = null;
     }
   }
@@ -346,15 +336,12 @@ class UnifiedAuthState extends ChangeNotifier {
   // Save customer tokens
   Future<void> _saveCustomerTokens() async {
     try {
-      print('💾 Saving customer tokens to storage...');
       final prefs = await SharedPreferences.getInstance();
       if (_customerAccessToken != null) {
         await prefs.setString('access_token', _customerAccessToken!);
-        print('💾 Customer access token saved');
       }
       if (_customerRefreshToken != null) {
         await prefs.setString('refresh_token', _customerRefreshToken!);
-        print('💾 Customer refresh token saved');
       }
       if (_customerId != null) {
         await prefs.setInt('customer_id', _customerId!);
@@ -365,32 +352,26 @@ class UnifiedAuthState extends ChangeNotifier {
       if (_customerName != null) {
         await prefs.setString('customer_name', _customerName!);
       }
-      print('💾 All customer tokens and data saved successfully');
     } catch (e) {
-      print('❌ Failed to save customer tokens: $e');
+      debugPrint('Clear customer tokens error: $e');
     }
   }
 
   // Save admin tokens
   Future<void> _saveAdminTokens() async {
     try {
-      print('💾 Saving admin tokens to storage...');
       final prefs = await SharedPreferences.getInstance();
       if (_adminAccessToken != null) {
         await prefs.setString('admin_token', _adminAccessToken!);
-        print('💾 Admin access token saved');
       }
       if (_adminRefreshToken != null) {
         await prefs.setString('admin_refresh_token', _adminRefreshToken!);
-        print('💾 Admin refresh token saved');
       }
       if (_adminData != null) {
         await prefs.setString('admin_data', jsonEncode(_adminData!));
-        print('💾 Admin data saved');
       }
-      print('💾 All admin tokens and data saved successfully');
     } catch (e) {
-      print('❌ Failed to save admin tokens: $e');
+      debugPrint('Clear admin tokens error: $e');
     }
   }
 
@@ -420,9 +401,7 @@ class UnifiedAuthState extends ChangeNotifier {
       await prefs.remove('customer_id');
       await prefs.remove('customer_email');
       await prefs.remove('customer_name');
-    } catch (e) {
-      print('Failed to clear customer tokens: $e');
-    }
+    } catch (e) {}
   }
 
   // Clear admin tokens
@@ -432,9 +411,7 @@ class UnifiedAuthState extends ChangeNotifier {
       await prefs.remove('admin_token');
       await prefs.remove('admin_refresh_token');
       await prefs.remove('admin_data');
-    } catch (e) {
-      print('Failed to clear admin tokens: $e');
-    }
+    } catch (e) {}
   }
 
   // Clear all tokens
