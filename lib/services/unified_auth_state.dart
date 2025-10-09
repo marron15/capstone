@@ -57,14 +57,18 @@ class UnifiedAuthState extends ChangeNotifier {
       final adminToken = prefs.getString('admin_token');
       final adminData = prefs.getString('admin_data');
 
+      // Attempt to restore customer, then fall back to admin if not logged in
       if (customerAccessToken != null) {
         await _validateAndRestoreCustomerAuth(
           customerAccessToken,
           customerRefreshToken,
         );
-      } else if (adminToken != null && adminData != null) {
+      }
+
+      // If still not logged in, try admin
+      if (!isLoggedIn && adminToken != null && adminData != null) {
         await _validateAndRestoreAdminAuth(adminToken, adminData);
-      } else {}
+      }
 
       _isInitialized = true;
       notifyListeners();
@@ -87,6 +91,7 @@ class UnifiedAuthState extends ChangeNotifier {
   }) async {
     // Clear any existing admin session
     _clearAdminData();
+    await _clearAdminTokens();
 
     _userType = UserType.customer;
     _customerId = customerId;
@@ -112,6 +117,7 @@ class UnifiedAuthState extends ChangeNotifier {
   }) async {
     // Clear any existing customer session
     _clearCustomerData();
+    await _clearCustomerTokens();
 
     _userType = UserType.admin;
     _adminData = admin;

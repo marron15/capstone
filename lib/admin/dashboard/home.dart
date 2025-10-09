@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
-import '../statistics/new_week_members.dart';
-import '../statistics/total_memberships.dart';
-import '../statistics/new_members_month.dart';
-import '../statistics/trainers_total.dart';
 import '../sidenav.dart';
 import '../excel/excel_stats_export.dart';
 import '../services/api_service.dart';
+import '../services/admin_service.dart';
 
 class StatisticPage extends StatefulWidget {
   const StatisticPage({super.key});
@@ -16,350 +13,373 @@ class StatisticPage extends StatefulWidget {
 
 class _StatisticPageState extends State<StatisticPage> {
   static const double _drawerWidth = 280;
-  bool _isDrawerOpen = false;
+  // Drawer state no longer needed (side nav is fixed)
+  bool _isLoading = true;
+  String? _errorMessage;
+
+  // Overall counts
+  int productsActive = 0;
+  int productsArchived = 0;
+  int adminsActive = 0;
+  int adminsArchived = 0;
+  int customersActive = 0;
+  int customersArchived = 0;
+  int customersExpired = 0;
+  int trainersActive = 0;
+  int trainersArchived = 0;
+  Map<String, int> membershipTotals = const {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadOverallReport();
+  }
+
+  Future<void> _loadOverallReport() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      // Fetch in parallel
+      final futures = await Future.wait([
+        ApiService.getProductsByStatus('active'),
+        ApiService.getProductsByStatus('inactive'),
+        AdminService.getAllAdmins(),
+        ApiService.getCustomersByStatusWithPasswords(status: 'active'),
+        ApiService.getCustomersByStatus(status: 'inactive'),
+        ApiService.getAllTrainers(),
+        ApiService.getMembershipTotals(),
+      ]);
+
+      final List<Map<String, dynamic>> prodActive =
+          List<Map<String, dynamic>>.from(futures[0] as List);
+      final List<Map<String, dynamic>> prodInactive =
+          List<Map<String, dynamic>>.from(futures[1] as List);
+
+      final List<Map<String, dynamic>> admins = List<Map<String, dynamic>>.from(
+        futures[2] as List,
+      );
+
+      final Map<String, dynamic> customersActiveRes =
+          futures[3] as Map<String, dynamic>;
+      final Map<String, dynamic> customersInactiveRes =
+          futures[4] as Map<String, dynamic>;
+
+      final List<Map<String, String>> trainers = List<Map<String, String>>.from(
+        futures[5] as List,
+      );
+
+      final Map<String, int> memTotals = Map<String, int>.from(
+        futures[6] as Map<String, int>,
+      );
+
+      // Compute counts
+      productsActive = prodActive.length;
+      productsArchived = prodInactive.length;
+
+      // Admins: treat status === 'inactive' as archived if present
+      adminsActive =
+          admins.where((a) {
+            final String s = (a['status'] ?? '').toString().toLowerCase();
+            return s != 'inactive';
+          }).length;
+      adminsArchived = admins.length - adminsActive;
+
+      final List<dynamic> activeCust =
+          (customersActiveRes['data'] as List<dynamic>? ?? const []);
+      final List<dynamic> archivedCust =
+          (customersInactiveRes['data'] as List<dynamic>? ?? const []);
+      customersActive = activeCust.length;
+      customersArchived = archivedCust.length;
+
+      // Expired among active customers (based on expiration_date)
+      final DateTime now = DateTime.now();
+      final DateTime todayOnly = DateTime(now.year, now.month, now.day);
+      int expired = 0;
+      for (final dynamic c in activeCust) {
+        if (c is! Map<String, dynamic>) continue;
+        final String? expRaw = c['expiration_date']?.toString();
+        if (expRaw == null || expRaw.isEmpty) continue;
+        final DateTime? exp = DateTime.tryParse(expRaw);
+        if (exp != null && exp.isBefore(todayOnly)) expired++;
+      }
+      customersExpired = expired;
+
+      // Trainers status-based counts
+      trainersActive =
+          trainers
+              .where((t) => (t['status'] ?? '').toLowerCase() != 'inactive')
+              .length;
+      trainersArchived = trainers.length - trainersActive;
+
+      membershipTotals = memTotals;
+
+      setState(() {
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Failed to load report: $e';
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _exportOverallReport(BuildContext context) async {
+    final rows = <List<dynamic>>[
+      ['Section', 'Metric', 'Value'],
+      ['Products', 'Active', productsActive],
+      ['Products', 'Archived', productsArchived],
+      ['Admins', 'Active', adminsActive],
+      ['Admins', 'Archived', adminsArchived],
+      ['Customers', 'Active', customersActive],
+      ['Customers', 'Archived', customersArchived],
+      ['Customers', 'Expired (of Active)', customersExpired],
+      ['Trainers', 'Active', trainersActive],
+      ['Trainers', 'Archived', trainersArchived],
+      ['Memberships', 'Daily', membershipTotals['Daily'] ?? 0],
+      ['Memberships', 'Half Month', membershipTotals['Half Month'] ?? 0],
+      ['Memberships', 'Monthly', membershipTotals['Monthly'] ?? 0],
+    ];
+
+    await exportStatsToExcel(
+      context,
+      sheetName: 'Overall Report',
+      rows: rows,
+      withBarChart: false,
+      chartTitle: 'Overall Report',
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 245, 245, 245),
-      drawer: const SideNav(width: _drawerWidth),
-      onDrawerChanged: (bool isOpen) => setState(() => _isDrawerOpen = isOpen),
-      appBar: AppBar(
-        title: const Center(child: Text('Dashboard')),
-        foregroundColor: Colors.white,
-        backgroundColor: Colors.black,
-      ),
-      body: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeOutCubic,
-        transform: Matrix4.translationValues(
-          _isDrawerOpen ? _drawerWidth : 0,
-          0,
-          0,
-        ),
-        child: Container(
-          decoration: const BoxDecoration(color: Colors.white),
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+      body: Container(
+        decoration: const BoxDecoration(color: Colors.white),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Fixed, always-visible side navigation
+            SizedBox(
+              width: _drawerWidth,
+              child: const SideNav(width: _drawerWidth),
+            ),
+            // Main content
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Statistics',
-                      style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                      ),
-                    ),
-                    const Spacer(),
-                    ElevatedButton.icon(
-                      onPressed: () => _showExportDialog(context),
-                      icon: Icon(
-                        Icons.bar_chart_rounded,
-                        color: Colors.teal.shade700,
-                        size: 20,
-                      ),
-                      label: const Text('Export'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: Colors.black87,
-                        elevation: 0,
-                        side: BorderSide(color: Colors.grey.shade300),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
+                    Row(
+                      children: [
+                        const Text(
+                          'Statistics',
+                          style: TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
                         ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 10,
+                        const Spacer(),
+                        ElevatedButton.icon(
+                          onPressed: () => _exportOverallReport(context),
+                          icon: Icon(
+                            Icons.bar_chart_rounded,
+                            color: Colors.teal.shade700,
+                            size: 20,
+                          ),
+                          label: const Text('Export'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: Colors.black87,
+                            elevation: 0,
+                            side: BorderSide(color: Colors.grey.shade300),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 10,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    if (_isLoading)
+                      const Expanded(
+                        child: Center(child: CircularProgressIndicator()),
+                      )
+                    else if (_errorMessage != null)
+                      Expanded(
+                        child: Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.error_outline,
+                                size: 48,
+                                color: Colors.red,
+                              ),
+                              const SizedBox(height: 12),
+                              Text(_errorMessage!, textAlign: TextAlign.center),
+                              const SizedBox(height: 12),
+                              ElevatedButton(
+                                onPressed: _loadOverallReport,
+                                child: const Text('Retry'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    else
+                      Expanded(
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            int crossAxisCount;
+                            if (constraints.maxWidth < 800) {
+                              crossAxisCount = 1;
+                            } else {
+                              crossAxisCount = 2;
+                            }
+
+                            const double spacing = 24;
+                            final double itemWidth =
+                                (constraints.maxWidth -
+                                    spacing * (crossAxisCount - 1)) /
+                                crossAxisCount;
+                            final double targetHeight =
+                                constraints.maxWidth < 800 ? 220 : 200;
+                            final double aspectRatio = itemWidth / targetHeight;
+
+                            return GridView.count(
+                              crossAxisCount: crossAxisCount,
+                              crossAxisSpacing: spacing,
+                              mainAxisSpacing: spacing,
+                              childAspectRatio: aspectRatio,
+                              children: [
+                                _KpiCard(
+                                  title: 'Products',
+                                  rows: [
+                                    _KpiRow(
+                                      'Active',
+                                      productsActive,
+                                      Colors.green,
+                                    ),
+                                    _KpiRow(
+                                      'Archived',
+                                      productsArchived,
+                                      Colors.orange,
+                                    ),
+                                  ],
+                                ),
+                                _KpiCard(
+                                  title: 'Admins',
+                                  rows: [
+                                    _KpiRow(
+                                      'Active',
+                                      adminsActive,
+                                      Colors.green,
+                                    ),
+                                    _KpiRow(
+                                      'Archived',
+                                      adminsArchived,
+                                      Colors.orange,
+                                    ),
+                                  ],
+                                ),
+                                _KpiCard(
+                                  title: 'Customers',
+                                  rows: [
+                                    _KpiRow(
+                                      'Active',
+                                      customersActive,
+                                      Colors.green,
+                                    ),
+                                    _KpiRow(
+                                      'Expired (Active)',
+                                      customersExpired,
+                                      Colors.red,
+                                    ),
+                                    _KpiRow(
+                                      'Archived',
+                                      customersArchived,
+                                      Colors.orange,
+                                    ),
+                                  ],
+                                ),
+                                _KpiCard(
+                                  title: 'Trainers',
+                                  rows: [
+                                    _KpiRow(
+                                      'Active',
+                                      trainersActive,
+                                      Colors.green,
+                                    ),
+                                    _KpiRow(
+                                      'Archived',
+                                      trainersArchived,
+                                      Colors.orange,
+                                    ),
+                                  ],
+                                ),
+                                _KpiCard(
+                                  title: 'Membership Totals',
+                                  rows: [
+                                    _KpiRow(
+                                      'Daily',
+                                      membershipTotals['Daily'] ?? 0,
+                                      Colors.orange,
+                                    ),
+                                    _KpiRow(
+                                      'Half Month',
+                                      membershipTotals['Half Month'] ?? 0,
+                                      Colors.blue,
+                                    ),
+                                    _KpiRow(
+                                      'Monthly',
+                                      membershipTotals['Monthly'] ?? 0,
+                                      Colors.green,
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            );
+                          },
                         ),
                       ),
-                    ),
                   ],
                 ),
-                const SizedBox(height: 16),
-                Expanded(
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      // Responsive breakpoints for columns (2x2 layout on desktop)
-                      int crossAxisCount;
-                      if (constraints.maxWidth < 600) {
-                        crossAxisCount = 1;
-                      } else {
-                        crossAxisCount = 2;
-                      }
-
-                      const double spacing = 24;
-                      final double itemWidth =
-                          (constraints.maxWidth -
-                              spacing * (crossAxisCount - 1)) /
-                          crossAxisCount;
-                      // Target a comfortable card height across sizes
-                      final double targetHeight =
-                          constraints.maxWidth < 600
-                              ? 340
-                              : constraints.maxWidth < 900
-                              ? 300
-                              : 280;
-                      final double aspectRatio = itemWidth / targetHeight;
-
-                      return GridView.count(
-                        crossAxisCount: crossAxisCount,
-                        crossAxisSpacing: spacing,
-                        mainAxisSpacing: spacing,
-                        childAspectRatio: aspectRatio,
-                        children: const [
-                          // Top-left
-                          _StatCard(
-                            title: 'New Members this Week',
-                            subtitle: '',
-                            child: NewMembersBarGraph(),
-                          ),
-                          // Top-right
-                          _StatCard(
-                            title: 'New Members this Month',
-                            subtitle: '',
-                            child: NewMembersMonthBarGraph(),
-                          ),
-                          // Bottom-left
-                          _StatCard(
-                            title: 'Memberships Total',
-                            subtitle: '',
-                            child: MembershipsTotalBarGraph(),
-                          ),
-                          // Bottom-right
-                          _StatCard(
-                            title: 'Trainers Total',
-                            subtitle: '',
-                            child: TrainersTotalPieChart(),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
   }
 }
 
-Future<void> _showExportDialog(BuildContext context) async {
-  // Multi-select dialog with checkboxes
-  final Set<String> selected = <String>{};
-  final result = await showDialog<Set<String>>(
-    context: context,
-    builder: (context) {
-      return StatefulBuilder(
-        builder: (context, setState) {
-          Widget buildTile(String key, String label) => CheckboxListTile(
-            value: selected.contains(key),
-            onChanged: (bool? v) {
-              setState(() {
-                if (v == true) {
-                  selected.add(key);
-                } else {
-                  selected.remove(key);
-                }
-              });
-            },
-            title: Text(label),
-            controlAffinity: ListTileControlAffinity.leading,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-          );
-
-          return AlertDialog(
-            title: const Text('Export Statistics'),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  buildTile('week', 'New Members this Week'),
-                  buildTile('month', 'New Members this Month'),
-                  buildTile('memberships', 'Memberships Total'),
-                  buildTile('trainers', 'Trainers Total'),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
-              ),
-              FilledButton(
-                onPressed:
-                    selected.isEmpty
-                        ? null
-                        : () =>
-                            Navigator.pop(context, Set<String>.from(selected)),
-                child: const Text('Export'),
-              ),
-            ],
-          );
-        },
-      );
-    },
-  );
-
-  if (result == null || result.isEmpty) return;
-
-  // If only one selection, preserve previous single-sheet export behavior
-  if (result.length == 1) {
-    final String choice = result.first;
-    if (choice == 'week') {
-      final Map<String, int> map = await ApiService.getNewMembersThisWeek();
-      final rows = <List<dynamic>>[
-        ['Day', 'Count'],
-        ['Monday', map['Monday'] ?? 0],
-        ['Tuesday', map['Tuesday'] ?? 0],
-        ['Wednesday', map['Wednesday'] ?? 0],
-        ['Thursday', map['Thursday'] ?? 0],
-        ['Friday', map['Friday'] ?? 0],
-        ['Saturday', map['Saturday'] ?? 0],
-        ['Sunday', map['Sunday'] ?? 0],
-      ];
-      await exportStatsToExcel(
-        context,
-        sheetName: 'New Members Week',
-        rows: rows,
-        withBarChart: true,
-        chartTitle: 'New Members this Week',
-      );
-    } else if (choice == 'month') {
-      final Map<String, int> map = await ApiService.getNewMembersThisMonth();
-      final rows = <List<dynamic>>[
-        ['Week', 'Count'],
-        ['Week 1', map['1'] ?? map['Week 1'] ?? 0],
-        ['Week 2', map['2'] ?? map['Week 2'] ?? 0],
-        ['Week 3', map['3'] ?? map['Week 3'] ?? 0],
-        ['Week 4', map['4'] ?? map['Week 4'] ?? 0],
-      ];
-      await exportStatsToExcel(
-        context,
-        sheetName: 'New Members Month',
-        rows: rows,
-        withBarChart: true,
-        chartTitle: 'New Members this Month',
-      );
-    } else if (choice == 'memberships') {
-      final Map<String, int> map = await ApiService.getMembershipTotals();
-      final rows = <List<dynamic>>[
-        ['Type', 'Count'],
-        ['Daily', map['Daily'] ?? 0],
-        ['Half Month', map['Half Month'] ?? 0],
-        ['Monthly', map['Monthly'] ?? 0],
-      ];
-      await exportStatsToExcel(
-        context,
-        sheetName: 'Memberships Total',
-        rows: rows,
-        withBarChart: true,
-        chartTitle: 'Memberships Total',
-      );
-    } else if (choice == 'trainers') {
-      final int total = await ApiService.getTrainersTotal(activeOnly: true);
-      final rows = <List<dynamic>>[
-        ['Label', 'Count'],
-        ['Total', total],
-      ];
-      await exportStatsToExcel(
-        context,
-        sheetName: 'Trainers Total',
-        rows: rows,
-        withBarChart: true,
-        chartTitle: 'Trainers Total',
-      );
-    }
-    return;
-  }
-
-  // Multi-sheet export path
-  final List<({String sheetName, List<List<dynamic>> rows})> sheets = [];
-
-  if (result.contains('week')) {
-    final Map<String, int> map = await ApiService.getNewMembersThisWeek();
-    sheets.add((
-      sheetName: 'New Members Week',
-      rows: [
-        ['Day', 'Count'],
-        ['Monday', map['Monday'] ?? 0],
-        ['Tuesday', map['Tuesday'] ?? 0],
-        ['Wednesday', map['Wednesday'] ?? 0],
-        ['Thursday', map['Thursday'] ?? 0],
-        ['Friday', map['Friday'] ?? 0],
-        ['Saturday', map['Saturday'] ?? 0],
-        ['Sunday', map['Sunday'] ?? 0],
-      ],
-    ));
-  }
-
-  if (result.contains('month')) {
-    final Map<String, int> map = await ApiService.getNewMembersThisMonth();
-    sheets.add((
-      sheetName: 'New Members Month',
-      rows: [
-        ['Week', 'Count'],
-        ['Week 1', map['1'] ?? map['Week 1'] ?? 0],
-        ['Week 2', map['2'] ?? map['Week 2'] ?? 0],
-        ['Week 3', map['3'] ?? map['Week 3'] ?? 0],
-        ['Week 4', map['4'] ?? map['Week 4'] ?? 0],
-      ],
-    ));
-  }
-
-  if (result.contains('memberships')) {
-    final Map<String, int> map = await ApiService.getMembershipTotals();
-    sheets.add((
-      sheetName: 'Memberships Total',
-      rows: [
-        ['Type', 'Count'],
-        ['Daily', map['Daily'] ?? 0],
-        ['Half Month', map['Half Month'] ?? 0],
-        ['Monthly', map['Monthly'] ?? 0],
-      ],
-    ));
-  }
-
-  if (result.contains('trainers')) {
-    final int total = await ApiService.getTrainersTotal(activeOnly: true);
-    sheets.add((
-      sheetName: 'Trainers Total',
-      rows: [
-        ['Label', 'Count'],
-        ['Total', total],
-      ],
-    ));
-  }
-
-  if (sheets.isEmpty) return;
-  await exportMultipleSheetsToExcel(
-    context,
-    sheets: sheets,
-    fileName: 'Statistics',
-    withBarCharts: true,
-  );
+class _KpiRow {
+  final String label;
+  final int value;
+  final Color color;
+  const _KpiRow(this.label, this.value, this.color);
 }
 
-class _StatCard extends StatelessWidget {
+class _KpiCard extends StatelessWidget {
   final String title;
-  final String subtitle;
-  final Widget child;
-  const _StatCard({
-    required this.title,
-    required this.child,
-    this.subtitle = '',
-  });
+  final List<_KpiRow> rows;
+  const _KpiCard({required this.title, required this.rows});
 
   @override
   Widget build(BuildContext context) {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      elevation: 4,
+      elevation: 3,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
         child: Column(
@@ -369,16 +389,42 @@ class _StatCard extends StatelessWidget {
               title,
               style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
-            if (subtitle.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 4.0),
-                child: Text(
-                  subtitle,
-                  style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+            const SizedBox(height: 12),
+            ...rows.map(
+              (r) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: r.color,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        r.label,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Colors.black87,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      r.value.toString(),
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            const SizedBox(height: 16),
-            Expanded(child: Center(child: child)),
+            ),
           ],
         ),
       ),

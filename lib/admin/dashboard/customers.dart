@@ -23,8 +23,8 @@ class _CustomersPageState extends State<CustomersPage> {
   String _searchQuery = '';
   String _membershipFilter = 'All';
   bool _showExpiredOnly = false;
+  bool _showNotExpiredOnly = false;
   static const double _drawerWidth = 280;
-  bool _isDrawerOpen = false;
 
   @override
   void initState() {
@@ -144,6 +144,14 @@ class _CustomersPageState extends State<CustomersPage> {
           filtered.where((c) {
             final DateTime exp = c['expirationDate'] as DateTime;
             return exp.isBefore(todayOnly);
+          }).toList();
+    } else if (_showNotExpiredOnly) {
+      final DateTime now = DateTime.now();
+      final DateTime todayOnly = DateTime(now.year, now.month, now.day);
+      result =
+          filtered.where((c) {
+            final DateTime exp = c['expirationDate'] as DateTime;
+            return !exp.isBefore(todayOnly);
           }).toList();
     }
 
@@ -381,6 +389,118 @@ class _CustomersPageState extends State<CustomersPage> {
     return '$mm/$dd/$yyyy';
   }
 
+  // Header cell with dropdown for membership filter
+  Widget _buildMembershipHeader() {
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text(
+            'Membership Type',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.3,
+            ),
+          ),
+          const SizedBox(width: 4),
+          PopupMenuButton<String>(
+            tooltip: 'Filter membership type',
+            icon: const Icon(Icons.arrow_drop_down, size: 18),
+            onSelected: (val) => setState(() => _membershipFilter = val),
+            itemBuilder:
+                (context) => const [
+                  PopupMenuItem(value: 'All', child: Text('All')),
+                  PopupMenuItem(value: 'Daily', child: Text('Daily')),
+                  PopupMenuItem(value: 'Half Month', child: Text('Half Month')),
+                  PopupMenuItem(value: 'Monthly', child: Text('Monthly')),
+                ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Header cell with dropdown for expiration filter
+  Widget _buildExpirationHeader() {
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text(
+            'Expiration Date',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.3,
+            ),
+          ),
+          const SizedBox(width: 4),
+          PopupMenuButton<String>(
+            tooltip: 'Filter expiration',
+            icon: const Icon(Icons.arrow_drop_down, size: 18),
+            onSelected:
+                (val) => setState(() {
+                  if (val == 'all') {
+                    _showExpiredOnly = false;
+                    _showNotExpiredOnly = false;
+                  } else if (val == 'expired') {
+                    _showExpiredOnly = true;
+                    _showNotExpiredOnly = false;
+                  } else if (val == 'notExpired') {
+                    _showExpiredOnly = false;
+                    _showNotExpiredOnly = true;
+                  }
+                }),
+            itemBuilder:
+                (context) => [
+                  PopupMenuItem(
+                    value: 'all',
+                    child: Row(
+                      children: const [
+                        Icon(Icons.event_available, size: 18),
+                        SizedBox(width: 8),
+                        Text('All Dates'),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'expired',
+                    child: Row(
+                      children: const [
+                        Icon(
+                          Icons.warning_amber_rounded,
+                          size: 18,
+                          color: Colors.orange,
+                        ),
+                        SizedBox(width: 8),
+                        Text('Expired Only'),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'notExpired',
+                    child: Row(
+                      children: const [
+                        Icon(Icons.check_circle, size: 18, color: Colors.green),
+                        SizedBox(width: 8),
+                        Text('Not Expired Only'),
+                      ],
+                    ),
+                  ),
+                ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Color _getMembershipTypeColor(String membershipType) {
     switch (membershipType) {
       case 'Daily':
@@ -479,67 +599,26 @@ class _CustomersPageState extends State<CustomersPage> {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isMobile = screenWidth < 768;
+    // No-op: fixed sidenav layout; no header-driven responsiveness required here
 
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 245, 245, 245),
-      drawer: const SideNav(width: _drawerWidth),
-      onDrawerChanged: (bool isOpen) => setState(() => _isDrawerOpen = isOpen),
-      appBar: AppBar(
-        title: const Center(child: Text('Customer Management')),
-        foregroundColor: Colors.white,
-        backgroundColor: Colors.black,
-        actions:
-            isMobile
-                ? [
-                  Container(
-                    width: 200,
-                    height: 36,
-                    margin: const EdgeInsets.only(right: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                    child: TextField(
-                      controller: _searchController,
-                      onChanged:
-                          (val) => setState(() {
-                            _searchQuery = val;
-                          }),
-                      textAlignVertical: TextAlignVertical.center,
-                      style: const TextStyle(fontSize: 14),
-                      decoration: const InputDecoration(
-                        hintText: 'Search',
-                        hintStyle: TextStyle(fontSize: 14),
-                        prefixIcon: Icon(
-                          Icons.search,
-                          color: Colors.grey,
-                          size: 18,
-                        ),
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
-                        ),
-                        isDense: true,
-                      ),
-                    ),
-                  ),
-                ]
-                : null,
-      ),
-      body: AnimatedContainer(
-        duration: const Duration(milliseconds: 280),
-        curve: Curves.easeOutCubic,
-        transform: Matrix4.translationValues(
-          _isDrawerOpen ? _drawerWidth : 0,
-          0,
-          0,
-        ),
-        child: Container(
-          decoration: const BoxDecoration(color: Colors.white),
-          child: _buildBody(),
+      body: Container(
+        decoration: const BoxDecoration(color: Colors.white),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: _drawerWidth,
+              child: const SideNav(width: _drawerWidth),
+            ),
+            Expanded(
+              child: Container(
+                decoration: const BoxDecoration(color: Colors.white),
+                child: _buildBody(),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -1260,79 +1339,8 @@ class _CustomersPageState extends State<CustomersPage> {
                           ),
                         ),
                       ),
+                      // Membership/Expiration filters have been moved into table headers
                       const SizedBox(width: 12),
-                      // Expired-only toggle
-                      OutlinedButton.icon(
-                        onPressed:
-                            () => setState(() {
-                              _showExpiredOnly = !_showExpiredOnly;
-                            }),
-                        icon: Icon(
-                          Icons.warning_amber_rounded,
-                          color: _showExpiredOnly ? Colors.red : Colors.orange,
-                          size: 18,
-                        ),
-                        label: Text(
-                          _showExpiredOnly ? 'All Dates' : 'Expired Only',
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.black87,
-                          side: BorderSide(
-                            color:
-                                _showExpiredOnly ? Colors.red : Colors.black26,
-                          ),
-                          backgroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 10,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      // Styled dropdown (membership filter for now)
-                      DropdownButtonHideUnderline(
-                        child: Container(
-                          height: 42,
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.black26),
-                          ),
-                          child: DropdownButton<String>(
-                            value: _membershipFilter,
-                            items: const [
-                              DropdownMenuItem(
-                                value: 'All',
-                                child: Text('All'),
-                              ),
-                              DropdownMenuItem(
-                                value: 'Daily',
-                                child: Text('Daily'),
-                              ),
-                              DropdownMenuItem(
-                                value: 'Half Month',
-                                child: Text('Half Month'),
-                              ),
-                              DropdownMenuItem(
-                                value: 'Monthly',
-                                child: Text('Monthly'),
-                              ),
-                            ],
-                            onChanged: (val) {
-                              if (val == null) return;
-                              setState(() {
-                                _membershipFilter = val;
-                              });
-                            },
-                            style: const TextStyle(color: Colors.black87),
-                            icon: const Icon(Icons.arrow_drop_down),
-                          ),
-                        ),
-                      ),
                       const Spacer(),
                       // View archives pill button
                       OutlinedButton.icon(
@@ -1436,11 +1444,11 @@ class _CustomersPageState extends State<CustomersPage> {
                             ),
                           ),
                         ),
-                        child: const Row(
+                        child: Row(
                           children: [
                             Expanded(
                               flex: 3,
-                              child: Text(
+                              child: const Text(
                                 'Name',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
@@ -1452,7 +1460,7 @@ class _CustomersPageState extends State<CustomersPage> {
                             ),
                             Expanded(
                               flex: 3,
-                              child: Text(
+                              child: const Text(
                                 'Contact Number',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
@@ -1462,51 +1470,29 @@ class _CustomersPageState extends State<CustomersPage> {
                                 ),
                               ),
                             ),
+                            Expanded(flex: 3, child: _buildMembershipHeader()),
                             Expanded(
                               flex: 3,
-                              child: Text(
-                                'Membership Type',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              flex: 3,
-                              child: Text(
+                              child: const Text(
                                 'Membership Start Date',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
-                                  fontSize: 18,
+                                  fontSize: 16,
                                   fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.5,
+                                  letterSpacing: 0.3,
                                 ),
                               ),
                             ),
-                            Expanded(
-                              flex: 3,
-                              child: Text(
-                                'Membership Expiration Date',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                            ),
+                            Expanded(flex: 3, child: _buildExpirationHeader()),
                             SizedBox(
                               width: 160,
-                              child: Text(
+                              child: const Text(
                                 'Actions',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
-                                  fontSize: 18,
+                                  fontSize: 16,
                                   fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.5,
+                                  letterSpacing: 0.3,
                                 ),
                               ),
                             ),
@@ -1572,14 +1558,17 @@ class _CustomersPageState extends State<CustomersPage> {
                                         vertical: 14,
                                         horizontal: 8,
                                       ),
-                                      child: Text(
-                                        membershipType,
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          color: _getMembershipTypeColor(
-                                            membershipType,
+                                      child: FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        child: Text(
+                                          membershipType,
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            color: _getMembershipTypeColor(
+                                              membershipType,
+                                            ),
+                                            fontSize: 14,
                                           ),
-                                          fontSize: 16,
                                         ),
                                       ),
                                     ),
@@ -1591,12 +1580,15 @@ class _CustomersPageState extends State<CustomersPage> {
                                         vertical: 14,
                                         horizontal: 8,
                                       ),
-                                      child: Text(
-                                        formattedStart,
-                                        textAlign: TextAlign.center,
-                                        style: const TextStyle(
-                                          color: Colors.black87,
-                                          fontSize: 16,
+                                      child: FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        child: Text(
+                                          formattedStart,
+                                          textAlign: TextAlign.center,
+                                          style: const TextStyle(
+                                            color: Colors.black87,
+                                            fontSize: 14,
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -1613,15 +1605,18 @@ class _CustomersPageState extends State<CustomersPage> {
                                             MainAxisAlignment.center,
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          Text(
-                                            formattedExpiry,
-                                            textAlign: TextAlign.center,
-                                            style: TextStyle(
-                                              color:
-                                                  isExpired
-                                                      ? Colors.red
-                                                      : Colors.black87,
-                                              fontSize: 16,
+                                          FittedBox(
+                                            fit: BoxFit.scaleDown,
+                                            child: Text(
+                                              formattedExpiry,
+                                              textAlign: TextAlign.center,
+                                              style: TextStyle(
+                                                color:
+                                                    isExpired
+                                                        ? Colors.red
+                                                        : Colors.black87,
+                                                fontSize: 14,
+                                              ),
                                             ),
                                           ),
                                           if (isExpired) ...[
