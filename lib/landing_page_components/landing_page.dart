@@ -480,7 +480,23 @@ class _LandingPageState extends State<LandingPage>
                   ),
                 ),
 
-                Container(color: Colors.black.withAlpha((0.4 * 255).toInt())),
+                // Lightened overlay: subtle white tint on top fading to transparent (no dark tint)
+                Positioned.fill(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.white.withAlpha((0.08 * 255).toInt()),
+                          Colors.transparent,
+                          Colors.transparent,
+                        ],
+                        stops: const [0.0, 0.5, 1.0],
+                      ),
+                    ),
+                  ),
+                ),
 
                 SafeArea(
                   child: LayoutBuilder(
@@ -552,15 +568,9 @@ class _LandingPageState extends State<LandingPage>
                                                   letterSpacing: 1.2,
                                                   shadows: [
                                                     Shadow(
-                                                      color: Colors.black
-                                                          .withValues(
-                                                            alpha: 0.5,
-                                                          ),
-                                                      offset: const Offset(
-                                                        0,
-                                                        2,
-                                                      ),
-                                                      blurRadius: 4,
+                                                      color: Colors.black87,
+                                                      offset: Offset(0, 2),
+                                                      blurRadius: 8,
                                                     ),
                                                   ],
                                                 ),
@@ -1174,6 +1184,13 @@ class _LandingPageState extends State<LandingPage>
                                                   fontWeight: FontWeight.w500,
 
                                                   height: 1.5,
+                                                  shadows: [
+                                                    Shadow(
+                                                      color: Colors.black87,
+                                                      offset: Offset(0, 1.5),
+                                                      blurRadius: 4,
+                                                    ),
+                                                  ],
                                                 ),
                                               ),
 

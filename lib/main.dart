@@ -330,8 +330,23 @@ class _LoginChoicePageState extends State<LoginChoicePage>
               'assets/images/gym_view/BACK VIEW OF GYM.jpg',
             ],
           ),
-          // Dark overlay for readability
-          Container(color: Colors.black54),
+          // Lightened gradient overlay: white tint to transparent (no dark tint)
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.white.withAlpha((0.08 * 255).toInt()),
+                    Colors.transparent,
+                    Colors.transparent,
+                  ],
+                  stops: const [0.0, 0.5, 1.0],
+                ),
+              ),
+            ),
+          ),
           // Content container on top of background
           Container(
             color: Colors.transparent,
@@ -359,6 +374,13 @@ class _LoginChoicePageState extends State<LoginChoicePage>
                                     fontWeight: FontWeight.w900,
                                     letterSpacing: 0.5,
                                     color: Colors.white,
+                                    shadows: [
+                                      Shadow(
+                                        color: Color(0xCC000000),
+                                        offset: Offset(0, 2),
+                                        blurRadius: 6,
+                                      ),
+                                    ],
                                   ),
                                 ),
                                 SizedBox(height: 15),
@@ -366,7 +388,14 @@ class _LoginChoicePageState extends State<LoginChoicePage>
                                   'Access memberships, trainers, and services.',
                                   style: TextStyle(
                                     fontSize: 14,
-                                    color: Colors.white70,
+                                    color: Colors.white,
+                                    shadows: [
+                                      Shadow(
+                                        color: Color(0xCC000000),
+                                        offset: Offset(0, 1.5),
+                                        blurRadius: 4,
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],
