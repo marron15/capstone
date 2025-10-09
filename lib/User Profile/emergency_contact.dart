@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
+// import removed: image picking disabled in read-only mode
 import 'dart:io';
 import 'profile_data.dart';
 import 'package:flutter/foundation.dart';
@@ -29,24 +29,7 @@ class _EmergencyContactWidgetState extends State<EmergencyContactWidget> {
     _webImageBytes = profileNotifier.value.webImageBytes;
   }
 
-  Future<void> _pickEmergencyImage() async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      if (kIsWeb) {
-        final bytes = await pickedFile.readAsBytes();
-        setState(() {
-          _webImageBytes = bytes;
-          _emergencyImageFile = null;
-        });
-      } else {
-        setState(() {
-          _emergencyImageFile = File(pickedFile.path);
-          _webImageBytes = null;
-        });
-      }
-    }
-  }
+  // Picking image disabled in read-only mode
 
   @override
   void dispose() {
@@ -71,7 +54,7 @@ class _EmergencyContactWidgetState extends State<EmergencyContactWidget> {
         SizedBox(height: 20),
         Center(
           child: GestureDetector(
-            onTap: _pickEmergencyImage,
+            onTap: null,
             child: CircleAvatar(
               radius: 48,
               backgroundColor: Colors.grey[300],
@@ -83,22 +66,14 @@ class _EmergencyContactWidgetState extends State<EmergencyContactWidget> {
                       : (_emergencyImageFile != null
                           ? FileImage(_emergencyImageFile!)
                           : null),
-              child:
-                  (kIsWeb
-                          ? _webImageBytes == null
-                          : _emergencyImageFile == null)
-                      ? Icon(
-                        Icons.camera_alt,
-                        size: 32,
-                        color: Colors.grey[700],
-                      )
-                      : null,
+              child: null,
             ),
           ),
         ),
         SizedBox(height: 24),
         TextField(
           controller: _emergencyNameController,
+          readOnly: true,
           decoration: InputDecoration(
             labelText: 'Emergency Contact Name',
             labelStyle: TextStyle(color: Colors.white),
@@ -118,6 +93,7 @@ class _EmergencyContactWidgetState extends State<EmergencyContactWidget> {
         SizedBox(height: 20),
         TextField(
           controller: _emergencyPhoneController,
+          readOnly: true,
           keyboardType: TextInputType.phone,
           decoration: InputDecoration(
             labelText: 'Emergency Contact Number',
@@ -136,44 +112,7 @@ class _EmergencyContactWidgetState extends State<EmergencyContactWidget> {
           style: TextStyle(color: Colors.white),
         ),
         SizedBox(height: 20),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: () {
-              // Save emergency contact information to profile (Mobile version)
-              profileNotifier.value = ProfileData(
-                imageFile: profileNotifier.value.imageFile,
-                webImageBytes: profileNotifier.value.webImageBytes,
-                firstName: profileNotifier.value.firstName,
-                middleName: profileNotifier.value.middleName,
-                lastName: profileNotifier.value.lastName,
-                contactNumber: profileNotifier.value.contactNumber,
-                email: profileNotifier.value.email,
-                birthdate: profileNotifier.value.birthdate,
-                password: profileNotifier.value.password,
-                address: profileNotifier.value.address,
-                street: profileNotifier.value.street,
-                city: profileNotifier.value.city,
-                stateProvince: profileNotifier.value.stateProvince,
-                postalCode: profileNotifier.value.postalCode,
-                country: profileNotifier.value.country,
-                emergencyContactName:
-                    _emergencyNameController.text.trim().isEmpty
-                        ? null
-                        : _emergencyNameController.text.trim(),
-                emergencyContactPhone:
-                    _emergencyPhoneController.text.trim().isEmpty
-                        ? null
-                        : _emergencyPhoneController.text.trim(),
-              );
-
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Emergency contact information saved!')),
-              );
-            },
-            child: Text('Save Emergency Contact'),
-          ),
-        ),
+        // Button removed for read-only mode
       ],
     );
   }

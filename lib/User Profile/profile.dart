@@ -37,13 +37,13 @@ class _ProfilePageState extends State<ProfilePage>
   late VoidCallback _contactListener;
   late VoidCallback _emailListener;
   late VoidCallback _profileListener;
-  late VoidCallback _passwordListener;
+  // Password listener removed
   String? _contactError;
   String? _emergencyPhoneError;
 
   DateTime? _birthdate;
-  TextEditingController _passwordController = TextEditingController();
-  bool _obscurePassword = true;
+  // Password field removed; no controller needed
+  // Password visibility state unused in read-only mode
 
   // Controllers for address fields (composite Address field removed)
   late TextEditingController _streetController;
@@ -67,8 +67,7 @@ class _ProfilePageState extends State<ProfilePage>
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     _birthdate = profileNotifier.value.birthdate;
-    // Don't populate password field for security - it will be empty initially
-    _passwordController.text = '';
+    // Password field removed
 
     // Initialize address controllers
     _streetController = TextEditingController(
@@ -109,8 +108,7 @@ class _ProfilePageState extends State<ProfilePage>
     _lastNameController.addListener(_lastNameListener);
     _contactController.addListener(_contactListener);
     _emailController.addListener(_emailListener);
-    _passwordListener = () => setState(() {});
-    _passwordController.addListener(_passwordListener);
+    // Password field removed
     _emergencyPhoneController.addListener(_validateEmergencyPhoneInline);
 
     // Address field listeners so Save/Cancel visibility updates while typing
@@ -197,7 +195,7 @@ class _ProfilePageState extends State<ProfilePage>
     _lastNameController.removeListener(_lastNameListener);
     _contactController.removeListener(_contactListener);
     _emailController.removeListener(_emailListener);
-    _passwordController.removeListener(_passwordListener);
+    // Password field removed
     profileNotifier.removeListener(_profileListener);
     _firstNameController.dispose();
     _middleNameController.dispose();
@@ -205,7 +203,7 @@ class _ProfilePageState extends State<ProfilePage>
     _contactController.dispose();
     _emailController.dispose();
 
-    _passwordController.dispose();
+    // Password field removed
     // Dispose of address controllers
     _streetController.removeListener(_streetListener);
     _cityController.removeListener(_cityListener);
@@ -224,68 +222,7 @@ class _ProfilePageState extends State<ProfilePage>
     super.dispose();
   }
 
-  bool _hasChanges() {
-    return _firstNameController.text != profileNotifier.value.firstName ||
-        _middleNameController.text != profileNotifier.value.middleName ||
-        _lastNameController.text != profileNotifier.value.lastName ||
-        _contactController.text != profileNotifier.value.contactNumber ||
-        _emailController.text != (profileNotifier.value.email ?? '') ||
-        _birthdate != profileNotifier.value.birthdate ||
-        _passwordController.text.trim().isNotEmpty ||
-        _streetController.text != (profileNotifier.value.street ?? '') ||
-        _cityController.text != (profileNotifier.value.city ?? '') ||
-        _stateProvinceController.text !=
-            (profileNotifier.value.stateProvince ?? '') ||
-        _postalCodeController.text !=
-            (profileNotifier.value.postalCode ?? '') ||
-        _countryController.text != (profileNotifier.value.country ?? '') ||
-        _emergencyNameController.text !=
-            (profileNotifier.value.emergencyContactName ?? '') ||
-        _emergencyPhoneController.text !=
-            (profileNotifier.value.emergencyContactPhone ?? '');
-  }
-
-  bool _hasAddressChanges() {
-    return _streetController.text != (profileNotifier.value.street ?? '') ||
-        _cityController.text != (profileNotifier.value.city ?? '') ||
-        _stateProvinceController.text !=
-            (profileNotifier.value.stateProvince ?? '') ||
-        _postalCodeController.text !=
-            (profileNotifier.value.postalCode ?? '') ||
-        _countryController.text != (profileNotifier.value.country ?? '');
-  }
-
-  bool _hasEmergencyContactChanges() {
-    return _emergencyNameController.text !=
-            (profileNotifier.value.emergencyContactName ?? '') ||
-        _emergencyPhoneController.text !=
-            (profileNotifier.value.emergencyContactPhone ?? '');
-  }
-
-  void _resetPersonalInfo() {
-    final p = profileNotifier.value;
-    _firstNameController.text = p.firstName;
-    _middleNameController.text = p.middleName;
-    _lastNameController.text = p.lastName;
-    _contactController.text = p.contactNumber;
-    _emailController.text = p.email ?? '';
-    setState(() {
-      _birthdate = p.birthdate;
-      _passwordController.clear();
-      _obscurePassword = true;
-      _contactError = null;
-    });
-  }
-
-  void _resetAddress() {
-    final p = profileNotifier.value;
-    _streetController.text = p.street ?? '';
-    _cityController.text = p.city ?? '';
-    _stateProvinceController.text = p.stateProvince ?? '';
-    _postalCodeController.text = p.postalCode ?? '';
-    _countryController.text = p.country ?? '';
-    setState(() {});
-  }
+  // Editing disabled: change tracking and reset methods removed
 
   void _validateContactInline() {
     final String v = _contactController.text.trim();
@@ -317,176 +254,11 @@ class _ProfilePageState extends State<ProfilePage>
     setState(() {});
   }
 
-  void _resetEmergency() {
-    final p = profileNotifier.value;
-    _emergencyNameController.text = p.emergencyContactName ?? '';
-    _emergencyPhoneController.text = p.emergencyContactPhone ?? '';
-    setState(() {
-      _emergencyPhoneError = null;
-    });
-  }
+  // Editing disabled: reset emergency removed
 
-  // Save profile changes to server
-  Future<void> _saveProfileToServer() async {
-    try {
-      final customerId = unifiedAuthState.customerId;
-      if (customerId == null) return;
+  // Editing disabled: saving to server removed
 
-      // Prepare profile data for update
-      // When user wants to change only password, some text fields may be empty
-      // because they haven't touched them. Backend requires first_name, last_name, email.
-      // Use existing profile values as fallback for required fields.
-      String firstName = _firstNameController.text.trim();
-      if (firstName.isEmpty) firstName = profileNotifier.value.firstName;
-      String lastName = _lastNameController.text.trim();
-      if (lastName.isEmpty) lastName = profileNotifier.value.lastName;
-      String middleName = _middleNameController.text.trim();
-      if (middleName.isEmpty) middleName = profileNotifier.value.middleName;
-      String email = _emailController.text.trim();
-      if (email.isEmpty) email = (profileNotifier.value.email ?? '');
-      if (email.isEmpty) email = (unifiedAuthState.customerEmail ?? '');
-      String phone = _contactController.text.trim();
-      if (phone.isEmpty) phone = profileNotifier.value.contactNumber;
-
-      // Validate emergency phone if provided
-      final String emergencyPhoneValRaw = _emergencyPhoneController.text.trim();
-      final String emergencyPhoneVal = emergencyPhoneValRaw.replaceAll(
-        RegExp(r'\D'),
-        '',
-      );
-      if (emergencyPhoneVal.isNotEmpty && emergencyPhoneVal.length != 11) {
-        setState(() {
-          _emergencyPhoneError = 'Contact number must be exactly 11 digits';
-        });
-        return;
-      } else {
-        _emergencyPhoneError = null;
-      }
-
-      final Map<String, dynamic> profileData = {
-        'customer_id': customerId,
-        'first_name': firstName,
-        'last_name': lastName,
-        'middle_name': middleName,
-        'email': email,
-        'birthdate': _birthdate?.toIso8601String(),
-        'phone_number': phone,
-        'emergency_contact_name':
-            _emergencyNameController.text.trim().isNotEmpty
-                ? _emergencyNameController.text.trim()
-                : (profileNotifier.value.emergencyContactName ?? ''),
-        // Backend expects `emergency_contact_number` key
-        'emergency_contact_number':
-            emergencyPhoneVal.isNotEmpty
-                ? emergencyPhoneVal
-                : (profileNotifier.value.emergencyContactPhone ?? ''),
-      };
-
-      // Address: backend expects `address_details` object, not flat keys
-      final Map<String, String> addressDetails = {
-        'street':
-            _streetController.text.trim().isNotEmpty
-                ? _streetController.text.trim()
-                : (profileNotifier.value.street ?? ''),
-        'city':
-            _cityController.text.trim().isNotEmpty
-                ? _cityController.text.trim()
-                : (profileNotifier.value.city ?? ''),
-        'state':
-            _stateProvinceController.text.trim().isNotEmpty
-                ? _stateProvinceController.text.trim()
-                : (profileNotifier.value.stateProvince ?? ''),
-        'postal_code':
-            _postalCodeController.text.trim().isNotEmpty
-                ? _postalCodeController.text.trim()
-                : (profileNotifier.value.postalCode ?? ''),
-        'country':
-            _countryController.text.trim().isNotEmpty
-                ? _countryController.text.trim()
-                : (profileNotifier.value.country ?? ''),
-      };
-
-      // Only include when any field is non-empty (avoid sending empty object)
-      final bool hasAddressAny = addressDetails.values.any(
-        (v) => v.trim().isNotEmpty,
-      );
-      if (hasAddressAny) {
-        profileData['address_details'] = addressDetails;
-      }
-
-      // Include password only when user typed a new one
-      final String newPassword = _passwordController.text.trim();
-      if (newPassword.isNotEmpty) {
-        profileData['password'] = newPassword;
-      }
-
-      final response = await AuthService.updateProfile(profileData);
-
-      if (response.success == true) {
-        // Update local profile data
-        profileNotifier.value = ProfileData(
-          imageFile: profileNotifier.value.imageFile,
-          webImageBytes: profileNotifier.value.webImageBytes,
-          firstName: _firstNameController.text.trim(),
-          middleName: _middleNameController.text.trim(),
-          lastName: _lastNameController.text.trim(),
-          contactNumber: _contactController.text.trim(),
-          email: _emailController.text.trim(),
-          birthdate: _birthdate,
-          password: profileNotifier.value.password,
-          address: profileNotifier.value.address,
-          street: _streetController.text.trim(),
-          city: _cityController.text.trim(),
-          stateProvince: _stateProvinceController.text.trim(),
-          postalCode: _postalCodeController.text.trim(),
-          country: _countryController.text.trim(),
-          emergencyContactName: _emergencyNameController.text.trim(),
-          emergencyContactPhone: _emergencyPhoneController.text.trim(),
-        );
-
-        // Clear password field after successful update
-        if (newPassword.isNotEmpty) {
-          _passwordController.clear();
-          _obscurePassword = true;
-        }
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Profile updated successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(response.message),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error updating profile: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: _birthdate ?? DateTime.now(),
-      firstDate: DateTime(1900),
-      lastDate: DateTime.now(),
-    );
-    if (picked != null && picked != _birthdate) {
-      setState(() {
-        _birthdate = picked;
-      });
-    }
-  }
+  // Date selection disabled in read-only mode
 
   @override
   Widget build(BuildContext context) {
@@ -522,10 +294,7 @@ class _ProfilePageState extends State<ProfilePage>
     }
     final isMobile = MediaQuery.of(context).size.width < 600;
     final titleFontSize = isMobile ? 24.0 : 32.0;
-    final buttonPadding =
-        isMobile
-            ? EdgeInsets.symmetric(vertical: 14)
-            : EdgeInsets.symmetric(vertical: 18);
+    // Buttons removed; no button padding required
 
     final labelFontSize = isMobile ? 13.0 : 15.0;
     final textFieldFontSize = isMobile ? 14.0 : 16.0;
@@ -555,6 +324,7 @@ class _ProfilePageState extends State<ProfilePage>
                   _firstNameController,
                   'First Name',
                   fontSize: textFieldFontSize,
+                  readOnly: true,
                 ),
                 SizedBox(height: 16),
 
@@ -563,6 +333,7 @@ class _ProfilePageState extends State<ProfilePage>
                   _middleNameController,
                   'Middle Name',
                   fontSize: textFieldFontSize,
+                  readOnly: true,
                 ),
                 SizedBox(height: 16),
 
@@ -571,12 +342,16 @@ class _ProfilePageState extends State<ProfilePage>
                   _lastNameController,
                   'Last Name',
                   fontSize: textFieldFontSize,
+                  readOnly: true,
                 ),
                 SizedBox(height: 16),
 
                 _buildLabel('Contact Number', labelFontSize),
                 TextField(
                   controller: _contactController,
+                  readOnly: true,
+                  enabled: false,
+                  enableInteractiveSelection: false,
                   keyboardType: TextInputType.phone,
                   inputFormatters: [
                     FilteringTextInputFormatter.digitsOnly,
@@ -613,6 +388,7 @@ class _ProfilePageState extends State<ProfilePage>
                   'Email',
                   keyboardType: TextInputType.emailAddress,
                   fontSize: textFieldFontSize,
+                  readOnly: true,
                 ),
                 SizedBox(height: 16),
 
@@ -620,8 +396,7 @@ class _ProfilePageState extends State<ProfilePage>
                 _buildDateField(textFieldFontSize, context),
                 SizedBox(height: 16),
 
-                _buildLabel('Password', labelFontSize),
-                _buildPasswordField(textFieldFontSize),
+                // Password field removed
               ] else ...[
                 _buildRow(
                   left: _buildLabeledField(
@@ -630,6 +405,7 @@ class _ProfilePageState extends State<ProfilePage>
                     'First Name',
                     labelFontSize,
                     textFieldFontSize,
+                    keyboardType: TextInputType.text,
                   ),
                   right: _buildLabeledField(
                     'Middle Name',
@@ -637,6 +413,7 @@ class _ProfilePageState extends State<ProfilePage>
                     'Middle Name',
                     labelFontSize,
                     textFieldFontSize,
+                    keyboardType: TextInputType.text,
                   ),
                 ),
                 SizedBox(height: 16),
@@ -647,6 +424,7 @@ class _ProfilePageState extends State<ProfilePage>
                     'Last Name',
                     labelFontSize,
                     textFieldFontSize,
+                    keyboardType: TextInputType.text,
                   ),
                   right: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -654,6 +432,9 @@ class _ProfilePageState extends State<ProfilePage>
                       _buildLabel('Contact Number', labelFontSize),
                       TextField(
                         controller: _contactController,
+                        readOnly: true,
+                        enabled: false,
+                        enableInteractiveSelection: false,
                         keyboardType: TextInputType.phone,
                         inputFormatters: [
                           FilteringTextInputFormatter.digitsOnly,
@@ -706,61 +487,11 @@ class _ProfilePageState extends State<ProfilePage>
                   ),
                 ),
                 SizedBox(height: 16),
-                _buildLabeledPassword(
-                  'Password',
-                  labelFontSize,
-                  textFieldFontSize,
-                ),
+                // Password field removed
               ],
               SizedBox(height: 32),
 
-              // Save/Cancel buttons for personal info
-              if (_hasChanges() || _passwordController.text.trim().isNotEmpty)
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: Colors.white24),
-                          padding: buttonPadding,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        onPressed: _resetPersonalInfo,
-                        child: Text(
-                          'Cancel',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white70,
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          padding: buttonPadding,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        onPressed: _saveProfileToServer,
-                        child: Text(
-                          'Save Changes',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+              // Buttons removed for read-only mode
             ],
           ),
         ),
@@ -792,6 +523,7 @@ class _ProfilePageState extends State<ProfilePage>
                   _streetController,
                   'Street',
                   fontSize: textFieldFontSize,
+                  readOnly: true,
                 ),
                 SizedBox(height: 16),
                 _buildLabel('City', labelFontSize),
@@ -799,6 +531,7 @@ class _ProfilePageState extends State<ProfilePage>
                   _cityController,
                   'City',
                   fontSize: textFieldFontSize,
+                  readOnly: true,
                 ),
                 SizedBox(height: 16),
                 _buildLabel('State/Province', labelFontSize),
@@ -806,6 +539,7 @@ class _ProfilePageState extends State<ProfilePage>
                   _stateProvinceController,
                   'State/Province',
                   fontSize: textFieldFontSize,
+                  readOnly: true,
                 ),
                 SizedBox(height: 16),
                 _buildLabel('Postal Code', labelFontSize),
@@ -813,6 +547,7 @@ class _ProfilePageState extends State<ProfilePage>
                   _postalCodeController,
                   'Postal Code',
                   fontSize: textFieldFontSize,
+                  readOnly: true,
                 ),
                 SizedBox(height: 16),
                 _buildLabel('Country', labelFontSize),
@@ -820,6 +555,7 @@ class _ProfilePageState extends State<ProfilePage>
                   _countryController,
                   'Country',
                   fontSize: textFieldFontSize,
+                  readOnly: true,
                 ),
               ] else ...[
                 _buildRow(
@@ -869,53 +605,7 @@ class _ProfilePageState extends State<ProfilePage>
               ],
               SizedBox(height: 32),
 
-              // Save/Cancel for address
-              if (_hasAddressChanges())
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: Colors.white24),
-                          padding: buttonPadding,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        onPressed: _resetAddress,
-                        child: Text(
-                          'Cancel',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white70,
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          padding: buttonPadding,
-                        ),
-                        onPressed: _saveProfileToServer,
-                        child: Text(
-                          'Save Address',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+              // Buttons removed for read-only mode
             ],
           ),
         ),
@@ -947,11 +637,13 @@ class _ProfilePageState extends State<ProfilePage>
                   _emergencyNameController,
                   'Emergency Contact Name',
                   fontSize: textFieldFontSize,
+                  readOnly: true,
                 ),
                 SizedBox(height: 16),
                 _buildLabel('Emergency Contact Phone', labelFontSize),
                 TextField(
                   controller: _emergencyPhoneController,
+                  readOnly: true,
                   keyboardType: TextInputType.phone,
                   inputFormatters: [
                     FilteringTextInputFormatter.digitsOnly,
@@ -995,6 +687,9 @@ class _ProfilePageState extends State<ProfilePage>
                       _buildLabel('Emergency Contact Phone', labelFontSize),
                       TextField(
                         controller: _emergencyPhoneController,
+                        readOnly: true,
+                        enabled: false,
+                        enableInteractiveSelection: false,
                         keyboardType: TextInputType.phone,
                         inputFormatters: [
                           FilteringTextInputFormatter.digitsOnly,
@@ -1032,53 +727,7 @@ class _ProfilePageState extends State<ProfilePage>
               ],
               SizedBox(height: 32),
 
-              // Save/Cancel for emergency
-              if (_hasEmergencyContactChanges())
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: Colors.white24),
-                          padding: buttonPadding,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        onPressed: _resetEmergency,
-                        child: Text(
-                          'Cancel',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white70,
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          padding: buttonPadding,
-                        ),
-                        onPressed: _saveProfileToServer,
-                        child: Text(
-                          'Save Emergency Contact',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+              // Buttons removed for read-only mode
             ],
           ),
         ),
@@ -1195,7 +844,9 @@ class _ProfilePageState extends State<ProfilePage>
     TextEditingController controller,
     String hintText, {
     bool obscureText = false,
-    bool readOnly = false,
+    bool readOnly = true,
+    bool enabled = false,
+    bool enableInteractiveSelection = false,
     TextInputType? keyboardType,
     Widget? suffixIcon,
     double fontSize = 16.0,
@@ -1204,11 +855,13 @@ class _ProfilePageState extends State<ProfilePage>
       controller: controller,
       obscureText: obscureText,
       readOnly: readOnly,
+      enabled: enabled,
+      enableInteractiveSelection: enableInteractiveSelection,
       keyboardType: keyboardType,
       decoration: InputDecoration(
         hintText: hintText,
         filled: true,
-        fillColor: readOnly ? Colors.grey[100] : Colors.grey[50],
+        fillColor: (!enabled || readOnly) ? Colors.grey[100] : Colors.grey[50],
         contentPadding: EdgeInsets.symmetric(vertical: 14, horizontal: 16),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
@@ -1252,6 +905,7 @@ class _ProfilePageState extends State<ProfilePage>
           hint,
           keyboardType: keyboardType,
           fontSize: textFieldFontSize,
+          readOnly: true,
         ),
       ],
     );
@@ -1259,11 +913,11 @@ class _ProfilePageState extends State<ProfilePage>
 
   Widget _buildDateField(double textFieldFontSize, BuildContext context) {
     return GestureDetector(
-      onTap: () => _selectDate(context),
+      onTap: null,
       child: Container(
         padding: EdgeInsets.symmetric(vertical: 14, horizontal: 16),
         decoration: BoxDecoration(
-          color: Colors.grey[50],
+          color: Colors.grey[100],
           borderRadius: BorderRadius.circular(10),
           border: Border.all(color: Colors.grey[300]!),
         ),
@@ -1273,13 +927,13 @@ class _ProfilePageState extends State<ProfilePage>
             Text(
               _birthdate != null
                   ? '${_birthdate!.day}/${_birthdate!.month}/${_birthdate!.year}'
-                  : 'Select Birthdate',
+                  : 'Birthdate',
               style: TextStyle(
                 fontSize: textFieldFontSize,
-                color: _birthdate != null ? Colors.black87 : Colors.grey[600],
+                color: Colors.black54,
               ),
             ),
-            Icon(Icons.calendar_today, color: Colors.grey[600]),
+            Icon(Icons.calendar_today, color: Colors.grey[400]),
           ],
         ),
       ),
@@ -1301,37 +955,5 @@ class _ProfilePageState extends State<ProfilePage>
     );
   }
 
-  Widget _buildPasswordField(double textFieldFontSize) {
-    return _buildTextField(
-      _passwordController,
-      'Password',
-      obscureText: _obscurePassword,
-      suffixIcon: IconButton(
-        icon: Icon(
-          _obscurePassword ? Icons.visibility : Icons.visibility_off,
-          color: Colors.grey[600],
-        ),
-        onPressed: () {
-          setState(() {
-            _obscurePassword = !_obscurePassword;
-          });
-        },
-      ),
-      fontSize: textFieldFontSize,
-    );
-  }
-
-  Widget _buildLabeledPassword(
-    String label,
-    double labelFontSize,
-    double textFieldFontSize,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildLabel(label, labelFontSize),
-        _buildPasswordField(textFieldFontSize),
-      ],
-    );
-  }
+  // Password UI removed
 }

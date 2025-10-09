@@ -7,12 +7,12 @@ class AuthService {
     if (kIsWeb) return 'localhost';
     try {
       if (defaultTargetPlatform == TargetPlatform.android) {
-        // Use computer's IP for real device testing, emulator IP for emulator
-        return '192.168.100.220'; // Replace with your computer's IP
+        // Use localhost for development - change to your IP for mobile testing
+        return 'localhost';
       }
-      return '192.168.100.220'; // Use computer's IP for mobile testing
+      return 'localhost'; // Use localhost for development
     } catch (_) {
-      return '192.168.100.220'; // Fallback to computer's IP
+      return 'localhost'; // Fallback to localhost
     }
   }
 

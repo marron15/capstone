@@ -66,42 +66,11 @@ class _AddressWidgetState extends State<AddressWidget> {
     }
   }
 
-  bool get _hasAddressChanges {
-    return _streetController.text != (widget.profileData.street ?? '') ||
-        _cityController.text != (widget.profileData.city ?? '') ||
-        _stateProvinceController.text !=
-            (widget.profileData.stateProvince ?? '') ||
-        _postalCodeController.text != (widget.profileData.postalCode ?? '') ||
-        _countryController.text != (widget.profileData.country ?? '');
-  }
+  // Read-only mode; no change tracking
 
-  void _cancel() {
-    setState(() {
-      _streetController.text = widget.profileData.street ?? '';
-      _cityController.text = widget.profileData.city ?? '';
-      _stateProvinceController.text = widget.profileData.stateProvince ?? '';
-      _postalCodeController.text = widget.profileData.postalCode ?? '';
-      _countryController.text = widget.profileData.country ?? '';
-    });
-  }
+  // Read-only mode; cancel disabled
 
-  void _save() {
-    widget.onSave(
-      address: [
-        _streetController.text,
-        _cityController.text,
-        _stateProvinceController.text,
-        _postalCodeController.text,
-        _countryController.text,
-      ].map((e) => e.trim()).where((e) => e.isNotEmpty).join(', '),
-      street: _streetController.text,
-      city: _cityController.text,
-      stateProvince: _stateProvinceController.text,
-      postalCode: _postalCodeController.text,
-      country: _countryController.text,
-    );
-    setState(() {});
-  }
+  // Read-only mode; save disabled
 
   @override
   void dispose() {
@@ -134,10 +103,11 @@ class _AddressWidgetState extends State<AddressWidget> {
   }) {
     return TextField(
       controller: controller,
+      readOnly: true,
       decoration: InputDecoration(
         hintText: hintText,
         filled: true,
-        fillColor: Colors.grey[50],
+        fillColor: Colors.grey[100],
         contentPadding: EdgeInsets.symmetric(vertical: 14, horizontal: 16),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
@@ -156,7 +126,7 @@ class _AddressWidgetState extends State<AddressWidget> {
   Widget build(BuildContext context) {
     final labelFontSize = 15.0;
     final textFieldFontSize = 16.0;
-    final buttonPadding = EdgeInsets.symmetric(vertical: 18);
+    // Read-only mode; no buttons
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -194,52 +164,7 @@ class _AddressWidgetState extends State<AddressWidget> {
           fontSize: textFieldFontSize,
         ),
         SizedBox(height: 24),
-        if (_hasAddressChanges)
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey[300],
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    padding: buttonPadding,
-                  ),
-                  onPressed: _cancel,
-                  child: Text(
-                    'Cancel',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                  ),
-                ),
-              ),
-              SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    padding: buttonPadding,
-                  ),
-                  onPressed: _save,
-                  child: Text(
-                    'Save',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
+        // Buttons removed for read-only mode
       ],
     );
   }
