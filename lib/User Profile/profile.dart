@@ -14,6 +14,7 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage>
     with TickerProviderStateMixin {
   late TabController _tabController;
+  bool _isDarkMode = true;
 
   late TextEditingController _firstNameController = TextEditingController(
     text: profileNotifier.value.firstName,
@@ -262,15 +263,19 @@ class _ProfilePageState extends State<ProfilePage>
 
   @override
   Widget build(BuildContext context) {
+    final Color bgColor = _isDarkMode ? Colors.black : Colors.white;
+    final Color titleColor = _isDarkMode ? Colors.white : Colors.black87;
+    final Color appBarBg = bgColor;
+    final Color appBarIcon = titleColor;
     // If user is logged out, prevent showing stale data
     if (!unifiedAuthState.isCustomerLoggedIn) {
       return Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: bgColor,
         appBar: AppBar(
-          backgroundColor: Colors.black,
+          backgroundColor: appBarBg,
           elevation: 0,
-          iconTheme: const IconThemeData(color: Colors.white),
-          title: const Text('Profile', style: TextStyle(color: Colors.white)),
+          iconTheme: IconThemeData(color: appBarIcon),
+          title: Text('Profile', style: TextStyle(color: titleColor)),
         ),
         body: Center(
           child: Column(
@@ -313,7 +318,7 @@ class _ProfilePageState extends State<ProfilePage>
                 style: TextStyle(
                   fontSize: titleFontSize,
                   fontWeight: FontWeight.w800,
-                  color: Colors.white,
+                  color: titleColor,
                 ),
               ),
               SizedBox(height: 32),
@@ -512,7 +517,7 @@ class _ProfilePageState extends State<ProfilePage>
                 style: TextStyle(
                   fontSize: titleFontSize,
                   fontWeight: FontWeight.w800,
-                  color: Colors.white,
+                  color: titleColor,
                 ),
               ),
               SizedBox(height: 32),
@@ -626,7 +631,7 @@ class _ProfilePageState extends State<ProfilePage>
                 style: TextStyle(
                   fontSize: titleFontSize,
                   fontWeight: FontWeight.w800,
-                  color: Colors.white,
+                  color: titleColor,
                 ),
               ),
               SizedBox(height: 32),
@@ -735,22 +740,33 @@ class _ProfilePageState extends State<ProfilePage>
     );
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: bgColor,
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: appBarBg,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.home, color: Colors.white),
+          icon: Icon(Icons.home, color: appBarIcon),
           onPressed: () {
             Navigator.pushReplacementNamed(context, '/customer-landing');
           },
         ),
-        title: const Text('Profile', style: TextStyle(color: Colors.white)),
+        title: Text('Profile', style: TextStyle(color: titleColor)),
         centerTitle: true,
-        actions: const [],
+        actions: [
+          IconButton(
+            tooltip: _isDarkMode ? 'Light mode' : 'Dark mode',
+            icon: Icon(
+              _isDarkMode ? Icons.light_mode : Icons.dark_mode,
+              color: appBarIcon,
+            ),
+            onPressed: () {
+              setState(() => _isDarkMode = !_isDarkMode);
+            },
+          ),
+        ],
         bottom: TabBar(
           controller: _tabController,
-          labelColor: Colors.white,
+          labelColor: titleColor,
           unselectedLabelColor: Colors.grey,
           indicatorColor: Colors.blue,
           tabs: [
@@ -775,7 +791,7 @@ class _ProfilePageState extends State<ProfilePage>
         style: TextStyle(
           fontWeight: FontWeight.w600,
           fontSize: fontSize,
-          color: Colors.white,
+          color: _isDarkMode ? Colors.white : Colors.black87,
         ),
       ),
     );
