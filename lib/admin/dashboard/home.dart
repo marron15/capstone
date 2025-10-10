@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../sidenav.dart';
-import '../excel/excel_stats_export.dart';
+import '../pdf/pdf_stats_export.dart';
 import '../services/api_service.dart';
 import '../services/admin_service.dart';
 import '../statistics/new_week_members.dart';
@@ -152,12 +152,40 @@ class _StatisticPageState extends State<StatisticPage> {
       ['Memberships', 'Monthly', membershipTotals['Monthly'] ?? 0],
     ];
 
-    await exportStatsToExcel(
+    // Fetch weekly memberships data
+    Map<String, int> weeklyMemberships = {};
+    try {
+      weeklyMemberships = await ApiService.getNewMembersThisWeek();
+    } catch (e) {
+      // If weekly data fails, continue with empty data
+      weeklyMemberships = {
+        'Monday': 0,
+        'Tuesday': 0,
+        'Wednesday': 0,
+        'Thursday': 0,
+        'Friday': 0,
+        'Saturday': 0,
+        'Sunday': 0,
+      };
+    }
+
+    // Fetch monthly memberships data
+    Map<String, int> monthlyMemberships = {};
+    try {
+      monthlyMemberships = await ApiService.getNewMembersThisMonth();
+    } catch (e) {
+      // If monthly data fails, continue with empty data
+      monthlyMemberships = {'1': 0, '2': 0, '3': 0, '4': 0};
+    }
+
+    await exportStatsToPDF(
       context,
-      sheetName: 'Overall Report',
+      title: 'Status Change Report',
       rows: rows,
-      withBarChart: false,
-      chartTitle: 'Overall Report',
+      weeklyMemberships: weeklyMemberships,
+      monthlyMemberships: monthlyMemberships,
+      membershipTotals: membershipTotals,
+      expiredMemberships: customersExpired,
     );
   }
 
@@ -219,11 +247,11 @@ class _StatisticPageState extends State<StatisticPage> {
                         ElevatedButton.icon(
                           onPressed: () => _exportOverallReport(context),
                           icon: Icon(
-                            Icons.file_download_outlined,
-                            color: Colors.teal.shade700,
+                            Icons.picture_as_pdf,
+                            color: Colors.red.shade700,
                             size: 20,
                           ),
-                          label: const Text('Export'),
+                          label: const Text('Export PDF'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.white,
                             foregroundColor: Colors.black87,

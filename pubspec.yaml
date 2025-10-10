@@ -42,6 +42,7 @@ dependencies:
   file_saver: ^0.2.12
   syncfusion_flutter_xlsio: ^29.2.7
   syncfusion_officechart: ^29.2.7
+  pdf: ^3.10.7
 
 
 # The following adds the Cupertino Icons font to your application.
