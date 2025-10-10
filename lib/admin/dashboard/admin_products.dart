@@ -4,7 +4,7 @@ import '../sidenav.dart';
 import '../services/api_service.dart';
 import 'dart:typed_data';
 import 'dart:convert';
-import '../excel/excel_product_export.dart';
+// export removed
 
 class AdminProductsPage extends StatefulWidget {
   const AdminProductsPage({super.key});
@@ -21,6 +21,7 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
   bool _showArchived = false;
   final List<int> _productIds = [];
   static const double _drawerWidth = 280;
+  bool _navCollapsed = false;
 
   Widget _buildArchiveEmpty({
     required String title,
@@ -366,17 +367,53 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(
-              width: _drawerWidth,
-              child: const SideNav(width: _drawerWidth),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeOutCubic,
+              width: _navCollapsed ? 0 : _drawerWidth,
+              child: SideNav(
+                width: _drawerWidth,
+                onClose: () => setState(() => _navCollapsed = true),
+              ),
             ),
             Expanded(
-              child: Container(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeOutCubic,
                 decoration: const BoxDecoration(color: Colors.white),
                 child:
                     isMobile
                         ? Column(
                           children: [
+                            Row(
+                              children: [
+                                IconButton(
+                                  tooltip:
+                                      _navCollapsed
+                                          ? 'Open Sidebar'
+                                          : 'Close Sidebar',
+                                  onPressed:
+                                      () => setState(
+                                        () => _navCollapsed = !_navCollapsed,
+                                      ),
+                                  icon: Icon(
+                                    _navCollapsed
+                                        ? Icons.menu
+                                        : Icons.chevron_left,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Products',
+                                  style: TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                                const Spacer(),
+                              ],
+                            ),
                             // Action buttons for mobile
                             Container(
                               padding: const EdgeInsets.all(16),
@@ -387,49 +424,7 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                                   // First row with Export and View Archives buttons
                                   Row(
                                     children: [
-                                      // Export
-                                      Expanded(
-                                        child: ElevatedButton.icon(
-                                          onPressed:
-                                              () => exportProductsToExcel(
-                                                context,
-                                                _visibleProducts(),
-                                              ),
-                                          icon: const Icon(
-                                            Icons.table_view,
-                                            size: 16,
-                                          ),
-                                          label: const Text('Export'),
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.white,
-                                            foregroundColor: Colors.black87,
-                                            elevation: 0,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(20),
-                                            ),
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 12,
-                                              vertical: 8,
-                                            ),
-                                          ).copyWith(
-                                            side:
-                                                WidgetStateProperty.resolveWith(
-                                                  (states) => BorderSide(
-                                                    color:
-                                                        states.contains(
-                                                              WidgetState
-                                                                  .hovered,
-                                                            )
-                                                            ? const Color(
-                                                              0xFFFFA812,
-                                                            )
-                                                            : Colors.black26,
-                                                  ),
-                                                ),
-                                          ),
-                                        ),
-                                      ),
+                                      // Export removed
                                       const SizedBox(width: 8),
                                       // View Archives toggle
                                       Expanded(
@@ -562,6 +557,24 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                                 children: [
                                   Row(
                                     children: [
+                                      IconButton(
+                                        tooltip:
+                                            _navCollapsed
+                                                ? 'Open Sidebar'
+                                                : 'Close Sidebar',
+                                        onPressed:
+                                            () => setState(
+                                              () =>
+                                                  _navCollapsed =
+                                                      !_navCollapsed,
+                                            ),
+                                        icon: Icon(
+                                          _navCollapsed
+                                              ? Icons.menu
+                                              : Icons.chevron_left,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
                                       Text(
                                         'Products',
                                         style: TextStyle(
@@ -613,46 +626,7 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                                         ),
                                       ),
                                       const SizedBox(width: 12),
-                                      OutlinedButton.icon(
-                                        onPressed:
-                                            () => exportProductsToExcel(
-                                              context,
-                                              _visibleProducts(),
-                                            ),
-                                        icon: const Icon(
-                                          Icons.table_chart_rounded,
-                                          color: Colors.teal,
-                                          size: 20,
-                                        ),
-                                        label: const Text('Export'),
-                                        style: OutlinedButton.styleFrom(
-                                          foregroundColor: Colors.black87,
-                                          side: const BorderSide(
-                                            color: Colors.black26,
-                                          ),
-                                          backgroundColor: Colors.white,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              12,
-                                            ),
-                                          ),
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 14,
-                                            vertical: 10,
-                                          ),
-                                        ).copyWith(
-                                          side: WidgetStateProperty.resolveWith(
-                                            (states) => BorderSide(
-                                              color:
-                                                  states.contains(
-                                                        WidgetState.hovered,
-                                                      )
-                                                      ? const Color(0xFFFFA812)
-                                                      : Colors.black26,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
+                                      // Export removed
                                       const Spacer(),
                                       OutlinedButton.icon(
                                         onPressed: () async {

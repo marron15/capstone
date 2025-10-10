@@ -103,6 +103,9 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
     );
     _emailController.addListener(_emailListener);
     _rePasswordController.addListener(_validatePasswordMatch);
+
+    // Prefill default country for sign up
+    _countryController.text = 'Philippines';
   }
 
   @override

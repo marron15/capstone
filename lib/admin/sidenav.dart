@@ -3,11 +3,47 @@ import '../services/unified_auth_state.dart';
 
 class SideNav extends StatelessWidget {
   final double? width;
-  const SideNav({super.key, this.width});
+  final VoidCallback? onClose;
+  const SideNav({super.key, this.width, this.onClose});
 
   @override
   Widget build(BuildContext context) {
     // Render as a fixed side panel, not a modal drawer
+    final String? _currentRoute = ModalRoute.of(context)?.settings.name;
+
+    Widget _navItem({
+      required IconData icon,
+      required String label,
+      required String route,
+    }) {
+      final bool isSelected = _currentRoute == route;
+      return Container(
+        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.grey.shade200 : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+          border:
+              isSelected
+                  ? const Border(left: BorderSide(color: Colors.grey, width: 4))
+                  : null,
+        ),
+        child: ListTile(
+          leading: Icon(icon, color: Colors.black),
+          title: Text(label),
+          selected: isSelected,
+          selectedTileColor: Colors.grey.shade200,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          onTap: () {
+            if (_currentRoute != route) {
+              Navigator.pushNamed(context, route);
+            }
+          },
+        ),
+      );
+    }
+
     return SafeArea(
       child: Container(
         width: width ?? 280,
@@ -30,45 +66,46 @@ class SideNav extends StatelessWidget {
                     height: 120,
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     alignment: Alignment.centerLeft,
-                    child: const Text(
-                      'Admin Dashboard',
-                      style: TextStyle(color: Colors.black, fontSize: 24),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Admin Dashboard',
+                          style: TextStyle(color: Colors.black, fontSize: 24),
+                        ),
+                        if (onClose != null)
+                          IconButton(
+                            tooltip: 'Close',
+                            icon: const Icon(Icons.close),
+                            onPressed: onClose,
+                          ),
+                      ],
                     ),
                   ),
-                  ListTile(
-                    leading: const Icon(Icons.dashboard),
-                    title: const Text('Dashboard'),
-                    onTap: () {
-                      Navigator.pushNamed(context, '/admin-statistics');
-                    },
+                  _navItem(
+                    icon: Icons.dashboard,
+                    label: 'Dashboard',
+                    route: '/admin-statistics',
                   ),
-                  ListTile(
-                    leading: const Icon(Icons.person),
-                    title: const Text('Admin Profile'),
-                    onTap: () {
-                      Navigator.pushNamed(context, '/admin-dashboard');
-                    },
+                  _navItem(
+                    icon: Icons.person,
+                    label: 'Admin Profile',
+                    route: '/admin-dashboard',
                   ),
-                  ListTile(
-                    leading: const Icon(Icons.fitness_center),
-                    title: const Text('Trainers'),
-                    onTap: () {
-                      Navigator.pushNamed(context, '/admin-trainers');
-                    },
+                  _navItem(
+                    icon: Icons.fitness_center,
+                    label: 'Trainers',
+                    route: '/admin-trainers',
                   ),
-                  ListTile(
-                    leading: const Icon(Icons.people),
-                    title: const Text('Customers'),
-                    onTap: () {
-                      Navigator.pushNamed(context, '/admin-customers');
-                    },
+                  _navItem(
+                    icon: Icons.people,
+                    label: 'Customers',
+                    route: '/admin-customers',
                   ),
-                  ListTile(
-                    leading: const Icon(Icons.inventory),
-                    title: const Text('Products'),
-                    onTap: () {
-                      Navigator.pushNamed(context, '/admin-products');
-                    },
+                  _navItem(
+                    icon: Icons.inventory,
+                    label: 'Products',
+                    route: '/admin-products',
                   ),
                   Padding(
                     padding: const EdgeInsets.symmetric(

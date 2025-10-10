@@ -21,6 +21,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
   String? _errorMessage;
   bool _showArchived = false;
   static const double _drawerWidth = 280;
+  bool _navCollapsed = false;
 
   TextEditingController searchController = TextEditingController();
 
@@ -409,16 +410,24 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(
-              width: _drawerWidth,
-              child: const SideNav(width: _drawerWidth),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeOutCubic,
+              width: _navCollapsed ? 0 : _drawerWidth,
+              child: SideNav(
+                width: _drawerWidth,
+                onClose: () => setState(() => _navCollapsed = true),
+              ),
             ),
             Expanded(
-              child: Container(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeOutCubic,
                 decoration: const BoxDecoration(color: Colors.white),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    const SizedBox.shrink(),
                     Container(
                       padding: const EdgeInsets.all(16),
                       color: Colors.transparent,
@@ -571,6 +580,24 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                                 children: [
                                   Row(
                                     children: [
+                                      IconButton(
+                                        tooltip:
+                                            _navCollapsed
+                                                ? 'Open Sidebar'
+                                                : 'Close Sidebar',
+                                        onPressed:
+                                            () => setState(
+                                              () =>
+                                                  _navCollapsed =
+                                                      !_navCollapsed,
+                                            ),
+                                        icon: Icon(
+                                          _navCollapsed
+                                              ? Icons.menu
+                                              : Icons.chevron_left,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
                                       Text(
                                         'Admin Profiles',
                                         style: TextStyle(

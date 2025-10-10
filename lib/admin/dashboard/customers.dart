@@ -25,6 +25,7 @@ class _CustomersPageState extends State<CustomersPage> {
   bool _showExpiredOnly = false;
   bool _showNotExpiredOnly = false;
   static const double _drawerWidth = 280;
+  bool _navCollapsed = false;
 
   @override
   void initState() {
@@ -608,14 +609,26 @@ class _CustomersPageState extends State<CustomersPage> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(
-              width: _drawerWidth,
-              child: const SideNav(width: _drawerWidth),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeOutCubic,
+              width: _navCollapsed ? 0 : _drawerWidth,
+              child: SideNav(
+                width: _drawerWidth,
+                onClose: () => setState(() => _navCollapsed = true),
+              ),
             ),
             Expanded(
-              child: Container(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeOutCubic,
                 decoration: const BoxDecoration(color: Colors.white),
-                child: _buildBody(),
+                child: Column(
+                  children: [
+                    const SizedBox.shrink(),
+                    Expanded(child: _buildBody()),
+                  ],
+                ),
               ),
             ),
           ],
@@ -664,86 +677,11 @@ class _CustomersPageState extends State<CustomersPage> {
       );
     }
 
-    if (_customers.isEmpty && _archivedCustomers.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.people_outline, size: 64, color: Colors.grey[400]),
-            const SizedBox(height: 16),
-            Text(
-              'No customers found',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Add your first customer to get started',
-              style: TextStyle(color: Colors.grey),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: _showAddCustomerModal,
-              icon: const Icon(Icons.person_add),
-              label: const Text('Add First Customer'),
-            ),
-          ],
-        ),
-      );
-    }
+    // Always render the table shell; even when there are no customers
 
-    if (_showArchived && _archivedCustomers.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.archive_outlined, size: 64, color: Colors.grey[400]),
-            const SizedBox(height: 16),
-            Text(
-              'No archived customers',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Archived customers will appear here',
-              style: TextStyle(color: Colors.grey),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: _showArchivedCustomers,
-              icon: const Icon(Icons.people),
-              label: const Text('View Active Customers'),
-            ),
-          ],
-        ),
-      );
-    }
+    // Keep header visible for archives even when empty
 
-    if (!_showArchived && _customers.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.people_outline, size: 64, color: Colors.grey[400]),
-            const SizedBox(height: 16),
-            Text(
-              'No active customers',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Add your first customer to get started',
-              style: TextStyle(color: Colors.grey),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: _showAddCustomerModal,
-              icon: const Icon(Icons.person_add),
-              label: const Text('Add First Customer'),
-            ),
-          ],
-        ),
-      );
-    }
+    // Keep header visible for active view even when empty
 
     return isMobile
         ? Column(
@@ -1255,6 +1193,17 @@ class _CustomersPageState extends State<CustomersPage> {
                 children: [
                   Row(
                     children: [
+                      IconButton(
+                        tooltip:
+                            _navCollapsed ? 'Open Sidebar' : 'Close Sidebar',
+                        onPressed:
+                            () =>
+                                setState(() => _navCollapsed = !_navCollapsed),
+                        icon: Icon(
+                          _navCollapsed ? Icons.menu : Icons.chevron_left,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
                       // Title
                       Text(
                         _showArchived ? 'Archived Customers' : 'Customers',
