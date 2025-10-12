@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'header.dart';
@@ -40,6 +41,8 @@ class _LandingPageState extends State<LandingPage>
   late AnimationController _fadeController;
   late Animation<double> _heroAnimation;
 
+  Timer? _countdownTimer;
+
   @override
   void initState() {
     super.initState();
@@ -60,6 +63,12 @@ class _LandingPageState extends State<LandingPage>
     _heroController.forward();
     _fadeController.forward();
 
+    // Start countdown timer for real-time updates
+    _startCountdownTimer();
+
+    // Listen to auth state changes to restart timer when user logs in
+    unifiedAuthState.addListener(_onAuthStateChanged);
+
     _scrollController.addListener(() {
       final bool shouldShow = _scrollController.offset > 300;
       if (shouldShow != _showScrollToTop) {
@@ -70,10 +79,34 @@ class _LandingPageState extends State<LandingPage>
 
   @override
   void dispose() {
+    _countdownTimer?.cancel();
+    unifiedAuthState.removeListener(_onAuthStateChanged);
     _heroController.dispose();
     _fadeController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _onAuthStateChanged() {
+    // Restart timer when auth state changes (user logs in/out)
+    if (unifiedAuthState.isCustomerLoggedIn) {
+      _startCountdownTimer();
+    } else {
+      _countdownTimer?.cancel();
+    }
+  }
+
+  void _startCountdownTimer() {
+    _countdownTimer?.cancel();
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) {
+        setState(() {
+          // This will trigger a rebuild and update the time remaining display
+        });
+      } else {
+        timer.cancel();
+      }
+    });
   }
 
   void _scrollToSection(int index) {
@@ -168,15 +201,18 @@ class _LandingPageState extends State<LandingPage>
     if (difference.isNegative) return 'Expired';
 
     final days = difference.inDays;
-
     final hours = difference.inHours % 24;
+    final minutes = difference.inMinutes % 60;
+    final seconds = difference.inSeconds % 60;
 
     if (days > 0) {
-      return '${days}d ${hours}h';
+      return '${days}d ${hours}h ${minutes}m ${seconds}s';
     } else if (hours > 0) {
-      return '${hours}h';
+      return '${hours}h ${minutes}m ${seconds}s';
+    } else if (minutes > 0) {
+      return '${minutes}m ${seconds}s';
     } else {
-      return '${difference.inMinutes}m';
+      return '${seconds}s';
     }
   }
 
