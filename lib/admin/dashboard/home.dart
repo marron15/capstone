@@ -1,9 +1,9 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import '../sidenav.dart';
 import '../pdf/pdf_stats_export.dart';
 import '../services/api_service.dart';
 import '../services/admin_service.dart';
+import '../services/refresh_service.dart';
 import '../statistics/new_week_members.dart';
 import '../statistics/new_members_month.dart';
 import '../statistics/total_memberships.dart';
@@ -46,16 +46,18 @@ class _StatisticPageState extends State<StatisticPage>
   bool _showExpiredOnly = false;
   bool _showNotExpiredOnly = false;
 
-  // Timer for periodic refresh
-  Timer? _refreshTimer;
+  // Manual refresh only - no auto refresh timer
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+
+    // Register with refresh service
+    RefreshService().registerRefreshCallback(_refreshData);
+
     _loadOverallReport();
     _loadCustomers();
-    _startPeriodicRefresh();
   }
 
   @override
@@ -839,19 +841,13 @@ class _StatisticPageState extends State<StatisticPage>
     );
   }
 
-  void _startPeriodicRefresh() {
-    // Refresh data every 15 seconds to keep membership statuses and new customers up to date
-    _refreshTimer = Timer.periodic(const Duration(seconds: 15), (timer) {
-      if (mounted) {
-        _refreshData();
-      }
-    });
-  }
-
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _refreshTimer?.cancel();
+
+    // Unregister from refresh service
+    RefreshService().unregisterRefreshCallback(_refreshData);
+
     _kpiController.dispose();
     super.dispose();
   }

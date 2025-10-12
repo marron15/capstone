@@ -3,6 +3,7 @@ import '../sidenav.dart';
 import '../modal/customers_signup_modal.dart';
 import '../modal/customer_view_edit_modal.dart';
 import '../services/api_service.dart';
+import '../services/refresh_service.dart';
 import '../excel/excel_import.dart';
 import '../../PH phone number valid/phone_formatter.dart';
 
@@ -32,6 +33,15 @@ class _CustomersPageState extends State<CustomersPage> {
   void initState() {
     super.initState();
     _loadCustomers();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Refresh data when returning from other pages
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadCustomers();
+    });
   }
 
   Future<void> _confirmAndArchive(Map<String, dynamic> customer) async {
@@ -89,6 +99,9 @@ class _CustomersPageState extends State<CustomersPage> {
             backgroundColor: Colors.orange,
           ),
         );
+
+        // Refresh home page data
+        RefreshService().triggerRefresh();
       } else {
         setState(() => _isLoading = false);
         if (!mounted) return;
@@ -203,6 +216,9 @@ class _CustomersPageState extends State<CustomersPage> {
           backgroundColor: Colors.green,
         ),
       );
+
+      // Refresh home page data
+      RefreshService().triggerRefresh();
     } else {
       setState(() => _isLoading = false);
       if (!mounted) return;
@@ -596,6 +612,9 @@ class _CustomersPageState extends State<CustomersPage> {
 
         // Refresh the customer list from the server
         _loadCustomers();
+
+        // Refresh home page data
+        RefreshService().triggerRefresh();
       }
     });
   }
@@ -1059,6 +1078,8 @@ class _CustomersPageState extends State<CustomersPage> {
                                               );
                                           if (result == true && mounted) {
                                             setState(() {});
+                                            // Refresh home page data
+                                            RefreshService().triggerRefresh();
                                           }
                                         },
                                         padding: const EdgeInsets.all(8),
@@ -1708,6 +1729,9 @@ class _CustomersPageState extends State<CustomersPage> {
                                               // Modal result handled below
                                               if (result == true && mounted) {
                                                 setState(() {});
+                                                // Refresh home page data
+                                                RefreshService()
+                                                    .triggerRefresh();
                                               }
                                             },
                                             icon: Icon(
