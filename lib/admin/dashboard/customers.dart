@@ -120,8 +120,13 @@ class _CustomersPageState extends State<CustomersPage> {
               (c['contactNumber'] ?? c['phone_number'] ?? '')
                   .toString()
                   .toLowerCase();
+          final String customerId =
+              (c['customerId'] ?? '').toString().toLowerCase();
           final bool matchesSearch =
-              q.isEmpty || name.contains(q) || contact.contains(q);
+              q.isEmpty ||
+              name.contains(q) ||
+              contact.contains(q) ||
+              customerId.contains(q);
           if (!matchesSearch) return false;
           if (_membershipFilter == 'All') return true;
           final String type =
@@ -954,13 +959,40 @@ class _CustomersPageState extends State<CustomersPage> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Text(
-                                        customer['name'] ?? '',
-                                        style: const TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.black87,
-                                        ),
+                                      Row(
+                                        children: [
+                                          Text(
+                                            customer['name'] ?? '',
+                                            style: const TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.black87,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 2,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.blue.shade50,
+                                              borderRadius:
+                                                  BorderRadius.circular(4),
+                                              border: Border.all(
+                                                color: Colors.blue.shade200,
+                                              ),
+                                            ),
+                                            child: Text(
+                                              '#${customer['customerId'] ?? 'N/A'}',
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.w600,
+                                                color: Colors.blue.shade700,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                       const SizedBox(height: 6),
                                       Container(
@@ -1396,6 +1428,18 @@ class _CustomersPageState extends State<CustomersPage> {
                         child: Row(
                           children: [
                             Expanded(
+                              flex: 2,
+                              child: const Text(
+                                'Customer ID',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ),
+                            Expanded(
                               flex: 3,
                               child: const Text(
                                 'Name',
@@ -1474,6 +1518,39 @@ class _CustomersPageState extends State<CustomersPage> {
                               color: isExpired ? Colors.red.shade50 : null,
                               child: Row(
                                 children: [
+                                  Expanded(
+                                    flex: 2,
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 14,
+                                        horizontal: 8,
+                                      ),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.blue.shade50,
+                                          borderRadius: BorderRadius.circular(
+                                            6,
+                                          ),
+                                          border: Border.all(
+                                            color: Colors.blue.shade200,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          '#${customer['customerId'] ?? 'N/A'}',
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.blue.shade700,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
                                   Expanded(
                                     flex: 3,
                                     child: Padding(
