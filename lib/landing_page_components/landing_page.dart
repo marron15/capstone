@@ -15,6 +15,8 @@ import '../services/unified_auth_state.dart';
 
 import 'footer.dart';
 
+import '../modals/membership_alert.dart';
+
 class LandingPage extends StatefulWidget {
   const LandingPage({Key? key}) : super(key: key);
 
@@ -42,6 +44,7 @@ class _LandingPageState extends State<LandingPage>
   late Animation<double> _heroAnimation;
 
   Timer? _countdownTimer;
+  bool _hasShownMembershipAlert = false;
 
   @override
   void initState() {
@@ -91,8 +94,27 @@ class _LandingPageState extends State<LandingPage>
     // Restart timer when auth state changes (user logs in/out)
     if (unifiedAuthState.isCustomerLoggedIn) {
       _startCountdownTimer();
+
+      // Show membership alert if not already shown and user has membership data
+      if (!_hasShownMembershipAlert &&
+          unifiedAuthState.membershipData != null &&
+          mounted) {
+        _hasShownMembershipAlert = true;
+
+        // Show alert after a short delay to ensure UI is ready
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted) {
+            showDialog(
+              context: context,
+              barrierDismissible: true,
+              builder: (context) => const MembershipAlertModal(),
+            );
+          }
+        });
+      }
     } else {
       _countdownTimer?.cancel();
+      _hasShownMembershipAlert = false; // Reset flag when user logs out
     }
   }
 
