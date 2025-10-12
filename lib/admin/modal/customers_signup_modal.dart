@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import '../services/api_service.dart';
+import '../../PH phone number valid/phone_formatter.dart';
 
 class AdminSignUpModal extends StatefulWidget {
   const AdminSignUpModal({super.key});
@@ -239,7 +240,9 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
       String middleName = _middleNameController.text.trim();
       String lastName = _lastNameController.text.trim();
       String email = _emailController.text.trim();
-      String contact = _contactController.text.trim();
+      String contact = PhoneFormatter.cleanPhoneNumber(
+        _contactController.text.trim(),
+      );
 
       // Format birthdate
       String? birthdate =
@@ -296,7 +299,9 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
                 : null,
         emergencyContactNumber:
             _emergencyPhoneController.text.trim().isNotEmpty
-                ? _emergencyPhoneController.text.trim()
+                ? PhoneFormatter.cleanPhoneNumber(
+                  _emergencyPhoneController.text.trim(),
+                )
                 : null,
         street:
             _streetController.text.trim().isNotEmpty
@@ -920,18 +925,15 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
                                                   label:
                                                       'Emergency Contact Phone',
                                                   icon: Icons.phone,
-                                                  hintText: '09XXXXXXXXX',
+
                                                   errorText:
                                                       _emergencyPhoneError,
                                                 ),
                                                 keyboardType:
                                                     TextInputType.phone,
                                                 inputFormatters: [
-                                                  FilteringTextInputFormatter
-                                                      .digitsOnly,
-                                                  LengthLimitingTextInputFormatter(
-                                                    11,
-                                                  ),
+                                                  PhoneFormatter
+                                                      .phoneNumberFormatter,
                                                 ],
                                               ),
                                             ),
@@ -1073,13 +1075,12 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
                                   decoration: _inputDecoration(
                                     label: 'Emergency Contact Phone',
                                     icon: Icons.phone,
-                                    hintText: '09XXXXXXXXX',
+
                                     errorText: _emergencyPhoneError,
                                   ),
                                   keyboardType: TextInputType.phone,
                                   inputFormatters: [
-                                    FilteringTextInputFormatter.digitsOnly,
-                                    LengthLimitingTextInputFormatter(11),
+                                    PhoneFormatter.phoneNumberFormatter,
                                   ],
                                 ),
                                 const SizedBox(height: 32),
@@ -1390,13 +1391,12 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
                                     label: 'Contact Number',
                                     icon: Icons.phone_outlined,
                                     focusNode: _contactFocus,
-                                    hintText: '09XXXXXXXXX',
+
                                     errorText: _contactError,
                                   ),
                                   keyboardType: TextInputType.phone,
                                   inputFormatters: [
-                                    FilteringTextInputFormatter.digitsOnly,
-                                    LengthLimitingTextInputFormatter(11),
+                                    PhoneFormatter.phoneNumberFormatter,
                                   ],
                                 ),
                                 const SizedBox(height: 18),
@@ -1626,12 +1626,13 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
 
                                                     // Contact must be exactly 11 digits
                                                     final String contact =
-                                                        _contactController.text
-                                                            .trim();
+                                                        PhoneFormatter.cleanPhoneNumber(
+                                                          _contactController
+                                                              .text
+                                                              .trim(),
+                                                        );
                                                     if (contact.isNotEmpty &&
-                                                        !RegExp(
-                                                          r'^\d{11}$',
-                                                        ).hasMatch(contact)) {
+                                                        contact.length != 11) {
                                                       setState(() {
                                                         _contactError =
                                                             'Contact number must be exactly 11 digits';
@@ -1641,13 +1642,14 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
 
                                                     // Emergency contact (if provided) must be exactly 11 digits
                                                     final String emergency =
-                                                        _emergencyPhoneController
-                                                            .text
-                                                            .trim();
+                                                        PhoneFormatter.cleanPhoneNumber(
+                                                          _emergencyPhoneController
+                                                              .text
+                                                              .trim(),
+                                                        );
                                                     if (emergency.isNotEmpty &&
-                                                        !RegExp(
-                                                          r'^\d{11}$',
-                                                        ).hasMatch(emergency)) {
+                                                        emergency.length !=
+                                                            11) {
                                                       setState(() {
                                                         _emergencyPhoneError =
                                                             'Emergency contact number must be exactly 11 digits';

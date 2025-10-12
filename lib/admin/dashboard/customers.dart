@@ -4,6 +4,7 @@ import '../modal/customers_signup_modal.dart';
 import '../modal/customer_view_edit_modal.dart';
 import '../services/api_service.dart';
 import '../excel/excel_import.dart';
+import '../../PH phone number valid/phone_formatter.dart';
 
 class CustomersPage extends StatefulWidget {
   const CustomersPage({super.key});
@@ -343,7 +344,9 @@ class _CustomersPageState extends State<CustomersPage> {
       'name':
           '${customerData['first_name'] ?? ''} ${customerData['last_name'] ?? ''}'
               .trim(),
-      'contactNumber': customerData['phone_number'] ?? 'Not provided',
+      'contactNumber': PhoneFormatter.formatWithSpaces(
+        customerData['phone_number'] ?? 'Not provided',
+      ),
       'membershipType': membershipType,
       'expirationDate': expirationDate,
       'startDate': startDate,
@@ -353,7 +356,9 @@ class _CustomersPageState extends State<CustomersPage> {
               .trim(),
       'birthdate': customerData['birthdate'],
       'emergencyContactName': customerData['emergency_contact_name'] ?? '',
-      'emergencyContactPhone': customerData['emergency_contact_number'] ?? '',
+      'emergencyContactPhone': PhoneFormatter.formatWithSpaces(
+        customerData['emergency_contact_number'] ?? '',
+      ),
       'customerId': customerData['customer_id'] ?? customerData['id'],
       'createdAt':
           customerData['customer_created_at'] ?? customerData['created_at'],
@@ -1800,7 +1805,9 @@ class _CustomersPageState extends State<CustomersPage> {
 
   // Build styled phone number button for desktop view
   Widget _buildPhoneNumberButton(String phoneNumber) {
-    if (phoneNumber == 'N/A' || phoneNumber.isEmpty) {
+    if (phoneNumber == 'N/A' ||
+        phoneNumber.isEmpty ||
+        phoneNumber == 'Not provided') {
       return Center(
         child: Text(
           'N/A',

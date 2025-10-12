@@ -5,6 +5,8 @@ import 'package:flutter/services.dart';
 import 'dart:math' as math;
 // Removed image picker and file picker imports
 import '../services/api_service.dart';
+import '../../PH phone number valid/phone_validator.dart';
+import '../../PH phone number valid/phone_formatter.dart';
 
 class CustomerViewEditModal {
   // Show the modal dialog for viewing and editing a customer
@@ -39,7 +41,7 @@ class CustomerViewEditModal {
       text: customer['email'] ?? '',
     );
     final TextEditingController contactController = TextEditingController(
-      text: customer['phone_number'] ?? '',
+      text: PhoneFormatter.formatWithSpaces(customer['phone_number'] ?? ''),
     );
     final TextEditingController birthdateController = TextEditingController(
       text: customer['birthdate'] ?? '',
@@ -48,7 +50,11 @@ class CustomerViewEditModal {
       text: customer['emergency_contact_name'] ?? '',
     );
     final TextEditingController emergencyPhoneController =
-        TextEditingController(text: customer['emergency_contact_number'] ?? '');
+        TextEditingController(
+          text: PhoneFormatter.formatWithSpaces(
+            customer['emergency_contact_number'] ?? '',
+          ),
+        );
     // Handle password field - store original password for display
     final String originalPassword = customer['password'] ?? '';
     final TextEditingController passwordController = TextEditingController(
@@ -179,18 +185,32 @@ class CustomerViewEditModal {
       });
 
       try {
-        // Validate contact number and emergency number: exactly 11 digits
-        final String phone = contactController.text.trim();
-        final String emergencyPhone = emergencyPhoneController.text.trim();
+        // Validate contact number and emergency number as Philippine mobile numbers
+        final String phone = PhoneFormatter.cleanPhoneNumber(
+          contactController.text.trim(),
+        );
+        final String emergencyPhone = PhoneFormatter.cleanPhoneNumber(
+          emergencyPhoneController.text.trim(),
+        );
         String? localContactError;
         String? localEmergencyError;
-        if (!RegExp(r'^\d{11}$').hasMatch(phone)) {
-          localContactError = 'Contact number must be exactly 11 digits';
+
+        if (phone.isNotEmpty) {
+          final phoneValidation = PhoneValidator.validatePhilippineMobile(
+            phone,
+          );
+          if (!phoneValidation.isValid) {
+            localContactError = phoneValidation.errorMessage;
+          }
         }
-        if (emergencyPhone.isNotEmpty &&
-            !RegExp(r'^\d{11}$').hasMatch(emergencyPhone)) {
-          localEmergencyError =
-              'Emergency contact number must be exactly 11 digits';
+
+        if (emergencyPhone.isNotEmpty) {
+          final emergencyValidation = PhoneValidator.validatePhilippineMobile(
+            emergencyPhone,
+          );
+          if (!emergencyValidation.isValid) {
+            localEmergencyError = emergencyValidation.errorMessage;
+          }
         }
         if (localContactError != null || localEmergencyError != null) {
           setModalState(() {
@@ -212,9 +232,9 @@ class CustomerViewEditModal {
           'last_name': lastNameController.text.trim(),
           'email': emailController.text.trim(),
           'birthdate': birthdateController.text.trim(),
-          'phone_number': contactController.text.trim(),
+          'phone_number': phone,
           'emergency_contact_name': emergencyNameController.text.trim(),
-          'emergency_contact_number': emergencyPhoneController.text.trim(),
+          'emergency_contact_number': emergencyPhone,
           'password':
               passwordController.text.trim().isNotEmpty
                   ? passwordController.text.trim()
@@ -286,11 +306,10 @@ class CustomerViewEditModal {
           customer['last_name'] = lastNameController.text.trim();
           customer['email'] = emailController.text.trim();
           customer['birthdate'] = birthdateController.text.trim();
-          customer['phone_number'] = contactController.text.trim();
+          customer['phone_number'] = phone;
           customer['emergency_contact_name'] =
               emergencyNameController.text.trim();
-          customer['emergency_contact_number'] =
-              emergencyPhoneController.text.trim();
+          customer['emergency_contact_number'] = emergencyPhone;
 
           // Update password if it was changed (don't store plain text in local data)
           if (passwordController.text.trim().isNotEmpty) {
@@ -414,14 +433,11 @@ class CustomerViewEditModal {
             style: const TextStyle(color: Colors.white),
             keyboardType:
                 label.toLowerCase().contains('contact')
-                    ? TextInputType.number
+                    ? TextInputType.phone
                     : null,
             inputFormatters:
                 label.toLowerCase().contains('contact')
-                    ? [
-                      FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(11),
-                    ]
+                    ? [PhoneFormatter.phoneNumberFormatter]
                     : null,
             decoration: InputDecoration(
               filled: true,
@@ -1315,8 +1331,10 @@ class CustomerViewEditModal {
                                                           customer['email'] ??
                                                           '';
                                                       contactController.text =
-                                                          customer['phone_number'] ??
-                                                          '';
+                                                          PhoneFormatter.formatWithSpaces(
+                                                            customer['phone_number'] ??
+                                                                '',
+                                                          );
                                                       birthdateController.text =
                                                           customer['birthdate'] ??
                                                           '';
@@ -1326,8 +1344,10 @@ class CustomerViewEditModal {
                                                           '';
                                                       emergencyPhoneController
                                                               .text =
-                                                          customer['emergency_contact_number'] ??
-                                                          '';
+                                                          PhoneFormatter.formatWithSpaces(
+                                                            customer['emergency_contact_number'] ??
+                                                                '',
+                                                          );
                                                       // Reset password field and display password
                                                       passwordController.text =
                                                           '';
