@@ -1040,7 +1040,7 @@ pw.Widget _buildMembershipTotalsChart(
             ],
           ),
         ),
-        pw.SizedBox(height: 16),
+        pw.SizedBox(height: 60),
         pw.Center(
           child: pw.Text(
             'Total memberships: $total',
