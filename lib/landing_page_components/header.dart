@@ -42,24 +42,23 @@ class BlackHeader extends StatelessWidget {
                 ),
                 const SizedBox(width: 30),
               ],
-              // Home button placed on the left side
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (_) => const LoginChoicePage()),
-                    (route) => false,
-                  );
-                },
-                style: TextButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  padding: EdgeInsets.symmetric(
-                    horizontal: isSmallScreen ? 8 : 12,
-                    vertical: isSmallScreen ? 6 : 8,
-                  ),
-                ),
-                child: const Text(
-                  'Home',
-                  style: TextStyle(fontWeight: FontWeight.w700),
+              // Home icon button placed on the left side
+              Tooltip(
+                message: 'Home',
+                child: IconButton(
+                  onPressed: () {
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(
+                        builder: (_) => const LoginChoicePage(),
+                      ),
+                      (route) => false,
+                    );
+                  },
+                  icon: const Icon(Icons.home_outlined, color: Colors.white),
+                  iconSize: isSmallScreen ? 20 : 30,
+                  padding: EdgeInsets.all(isSmallScreen ? 6 : 8),
+                  splashRadius: isSmallScreen ? 18 : 20,
+                  constraints: const BoxConstraints(),
                 ),
               ),
               const SizedBox(width: 8),
@@ -206,6 +205,7 @@ class BlackHeader extends StatelessWidget {
                   } else {
                     // Show Login button when logged out
                     return Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         const SizedBox(width: 8),
                         // Login Button
@@ -219,7 +219,7 @@ class BlackHeader extends StatelessWidget {
                           isSmallScreen: isSmallScreen,
                           text: 'Login',
                         ),
-                        const SizedBox(width: 12),
+                        SizedBox(width: isSmallScreen ? 8 : 12),
                         // Help icon next to Login
                         Tooltip(
                           message:
@@ -259,7 +259,10 @@ class BlackHeader extends StatelessWidget {
                               Icons.help_outline,
                               color: Colors.white70,
                             ),
-                            splashRadius: 18,
+                            padding: EdgeInsets.all(isSmallScreen ? 6 : 8),
+                            iconSize: isSmallScreen ? 18 : 20,
+                            splashRadius: isSmallScreen ? 18 : 20,
+                            constraints: const BoxConstraints(),
                             onPressed: () {
                               showDialog(
                                 context: context,
