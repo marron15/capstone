@@ -557,6 +557,30 @@ class _StatisticPageState extends State<StatisticPage>
       ['Memberships', 'Monthly', membershipTotals['Monthly'] ?? 0],
     ];
 
+    // Build customer table rows matching on-screen columns
+    final customerTableRows = <List<dynamic>>[
+      [
+        'Customer ID',
+        'Name',
+        'Contact Number',
+        'Membership Type',
+        'Membership Start Date',
+        'Expiration Date',
+      ],
+      ..._getVisibleCustomers().map((c) {
+        final String id = '#${c['customerId'] ?? 'N/A'}';
+        final String name = c['name'] ?? '';
+        final String contact = c['contactNumber'] ?? 'N/A';
+        final String membership = c['membershipType'] ?? '';
+        final String start = _formatExpirationDate(c['startDate'] as DateTime);
+        final String exp = _formatExpirationDate(
+          c['expirationDate'] as DateTime,
+        );
+        final bool isExpired = c['isExpired'] == true;
+        return [id, name, contact, membership, start, exp, isExpired];
+      }),
+    ];
+
     // Fetch weekly memberships data
     Map<String, int> weeklyMemberships = {};
     try {
@@ -587,6 +611,7 @@ class _StatisticPageState extends State<StatisticPage>
       context,
       title: 'Status Change Report',
       rows: rows,
+      customerTableRows: customerTableRows,
       weeklyMemberships: weeklyMemberships,
       monthlyMemberships: monthlyMemberships,
       membershipTotals: membershipTotals,

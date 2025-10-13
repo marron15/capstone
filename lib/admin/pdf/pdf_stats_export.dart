@@ -8,6 +8,7 @@ Future<void> exportStatsToPDF(
   BuildContext context, {
   required String title,
   required List<List<dynamic>> rows,
+  List<List<dynamic>>? customerTableRows,
   Map<String, int>? weeklyMemberships,
   Map<String, int>? monthlyMemberships,
   Map<String, int>? membershipTotals,
@@ -66,6 +67,52 @@ Future<void> exportStatsToPDF(
         },
       ),
     );
+
+    // Optional: Page 2 containing Customer Table if provided
+    if (customerTableRows != null && customerTableRows.isNotEmpty) {
+      pdf.addPage(
+        pw.MultiPage(
+          pageFormat: PdfPageFormat.a4.landscape,
+          margin: const pw.EdgeInsets.all(24),
+          build: (pw.Context context) {
+            return [
+              pw.Container(
+                width: double.infinity,
+                padding: const pw.EdgeInsets.only(bottom: 16),
+                decoration: const pw.BoxDecoration(
+                  border: pw.Border(
+                    bottom: pw.BorderSide(color: PdfColors.grey300, width: 1),
+                  ),
+                ),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text(
+                      'Customers',
+                      style: pw.TextStyle(
+                        fontSize: 22,
+                        fontWeight: pw.FontWeight.bold,
+                        color: PdfColors.blue800,
+                      ),
+                    ),
+                    pw.SizedBox(height: 6),
+                    pw.Text(
+                      'Generated on: ${DateTime.now().toString().split(' ')[0]}',
+                      style: pw.TextStyle(
+                        fontSize: 11,
+                        color: PdfColors.grey600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              pw.SizedBox(height: 16),
+              _buildCustomerTable(customerTableRows),
+            ];
+          },
+        ),
+      );
+    }
 
     // Page 2: Weekly Memberships Chart
     if (weeklyMemberships != null) {
@@ -240,6 +287,86 @@ Future<void> exportStatsToPDF(
       context,
     ).showSnackBar(SnackBar(content: Text('Export failed: $e')));
   }
+}
+
+pw.Widget _buildCustomerTable(List<List<dynamic>> rows) {
+  // Expect rows[0] as headers, remaining as data
+  final headers = rows.first.map((c) => c.toString()).toList();
+  final dataRows = rows.skip(1).toList();
+
+  return pw.Container(
+    width: double.infinity,
+    child: pw.Table(
+      border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
+      columnWidths: const {
+        0: pw.FlexColumnWidth(1.6), // Customer ID
+        1: pw.FlexColumnWidth(2.4), // Name
+        2: pw.FlexColumnWidth(2.2), // Contact
+        3: pw.FlexColumnWidth(1.8), // Membership
+        4: pw.FlexColumnWidth(2.0), // Start
+        5: pw.FlexColumnWidth(2.0), // Expiration
+      },
+      children: [
+        pw.TableRow(
+          decoration: const pw.BoxDecoration(color: PdfColors.grey200),
+          children:
+              headers
+                  .map(
+                    (h) => pw.Padding(
+                      padding: const pw.EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 10,
+                      ),
+                      child: pw.Text(
+                        h,
+                        style: pw.TextStyle(
+                          fontWeight: pw.FontWeight.bold,
+                          fontSize: 11,
+                          color: PdfColors.blue800,
+                        ),
+                        textAlign: pw.TextAlign.center,
+                      ),
+                    ),
+                  )
+                  .toList(),
+        ),
+        ...dataRows.map((row) {
+          final membership = row[3].toString();
+          final isExpired = row.length > 6 && row[6] == true;
+          return pw.TableRow(
+            decoration:
+                isExpired
+                    ? const pw.BoxDecoration(color: PdfColors.red50)
+                    : const pw.BoxDecoration(),
+            children: [
+              for (int i = 0; i < 6; i++)
+                pw.Padding(
+                  padding: const pw.EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 8,
+                  ),
+                  child: pw.Text(
+                    row[i].toString(),
+                    style: pw.TextStyle(
+                      fontSize: 10,
+                      color:
+                          i == 3
+                              ? _getStatusColor(membership)
+                              : (i == 5 && isExpired
+                                  ? PdfColors.red
+                                  : PdfColors.black),
+                      fontWeight:
+                          i == 0 ? pw.FontWeight.bold : pw.FontWeight.normal,
+                    ),
+                    textAlign: pw.TextAlign.center,
+                  ),
+                ),
+            ],
+          );
+        }),
+      ],
+    ),
+  );
 }
 
 pw.Widget _buildDataTable(List<List<dynamic>> rows) {
