@@ -15,7 +15,7 @@ import '../services/unified_auth_state.dart';
 
 import 'footer.dart';
 
-import '../modals/membership_alert.dart';
+import '../modals_customer/membership_alert.dart';
 
 class LandingPage extends StatefulWidget {
   const LandingPage({Key? key}) : super(key: key);
