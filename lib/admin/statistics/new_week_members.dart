@@ -17,7 +17,6 @@ class _NewMembersBarGraphState extends State<NewMembersBarGraph> {
     _BarData('Thu', 0),
     _BarData('Fri', 0),
     _BarData('Sat', 0),
-    _BarData('Sun', 0),
   ];
 
   @override
@@ -36,7 +35,6 @@ class _NewMembersBarGraphState extends State<NewMembersBarGraph> {
         _BarData('Thu', res['Thursday'] ?? 0),
         _BarData('Fri', res['Friday'] ?? 0),
         _BarData('Sat', res['Saturday'] ?? 0),
-        _BarData('Sun', res['Sunday'] ?? 0),
       ];
     });
   }

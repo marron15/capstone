@@ -589,12 +589,18 @@ pw.Widget _buildWeeklyMembershipsChart(Map<String, int> weeklyData) {
     'Thursday',
     'Friday',
     'Saturday',
-    'Sunday',
   ];
-  final dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  final dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-  // Calculate max value for scaling (use 50 as max like dashboard)
-  final maxValue = 50;
+  // Calculate dynamic max value for scaling based on total new memberships
+  final int totalForWeek = weeklyData.values.fold(0, (sum, v) => sum + v);
+  int _roundUpToNearestTen(int v) {
+    if (v <= 0) return 10;
+    final int rem = v % 10;
+    return rem == 0 ? v : v + (10 - rem);
+  }
+
+  final int maxValue = _roundUpToNearestTen(totalForWeek);
 
   // Format week range like in home.dart
   String _formatWeekRange(DateTime date) {
@@ -620,6 +626,11 @@ pw.Widget _buildWeeklyMembershipsChart(Map<String, int> weeklyData) {
   }
 
   final String subtitle = _formatWeekRange(DateTime.now());
+  final List<int> valuesInOrder = days.map((d) => weeklyData[d] ?? 0).toList();
+  const double _yAxisWidth = 30; // Keep in sync with Y-axis container width
+  const double _yAxisGap =
+      8; // Keep in sync with SizedBox between axis and chart
+  const double _chartHeight = 260; // Match container height for exact scaling
 
   return pw.Container(
     width: double.infinity,
@@ -649,18 +660,19 @@ pw.Widget _buildWeeklyMembershipsChart(Map<String, int> weeklyData) {
 
         // Chart with Y-axis and grid lines
         pw.Container(
-          height: 260,
+          height: _chartHeight,
           child: pw.Row(
             crossAxisAlignment: pw.CrossAxisAlignment.end,
             children: [
               // Y-axis labels
               pw.Container(
-                width: 30,
+                width: _yAxisWidth,
                 child: pw.Column(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: pw.CrossAxisAlignment.end,
                   children: List.generate(6, (index) {
-                    final value = (5 - index) * 10;
+                    final double step = maxValue / 5;
+                    final int value = ((5 - index) * step).round();
                     return pw.Text(
                       value.toString(),
                       style: const pw.TextStyle(fontSize: 10),
@@ -668,26 +680,25 @@ pw.Widget _buildWeeklyMembershipsChart(Map<String, int> weeklyData) {
                   }),
                 ),
               ),
-              pw.SizedBox(width: 8),
+              pw.SizedBox(width: _yAxisGap),
 
               // Chart area
               pw.Expanded(
                 child: pw.Stack(
                   children: [
-                    // Grid lines
-                    pw.Positioned.fill(
-                      child: pw.Column(
-                        children: List.generate(6, (index) {
-                          return pw.Container(
-                            height: 1,
-                            color: PdfColors.grey300,
-                            margin: pw.EdgeInsets.only(
-                              bottom: index == 5 ? 0 : 48,
-                            ),
-                          );
-                        }),
-                      ),
-                    ),
+                    // Grid lines precisely aligned to 0..maxValue (5 intervals)
+                    ...List.generate(6, (i) {
+                      final double bottom = i * (_chartHeight / 5);
+                      return pw.Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: bottom,
+                        child: pw.Container(
+                          height: 1,
+                          color: PdfColors.grey300,
+                        ),
+                      );
+                    }),
 
                     // Bars
                     pw.Row(
@@ -695,36 +706,20 @@ pw.Widget _buildWeeklyMembershipsChart(Map<String, int> weeklyData) {
                       crossAxisAlignment: pw.CrossAxisAlignment.end,
                       children:
                           days.asMap().entries.map((entry) {
-                            final index = entry.key;
-                            final day = entry.value;
-                            final value = weeklyData[day] ?? 0;
-                            final height =
-                                (value / maxValue) * 240; // 240px max height
+                            final String day = entry.value;
+                            final int value = weeklyData[day] ?? 0;
+                            final double scaled =
+                                (value / maxValue) * _chartHeight;
+                            // Scale purely by value so 3 looks between 2 and 4
+                            final double height = value > 0 ? scaled : 0;
 
-                            return pw.Column(
-                              mainAxisSize: pw.MainAxisSize.min,
-                              children: [
-                                pw.Container(
-                                  width: 30,
-                                  height: height,
-                                  decoration: pw.BoxDecoration(
-                                    color: PdfColors.blue400,
-                                    borderRadius: pw.BorderRadius.circular(2),
-                                  ),
-                                ),
-                                pw.SizedBox(height: 8),
-                                pw.Text(
-                                  dayLabels[index],
-                                  style: const pw.TextStyle(fontSize: 10),
-                                ),
-                                pw.Text(
-                                  value.toString(),
-                                  style: pw.TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: pw.FontWeight.bold,
-                                  ),
-                                ),
-                              ],
+                            return pw.Container(
+                              width: 30,
+                              height: height,
+                              decoration: pw.BoxDecoration(
+                                color: PdfColors.blue400,
+                                borderRadius: pw.BorderRadius.circular(2),
+                              ),
                             );
                           }).toList(),
                     ),
@@ -732,6 +727,35 @@ pw.Widget _buildWeeklyMembershipsChart(Map<String, int> weeklyData) {
                 ),
               ),
             ],
+          ),
+        ),
+        // Day labels and values below the 0 baseline
+        pw.SizedBox(height: 8),
+        pw.Padding(
+          padding: const pw.EdgeInsets.only(left: _yAxisWidth + _yAxisGap),
+          child: pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceEvenly,
+            children: List.generate(days.length, (i) {
+              return pw.SizedBox(
+                width: 30,
+                child: pw.Column(
+                  mainAxisSize: pw.MainAxisSize.min,
+                  children: [
+                    pw.Text(
+                      dayLabels[i],
+                      style: const pw.TextStyle(fontSize: 10),
+                    ),
+                    pw.Text(
+                      valuesInOrder[i].toString(),
+                      style: pw.TextStyle(
+                        fontSize: 10,
+                        fontWeight: pw.FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
           ),
         ),
       ],
