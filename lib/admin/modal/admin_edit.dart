@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:capstone/PH phone number valid/phone_formatter.dart';
+import 'package:capstone/PH phone number valid/phone_validator.dart';
 import 'dart:ui';
 import '../services/admin_service.dart';
 
@@ -35,6 +37,11 @@ class AdminEditModal {
     DateTime? selectedDate;
     bool isLoading = false;
 
+    // Prefill with spaced format and use shared input formatter
+    contactNumberController.text = PhoneFormatter.formatWithSpaces(
+      contactNumberController.text,
+    );
+
     // Function to pick date
     Future<void> pickDate(StateSetter setModalState) async {
       final DateTime? picked = await showDatePicker(
@@ -66,37 +73,33 @@ class AdminEditModal {
     }
 
     // Validate the form fields
-    String? editValidationError;
+    String? phoneError;
+
     bool validateForm() {
+      phoneError = null;
       if (firstNameController.text.trim().isEmpty ||
           lastNameController.text.trim().isEmpty ||
-          emailController.text.trim().isEmpty ||
-          contactNumberController.text.trim().isEmpty ||
-          dateOfBirthController.text.isEmpty) {
-        editValidationError = 'Please fill all required fields correctly';
+          contactNumberController.text.trim().isEmpty) {
+        if (contactNumberController.text.trim().isEmpty) {
+          phoneError = 'Contact number is required';
+        }
         return false;
       }
 
-      // Email validation
-      final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-      if (!emailRegex.hasMatch(emailController.text.trim())) {
-        editValidationError = 'Please enter a valid email address';
-        return false;
+      // Email validation (optional)
+      if (emailController.text.trim().isNotEmpty) {
+        final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+        if (!emailRegex.hasMatch(emailController.text.trim())) {
+          return false;
+        }
       }
 
-      // Phone number must be exactly 11 digits (numbers only)
-      final String editPhone = contactNumberController.text.trim();
-      if (!RegExp(r'^\d+$').hasMatch(editPhone)) {
-        editValidationError = 'Contact number must contain digits only';
-        return false;
-      }
-      if (editPhone.length > 11) {
-        editValidationError =
-            'Contact number exceeded (${editPhone.length}) digits. Use 11 digits only.';
-        return false;
-      }
-      if (editPhone.length < 11) {
-        editValidationError = 'Contact number must be exactly 11 digits';
+      // Validate PH mobile using shared validator
+      final String input = contactNumberController.text.trim();
+      final bool isValid = PhoneValidator.isValidPhilippineMobile(input);
+      if (!isValid) {
+        phoneError =
+            'Enter a valid PH mobile number (09XXXXXXXXX or +639XXXXXXXXX)';
         return false;
       }
 
@@ -106,12 +109,7 @@ class AdminEditModal {
     // Handle admin update
     Future<void> handleAdminUpdate(StateSetter setModalState) async {
       if (!validateForm()) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(editValidationError ?? 'Invalid input'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        setModalState(() {});
         return;
       }
 
@@ -137,7 +135,9 @@ class AdminEditModal {
           'lastName': lastNameController.text.trim(),
           'dateOfBirth': formattedDate,
           'emailAddress': emailController.text.trim(),
-          'phoneNumber': contactNumberController.text.trim(),
+          'phoneNumber': PhoneFormatter.cleanPhoneNumber(
+            contactNumberController.text,
+          ),
           'updatedBy': 'system',
           'updatedAt': DateTime.now().toIso8601String(),
         };
@@ -228,6 +228,14 @@ class AdminEditModal {
             readOnly: isReadOnly,
             onTap: onTap,
             style: const TextStyle(color: Colors.white),
+            keyboardType:
+                identical(controller, contactNumberController)
+                    ? TextInputType.number
+                    : null,
+            inputFormatters:
+                identical(controller, contactNumberController)
+                    ? [PhoneFormatter.phoneNumberFormatter]
+                    : null,
             decoration: InputDecoration(
               filled: true,
               fillColor: Colors.black.withAlpha((0.3 * 255).toInt()),
@@ -440,9 +448,32 @@ class AdminEditModal {
                                             ),
                                           ),
                                           sized(
-                                            buildFormField(
-                                              "Contact Number:",
-                                              contactNumberController,
+                                            Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                buildFormField(
+                                                  "Contact Number:",
+                                                  contactNumberController,
+                                                ),
+                                                if (phoneError != null)
+                                                  Padding(
+                                                    padding:
+                                                        const EdgeInsets.only(
+                                                          top: 6,
+                                                          left: 4,
+                                                        ),
+                                                    child: Text(
+                                                      phoneError!,
+                                                      style: const TextStyle(
+                                                        color: Colors.redAccent,
+                                                        fontSize: 12,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                      ),
+                                                    ),
+                                                  ),
+                                              ],
                                             ),
                                           ),
                                         ],

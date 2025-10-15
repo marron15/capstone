@@ -37,6 +37,21 @@ class AdminProfileTable extends StatelessWidget {
     }
   }
 
+  String _formatPhoneDisplay(String input) {
+    final String digits = input.replaceAll(RegExp(r'\D'), '');
+    if (digits.isEmpty) return 'N/A';
+    final String part1 = digits.substring(0, digits.length.clamp(0, 4));
+    final String part2 =
+        digits.length > 4 ? digits.substring(4, digits.length.clamp(4, 7)) : '';
+    final String part3 =
+        digits.length > 7
+            ? digits.substring(7, digits.length.clamp(7, 11))
+            : '';
+    final List<String> parts =
+        [part1, part2, part3].where((p) => p.isNotEmpty).toList();
+    return parts.join(' ');
+  }
+
   // Mobile table row (stacked layout)
   Widget _buildMobileTableRow(BuildContext context) {
     return Container(
@@ -111,7 +126,10 @@ class AdminProfileTable extends StatelessWidget {
                   flex: 1,
                   child: _buildInfoCard(
                     'Contact',
-                    admin['phone_number'] ?? admin['contactNumber'] ?? 'N/A',
+                    _formatPhoneDisplay(
+                      (admin['phone_number'] ?? admin['contactNumber'] ?? '')
+                          .toString(),
+                    ),
                     Icons.phone_outlined,
                     Colors.green,
                   ),
@@ -232,17 +250,20 @@ class AdminProfileTable extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: _buildPhoneNumberButton(
-                  admin['phone_number'] ?? admin['contactNumber'] ?? 'N/A',
+                  _formatPhoneDisplay(
+                    (admin['phone_number'] ?? admin['contactNumber'] ?? '')
+                        .toString(),
+                  ),
                 ),
               ),
             ),
-            // Date of Birth column
+            // Email column
             Expanded(
               flex: 1,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: Text(
-                  admin['date_of_birth'] ?? admin['dateOfBirth'] ?? 'N/A',
+                  admin['email_address'] ?? admin['email'] ?? 'N/A',
                   style: const TextStyle(fontSize: 16, color: Colors.black87),
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,

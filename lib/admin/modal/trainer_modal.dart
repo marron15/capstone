@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:capstone/PH phone number valid/phone_formatter.dart';
+import 'package:capstone/PH phone number valid/phone_validator.dart';
 import 'dart:ui';
 
 class TrainerModal {
@@ -203,24 +204,20 @@ class TrainerModal {
                                             'Contact Number',
                                           ),
                                           inputFormatters: [
-                                            FilteringTextInputFormatter
-                                                .digitsOnly,
-                                            LengthLimitingTextInputFormatter(
-                                              11,
-                                            ),
+                                            PhoneFormatter.phoneNumberFormatter,
                                           ],
                                           keyboardType: TextInputType.number,
                                           validator: (value) {
                                             final String v =
                                                 (value ?? '').trim();
-                                            if (v.isEmpty)
+                                            if (v.isEmpty) {
                                               return 'Please enter contact number';
-                                            final bool isValid = RegExp(
-                                              r'^\d{11}$',
-                                            ).hasMatch(v);
-                                            return isValid
+                                            }
+                                            return PhoneValidator.isValidPhilippineMobile(
+                                                  v,
+                                                )
                                                 ? null
-                                                : 'Contact number must be exactly 11 digits';
+                                                : 'Enter a valid PH mobile number';
                                           },
                                         ),
                                       ),
@@ -258,7 +255,9 @@ class TrainerModal {
                                               middleNameController.text,
                                           'lastName': lastNameController.text,
                                           'contactNumber':
-                                              contactNumberController.text,
+                                              PhoneFormatter.cleanPhoneNumber(
+                                                contactNumberController.text,
+                                              ),
                                         });
                                         Navigator.of(context).pop();
                                       }
@@ -308,7 +307,7 @@ class TrainerModal {
       text: trainer['lastName'],
     );
     final TextEditingController contactNumberController = TextEditingController(
-      text: trainer['contactNumber'],
+      text: PhoneFormatter.formatWithSpaces(trainer['contactNumber'] ?? ''),
     );
     final formKey = GlobalKey<FormState>();
 
@@ -453,20 +452,19 @@ class TrainerModal {
                                 style: const TextStyle(color: Colors.white),
                                 decoration: _inputDecoration('Contact Number'),
                                 inputFormatters: [
-                                  FilteringTextInputFormatter.digitsOnly,
-                                  LengthLimitingTextInputFormatter(11),
+                                  PhoneFormatter.phoneNumberFormatter,
                                 ],
                                 keyboardType: TextInputType.number,
                                 validator: (value) {
                                   final String v = (value ?? '').trim();
-                                  if (v.isEmpty)
+                                  if (v.isEmpty) {
                                     return 'Please enter contact number';
-                                  final bool isValid = RegExp(
-                                    r'^\d{11}$',
-                                  ).hasMatch(v);
-                                  return isValid
+                                  }
+                                  return PhoneValidator.isValidPhilippineMobile(
+                                        v,
+                                      )
                                       ? null
-                                      : 'Contact number must be exactly 11 digits';
+                                      : 'Enter a valid PH mobile number';
                                 },
                               ),
                               const SizedBox(height: 24),
@@ -499,7 +497,9 @@ class TrainerModal {
                                               middleNameController.text,
                                           'lastName': lastNameController.text,
                                           'contactNumber':
-                                              contactNumberController.text,
+                                              PhoneFormatter.cleanPhoneNumber(
+                                                contactNumberController.text,
+                                              ),
                                         });
                                         Navigator.of(context).pop();
                                       }

@@ -219,8 +219,8 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                 (admin['phone_number'] ?? admin['contactNumber'] ?? '')
                     .toString()
                     .toLowerCase();
-            final dateOfBirth =
-                (admin['date_of_birth'] ?? admin['dateOfBirth'] ?? '')
+            final email =
+                (admin['email_address'] ?? admin['email'] ?? '')
                     .toString()
                     .toLowerCase();
 
@@ -228,7 +228,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                 middleName.contains(query) ||
                 lastName.contains(query) ||
                 phone.contains(query) ||
-                dateOfBirth.contains(query);
+                email.contains(query);
           }).toList();
     }
   }
@@ -325,7 +325,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                     child: Text(
-                      'Date of Birth',
+                      'Email',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,

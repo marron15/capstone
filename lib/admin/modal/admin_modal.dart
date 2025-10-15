@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'package:flutter/services.dart';
+import 'package:capstone/PH phone number valid/phone_formatter.dart';
+import 'package:capstone/PH phone number valid/phone_validator.dart';
 import '../services/admin_service.dart';
 import 'admin_edit.dart';
 
@@ -17,10 +19,15 @@ class AdminModal {
     final TextEditingController contactNumberController =
         TextEditingController();
     final TextEditingController passwordController = TextEditingController();
+    final TextEditingController emailController = TextEditingController();
     final TextEditingController dateOfBirthController = TextEditingController();
 
     DateTime? selectedDate;
     bool isLoading = false;
+
+    // Use shared phone formatter for live spacing
+    final TextInputFormatter _phPhoneFormatter =
+        PhoneFormatter.phoneNumberFormatter;
 
     // Function to pick date
     Future<void> pickDate(StateSetter setModalState) async {
@@ -54,6 +61,7 @@ class AdminModal {
 
     // Validate the form fields
     String? validationError;
+
     bool validateForm() {
       // Basic validation - check for empty fields
       if (firstNameController.text.trim().isEmpty ||
@@ -70,19 +78,12 @@ class AdminModal {
         return false;
       }
 
-      // Phone number must be exactly 11 digits (numbers only)
-      final String phone = contactNumberController.text.trim();
-      if (!RegExp(r'^\d+$').hasMatch(phone)) {
-        validationError = 'Contact number must contain digits only';
-        return false;
-      }
-      if (phone.length > 11) {
+      // Validate using shared validator (accepts spaces)
+      if (!PhoneValidator.isValidPhilippineMobile(
+        contactNumberController.text,
+      )) {
         validationError =
-            'Contact number exceeded (${phone.length}) digits. Use 11 digits only.';
-        return false;
-      }
-      if (phone.length < 11) {
-        validationError = 'Contact number must be exactly 11 digits';
+            'Enter a valid PH mobile number (09XXXXXXXXX or +639XXXXXXXXX)';
         return false;
       }
 
@@ -122,7 +123,13 @@ class AdminModal {
           lastName: lastNameController.text.trim(),
           password: passwordController.text,
           dateOfBirth: formattedDate,
-          phoneNumber: contactNumberController.text.trim(),
+          phoneNumber: PhoneFormatter.cleanPhoneNumber(
+            contactNumberController.text,
+          ),
+          emailAddress:
+              emailController.text.trim().isEmpty
+                  ? null
+                  : emailController.text.trim(),
         );
 
         // Use setModalState to safely update UI after async operation
@@ -198,10 +205,7 @@ class AdminModal {
                     : null,
             inputFormatters:
                 identical(controller, contactNumberController)
-                    ? [
-                      FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(11),
-                    ]
+                    ? [_phPhoneFormatter]
                     : null,
             decoration: InputDecoration(
               filled: true,
@@ -412,6 +416,12 @@ class AdminModal {
                                             buildFormField(
                                               "Contact Number:",
                                               contactNumberController,
+                                            ),
+                                          ),
+                                          sized(
+                                            buildFormField(
+                                              "Email:",
+                                              emailController,
                                             ),
                                           ),
                                         ],

@@ -20,6 +20,7 @@ class AdminService {
     required String password,
     String? dateOfBirth,
     String? phoneNumber,
+    String? emailAddress,
   }) async {
     try {
       // Convert date format if provided
@@ -49,6 +50,9 @@ class AdminService {
       requestBody['date_of_birth'] = formattedDate;
       if (phoneNumber != null && phoneNumber.isNotEmpty) {
         requestBody['phone_number'] = phoneNumber;
+      }
+      if (emailAddress != null && emailAddress.isNotEmpty) {
+        requestBody['email_address'] = emailAddress;
       }
 
       // Creating admin account
@@ -227,6 +231,7 @@ class AdminService {
         'last_name': data['lastName'] ?? data['last_name'],
         'date_of_birth': data['dateOfBirth'] ?? data['date_of_birth'],
         'phone_number': data['phoneNumber'] ?? data['phone_number'],
+        'email_address': data['emailAddress'] ?? data['email_address'],
         'updated_by': data['updatedBy'] ?? 'system',
         'updated_at': data['updatedAt'] ?? DateTime.now().toIso8601String(),
       };

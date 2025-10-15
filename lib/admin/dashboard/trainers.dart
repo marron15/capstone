@@ -3,6 +3,8 @@ import '../sidenav.dart';
 import '../modal/trainer_modal.dart';
 import '../services/api_service.dart';
 import '../excel/excel_trainer_export.dart';
+import 'package:capstone/PH phone number valid/phone_formatter.dart';
+import 'package:capstone/PH phone number valid/phone_validator.dart';
 
 class TrainersPage extends StatefulWidget {
   const TrainersPage({super.key});
@@ -104,13 +106,14 @@ class _TrainersPageState extends State<TrainersPage> {
     final String contactNumber = trainer['contactNumber'] ?? '';
     final String middleName = trainer['middleName'] ?? '';
 
-    final bool isContactValid = RegExp(r'^\d{11}$').hasMatch(contactNumber);
+    // Validate using shared PH validator (handles spaces)
+    final bool isContactValid = PhoneValidator.isValidPhilippineMobile(
+      contactNumber,
+    );
     if (firstName.isEmpty || lastName.isEmpty || !isContactValid) {
       if (mounted && !isContactValid) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Contact number must be exactly 11 digits'),
-          ),
+          const SnackBar(content: Text('Enter a valid PH mobile number')),
         );
       }
       return;
@@ -121,7 +124,7 @@ class _TrainersPageState extends State<TrainersPage> {
       firstName: firstName,
       middleName: middleName.isEmpty ? null : middleName,
       lastName: lastName,
-      contactNumber: contactNumber,
+      contactNumber: PhoneFormatter.cleanPhoneNumber(contactNumber),
     );
     if (mounted) {
       if (ok) {
@@ -690,8 +693,10 @@ class _TrainersPageState extends State<TrainersPage> {
                                                             height: 2,
                                                           ),
                                                           Text(
-                                                            trainer['contactNumber'] ??
-                                                                'N/A',
+                                                            PhoneFormatter.formatWithSpaces(
+                                                              trainer['contactNumber'] ??
+                                                                  '',
+                                                            ),
                                                             style: const TextStyle(
                                                               fontSize: 13,
                                                               color:
@@ -1101,8 +1106,10 @@ class _TrainersPageState extends State<TrainersPage> {
                                                             horizontal: 8,
                                                           ),
                                                       child: _buildPhoneNumberButton(
-                                                        trainer['contactNumber'] ??
-                                                            'N/A',
+                                                        PhoneFormatter.formatWithSpaces(
+                                                          trainer['contactNumber'] ??
+                                                              '',
+                                                        ),
                                                       ),
                                                     ),
                                                   ),
