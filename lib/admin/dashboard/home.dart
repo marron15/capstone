@@ -7,6 +7,7 @@ import '../services/refresh_service.dart';
 import '../statistics/new_week_members.dart';
 import '../statistics/new_members_month.dart';
 import '../statistics/total_memberships.dart';
+import '../statistics/new_members_today.dart';
 import '../../PH phone number valid/phone_formatter.dart';
 
 class StatisticPage extends StatefulWidget {
@@ -41,6 +42,7 @@ class _StatisticPageState extends State<StatisticPage>
     setState(() {
       _kpiPeriodFilter = period;
       _syncPeriodSelection();
+      if (period == 'Daily') _startsView = 'Day';
       if (period == 'This Week') _startsView = 'Week';
       if (period == 'This Month') _startsView = 'Month';
     });
@@ -271,11 +273,39 @@ class _StatisticPageState extends State<StatisticPage>
       trainersAddedWeek = _countAdded(trainers, nowTs, 'Week');
       trainersAddedMonth = _countAdded(trainers, nowTs, 'Month');
 
+      // Customers: count by membership start_date instead of created_at
+      // to match table and charts logic
+      DateTime? _parseStartDate(Map m) {
+        final dynamic membership = m['membership'];
+        String? raw =
+            (membership is Map ? membership['start_date'] : null)?.toString() ??
+            m['start_date']?.toString() ??
+            m['membership_start_date']?.toString();
+        if (raw == null || raw.isEmpty) return null;
+        return DateTime.tryParse(raw);
+      }
+
+      int _countByStart(Iterable items, DateTime now, String period) {
+        int c = 0;
+        for (final dynamic item in items) {
+          if (item is! Map) continue;
+          final DateTime? dt = _parseStartDate(item);
+          if (dt == null) continue;
+          if (period == 'Day' && _isSameDay(dt, now))
+            c++;
+          else if (period == 'Week' && _isThisWeek(dt, now))
+            c++;
+          else if (period == 'Month' && _isThisMonth(dt, now))
+            c++;
+        }
+        return c;
+      }
+
       // Customers data may be nested inside data arrays
       final Iterable custAll = [...activeCust, ...archivedCust];
-      customersAddedDay = _countAdded(custAll, nowTs, 'Day');
-      customersAddedWeek = _countAdded(custAll, nowTs, 'Week');
-      customersAddedMonth = _countAdded(custAll, nowTs, 'Month');
+      customersAddedDay = _countByStart(custAll, nowTs, 'Day');
+      customersAddedWeek = _countByStart(custAll, nowTs, 'Week');
+      customersAddedMonth = _countByStart(custAll, nowTs, 'Month');
 
       productsAddedDay = _countAdded(
         [...prodActive, ...prodInactive],
@@ -694,7 +724,11 @@ class _StatisticPageState extends State<StatisticPage>
     );
   }
 
-  Future<void> _exportOverallReport(BuildContext context) async {
+  // Export report for a specific period without mutating on-screen filters
+  Future<void> _exportOverallReportForPeriod(
+    BuildContext context,
+    String period,
+  ) async {
     final rows = <List<dynamic>>[
       ['Section', 'Metric', 'Value'],
       ['Products', 'Active', productsActive],
@@ -711,6 +745,34 @@ class _StatisticPageState extends State<StatisticPage>
       ['Memberships', 'Monthly', membershipTotals['Monthly'] ?? 0],
     ];
 
+    // Prepare customers filtered by selected export period (without changing UI state)
+    List<Map<String, dynamic>> customersForExport =
+        _customers
+            .where(
+              (c) =>
+                  (c['status'] ?? 'active').toString().toLowerCase() ==
+                  'active',
+            )
+            .toList();
+
+    DateTime now = DateTime.now();
+    if (period == 'Daily') {
+      customersForExport =
+          customersForExport
+              .where((c) => _isSameDay(c['startDate'] as DateTime, now))
+              .toList();
+    } else if (period == 'This Week') {
+      customersForExport =
+          customersForExport
+              .where((c) => _isThisWeek(c['startDate'] as DateTime, now))
+              .toList();
+    } else if (period == 'This Month') {
+      customersForExport =
+          customersForExport
+              .where((c) => _isThisMonth(c['startDate'] as DateTime, now))
+              .toList();
+    }
+
     // Build customer table rows matching on-screen columns
     final customerTableRows = <List<dynamic>>[
       [
@@ -721,7 +783,7 @@ class _StatisticPageState extends State<StatisticPage>
         'Membership Start Date',
         'Expiration Date',
       ],
-      ..._getVisibleCustomers().map((c) {
+      ...customersForExport.map((c) {
         final String id = '#${c['customerId'] ?? 'N/A'}';
         final String name = c['name'] ?? '';
         final String contact = c['contactNumber'] ?? 'N/A';
@@ -735,42 +797,142 @@ class _StatisticPageState extends State<StatisticPage>
       }),
     ];
 
-    // Fetch weekly memberships data
-    Map<String, int> weeklyMemberships = {};
-    try {
-      weeklyMemberships = await ApiService.getNewMembersThisWeek();
-    } catch (e) {
-      // If weekly data fails, continue with empty data
-      weeklyMemberships = {
-        'Monday': 0,
-        'Tuesday': 0,
-        'Wednesday': 0,
-        'Thursday': 0,
-        'Friday': 0,
-        'Saturday': 0,
-        'Sunday': 0,
+    // Prepare Today memberships data for Daily
+    Map<String, int>? todayMemberships;
+    if (period == 'Daily') {
+      final DateTime now = DateTime.now();
+      int daily = 0, halfMonth = 0, monthly = 0, expired = 0;
+      for (final c in customersForExport) {
+        final DateTime start = c['startDate'] as DateTime;
+        if (_isSameDay(start, now)) {
+          final String type = (c['membershipType'] ?? '').toString();
+          if (type == 'Daily')
+            daily++;
+          else if (type == 'Half Month')
+            halfMonth++;
+          else
+            monthly++;
+          if (c['isExpired'] == true) expired++;
+        }
+      }
+      todayMemberships = {
+        'Daily': daily,
+        'Half Month': halfMonth,
+        'Monthly': monthly,
+        'Expired': expired,
       };
     }
 
-    // Fetch monthly memberships data
-    Map<String, int> monthlyMemberships = {};
-    try {
-      monthlyMemberships = await ApiService.getNewMembersThisMonth();
-    } catch (e) {
-      // If monthly data fails, continue with empty data
-      monthlyMemberships = {'1': 0, '2': 0, '3': 0, '4': 0};
+    // Decide which charts to include based on selected period
+    Map<String, int>? weeklyMemberships;
+    Map<String, int>? monthlyMemberships;
+    if (period == 'This Week') {
+      try {
+        weeklyMemberships = await ApiService.getNewMembersThisWeek();
+      } catch (e) {
+        weeklyMemberships = {
+          'Monday': 0,
+          'Tuesday': 0,
+          'Wednesday': 0,
+          'Thursday': 0,
+          'Friday': 0,
+          'Saturday': 0,
+          'Sunday': 0,
+        };
+      }
+    } else if (period == 'This Month') {
+      try {
+        monthlyMemberships = await ApiService.getNewMembersThisMonth();
+      } catch (e) {
+        monthlyMemberships = {'1': 0, '2': 0, '3': 0, '4': 0};
+      }
     }
 
     await exportStatsToPDF(
       context,
-      title: 'Status Change Report',
+      title: 'Status Change Report ($period)',
       rows: rows,
       customerTableRows: customerTableRows,
+      todayMemberships: todayMemberships,
       weeklyMemberships: weeklyMemberships,
       monthlyMemberships: monthlyMemberships,
       membershipTotals: membershipTotals,
       expiredMemberships: customersExpired,
     );
+  }
+
+  Future<void> _promptExportPeriod(BuildContext context) async {
+    final String initial = _kpiPeriodFilter; // remember current UI selection
+    String selected = initial;
+
+    final String? confirmed = await showDialog<String>(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setLocalState) {
+            return AlertDialog(
+              title: const Text('Select export period'),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    RadioListTile<String>(
+                      value: 'Daily',
+                      groupValue: selected,
+                      onChanged: (v) => setLocalState(() => selected = v!),
+                      title: const Text('Daily'),
+                      secondary: const Icon(Icons.today_rounded),
+                      dense: true,
+                    ),
+                    RadioListTile<String>(
+                      value: 'This Week',
+                      groupValue: selected,
+                      onChanged: (v) => setLocalState(() => selected = v!),
+                      title: const Text('This Week'),
+                      secondary: const Icon(Icons.calendar_view_week_rounded),
+                      dense: true,
+                    ),
+                    RadioListTile<String>(
+                      value: 'This Month',
+                      groupValue: selected,
+                      onChanged: (v) => setLocalState(() => selected = v!),
+                      title: const Text('This Month'),
+                      secondary: const Icon(Icons.calendar_month_rounded),
+                      dense: true,
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(null),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton.icon(
+                  onPressed: () => Navigator.of(ctx).pop(selected),
+                  icon: const Icon(Icons.picture_as_pdf, size: 18),
+                  label: const Text('Export'),
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    backgroundColor: Colors.black87,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (confirmed == null) return; // cancelled
+    await _exportOverallReportForPeriod(context, confirmed);
   }
 
   Widget _buildCustomerTable() {
@@ -1090,7 +1252,7 @@ class _StatisticPageState extends State<StatisticPage>
                           ),
                           const Spacer(),
                           ElevatedButton.icon(
-                            onPressed: () => _exportOverallReport(context),
+                            onPressed: () => _promptExportPeriod(context),
                             icon: Icon(
                               Icons.picture_as_pdf,
                               color: Colors.red.shade700,
@@ -1311,10 +1473,13 @@ class _StatisticPageState extends State<StatisticPage>
                                                       Row(
                                                         children: [
                                                           Text(
-                                                            _startsView ==
-                                                                    'Week'
-                                                                ? 'New Memberships this Week'
-                                                                : 'New Memberships this Month',
+                                                            _kpiPeriodFilter ==
+                                                                    'Daily'
+                                                                ? 'New Memberships Today'
+                                                                : (_startsView ==
+                                                                        'Week'
+                                                                    ? 'New Memberships this Week'
+                                                                    : 'New Memberships this Month'),
                                                             style:
                                                                 const TextStyle(
                                                                   fontSize: 18,
@@ -1330,11 +1495,56 @@ class _StatisticPageState extends State<StatisticPage>
                                                       const SizedBox(height: 8),
                                                       SizedBox(
                                                         height: 260,
-                                                        child:
-                                                            _startsView ==
-                                                                    'Week'
-                                                                ? const NewMembersBarGraph()
-                                                                : const NewMembersMonthBarGraph(),
+                                                        child: () {
+                                                          if (_kpiPeriodFilter ==
+                                                              'Daily') {
+                                                            // Compute today's counts by membership type from loaded customers
+                                                            final DateTime now =
+                                                                DateTime.now();
+                                                            int d = 0,
+                                                                h = 0,
+                                                                m = 0,
+                                                                e = 0;
+                                                            for (final c
+                                                                in _customers) {
+                                                              final DateTime
+                                                              start =
+                                                                  c['startDate']
+                                                                      as DateTime;
+                                                              if (_isSameDay(
+                                                                start,
+                                                                now,
+                                                              )) {
+                                                                final String
+                                                                type =
+                                                                    (c['membershipType'] ??
+                                                                            '')
+                                                                        .toString();
+                                                                if (type ==
+                                                                    'Daily')
+                                                                  d++;
+                                                                else if (type ==
+                                                                    'Half Month')
+                                                                  h++;
+                                                                else
+                                                                  m++;
+                                                                if (c['isExpired'] ==
+                                                                    true)
+                                                                  e++;
+                                                              }
+                                                            }
+                                                            return NewMembersTodayBarGraph(
+                                                              daily: d,
+                                                              halfMonth: h,
+                                                              monthly: m,
+                                                              expired: e,
+                                                            );
+                                                          }
+                                                          return _startsView ==
+                                                                  'Week'
+                                                              ? const NewMembersBarGraph()
+                                                              : const NewMembersMonthBarGraph();
+                                                        }(),
                                                       ),
                                                     ],
                                                   ),

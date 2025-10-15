@@ -9,6 +9,7 @@ Future<void> exportStatsToPDF(
   required String title,
   required List<List<dynamic>> rows,
   List<List<dynamic>>? customerTableRows,
+  Map<String, int>? todayMemberships,
   Map<String, int>? weeklyMemberships,
   Map<String, int>? monthlyMemberships,
   Map<String, int>? membershipTotals,
@@ -108,6 +109,52 @@ Future<void> exportStatsToPDF(
               ),
               pw.SizedBox(height: 16),
               _buildCustomerTable(customerTableRows),
+            ];
+          },
+        ),
+      );
+    }
+
+    // Today Memberships Chart (for Daily)
+    if (todayMemberships != null) {
+      pdf.addPage(
+        pw.MultiPage(
+          pageFormat: PdfPageFormat.a4,
+          margin: const pw.EdgeInsets.all(32),
+          build: (pw.Context context) {
+            return [
+              pw.Container(
+                width: double.infinity,
+                padding: const pw.EdgeInsets.only(bottom: 20),
+                decoration: const pw.BoxDecoration(
+                  border: pw.Border(
+                    bottom: pw.BorderSide(color: PdfColors.grey300, width: 1),
+                  ),
+                ),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text(
+                      'New Memberships Today',
+                      style: pw.TextStyle(
+                        fontSize: 24,
+                        fontWeight: pw.FontWeight.bold,
+                        color: PdfColors.blue800,
+                      ),
+                    ),
+                    pw.SizedBox(height: 8),
+                    pw.Text(
+                      'Generated on: ${DateTime.now().toString().split(' ')[0]}',
+                      style: pw.TextStyle(
+                        fontSize: 12,
+                        color: PdfColors.grey600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              pw.SizedBox(height: 20),
+              _buildTodayMembershipsChart(todayMemberships),
             ];
           },
         ),
@@ -931,6 +978,154 @@ pw.Widget _buildMonthlyMembershipsChart(Map<String, int> monthlyData) {
                         ),
                         pw.Text(
                           value.toString(),
+                          style: pw.TextStyle(
+                            fontSize: 10,
+                            fontWeight: pw.FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+pw.Widget _buildTodayMembershipsChart(Map<String, int> todayData) {
+  final categories = [
+    {
+      'name': 'Daily',
+      'value': todayData['Daily'] ?? 0,
+      'color': PdfColors.orange,
+    },
+    {
+      'name': 'Half Month',
+      'value': todayData['Half Month'] ?? 0,
+      'color': PdfColors.blue,
+    },
+    {
+      'name': 'Monthly',
+      'value': todayData['Monthly'] ?? 0,
+      'color': PdfColors.green,
+    },
+    {
+      'name': 'Expired',
+      'value': todayData['Expired'] ?? 0,
+      'color': PdfColors.red,
+    },
+  ];
+
+  final int total = categories.fold<int>(0, (s, c) => s + (c['value'] as int));
+
+  int _roundUpToNearestTwenty(int v) {
+    if (v <= 0) return 10;
+    final int rem = v % 20;
+    return rem == 0 ? v : v + (20 - rem);
+  }
+
+  final int maxValue = _roundUpToNearestTwenty(total);
+
+  return pw.Container(
+    width: double.infinity,
+    padding: const pw.EdgeInsets.all(16),
+    margin: const pw.EdgeInsets.only(bottom: 20),
+    decoration: pw.BoxDecoration(
+      border: pw.Border.all(color: PdfColors.grey300, width: 0.5),
+      borderRadius: pw.BorderRadius.circular(8),
+    ),
+    child: pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.Text(
+          'New Memberships Today',
+          style: pw.TextStyle(
+            fontSize: 18,
+            fontWeight: pw.FontWeight.bold,
+            color: PdfColors.black,
+          ),
+        ),
+        pw.SizedBox(height: 16),
+        pw.Container(
+          height: 260,
+          child: pw.Row(
+            crossAxisAlignment: pw.CrossAxisAlignment.end,
+            children: [
+              pw.Container(
+                width: 30,
+                child: pw.Column(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: pw.CrossAxisAlignment.end,
+                  children: List.generate(6, (index) {
+                    final double step = maxValue / 5;
+                    final int value = ((5 - index) * step).round();
+                    return pw.Text(
+                      value.toString(),
+                      style: const pw.TextStyle(fontSize: 10),
+                    );
+                  }),
+                ),
+              ),
+              pw.SizedBox(width: 8),
+              pw.Expanded(
+                child: pw.Stack(
+                  children: [
+                    ...List.generate(6, (i) {
+                      final double bottom = i * (240 / 5);
+                      return pw.Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: bottom,
+                        child: pw.Container(
+                          height: 1,
+                          color: PdfColors.grey300,
+                        ),
+                      );
+                    }),
+                    pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceEvenly,
+                      crossAxisAlignment: pw.CrossAxisAlignment.end,
+                      children:
+                          categories.map((c) {
+                            final int v = c['value'] as int;
+                            final double h = (v / maxValue) * 240;
+                            return pw.Container(
+                              width: 40,
+                              height: h,
+                              decoration: pw.BoxDecoration(
+                                color: c['color'] as PdfColor,
+                                borderRadius: pw.BorderRadius.circular(2),
+                              ),
+                            );
+                          }).toList(),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        pw.SizedBox(height: 8),
+        pw.Padding(
+          padding: const pw.EdgeInsets.only(left: 38),
+          child: pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceEvenly,
+            children:
+                categories.map((c) {
+                  return pw.SizedBox(
+                    width: 40,
+                    child: pw.Column(
+                      mainAxisSize: pw.MainAxisSize.min,
+                      children: [
+                        pw.Text(
+                          c['name'] as String,
+                          style: const pw.TextStyle(fontSize: 10),
+                          textAlign: pw.TextAlign.center,
+                        ),
+                        pw.Text(
+                          (c['value'] as int).toString(),
                           style: pw.TextStyle(
                             fontSize: 10,
                             fontWeight: pw.FontWeight.bold,
