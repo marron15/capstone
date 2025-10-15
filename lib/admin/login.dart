@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'services/admin_service.dart';
 import '../services/unified_auth_state.dart';
 
@@ -63,8 +64,12 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     try {
+      final contactDigits = _contactController.text.replaceAll(
+        RegExp(r'\D'),
+        '',
+      );
       final result = await AdminService.loginAdmin(
-        contactNumber: _contactController.text.trim(),
+        contactNumber: contactDigits,
         password: _passwordController.text,
       );
 
@@ -287,6 +292,10 @@ class _LoginPageState extends State<LoginPage> {
 
                                       //PWEDE KO MA PRESS ENTER (Code)
                                       textInputAction: TextInputAction.next,
+                                      keyboardType: TextInputType.number,
+                                      inputFormatters: const [
+                                        _ContactNumberFormatter(),
+                                      ],
                                       onFieldSubmitted:
                                           (_) =>
                                               FocusScope.of(
@@ -294,13 +303,15 @@ class _LoginPageState extends State<LoginPage> {
                                               ).nextFocus(),
 
                                       validator: (value) {
-                                        if (value == null || value.isEmpty) {
+                                        final digits = (value ?? '').replaceAll(
+                                          RegExp(r'\D'),
+                                          '',
+                                        );
+                                        if (digits.isEmpty) {
                                           return 'Please enter your contact number';
                                         }
                                         final onlyDigits = RegExp(r'^\d{11}$');
-                                        if (!onlyDigits.hasMatch(
-                                          value.trim(),
-                                        )) {
+                                        if (!onlyDigits.hasMatch(digits)) {
                                           return 'Contact number must be exactly 11 digits';
                                         }
                                         return null;
@@ -441,6 +452,34 @@ class _LoginPageState extends State<LoginPage> {
           },
         ),
       ),
+    );
+  }
+}
+
+class _ContactNumberFormatter extends TextInputFormatter {
+  const _ContactNumberFormatter();
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final digitsOnly = newValue.text.replaceAll(RegExp(r'\D'), '');
+
+    final limited =
+        digitsOnly.length > 11 ? digitsOnly.substring(0, 11) : digitsOnly;
+
+    final StringBuffer buffer = StringBuffer();
+    for (int i = 0; i < limited.length; i++) {
+      buffer.write(limited[i]);
+      if (i == 3 || i == 6) buffer.write(' ');
+    }
+    final formatted = buffer.toString();
+
+    int selectionIndex = formatted.length;
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: selectionIndex),
     );
   }
 }

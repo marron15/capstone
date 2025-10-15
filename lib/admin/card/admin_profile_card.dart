@@ -37,6 +37,24 @@ class AdminProfileTable extends StatelessWidget {
     }
   }
 
+  Widget _buildIdChip(String idText) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE6F0FF),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFF90CAF9)),
+      ),
+      child: Text(
+        '#$idText',
+        style: const TextStyle(
+          color: Color(0xFF1976D2),
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+
   String _formatPhoneDisplay(String input) {
     final String digits = input.replaceAll(RegExp(r'\D'), '');
     if (digits.isEmpty) return 'N/A';
@@ -81,6 +99,32 @@ class AdminProfileTable extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // ID chip
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade200,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey.shade300),
+                        ),
+                        child: Text(
+                          'ID: ' +
+                              (admin['id'] ??
+                                      admin['admin_id'] ??
+                                      admin['adminId'] ??
+                                      '0')
+                                  .toString(),
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey.shade800,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
                       Text(
                         _getFullName(),
                         style: const TextStyle(
@@ -178,6 +222,16 @@ class AdminProfileTable extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            // ID column
+            SizedBox(
+              width: 80,
+              child: Center(
+                child: _buildIdChip(
+                  (admin['id'] ?? admin['admin_id'] ?? admin['adminId'] ?? '0')
+                      .toString(),
+                ),
+              ),
+            ),
             // Name column
             Expanded(
               flex: 2,

@@ -406,13 +406,54 @@ class _TrainersPageState extends State<TrainersPage> {
                                                     MainAxisAlignment
                                                         .spaceBetween,
                                                 children: [
-                                                  Text(
-                                                    '${trainer['firstName'] ?? ''} ${trainer['lastName'] ?? ''}',
-                                                    style: const TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      fontSize: 16,
-                                                    ),
+                                                  Row(
+                                                    children: [
+                                                      Container(
+                                                        margin:
+                                                            const EdgeInsets.only(
+                                                              right: 8,
+                                                            ),
+                                                        padding:
+                                                            const EdgeInsets.symmetric(
+                                                              horizontal: 12,
+                                                              vertical: 6,
+                                                            ),
+                                                        decoration: BoxDecoration(
+                                                          color: const Color(
+                                                            0xFFE6F0FF,
+                                                          ),
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                10,
+                                                              ),
+                                                          border: Border.all(
+                                                            color: const Color(
+                                                              0xFF90CAF9,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                        child: Text(
+                                                          '#${(trainer['id'] ?? '0').toString()}',
+                                                          style:
+                                                              const TextStyle(
+                                                                color: Color(
+                                                                  0xFF1976D2,
+                                                                ),
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w700,
+                                                              ),
+                                                        ),
+                                                      ),
+                                                      Text(
+                                                        '${trainer['firstName'] ?? ''} ${trainer['lastName'] ?? ''}',
+                                                        style: const TextStyle(
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          fontSize: 16,
+                                                        ),
+                                                      ),
+                                                    ],
                                                   ),
                                                   Row(
                                                     children: [
@@ -979,8 +1020,20 @@ class _TrainersPageState extends State<TrainersPage> {
                                             ),
                                           ),
                                         ),
-                                        child: const Row(
-                                          children: [
+                                        child: Row(
+                                          children: const [
+                                            SizedBox(
+                                              width: 80,
+                                              child: Text(
+                                                'ID',
+                                                textAlign: TextAlign.center,
+                                                style: TextStyle(
+                                                  fontSize: 18,
+                                                  fontWeight: FontWeight.w700,
+                                                  letterSpacing: 0.5,
+                                                ),
+                                              ),
+                                            ),
                                             Expanded(
                                               flex: 3,
                                               child: Text(
@@ -1059,6 +1112,44 @@ class _TrainersPageState extends State<TrainersPage> {
                                             children: [
                                               Row(
                                                 children: [
+                                                  SizedBox(
+                                                    width: 80,
+                                                    child: Center(
+                                                      child: Container(
+                                                        padding:
+                                                            const EdgeInsets.symmetric(
+                                                              horizontal: 12,
+                                                              vertical: 6,
+                                                            ),
+                                                        decoration: BoxDecoration(
+                                                          color: const Color(
+                                                            0xFFE6F0FF,
+                                                          ),
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                10,
+                                                              ),
+                                                          border: Border.all(
+                                                            color: const Color(
+                                                              0xFF90CAF9,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                        child: Text(
+                                                          '#${(trainer['id'] ?? '0').toString()}',
+                                                          style:
+                                                              const TextStyle(
+                                                                color: Color(
+                                                                  0xFF1976D2,
+                                                                ),
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w700,
+                                                              ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
                                                   Expanded(
                                                     flex: 3,
                                                     child: Padding(

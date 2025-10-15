@@ -201,13 +201,44 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        product.name,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        ),
+                      Row(
+                        children: [
+                          Container(
+                            margin: const EdgeInsets.only(right: 8),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade200,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: Colors.grey.shade300),
+                            ),
+                            child: Text(
+                              'ID: ' +
+                                  ((index >= 0 && index < _productIds.length)
+                                          ? _productIds[index]
+                                          : 0)
+                                      .toString(),
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey.shade800,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          Flexible(
+                            child: Text(
+                              product.name,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -756,8 +787,20 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                                             ),
                                           ),
                                         ),
-                                        child: const Row(
-                                          children: [
+                                        child: Row(
+                                          children: const [
+                                            SizedBox(
+                                              width: 80,
+                                              child: Text(
+                                                'ID',
+                                                textAlign: TextAlign.center,
+                                                style: TextStyle(
+                                                  fontSize: 18,
+                                                  fontWeight: FontWeight.w700,
+                                                  letterSpacing: 0.5,
+                                                ),
+                                              ),
+                                            ),
                                             SizedBox(
                                               width: 120,
                                               child: Text(
@@ -834,6 +877,44 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                                             children: [
                                               Row(
                                                 children: [
+                                                  SizedBox(
+                                                    width: 80,
+                                                    child: Center(
+                                                      child: Container(
+                                                        padding:
+                                                            const EdgeInsets.symmetric(
+                                                              horizontal: 12,
+                                                              vertical: 6,
+                                                            ),
+                                                        decoration: BoxDecoration(
+                                                          color: const Color(
+                                                            0xFFE6F0FF,
+                                                          ),
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                10,
+                                                              ),
+                                                          border: Border.all(
+                                                            color: const Color(
+                                                              0xFF90CAF9,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                        child: Text(
+                                                          '#${((index >= 0 && index < _productIds.length) ? _productIds[index] : 0).toString()}',
+                                                          style:
+                                                              const TextStyle(
+                                                                color: Color(
+                                                                  0xFF1976D2,
+                                                                ),
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w700,
+                                                              ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
                                                   SizedBox(
                                                     width: 120,
                                                     child: Center(

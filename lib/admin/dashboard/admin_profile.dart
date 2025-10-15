@@ -288,6 +288,21 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
             ),
             child: Row(
               children: [
+                SizedBox(
+                  width: 80,
+                  child: Center(
+                    child: Text(
+                      'ID',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.grey.shade800,
+                        letterSpacing: 0.5,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
                 Expanded(
                   flex: 2,
                   child: Container(
