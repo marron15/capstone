@@ -22,7 +22,7 @@ class AdminEditModal {
       text: admin['last_name'] ?? admin['lastName'],
     );
     final TextEditingController emailController = TextEditingController(
-      text: admin['email_address'] ?? admin['email'],
+      text: admin['email'] ?? admin['email_address'],
     );
     final TextEditingController contactNumberController = TextEditingController(
       text: admin['phone_number'] ?? admin['contactNumber'],
@@ -134,7 +134,7 @@ class AdminEditModal {
           'middleName': middleNameController.text.trim(),
           'lastName': lastNameController.text.trim(),
           'dateOfBirth': formattedDate,
-          'emailAddress': emailController.text.trim(),
+          'email': emailController.text.trim(),
           'phoneNumber': PhoneFormatter.cleanPhoneNumber(
             contactNumberController.text,
           ),
@@ -172,7 +172,7 @@ class AdminEditModal {
             updatedAdmin['middle_name'] = updateData['middleName'];
             updatedAdmin['last_name'] = updateData['lastName'];
             updatedAdmin['date_of_birth'] = updateData['dateOfBirth'];
-            updatedAdmin['email_address'] = updateData['emailAddress'];
+            updatedAdmin['email'] = updateData['email'];
             updatedAdmin['phone_number'] = updateData['phoneNumber'];
 
             // Call the callback with the updated admin data

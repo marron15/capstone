@@ -61,6 +61,7 @@ class AdminModal {
 
     // Validate the form fields
     String? validationError;
+    String? phoneFieldError;
 
     bool validateForm() {
       // Basic validation - check for empty fields
@@ -78,11 +79,14 @@ class AdminModal {
         return false;
       }
 
+      // Reset phone inline error first
+      phoneFieldError = null;
+
       // Validate using shared validator (accepts spaces)
       if (!PhoneValidator.isValidPhilippineMobile(
         contactNumberController.text,
       )) {
-        validationError =
+        phoneFieldError =
             'Enter a valid PH mobile number (09XXXXXXXXX or +639XXXXXXXXX)';
         return false;
       }
@@ -93,12 +97,15 @@ class AdminModal {
     // Handle admin creation
     Future<void> handleAdminCreation(StateSetter setModalState) async {
       if (!validateForm()) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(validationError ?? 'Invalid input'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        setModalState(() {}); // reflect inline errors
+        if (phoneFieldError == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(validationError ?? 'Invalid input'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
         return;
       }
 
@@ -126,7 +133,7 @@ class AdminModal {
           phoneNumber: PhoneFormatter.cleanPhoneNumber(
             contactNumberController.text,
           ),
-          emailAddress:
+          email:
               emailController.text.trim().isEmpty
                   ? null
                   : emailController.text.trim(),
@@ -180,6 +187,8 @@ class AdminModal {
       bool isPassword = false,
       bool isReadOnly = false,
       VoidCallback? onTap,
+      ValueChanged<String>? onChanged,
+      String? errorText,
     }) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -198,6 +207,7 @@ class AdminModal {
             obscureText: isPassword,
             readOnly: isReadOnly,
             onTap: onTap,
+            onChanged: onChanged,
             style: const TextStyle(color: Colors.white),
             keyboardType:
                 identical(controller, contactNumberController)
@@ -242,6 +252,17 @@ class AdminModal {
                       : null,
             ),
           ),
+          if (errorText != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              errorText,
+              style: const TextStyle(
+                color: Colors.redAccent,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ],
       );
     }
@@ -416,6 +437,18 @@ class AdminModal {
                                             buildFormField(
                                               "Contact Number:",
                                               contactNumberController,
+                                              onChanged: (value) {
+                                                // live validate phone and update inline error
+                                                setModalState(() {
+                                                  phoneFieldError =
+                                                      PhoneValidator.isValidPhilippineMobile(
+                                                            value,
+                                                          )
+                                                          ? null
+                                                          : 'Enter a valid PH mobile number (09XXXXXXXXX or +639XXXXXXXXX)';
+                                                });
+                                              },
+                                              errorText: phoneFieldError,
                                             ),
                                           ),
                                           sized(
