@@ -27,6 +27,44 @@ class _StatisticPageState extends State<StatisticPage>
   // Simple filter UI state removed per request
   final ScrollController _kpiController = ScrollController();
   String _startsView = 'Week';
+  String _kpiPeriodFilter = 'Daily'; // Daily | This Week | This Month
+  final List<bool> _periodSelected = [true, false, false]; // Daily, Week, Month
+
+  void _syncPeriodSelection() {
+    _periodSelected[0] = _kpiPeriodFilter == 'Daily';
+    _periodSelected[1] = _kpiPeriodFilter == 'This Week';
+    _periodSelected[2] = _kpiPeriodFilter == 'This Month';
+  }
+
+  void _setGlobalPeriod(String period) {
+    if (!mounted) return;
+    setState(() {
+      _kpiPeriodFilter = period;
+      _syncPeriodSelection();
+      if (period == 'This Week') _startsView = 'Week';
+      if (period == 'This Month') _startsView = 'Month';
+    });
+  }
+
+  // Date helpers for filtering
+  bool _isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  bool _isThisWeek(DateTime d, DateTime now) {
+    final int weekday = now.weekday; // 1..7 Mon..Sun
+    final DateTime startOfWeek = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    ).subtract(Duration(days: weekday - 1));
+    final DateTime endOfWeek = startOfWeek.add(const Duration(days: 7));
+    return !d.isBefore(startOfWeek) && d.isBefore(endOfWeek);
+  }
+
+  bool _isThisMonth(DateTime d, DateTime now) {
+    return d.year == now.year && d.month == now.month;
+  }
 
   // Overall counts
   int productsActive = 0;
@@ -38,6 +76,12 @@ class _StatisticPageState extends State<StatisticPage>
   int customersExpired = 0;
   int trainersActive = 0;
   int trainersArchived = 0;
+
+  // KPI: added this day/week/month
+  int adminsAddedDay = 0, adminsAddedWeek = 0, adminsAddedMonth = 0;
+  int trainersAddedDay = 0, trainersAddedWeek = 0, trainersAddedMonth = 0;
+  int customersAddedDay = 0, customersAddedWeek = 0, customersAddedMonth = 0;
+  int productsAddedDay = 0, productsAddedWeek = 0, productsAddedMonth = 0;
   Map<String, int> membershipTotals = const {};
 
   // Customer table data
@@ -65,6 +109,7 @@ class _StatisticPageState extends State<StatisticPage>
     super.didChangeDependencies();
     // Refresh data when returning from other pages (like customers.dart)
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       _refreshData();
     });
   }
@@ -74,7 +119,7 @@ class _StatisticPageState extends State<StatisticPage>
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.resumed) {
       // Refresh data when app becomes active again
-      _refreshData();
+      if (mounted) _refreshData();
     }
   }
 
@@ -86,10 +131,12 @@ class _StatisticPageState extends State<StatisticPage>
   }
 
   Future<void> _loadOverallReport() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+    }
 
     try {
       // Fetch in parallel
@@ -166,19 +213,104 @@ class _StatisticPageState extends State<StatisticPage>
 
       membershipTotals = memTotals;
 
-      setState(() {
-        _isLoading = false;
-      });
+      // Compute added this day/week/month for each entity using created_at or similar fields
+      DateTime? _parseCreatedAt(Map m) {
+        String? raw =
+            (m['customer_created_at'] ??
+                    m['created_at'] ??
+                    m['createdAt'] ??
+                    m['date_created'] ??
+                    m['createdDate'] ??
+                    m['added_at'])
+                ?.toString();
+        return raw != null && raw.isNotEmpty ? DateTime.tryParse(raw) : null;
+      }
+
+      bool _isSameDay(DateTime a, DateTime b) {
+        return a.year == b.year && a.month == b.month && a.day == b.day;
+      }
+
+      bool _isThisWeek(DateTime d, DateTime now) {
+        final int weekday = now.weekday; // 1=Mon..7=Sun
+        final DateTime startOfWeek = DateTime(
+          now.year,
+          now.month,
+          now.day,
+        ).subtract(Duration(days: weekday - 1));
+        final DateTime endOfWeek = startOfWeek.add(const Duration(days: 7));
+        return !d.isBefore(startOfWeek) && d.isBefore(endOfWeek);
+      }
+
+      bool _isThisMonth(DateTime d, DateTime now) {
+        return d.year == now.year && d.month == now.month;
+      }
+
+      int _countAdded(Iterable items, DateTime now, String period) {
+        int c = 0;
+        for (final dynamic item in items) {
+          if (item is! Map) continue;
+          final DateTime? dt = _parseCreatedAt(item);
+          if (dt == null) continue;
+          if (period == 'Day' && _isSameDay(dt, now))
+            c++;
+          else if (period == 'Week' && _isThisWeek(dt, now))
+            c++;
+          else if (period == 'Month' && _isThisMonth(dt, now))
+            c++;
+        }
+        return c;
+      }
+
+      final DateTime nowTs = DateTime.now();
+
+      adminsAddedDay = _countAdded(admins, nowTs, 'Day');
+      adminsAddedWeek = _countAdded(admins, nowTs, 'Week');
+      adminsAddedMonth = _countAdded(admins, nowTs, 'Month');
+
+      trainersAddedDay = _countAdded(trainers, nowTs, 'Day');
+      trainersAddedWeek = _countAdded(trainers, nowTs, 'Week');
+      trainersAddedMonth = _countAdded(trainers, nowTs, 'Month');
+
+      // Customers data may be nested inside data arrays
+      final Iterable custAll = [...activeCust, ...archivedCust];
+      customersAddedDay = _countAdded(custAll, nowTs, 'Day');
+      customersAddedWeek = _countAdded(custAll, nowTs, 'Week');
+      customersAddedMonth = _countAdded(custAll, nowTs, 'Month');
+
+      productsAddedDay = _countAdded(
+        [...prodActive, ...prodInactive],
+        nowTs,
+        'Day',
+      );
+      productsAddedWeek = _countAdded(
+        [...prodActive, ...prodInactive],
+        nowTs,
+        'Week',
+      );
+      productsAddedMonth = _countAdded(
+        [...prodActive, ...prodInactive],
+        nowTs,
+        'Month',
+      );
+
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _errorMessage = 'Failed to load report: $e';
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Failed to load report: $e';
+          _isLoading = false;
+        });
+      }
     }
   }
 
   Future<void> _refreshData() async {
     // Refresh both overall report and customers when returning from other pages
+    if (!mounted) return;
     await Future.wait([_loadOverallReport(), _loadCustomers()]);
   }
 
@@ -320,6 +452,28 @@ class _StatisticPageState extends State<StatisticPage>
 
     // Expired-only filter (applied after membership/search filters)
     List<Map<String, dynamic>> result = filtered;
+
+    // Apply global period filter using membership startDate
+    final DateTime now = DateTime.now();
+    if (_kpiPeriodFilter == 'Daily') {
+      result =
+          result.where((c) {
+            final DateTime start = c['startDate'] as DateTime;
+            return _isSameDay(start, now);
+          }).toList();
+    } else if (_kpiPeriodFilter == 'This Week') {
+      result =
+          result.where((c) {
+            final DateTime start = c['startDate'] as DateTime;
+            return _isThisWeek(start, now);
+          }).toList();
+    } else if (_kpiPeriodFilter == 'This Month') {
+      result =
+          result.where((c) {
+            final DateTime start = c['startDate'] as DateTime;
+            return _isThisMonth(start, now);
+          }).toList();
+    }
     if (_showExpiredOnly) {
       result =
           filtered.where((c) {
@@ -959,6 +1113,41 @@ class _StatisticPageState extends State<StatisticPage>
                           ),
                         ],
                       ),
+                      const SizedBox(height: 8),
+                      // Global period filter (Daily | This Week | This Month)
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: ToggleButtons(
+                          isSelected: _periodSelected,
+                          onPressed: (index) {
+                            if (index == 0) _setGlobalPeriod('Daily');
+                            if (index == 1) _setGlobalPeriod('This Week');
+                            if (index == 2) _setGlobalPeriod('This Month');
+                          },
+                          borderRadius: BorderRadius.circular(18),
+                          constraints: const BoxConstraints(
+                            minHeight: 36,
+                            minWidth: 110,
+                          ),
+                          selectedColor: Colors.white,
+                          color: Colors.black87,
+                          fillColor: Colors.black87,
+                          children: const [
+                            Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 8),
+                              child: Text('Daily'),
+                            ),
+                            Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 8),
+                              child: Text('This Week'),
+                            ),
+                            Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 8),
+                              child: Text('This Month'),
+                            ),
+                          ],
+                        ),
+                      ),
                       const SizedBox(height: 12),
                       if (_isLoading)
                         const Expanded(
@@ -1002,58 +1191,91 @@ class _StatisticPageState extends State<StatisticPage>
                                     // KPI ribbon
                                     _KpiRibbonGroups(
                                       controller: _kpiController,
+                                      periodFilter: _kpiPeriodFilter,
                                       groups: [
                                         _KpiGroup(
                                           title: 'Admins',
-                                          top: _KpiTile(
-                                            label: 'Admins Active',
-                                            value: adminsActive,
-                                            color: const Color(0xFF2E7D32),
-                                          ),
-                                          bottom: _KpiTile(
-                                            label: 'Admins Archived',
-                                            value: adminsArchived,
-                                            color: const Color(0xFFFB8C00),
-                                          ),
+                                          tiles: [
+                                            _KpiTile(
+                                              label: 'Admins Added This Day',
+                                              value: adminsAddedDay,
+                                              color: const Color(0xFF2E7D32),
+                                            ),
+                                            _KpiTile(
+                                              label: 'Admins Added This Week',
+                                              value: adminsAddedWeek,
+                                              color: const Color(0xFF1565C0),
+                                            ),
+                                            _KpiTile(
+                                              label: 'Admins Added This Month',
+                                              value: adminsAddedMonth,
+                                              color: const Color(0xFF6A1B9A),
+                                            ),
+                                          ],
                                         ),
                                         _KpiGroup(
                                           title: 'Trainers',
-                                          top: _KpiTile(
-                                            label: 'Trainers Active',
-                                            value: trainersActive,
-                                            color: const Color(0xFF2E7D32),
-                                          ),
-                                          bottom: _KpiTile(
-                                            label: 'Trainers Archived',
-                                            value: trainersArchived,
-                                            color: const Color(0xFFFB8C00),
-                                          ),
+                                          tiles: [
+                                            _KpiTile(
+                                              label: 'Trainers Added This Day',
+                                              value: trainersAddedDay,
+                                              color: const Color(0xFF2E7D32),
+                                            ),
+                                            _KpiTile(
+                                              label: 'Trainers Added This Week',
+                                              value: trainersAddedWeek,
+                                              color: const Color(0xFF1565C0),
+                                            ),
+                                            _KpiTile(
+                                              label:
+                                                  'Trainers Added This Month',
+                                              value: trainersAddedMonth,
+                                              color: const Color(0xFF6A1B9A),
+                                            ),
+                                          ],
                                         ),
                                         _KpiGroup(
                                           title: 'Customers',
-                                          top: _KpiTile(
-                                            label: 'Customers Active',
-                                            value: customersActive,
-                                            color: const Color(0xFF2E7D32),
-                                          ),
-                                          bottom: _KpiTile(
-                                            label: 'Customers Archived',
-                                            value: customersArchived,
-                                            color: const Color(0xFFFB8C00),
-                                          ),
+                                          tiles: [
+                                            _KpiTile(
+                                              label: 'Customers Added This Day',
+                                              value: customersAddedDay,
+                                              color: const Color(0xFF2E7D32),
+                                            ),
+                                            _KpiTile(
+                                              label:
+                                                  'Customers Added This Week',
+                                              value: customersAddedWeek,
+                                              color: const Color(0xFF1565C0),
+                                            ),
+                                            _KpiTile(
+                                              label:
+                                                  'Customers Added This Month',
+                                              value: customersAddedMonth,
+                                              color: const Color(0xFF6A1B9A),
+                                            ),
+                                          ],
                                         ),
                                         _KpiGroup(
                                           title: 'Products',
-                                          top: _KpiTile(
-                                            label: 'Products Active',
-                                            value: productsActive,
-                                            color: const Color(0xFF2E7D32),
-                                          ),
-                                          bottom: _KpiTile(
-                                            label: 'Products Archived',
-                                            value: productsArchived,
-                                            color: const Color(0xFFFB8C00),
-                                          ),
+                                          tiles: [
+                                            _KpiTile(
+                                              label: 'Products Added This Day',
+                                              value: productsAddedDay,
+                                              color: const Color(0xFF2E7D32),
+                                            ),
+                                            _KpiTile(
+                                              label: 'Products Added This Week',
+                                              value: productsAddedWeek,
+                                              color: const Color(0xFF1565C0),
+                                            ),
+                                            _KpiTile(
+                                              label:
+                                                  'Products Added This Month',
+                                              value: productsAddedMonth,
+                                              color: const Color(0xFF6A1B9A),
+                                            ),
+                                          ],
                                         ),
                                       ],
                                     ),
@@ -1102,70 +1324,7 @@ class _StatisticPageState extends State<StatisticPage>
                                                                 ),
                                                           ),
                                                           const Spacer(),
-                                                          PopupMenuButton<
-                                                            String
-                                                          >(
-                                                            tooltip: 'Filter',
-                                                            onSelected:
-                                                                (v) => setState(
-                                                                  () =>
-                                                                      _startsView =
-                                                                          v,
-                                                                ),
-                                                            itemBuilder:
-                                                                (
-                                                                  context,
-                                                                ) => const [
-                                                                  PopupMenuItem(
-                                                                    value:
-                                                                        'Week',
-                                                                    child: Text(
-                                                                      'Week',
-                                                                    ),
-                                                                  ),
-                                                                  PopupMenuItem(
-                                                                    value:
-                                                                        'Month',
-                                                                    child: Text(
-                                                                      'Month',
-                                                                    ),
-                                                                  ),
-                                                                ],
-                                                            child: Row(
-                                                              mainAxisSize:
-                                                                  MainAxisSize
-                                                                      .min,
-                                                              children: [
-                                                                const Icon(
-                                                                  Icons
-                                                                      .chevron_right,
-                                                                  size: 18,
-                                                                  color:
-                                                                      Colors
-                                                                          .black54,
-                                                                ),
-                                                                const SizedBox(
-                                                                  width: 6,
-                                                                ),
-                                                                Text(
-                                                                  _startsView,
-                                                                  style: const TextStyle(
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .w600,
-                                                                  ),
-                                                                ),
-                                                                const Icon(
-                                                                  Icons
-                                                                      .arrow_drop_down,
-                                                                  size: 18,
-                                                                  color:
-                                                                      Colors
-                                                                          .black87,
-                                                                ),
-                                                              ],
-                                                            ),
-                                                          ),
+                                                          // Chart filter removed; controlled by global filter
                                                         ],
                                                       ),
                                                       const SizedBox(height: 8),
@@ -1277,19 +1436,20 @@ class _RibbonArrow extends StatelessWidget {
 // Grouped KPI ribbon (two stacked tiles per entity)
 class _KpiGroup {
   final String title;
-  final _KpiTile top;
-  final _KpiTile bottom;
-  const _KpiGroup({
-    required this.title,
-    required this.top,
-    required this.bottom,
-  });
+  final List<_KpiTile> tiles; // expects Day, Week, Month in order
+  const _KpiGroup({required this.title, required this.tiles});
 }
 
 class _KpiRibbonGroups extends StatelessWidget {
   final List<_KpiGroup> groups;
   final ScrollController? controller;
-  const _KpiRibbonGroups({required this.groups, this.controller});
+  final String periodFilter; // Daily | This Week | This Month
+  // filter callback removed
+  const _KpiRibbonGroups({
+    required this.groups,
+    this.controller,
+    this.periodFilter = 'Daily',
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1378,8 +1538,19 @@ class _KpiRibbonGroups extends StatelessWidget {
                                             ),
                                           ),
                                         ),
-                                        tile(g.top),
-                                        tile(g.bottom),
+                                        ...(() {
+                                          int index = 0; // Daily
+                                          if (periodFilter == 'This Week')
+                                            index = 1;
+                                          else if (periodFilter == 'This Month')
+                                            index = 2;
+                                          final _KpiTile selected =
+                                              (index >= 0 &&
+                                                      index < g.tiles.length)
+                                                  ? g.tiles[index]
+                                                  : g.tiles.first;
+                                          return [tile(selected)];
+                                        }()),
                                       ],
                                     ),
                                   ),
@@ -1425,6 +1596,7 @@ class _KpiRibbonGroups extends StatelessWidget {
                     ),
               ),
             ),
+            // Ribbon filter removed
           ],
         ),
       ),
