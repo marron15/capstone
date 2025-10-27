@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../modals_customer/login.dart';
 import '../services/unified_auth_state.dart';
 import '../services/auth_service.dart';
-import '../main.dart';
 
 class BlackHeader extends StatelessWidget {
   final Function(int) onNavTap;
@@ -47,11 +46,11 @@ class BlackHeader extends StatelessWidget {
                 message: 'Home',
                 child: IconButton(
                   onPressed: () {
-                    Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(
-                        builder: (_) => const LoginChoicePage(),
-                      ),
-                      (route) => false,
+                    // Navigate to home and clear all previous routes except root
+                    Navigator.pushNamedAndRemoveUntil(
+                      context,
+                      '/home',
+                      (route) => route.isFirst, // Keep only the first route
                     );
                   },
                   icon: const Icon(Icons.home_outlined, color: Colors.white),

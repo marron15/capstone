@@ -11,6 +11,8 @@ import 'services/unified_auth_state.dart';
 import 'services/auth_guard.dart';
 import 'User Profile/profile.dart';
 
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -44,7 +46,8 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'RNR Fitness Gym',
       theme: _buildTheme(),
-      initialRoute: '/',
+      initialRoute: '/home',
+      navigatorKey: navigatorKey,
       routes: {
         '/':
             (context) => AnimatedBuilder(
@@ -64,7 +67,9 @@ class MyApp extends StatelessWidget {
               },
             ),
         '/admin-login': (context) => const LoginPage(checkLoginStatus: false),
+        '/home': (context) => const LoginChoicePage(),
         '/customer-landing': (context) => const LandingPage(),
+        '/Home-Page': (context) => const LandingPage(),
         '/admin-dashboard':
             (context) => const AdminAuthGuard(child: AdminProfilePage()),
         '/admin-statistics':
