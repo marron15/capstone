@@ -4,21 +4,14 @@ import 'package:flutter/foundation.dart';
 
 class AuthService {
   static String _apiHost() {
-    if (kIsWeb) return 'localhost';
-    try {
-      if (defaultTargetPlatform == TargetPlatform.android) {
-        // Use localhost for development - change to your IP for mobile testing
-        return 'localhost';
-      }
-      return 'localhost'; // Use localhost for development
-    } catch (_) {
-      return 'localhost'; // Fallback to localhost
-    }
+    // Production: use your domain
+    return 'rnrgym.com';
   }
 
   static String get _customersBase =>
-      'http://' + _apiHost() + '/gym_api/customers';
-  static String get _addressBase => 'http://' + _apiHost() + '/gym_api/address';
+      'https://' + _apiHost() + '/gym_api/customers';
+  static String get _addressBase =>
+      'https://' + _apiHost() + '/gym_api/address';
 
   static Future<LoginResult> login(
     String contactNumber,

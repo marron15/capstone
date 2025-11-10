@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
 import 'landing_page_components/landing_page.dart';
 import 'admin/login.dart';
 import 'admin/dashboard/admin_profile.dart';
@@ -10,6 +11,7 @@ import 'admin/dashboard/admin_products.dart';
 import 'services/unified_auth_state.dart';
 import 'services/auth_guard.dart';
 import 'User Profile/profile.dart';
+import 'services/pwa_service.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -313,6 +315,12 @@ class _LoginChoicePageState extends State<LoginChoicePage>
     // Start animations
     _fadeController.forward();
     _slideController.forward();
+
+    // Listen for PWA install events if running on web
+    if (kIsWeb) {
+      // Event listeners are handled by JavaScript in index.html
+      // The service worker and PWA install functionality will work automatically
+    }
   }
 
   @override
@@ -331,8 +339,8 @@ class _LoginChoicePageState extends State<LoginChoicePage>
           // Fullscreen background slideshow
           const _BackgroundSlideshow(
             imagePaths: [
-              'assets/images/gym_view/Front View.jpg',
-              'assets/images/gym_view/BACK VIEW OF GYM.jpg',
+              'assets/images/gym_view/front-view.jpg',
+              'assets/images/gym_view/back-view.jpg',
             ],
           ),
           // Lightened gradient overlay: white tint to transparent (no dark tint)
@@ -574,17 +582,23 @@ class _LoginChoicePageState extends State<LoginChoicePage>
                 ),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Align(
-                    alignment: Alignment.center,
-                    child: const Text(
-                      'RNR Fitness Gym',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.5,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Spacer(),
+                      const Text(
+                        'RNR Fitness Gym',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.5,
+                        ),
                       ),
-                    ),
+                      const Spacer(),
+                      // PWA Install Button
+                      PwaService.buildInstallButton(context),
+                    ],
                   ),
                 ),
               ),

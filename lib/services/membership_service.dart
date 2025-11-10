@@ -3,21 +3,12 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 
 class MembershipService {
-  // Use localhost for development - change to your IP for mobile testing
+  // Production: use your domain
   static String _apiHost() {
-    if (kIsWeb) return 'localhost';
-    try {
-      if (defaultTargetPlatform == TargetPlatform.android) {
-        // Use localhost for development - change to your IP for mobile testing
-        return 'localhost';
-      }
-      return 'localhost'; // Use localhost for development
-    } catch (_) {
-      return 'localhost'; // Fallback to localhost
-    }
+    return 'rnrgym.com';
   }
 
-  static String get baseUrl => 'http://' + _apiHost() + '/gym_api/membership';
+  static String get baseUrl => 'https://' + _apiHost() + '/gym_api/membership';
 
   static Future<MembershipResult> getMembershipByCustomerId(
     int customerId,

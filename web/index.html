@@ -18,21 +18,74 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="description" content="Access gym memberships, trainers, and services at RNR Fitness Gym.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="capstone">
+  <meta name="apple-mobile-web-app-title" content="RNR Fitness">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>capstone</title>
+  <title>RNR Fitness Gym</title>
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
+  <!-- PWA Install Prompt Handler -->
+  <script>
+    let deferredPwaPrompt;
+    
+    // Listen for the beforeinstallprompt event
+    window.addEventListener('beforeinstallprompt', (e) => {
+      console.log('PWA: Install prompt available');
+      // Prevent the default mini-infobar from appearing on mobile
+      e.preventDefault();
+      // Store the event so it can be triggered later
+      deferredPwaPrompt = e;
+      // Dispatch a custom event to inform Flutter
+      window.dispatchEvent(new CustomEvent('pwa-installable', { detail: true }));
+    });
+
+    // Check if PWA install is available
+    window.isPwaInstallAvailable = function() {
+      return deferredPwaPrompt !== undefined;
+    };
+
+    // Trigger the PWA install prompt
+    window.triggerPwaInstall = async function() {
+      if (!deferredPwaPrompt) {
+        console.log('PWA: Install prompt not available');
+        return false;
+      }
+
+      // Show the install prompt
+      deferredPwaPrompt.prompt();
+      
+      // Wait for the user to respond to the prompt
+      const { outcome } = await deferredPwaPrompt.userChoice;
+      console.log('PWA: User response:', outcome);
+      
+      // Clear the deferred prompt as it can only be used once
+      deferredPwaPrompt = null;
+      
+      // Dispatch event to inform Flutter
+      window.dispatchEvent(new CustomEvent('pwa-install-result', { detail: outcome }));
+      
+      return outcome === 'accepted';
+    };
+
+    // Handle successful installation
+    window.addEventListener('appinstalled', () => {
+      console.log('PWA: App installed');
+      deferredPwaPrompt = null;
+    });
+  </script>
+
+  <!-- Service worker is automatically handled by Flutter's flutter_bootstrap.js -->
+  <!-- Note: Run patch_bootstrap.ps1 after building to disable service worker -->
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

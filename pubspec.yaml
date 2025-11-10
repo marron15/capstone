@@ -43,6 +43,7 @@ dependencies:
   syncfusion_flutter_xlsio: ^29.2.7
   syncfusion_officechart: ^29.2.7
   pdf: ^3.10.7
+  js: ^0.7.0
 
 
 # The following adds the Cupertino Icons font to your application.
@@ -77,8 +78,9 @@ flutter:
     - assets/images/gym_equipments/
     - assets/images/gym_view/
     - assets/images/services&products/
-    - assets/images/gym_view/BACK VIEW OF GYM.jpg
-    - assets/images/RNR1.png
+    - assets/images/gym_view/back-view.jpg
+    - assets/images/gym_view/back-view-2.jpg
+    - assets/images/gym_view/front-view.jpg
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
