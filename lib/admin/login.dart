@@ -64,10 +64,13 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     try {
-      final contactDigits = _contactController.text.replaceAll(
-        RegExp(r'\D'),
-        '',
-      );
+      final contactDigits =
+          _contactController.text
+              .split('')
+              .where(
+                (char) => char.codeUnitAt(0) >= 48 && char.codeUnitAt(0) <= 57,
+              )
+              .join();
       final result = await AdminService.loginAdmin(
         contactNumber: contactDigits,
         password: _passwordController.text,
@@ -303,15 +306,24 @@ class _LoginPageState extends State<LoginPage> {
                                               ).nextFocus(),
 
                                       validator: (value) {
-                                        final digits = (value ?? '').replaceAll(
-                                          RegExp(r'\D'),
-                                          '',
-                                        );
+                                        final digitsBuffer = StringBuffer();
+                                        for (final rune
+                                            in (value ?? '').runes) {
+                                          if (rune >= 48 && rune <= 57) {
+                                            digitsBuffer.writeCharCode(rune);
+                                          }
+                                        }
+                                        final digits = digitsBuffer.toString();
                                         if (digits.isEmpty) {
                                           return 'Please enter your contact number';
                                         }
-                                        final onlyDigits = RegExp(r'^\d{11}$');
-                                        if (!onlyDigits.hasMatch(digits)) {
+                                        final isElevenDigits =
+                                            digits.length == 11 &&
+                                            digits.codeUnits.every(
+                                              (code) =>
+                                                  code >= 48 && code <= 57,
+                                            );
+                                        if (!isElevenDigits) {
                                           return 'Contact number must be exactly 11 digits';
                                         }
                                         return null;
@@ -464,7 +476,13 @@ class _ContactNumberFormatter extends TextInputFormatter {
     TextEditingValue oldValue,
     TextEditingValue newValue,
   ) {
-    final digitsOnly = newValue.text.replaceAll(RegExp(r'\D'), '');
+    final digitsBuffer = StringBuffer();
+    for (final rune in newValue.text.runes) {
+      if (rune >= 48 && rune <= 57) {
+        digitsBuffer.writeCharCode(rune);
+      }
+    }
+    final digitsOnly = digitsBuffer.toString();
 
     final limited =
         digitsOnly.length > 11 ? digitsOnly.substring(0, 11) : digitsOnly;

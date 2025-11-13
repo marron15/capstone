@@ -1,12 +1,22 @@
 import 'package:flutter/services.dart';
 
 class PhoneFormatter {
+  static String _digitsOnly(String input) {
+    final StringBuffer buffer = StringBuffer();
+    for (final int codeUnit in input.codeUnits) {
+      if (codeUnit >= 48 && codeUnit <= 57) {
+        buffer.writeCharCode(codeUnit);
+      }
+    }
+    return buffer.toString();
+  }
+
   /// Formats a phone number with spaces: 09123456789 -> 0912 345 6789
   static String formatWithSpaces(String phoneNumber) {
     if (phoneNumber.isEmpty) return '';
 
     // Remove all non-digit characters
-    String cleanNumber = phoneNumber.replaceAll(RegExp(r'[^\d]'), '');
+    String cleanNumber = _digitsOnly(phoneNumber);
 
     // If it's 11 digits, format as 0912 345 6789
     if (cleanNumber.length == 11) {
@@ -26,7 +36,7 @@ class PhoneFormatter {
   static TextInputFormatter get phoneNumberFormatter {
     return TextInputFormatter.withFunction((oldValue, newValue) {
       // Remove all non-digit characters
-      String newText = newValue.text.replaceAll(RegExp(r'[^\d]'), '');
+      String newText = _digitsOnly(newValue.text);
 
       // Limit to 11 digits
       if (newText.length > 11) {
@@ -55,6 +65,6 @@ class PhoneFormatter {
 
   /// Cleans a formatted phone number by removing spaces
   static String cleanPhoneNumber(String phoneNumber) {
-    return phoneNumber.replaceAll(RegExp(r'[^\d]'), '');
+    return _digitsOnly(phoneNumber);
   }
 }

@@ -55,8 +55,18 @@ class AdminProfileTable extends StatelessWidget {
     );
   }
 
+  String _extractDigits(String input) {
+    final StringBuffer buffer = StringBuffer();
+    for (final int codeUnit in input.codeUnits) {
+      if (codeUnit >= 48 && codeUnit <= 57) {
+        buffer.writeCharCode(codeUnit);
+      }
+    }
+    return buffer.toString();
+  }
+
   String _formatPhoneDisplay(String input) {
-    final String digits = input.replaceAll(RegExp(r'\D'), '');
+    final String digits = _extractDigits(input);
     if (digits.isEmpty) return 'N/A';
     final String part1 = digits.substring(0, digits.length.clamp(0, 4));
     final String part2 =

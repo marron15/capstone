@@ -105,6 +105,15 @@ class _MembershipAlertModalState extends State<MembershipAlertModal>
         unifiedAuthState.membershipData != null &&
         !_isMembershipActive(unifiedAuthState.membershipData!.expirationDate);
 
+    const Color expiredBackgroundStart = Color(0xFF4A1111);
+    const Color expiredBackgroundMid = Color(0xFFAB1E1E);
+    const Color expiredBackgroundEnd = Color(0xFFE53935);
+    const Color expiredAccent = Color(0xFFFFEBEE);
+    const Color activeBackgroundStart = Color(0xFF161C2C);
+    const Color activeBackgroundEnd = Color(0xFF1F283C);
+    const Color activeAccent = Color(0xFFFFB74D);
+    const Color activePrimary = Color(0xFFE0F7FA);
+
     return Center(
       child: Material(
         color: Colors.transparent,
@@ -131,46 +140,47 @@ class _MembershipAlertModalState extends State<MembershipAlertModal>
                       width: double.infinity,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(24),
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors:
-                              isExpired
-                                  ? [
-                                    Colors.red.withValues(alpha: 0.85),
-                                    Colors.red.withValues(alpha: 0.95),
-                                  ]
-                                  : [
-                                    Colors.black.withValues(alpha: 0.85),
-                                    Colors.black.withValues(alpha: 0.95),
+                        gradient:
+                            isExpired
+                                ? const LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    expiredBackgroundStart,
+                                    expiredBackgroundMid,
+                                    expiredBackgroundEnd,
                                   ],
-                        ),
+                                )
+                                : const LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    activeBackgroundStart,
+                                    activeBackgroundEnd,
+                                  ],
+                                ),
                         border: Border.all(
                           color:
                               isExpired
-                                  ? Colors.red.withValues(alpha: 0.3)
-                                  : const Color(
-                                    0xFFFFA812,
-                                  ).withValues(alpha: 0.3),
-                          width: 2,
+                                  ? Colors.black.withValues(alpha: 0.18)
+                                  : Colors.black.withValues(alpha: 0.35),
+                          width: 1.4,
                         ),
                         boxShadow: [
-                          BoxShadow(
-                            color:
-                                isExpired
-                                    ? Colors.red.withValues(alpha: 0.3)
-                                    : const Color(
-                                      0xFFFFA812,
-                                    ).withValues(alpha: 0.3),
-                            blurRadius: 30,
-                            spreadRadius: 2,
-                            offset: const Offset(0, 10),
-                          ),
                           BoxShadow(
                             color: Colors.black.withValues(alpha: 0.4),
                             blurRadius: 20,
                             spreadRadius: 1,
                             offset: const Offset(0, 8),
+                          ),
+                          BoxShadow(
+                            color:
+                                isExpired
+                                    ? Colors.black.withValues(alpha: 0.35)
+                                    : Colors.black.withValues(alpha: 0.45),
+                            blurRadius: 42,
+                            spreadRadius: 4,
+                            offset: const Offset(0, 16),
                           ),
                         ],
                       ),
@@ -190,20 +200,20 @@ class _MembershipAlertModalState extends State<MembershipAlertModal>
                                       decoration: BoxDecoration(
                                         color:
                                             isExpired
-                                                ? Colors.red.withValues(
-                                                  alpha: 0.2,
+                                                ? Colors.white.withValues(
+                                                  alpha: 0.12,
                                                 )
-                                                : const Color(
-                                                  0xFFFFA812,
-                                                ).withValues(alpha: 0.2),
+                                                : activeAccent.withValues(
+                                                  alpha: 0.18,
+                                                ),
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: Icon(
                                         isExpired ? Icons.warning : Icons.timer,
                                         color:
                                             isExpired
-                                                ? Colors.red
-                                                : const Color(0xFFFFA812),
+                                                ? expiredAccent
+                                                : activeAccent,
                                         size: 24,
                                       ),
                                     ),
@@ -241,35 +251,43 @@ class _MembershipAlertModalState extends State<MembershipAlertModal>
                                 width: double.infinity,
                                 padding: const EdgeInsets.all(20),
                                 decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                    colors:
-                                        isExpired
-                                            ? [
-                                              Colors.red.withValues(alpha: 0.1),
-                                              Colors.red.withValues(
-                                                alpha: 0.05,
+                                  gradient:
+                                      isExpired
+                                          ? LinearGradient(
+                                            begin: Alignment.topLeft,
+                                            end: Alignment.bottomRight,
+                                            colors: [
+                                              Colors.white.withValues(
+                                                alpha: 0.24,
                                               ),
-                                            ]
-                                            : [
-                                              const Color(
-                                                0xFFFFA812,
-                                              ).withValues(alpha: 0.1),
-                                              const Color(
-                                                0xFFFFA812,
-                                              ).withValues(alpha: 0.05),
+                                              Colors.white.withValues(
+                                                alpha: 0.14,
+                                              ),
                                             ],
-                                  ),
+                                          )
+                                          : LinearGradient(
+                                            begin: Alignment.topLeft,
+                                            end: Alignment.bottomRight,
+                                            colors: [
+                                              Colors.white.withValues(
+                                                alpha: 0.12,
+                                              ),
+                                              Colors.white.withValues(
+                                                alpha: 0.06,
+                                              ),
+                                            ],
+                                          ),
                                   borderRadius: BorderRadius.circular(16),
                                   border: Border.all(
                                     color:
                                         isExpired
-                                            ? Colors.red.withValues(alpha: 0.3)
-                                            : const Color(
-                                              0xFFFFA812,
-                                            ).withValues(alpha: 0.3),
-                                    width: 1,
+                                            ? Colors.white.withValues(
+                                              alpha: 0.3,
+                                            )
+                                            : Colors.white.withValues(
+                                              alpha: 0.18,
+                                            ),
+                                    width: 1.2,
                                   ),
                                 ),
                                 child: Column(
@@ -279,9 +297,14 @@ class _MembershipAlertModalState extends State<MembershipAlertModal>
                                           ? 'Membership Status'
                                           : 'Time Remaining',
                                       style: TextStyle(
-                                        color: Colors.white70,
+                                        color:
+                                            isExpired
+                                                ? Colors.white
+                                                : Colors.white.withValues(
+                                                  alpha: 0.85,
+                                                ),
                                         fontSize: isSmallScreen ? 14 : 16,
-                                        fontWeight: FontWeight.w500,
+                                        fontWeight: FontWeight.w600,
                                       ),
                                     ),
                                     const SizedBox(height: 8),
@@ -296,8 +319,8 @@ class _MembershipAlertModalState extends State<MembershipAlertModal>
                                       style: TextStyle(
                                         color:
                                             isExpired
-                                                ? Colors.red
-                                                : const Color(0xFFFFA812),
+                                                ? expiredAccent
+                                                : activePrimary,
                                         fontSize: isSmallScreen ? 28 : 32,
                                         fontWeight: FontWeight.bold,
                                         letterSpacing: 1.0,
@@ -326,9 +349,9 @@ class _MembershipAlertModalState extends State<MembershipAlertModal>
                                           ),
                                           backgroundColor: Colors.transparent,
                                           valueColor:
-                                              const AlwaysStoppedAnimation<
-                                                Color
-                                              >(Color(0xFFFFA812)),
+                                              AlwaysStoppedAnimation<Color>(
+                                                activeAccent,
+                                              ),
                                           borderRadius: BorderRadius.circular(
                                             2,
                                           ),
@@ -347,17 +370,41 @@ class _MembershipAlertModalState extends State<MembershipAlertModal>
                               width: double.infinity,
                               padding: const EdgeInsets.all(20),
                               decoration: BoxDecoration(
-                                color:
+                                gradient:
                                     isExpired
-                                        ? Colors.red.withValues(alpha: 0.1)
-                                        : Colors.white.withValues(alpha: 0.1),
+                                        ? LinearGradient(
+                                          begin: Alignment.topCenter,
+                                          end: Alignment.bottomCenter,
+                                          colors: [
+                                            Colors.white.withValues(
+                                              alpha: 0.18,
+                                            ),
+                                            Colors.white.withValues(
+                                              alpha: 0.08,
+                                            ),
+                                          ],
+                                        )
+                                        : LinearGradient(
+                                          begin: Alignment.topCenter,
+                                          end: Alignment.bottomCenter,
+                                          colors: [
+                                            Colors.white.withValues(
+                                              alpha: 0.12,
+                                            ),
+                                            Colors.white.withValues(
+                                              alpha: 0.05,
+                                            ),
+                                          ],
+                                        ),
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
                                   color:
                                       isExpired
-                                          ? Colors.red.withValues(alpha: 0.2)
-                                          : Colors.white.withValues(alpha: 0.2),
-                                  width: 1,
+                                          ? Colors.white.withValues(alpha: 0.28)
+                                          : Colors.white.withValues(
+                                            alpha: 0.18,
+                                          ),
+                                  width: 1.2,
                                 ),
                               ),
                               child: Column(
@@ -368,8 +415,8 @@ class _MembershipAlertModalState extends State<MembershipAlertModal>
                                         : Icons.location_on,
                                     color:
                                         isExpired
-                                            ? Colors.red
-                                            : const Color(0xFFFFA812),
+                                            ? expiredAccent
+                                            : activeAccent,
                                     size: isSmallScreen ? 24 : 28,
                                   ),
                                   const SizedBox(height: 12),
@@ -379,7 +426,12 @@ class _MembershipAlertModalState extends State<MembershipAlertModal>
                                         : 'Want to Extend Membership?',
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
-                                      color: Colors.white,
+                                      color:
+                                          isExpired
+                                              ? Colors.white
+                                              : Colors.white.withValues(
+                                                alpha: 0.92,
+                                              ),
                                       fontSize: isSmallScreen ? 16 : 18,
                                       fontWeight: FontWeight.bold,
                                       letterSpacing: 0.3,
@@ -392,7 +444,9 @@ class _MembershipAlertModalState extends State<MembershipAlertModal>
                                         : 'Go to RNR GYM to Extend your Membership at',
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
-                                      color: Colors.white70,
+                                      color: Colors.white.withValues(
+                                        alpha: 0.78,
+                                      ),
                                       fontSize: isSmallScreen ? 12 : 14,
                                       fontWeight: FontWeight.w400,
                                     ),
@@ -404,8 +458,8 @@ class _MembershipAlertModalState extends State<MembershipAlertModal>
                                     style: TextStyle(
                                       color:
                                           isExpired
-                                              ? Colors.red
-                                              : const Color(0xFFFFA812),
+                                              ? expiredAccent
+                                              : activeAccent,
                                       fontSize: isSmallScreen ? 13 : 15,
                                       fontWeight: FontWeight.w600,
                                       letterSpacing: 0.5,
@@ -424,7 +478,7 @@ class _MembershipAlertModalState extends State<MembershipAlertModal>
                                 width: double.infinity,
                                 child: _AnimatedButton(
                                   onPressed: () => Navigator.of(context).pop(),
-                                  backgroundColor: Colors.red,
+                                  backgroundColor: expiredBackgroundEnd,
                                   textColor: Colors.white,
                                   text: 'Close',
                                 ),
@@ -454,7 +508,7 @@ class _MembershipAlertModalState extends State<MembershipAlertModal>
                                           '/customer-profile',
                                         );
                                       },
-                                      backgroundColor: const Color(0xFFFFA812),
+                                      backgroundColor: activeAccent,
                                       textColor: Colors.black,
                                       text: 'View Profile',
                                     ),

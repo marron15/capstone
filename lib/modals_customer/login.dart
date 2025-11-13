@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../services/auth_service.dart';
 import '../services/unified_auth_state.dart';
 import '../User Profile/profile_data.dart';
+import '../utils/dom_input_utils.dart';
 
 class LoginModal extends StatefulWidget {
   const LoginModal({Key? key}) : super(key: key);
@@ -12,7 +13,8 @@ class LoginModal extends StatefulWidget {
   State<LoginModal> createState() => _LoginModalState();
 }
 
-class _LoginModalState extends State<LoginModal> with TickerProviderStateMixin {
+class _LoginModalState extends State<LoginModal>
+    with TickerProviderStateMixin, RestorationMixin {
   bool _obscurePassword = true;
   bool _isLoading = false;
   String? _errorMessage;
@@ -27,6 +29,8 @@ class _LoginModalState extends State<LoginModal> with TickerProviderStateMixin {
   final TextEditingController _contactOrEmailController =
       TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final GlobalKey<FormState> _loginFormKey = GlobalKey<FormState>();
+  bool _domAttributesScheduled = false;
 
   @override
   void initState() {
@@ -41,7 +45,20 @@ class _LoginModalState extends State<LoginModal> with TickerProviderStateMixin {
     );
     _fadeAnim = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
     _controller.forward();
+    _scheduleDomAttributeSync();
   }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _scheduleDomAttributeSync();
+  }
+
+  @override
+  String? get restorationId => 'customer_login_modal';
+
+  @override
+  void restoreState(RestorationBucket? oldBucket, bool initialRestore) {}
 
   @override
   void dispose() {
@@ -51,6 +68,23 @@ class _LoginModalState extends State<LoginModal> with TickerProviderStateMixin {
     _contactOrEmailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  void _scheduleDomAttributeSync() {
+    if (_domAttributesScheduled || !mounted) return;
+    _domAttributesScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setInputAttributes('input[autocomplete="tel"]', {
+        'id': 'customer-login-phone',
+        'name': 'customer-login-phone',
+      });
+      setInputAttributes('input[autocomplete="current-password"]', {
+        'id': 'customer-login-password',
+        'name': 'customer-login-password',
+      });
+      _domAttributesScheduled = false;
+    });
   }
 
   Future<void> _handleLogin() async {
@@ -72,8 +106,10 @@ class _LoginModalState extends State<LoginModal> with TickerProviderStateMixin {
     }
 
     // Validate contact number (expects 11 digits like 09XXXXXXXXX)
-    final phoneRegex = RegExp(r'^\d{11}$');
-    if (!phoneRegex.hasMatch(rawContact)) {
+    final bool isValidPhone =
+        rawContact.length == 11 &&
+        rawContact.codeUnits.every((code) => code >= 48 && code <= 57);
+    if (!isValidPhone) {
       setState(() {
         _errorMessage = 'Please enter a valid contact number';
       });
@@ -350,55 +386,83 @@ class _LoginModalState extends State<LoginModal> with TickerProviderStateMixin {
                                   indent: 2,
                                 ),
                               ),
-                              TextField(
-                                controller: _contactOrEmailController,
-                                focusNode: _contactFocus,
-                                style: const TextStyle(color: Colors.white),
-                                decoration: _inputDecoration(
-                                  label: 'Contact Number',
-                                  icon: Icons.phone_outlined,
-                                  focusNode: _contactFocus,
-                                ),
-                                keyboardType: TextInputType.phone,
-                                inputFormatters: [
-                                  FilteringTextInputFormatter.digitsOnly,
-                                  PhoneNumberFormatter(),
-                                ],
-                                textInputAction: TextInputAction.next,
-                                //PWEDE KO MA PRESS ENTER (Code)
-                                onSubmitted:
-                                    (_) => FocusScope.of(
-                                      context,
-                                    ).requestFocus(_passFocus),
-                              ),
-                              const SizedBox(height: 35),
-                              TextField(
-                                controller: _passwordController,
-                                focusNode: _passFocus,
-                                obscureText: _obscurePassword,
-                                style: const TextStyle(color: Colors.white),
-                                decoration: _inputDecoration(
-                                  label: 'Password',
-                                  icon: Icons.lock_outline,
-                                  focusNode: _passFocus,
-                                  suffixIcon: IconButton(
-                                    icon: Icon(
-                                      _obscurePassword
-                                          ? Icons.visibility_off
-                                          : Icons.visibility,
-                                      color: Colors.white,
-                                    ),
-                                    onPressed:
-                                        () => setState(
-                                          () =>
-                                              _obscurePassword =
-                                                  !_obscurePassword,
+                              Form(
+                                key: _loginFormKey,
+                                child: AutofillGroup(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      TextFormField(
+                                        controller: _contactOrEmailController,
+                                        focusNode: _contactFocus,
+                                        style: const TextStyle(
+                                          color: Colors.white,
                                         ),
+                                        decoration: _inputDecoration(
+                                          label: 'Contact Number',
+                                          icon: Icons.phone_outlined,
+                                          focusNode: _contactFocus,
+                                        ),
+                                        keyboardType: TextInputType.phone,
+                                        inputFormatters: [
+                                          FilteringTextInputFormatter
+                                              .digitsOnly,
+                                          LengthLimitingTextInputFormatter(11),
+                                        ],
+                                        textInputAction: TextInputAction.next,
+                                        autofillHints: const [
+                                          AutofillHints.telephoneNumber,
+                                        ],
+                                        restorationId: 'login_contact_number',
+                                        validator: (_) => null,
+                                        onFieldSubmitted:
+                                            (_) => FocusScope.of(
+                                              context,
+                                            ).requestFocus(_passFocus),
+                                      ),
+                                      const SizedBox(height: 35),
+                                      TextFormField(
+                                        controller: _passwordController,
+                                        focusNode: _passFocus,
+                                        obscureText: _obscurePassword,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                        ),
+                                        decoration: _inputDecoration(
+                                          label: 'Password',
+                                          icon: Icons.lock_outline,
+                                          focusNode: _passFocus,
+                                          suffixIcon: IconButton(
+                                            icon: Icon(
+                                              _obscurePassword
+                                                  ? Icons.visibility_off
+                                                  : Icons.visibility,
+                                              color: Colors.white,
+                                            ),
+                                            onPressed:
+                                                () => setState(
+                                                  () =>
+                                                      _obscurePassword =
+                                                          !_obscurePassword,
+                                                ),
+                                          ),
+                                        ),
+                                        textInputAction: TextInputAction.done,
+                                        autofillHints: const [
+                                          AutofillHints.password,
+                                        ],
+                                        restorationId: 'login_password',
+                                        validator: (_) => null,
+                                        onFieldSubmitted:
+                                            (_) =>
+                                                _isLoading
+                                                    ? null
+                                                    : _handleLogin(),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                textInputAction: TextInputAction.done,
-                                onSubmitted:
-                                    (_) => _isLoading ? null : _handleLogin(),
                               ),
                               const SizedBox(height: 8),
                               // Error message display
@@ -614,7 +678,13 @@ class PhoneNumberFormatter extends TextInputFormatter {
     TextEditingValue oldValue,
     TextEditingValue newValue,
   ) {
-    final digitsOnly = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
+    final digitsBuffer = StringBuffer();
+    for (final rune in newValue.text.runes) {
+      if (rune >= 48 && rune <= 57) {
+        digitsBuffer.writeCharCode(rune);
+      }
+    }
+    final digitsOnly = digitsBuffer.toString();
     final limited =
         digitsOnly.length > 11 ? digitsOnly.substring(0, 11) : digitsOnly;
 

@@ -1,4 +1,14 @@
 class PhoneValidator {
+  static String _digitsOnly(String input) {
+    final StringBuffer buffer = StringBuffer();
+    for (final int codeUnit in input.codeUnits) {
+      if (codeUnit >= 48 && codeUnit <= 57) {
+        buffer.writeCharCode(codeUnit);
+      }
+    }
+    return buffer.toString();
+  }
+
   // Philippine mobile number patterns
   static const List<String> _philippineMobilePrefixes = [
     '0905', '0906', '0907', '0908', '0909', // Globe/TM
@@ -185,7 +195,7 @@ class PhoneValidator {
     if (phoneNumber.isEmpty) return false;
 
     // Remove all non-digit characters
-    String cleanNumber = phoneNumber.replaceAll(RegExp(r'[^\d]'), '');
+    String cleanNumber = _digitsOnly(phoneNumber);
 
     // Check if it's exactly 11 digits
     if (cleanNumber.length != 11) return false;
@@ -209,7 +219,7 @@ class PhoneValidator {
     }
 
     // Remove all non-digit characters
-    String cleanNumber = phoneNumber.replaceAll(RegExp(r'[^\d]'), '');
+    String cleanNumber = _digitsOnly(phoneNumber);
 
     // Check if it's exactly 11 digits
     if (cleanNumber.length != 11) {
@@ -246,7 +256,7 @@ class PhoneValidator {
   static String formatPhilippineMobile(String phoneNumber) {
     if (phoneNumber.isEmpty) return '';
 
-    String cleanNumber = phoneNumber.replaceAll(RegExp(r'[^\d]'), '');
+    String cleanNumber = _digitsOnly(phoneNumber);
 
     if (cleanNumber.length == 11 && cleanNumber.startsWith('0')) {
       // Remove the leading 0 and add +63
@@ -259,7 +269,7 @@ class PhoneValidator {
 
   /// Cleans a phone number by removing all non-digit characters
   static String cleanPhoneNumber(String phoneNumber) {
-    return phoneNumber.replaceAll(RegExp(r'[^\d]'), '');
+    return _digitsOnly(phoneNumber);
   }
 }
 

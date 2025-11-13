@@ -797,7 +797,15 @@ class CustomerViewEditModal {
                                                         child: DropdownButtonFormField<
                                                           String
                                                         >(
-                                                          value:
+                                                          key: ValueKey<
+                                                            String?
+                                                          >(
+                                                            membershipType
+                                                                    .isEmpty
+                                                                ? null
+                                                                : membershipType,
+                                                          ),
+                                                          initialValue:
                                                               membershipType
                                                                       .isEmpty
                                                                   ? null

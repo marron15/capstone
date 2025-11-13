@@ -875,35 +875,36 @@ class _StatisticPageState extends State<StatisticPage>
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
               ),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    RadioListTile<String>(
-                      value: 'Daily',
-                      groupValue: selected,
-                      onChanged: (v) => setLocalState(() => selected = v!),
-                      title: const Text('Daily'),
-                      secondary: const Icon(Icons.today_rounded),
-                      dense: true,
-                    ),
-                    RadioListTile<String>(
-                      value: 'This Week',
-                      groupValue: selected,
-                      onChanged: (v) => setLocalState(() => selected = v!),
-                      title: const Text('This Week'),
-                      secondary: const Icon(Icons.calendar_view_week_rounded),
-                      dense: true,
-                    ),
-                    RadioListTile<String>(
-                      value: 'This Month',
-                      groupValue: selected,
-                      onChanged: (v) => setLocalState(() => selected = v!),
-                      title: const Text('This Month'),
-                      secondary: const Icon(Icons.calendar_month_rounded),
-                      dense: true,
-                    ),
-                  ],
+              content: RadioGroup<String>(
+                groupValue: selected,
+                onChanged: (value) {
+                  if (value == null) return;
+                  setLocalState(() => selected = value);
+                },
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      RadioListTile<String>(
+                        value: 'Daily',
+                        title: Text('Daily'),
+                        secondary: Icon(Icons.today_rounded),
+                        dense: true,
+                      ),
+                      RadioListTile<String>(
+                        value: 'This Week',
+                        title: Text('This Week'),
+                        secondary: Icon(Icons.calendar_view_week_rounded),
+                        dense: true,
+                      ),
+                      RadioListTile<String>(
+                        value: 'This Month',
+                        title: Text('This Month'),
+                        secondary: Icon(Icons.calendar_month_rounded),
+                        dense: true,
+                      ),
+                    ],
+                  ),
                 ),
               ),
               actions: [

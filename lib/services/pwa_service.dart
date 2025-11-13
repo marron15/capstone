@@ -60,17 +60,76 @@ class _PwaInstallButtonWidget extends StatefulWidget {
 
 class _PwaInstallButtonWidgetState extends State<_PwaInstallButtonWidget> {
   bool _isAvailable = false;
+  bool _isChecking = true;
 
   @override
   void initState() {
     super.initState();
-    _checkAvailability();
-    // Set up periodic checking
+    // Wait a bit for JavaScript to initialize before first check
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        _checkAvailability();
+      }
+    });
+    // Set up periodic checking with longer intervals
     _startPeriodicCheck();
+    // Also listen for JavaScript events
+    _setupEventListeners();
+  }
+
+  void _setupEventListeners() {
+    if (kIsWeb) {
+      try {
+        // ignore: deprecated_member_use
+        js.context.callMethod('eval', [
+          '''
+          (function() {
+            const triggerCheck = function() {
+              // Trigger Flutter to check availability
+              if (window.flutterPwaCheck) {
+                window.flutterPwaCheck();
+              }
+            };
+            
+            window.addEventListener('pwa-installable', function() {
+              window.pwaInstallable = true;
+              triggerCheck();
+            });
+            window.addEventListener('pwa-manifest-ready', function() {
+              window.pwaManifestReady = true;
+              triggerCheck();
+            });
+            window.addEventListener('pwa-installed', function() {
+              window.pwaInstalled = true;
+              triggerCheck();
+            });
+            window.addEventListener('pwa-check-availability', function() {
+              triggerCheck();
+            });
+            
+            // Expose function for Flutter to call
+            window.flutterPwaCheck = function() {
+              triggerCheck();
+            };
+          })();
+          ''',
+        ]);
+
+        // Set up a callback that Flutter can use
+        // ignore: deprecated_member_use
+        js.context['flutterPwaCheck'] = () {
+          if (mounted) {
+            _checkAvailability();
+          }
+        };
+      } catch (e) {
+        print('Error setting up PWA event listeners: $e');
+      }
+    }
   }
 
   void _startPeriodicCheck() {
-    Future.delayed(const Duration(seconds: 2), () {
+    Future.delayed(const Duration(seconds: 3), () {
       if (mounted) {
         _checkAvailability();
         _startPeriodicCheck(); // Continue checking
@@ -79,19 +138,35 @@ class _PwaInstallButtonWidgetState extends State<_PwaInstallButtonWidget> {
   }
 
   void _checkAvailability() {
+    if (!kIsWeb) {
+      if (mounted) {
+        setState(() {
+          _isAvailable = false;
+          _isChecking = false;
+        });
+      }
+      return;
+    }
+
     final available = PwaService.isInstallAvailable();
-    if (mounted && available != _isAvailable) {
+    if (mounted) {
       setState(() {
         _isAvailable = available;
+        _isChecking = false;
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Show button even in development for testing purposes
-    // In production, this will only show when PWA install is available
-    final showButton = _isAvailable || kDebugMode;
+    // Wait a bit before showing/hiding to allow JavaScript to initialize
+    if (_isChecking) {
+      return const SizedBox.shrink();
+    }
+
+    // Show button when PWA install is available
+    // The JavaScript function now has better fallback logic
+    final showButton = _isAvailable;
 
     if (!showButton) {
       return const SizedBox.shrink();

@@ -8,6 +8,64 @@ import 'package:file_picker/file_picker.dart';
 import '../services/api_service.dart';
 import '../../PH phone number valid/phone_formatter.dart';
 
+bool _isValidEmailAddress(String email) {
+  final int atIndex = email.indexOf('@');
+  if (atIndex <= 0 || atIndex == email.length - 1) {
+    return false;
+  }
+
+  final String localPart = email.substring(0, atIndex);
+  final String domainPart = email.substring(atIndex + 1);
+
+  if (localPart.isEmpty || domainPart.isEmpty) {
+    return false;
+  }
+
+  if (domainPart.contains('..') ||
+      domainPart.startsWith('.') ||
+      domainPart.endsWith('.')) {
+    return false;
+  }
+
+  final List<String> labels = domainPart.split('.');
+  if (labels.length < 2) {
+    return false;
+  }
+
+  final String tld = labels.last;
+  if (tld.length < 2 || tld.length > 24) {
+    return false;
+  }
+
+  for (final String label in labels) {
+    if (label.isEmpty) {
+      return false;
+    }
+    for (final int code in label.codeUnits) {
+      final bool isLetter =
+          (code >= 65 && code <= 90) || (code >= 97 && code <= 122);
+      final bool isDigit = code >= 48 && code <= 57;
+      if (!(isLetter || isDigit || code == 45)) {
+        return false;
+      }
+    }
+  }
+
+  for (final int code in localPart.codeUnits) {
+    final bool isLetter =
+        (code >= 65 && code <= 90) || (code >= 97 && code <= 122);
+    final bool isDigit = code >= 48 && code <= 57;
+    const String allowedSpecials = "!#\$%&'*+-/=?^_`{|}~.";
+    if (!(isLetter ||
+        isDigit ||
+        allowedSpecials.contains(String.fromCharCode(code)))) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 class AdminSignUpModal extends StatefulWidget {
   const AdminSignUpModal({super.key});
 
@@ -646,7 +704,11 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
                                             ),
                                             sized(
                                               DropdownButtonFormField<String>(
-                                                value: _selectedMembershipType,
+                                                key: ValueKey<String?>(
+                                                  _selectedMembershipType,
+                                                ),
+                                                initialValue:
+                                                    _selectedMembershipType,
                                                 decoration: _inputDecoration(
                                                   label: 'Membership Type',
                                                   icon: Icons.card_membership,
@@ -1591,9 +1653,7 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
                                                     if (_emailController.text
                                                             .trim()
                                                             .isNotEmpty &&
-                                                        !RegExp(
-                                                          r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                                                        ).hasMatch(
+                                                        !_isValidEmailAddress(
                                                           _emailController.text
                                                               .trim(),
                                                         )) {

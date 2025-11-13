@@ -532,7 +532,7 @@ class _LandingPageState extends State<LandingPage>
                   opacity: 1.0,
 
                   child: Image.asset(
-                    'assets/images/gym_view/back-view-2.jpg',
+                    'assets/images/gym_view/back_view2.jpg',
 
                     fit: BoxFit.cover,
                   ),

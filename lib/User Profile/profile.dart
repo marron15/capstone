@@ -225,6 +225,16 @@ class _ProfilePageState extends State<ProfilePage>
 
   // Editing disabled: change tracking and reset methods removed
 
+  String _digitsOnly(String input) {
+    final StringBuffer buffer = StringBuffer();
+    for (final int codeUnit in input.codeUnits) {
+      if (codeUnit >= 48 && codeUnit <= 57) {
+        buffer.writeCharCode(codeUnit);
+      }
+    }
+    return buffer.toString();
+  }
+
   void _validateContactInline() {
     final String v = _contactController.text.trim();
     if (v.isEmpty) {
@@ -232,8 +242,8 @@ class _ProfilePageState extends State<ProfilePage>
       return;
     }
     // Enforce length and digits only
-    final bool digitsOnly = RegExp(r'^\d+$').hasMatch(v);
-    if (!digitsOnly || v.length != 11) {
+    final String digits = _digitsOnly(v);
+    if (digits.length != 11 || digits.length != v.trim().length) {
       _contactError = 'Contact number must be exactly 11 digits';
     } else {
       _contactError = null;
@@ -246,7 +256,7 @@ class _ProfilePageState extends State<ProfilePage>
       _emergencyPhoneError = null;
       return;
     }
-    final String digits = raw.replaceAll(RegExp(r'\D'), '');
+    final String digits = _digitsOnly(raw);
     if (digits.length != 11) {
       _emergencyPhoneError = 'Contact number must be exactly 11 digits';
     } else {

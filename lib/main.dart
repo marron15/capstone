@@ -339,8 +339,8 @@ class _LoginChoicePageState extends State<LoginChoicePage>
           // Fullscreen background slideshow
           const _BackgroundSlideshow(
             imagePaths: [
-              'assets/images/gym_view/front-view.jpg',
-              'assets/images/gym_view/back-view.jpg',
+              'assets/images/gym_view/front_view.jpg',
+              'assets/images/gym_view/back_view.jpg',
             ],
           ),
           // Lightened gradient overlay: white tint to transparent (no dark tint)
