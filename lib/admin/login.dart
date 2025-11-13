@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'services/admin_service.dart';
 import '../services/unified_auth_state.dart';
+import '../utils/dom_input_utils.dart';
 
 class LoginPage extends StatefulWidget {
   final bool checkLoginStatus;
@@ -21,6 +22,7 @@ class _LoginPageState extends State<LoginPage> {
   String? _errorMessage;
   String? _contactError;
   String? _passwordError;
+  bool _domAttributesScheduled = false;
 
   @override
   void initState() {
@@ -29,6 +31,13 @@ class _LoginPageState extends State<LoginPage> {
     if (widget.checkLoginStatus) {
       _checkLoginStatus();
     }
+    _scheduleDomAttributeSync();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _scheduleDomAttributeSync();
   }
 
   // Check if admin is already logged in
@@ -48,6 +57,23 @@ class _LoginPageState extends State<LoginPage> {
     _contactController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  void _scheduleDomAttributeSync() {
+    if (_domAttributesScheduled || !mounted) return;
+    _domAttributesScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setInputAttributes('input[autocomplete="tel"]', {
+        'id': 'admin-login-phone',
+        'name': 'admin-login-phone',
+      });
+      setInputAttributes('input[autocomplete="current-password"]', {
+        'id': 'admin-login-password',
+        'name': 'admin-login-password',
+      });
+      _domAttributesScheduled = false;
+    });
   }
 
   // Handle login
@@ -292,19 +318,21 @@ class _LoginPageState extends State<LoginPage> {
                                         ),
                                         errorText: _contactError,
                                       ),
-
-                                      //PWEDE KO MA PRESS ENTER (Code)
                                       textInputAction: TextInputAction.next,
                                       keyboardType: TextInputType.number,
-                                      inputFormatters: const [
-                                        _ContactNumberFormatter(),
+                                      inputFormatters: [
+                                        FilteringTextInputFormatter.digitsOnly,
+                                        LengthLimitingTextInputFormatter(11),
                                       ],
+                                      autofillHints: const [
+                                        AutofillHints.telephoneNumber,
+                                      ],
+                                      restorationId: 'admin_login_contact',
                                       onFieldSubmitted:
                                           (_) =>
                                               FocusScope.of(
                                                 context,
                                               ).nextFocus(),
-
                                       validator: (value) {
                                         final digitsBuffer = StringBuffer();
                                         for (final rune
@@ -383,6 +411,10 @@ class _LoginPageState extends State<LoginPage> {
                                         errorText: _passwordError,
                                       ),
                                       textInputAction: TextInputAction.done,
+                                      autofillHints: const [
+                                        AutofillHints.password,
+                                      ],
+                                      restorationId: 'admin_login_password',
                                       onFieldSubmitted:
                                           (_) =>
                                               _isLoading
@@ -464,40 +496,6 @@ class _LoginPageState extends State<LoginPage> {
           },
         ),
       ),
-    );
-  }
-}
-
-class _ContactNumberFormatter extends TextInputFormatter {
-  const _ContactNumberFormatter();
-
-  @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
-    final digitsBuffer = StringBuffer();
-    for (final rune in newValue.text.runes) {
-      if (rune >= 48 && rune <= 57) {
-        digitsBuffer.writeCharCode(rune);
-      }
-    }
-    final digitsOnly = digitsBuffer.toString();
-
-    final limited =
-        digitsOnly.length > 11 ? digitsOnly.substring(0, 11) : digitsOnly;
-
-    final StringBuffer buffer = StringBuffer();
-    for (int i = 0; i < limited.length; i++) {
-      buffer.write(limited[i]);
-      if (i == 3 || i == 6) buffer.write(' ');
-    }
-    final formatted = buffer.toString();
-
-    int selectionIndex = formatted.length;
-    return TextEditingValue(
-      text: formatted,
-      selection: TextSelection.collapsed(offset: selectionIndex),
     );
   }
 }
