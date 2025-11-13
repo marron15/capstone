@@ -323,7 +323,10 @@ class AdminService {
       await prefs.setString(_adminKey, jsonEncode(admin));
       await prefs.setString(_tokenKey, accessToken);
       await prefs.setString(_refreshTokenKey, refreshToken);
-      debugPrint('✅ Admin data stored locally');
+      assert(() {
+        debugPrint('✅ Admin data stored locally');
+        return true;
+      }());
     } catch (e) {
       debugPrint('❌ Error storing admin data locally: $e');
     }
@@ -373,7 +376,10 @@ class AdminService {
       await prefs.remove(_adminKey);
       await prefs.remove(_tokenKey);
       await prefs.remove(_refreshTokenKey);
-      debugPrint('✅ Admin data cleared locally');
+      assert(() {
+        debugPrint('✅ Admin data cleared locally');
+        return true;
+      }());
     } catch (e) {
       debugPrint('❌ Error clearing admin data: $e');
     }
