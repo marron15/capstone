@@ -28,6 +28,7 @@ class _CustomersPageState extends State<CustomersPage> {
   bool _showNotExpiredOnly = false;
   static const double _drawerWidth = 280;
   bool _navCollapsed = false;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
@@ -631,22 +632,38 @@ class _CustomersPageState extends State<CustomersPage> {
   Widget build(BuildContext context) {
     // No-op: fixed sidenav layout; no header-driven responsiveness required here
 
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 768;
+
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: const Color.fromARGB(255, 245, 245, 245),
+      drawer:
+          isMobile
+              ? Drawer(
+                width: _drawerWidth,
+                child: SideNav(
+                  width: _drawerWidth,
+                  onClose: () => Navigator.of(context).pop(),
+                ),
+              )
+              : null,
       body: Container(
         decoration: const BoxDecoration(color: Colors.white),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              curve: Curves.easeOutCubic,
-              width: _navCollapsed ? 0 : _drawerWidth,
-              child: SideNav(
-                width: _drawerWidth,
-                onClose: () => setState(() => _navCollapsed = true),
+            // Desktop sidebar - hidden on mobile
+            if (!isMobile)
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeOutCubic,
+                width: _navCollapsed ? 0 : _drawerWidth,
+                child: SideNav(
+                  width: _drawerWidth,
+                  onClose: () => setState(() => _navCollapsed = true),
+                ),
               ),
-            ),
             Expanded(
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 250),
@@ -715,9 +732,85 @@ class _CustomersPageState extends State<CustomersPage> {
     return isMobile
         ? Column(
           children: [
-            // Action buttons for mobile - matching admin_profile.dart pattern
+            // Header row with menu button, title, and search
             Container(
               padding: const EdgeInsets.all(16),
+              color: Colors.transparent,
+              child: Row(
+                children: [
+                  IconButton(
+                    tooltip: 'Open Menu',
+                    onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+                    icon: const Icon(Icons.menu),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _showArchived ? 'Archived Customers' : 'Customers',
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ),
+                  // Search bar
+                  Flexible(
+                    child: SizedBox(
+                      height: 36,
+                      child: TextField(
+                        controller: _searchController,
+                        onChanged:
+                            (val) => setState(() {
+                              _searchQuery = val;
+                            }),
+                        style: const TextStyle(
+                          color: Colors.black87,
+                          fontSize: 14,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: 'Search',
+                          hintStyle: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey.shade500,
+                          ),
+                          prefixIcon: const Icon(
+                            Icons.search,
+                            size: 18,
+                            color: Colors.black54,
+                          ),
+                          filled: true,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: BorderSide(color: Colors.grey.shade300),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: BorderSide(color: Colors.grey.shade300),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: BorderSide(
+                              color: Colors.grey.shade400,
+                              width: 1.5,
+                            ),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          isDense: true,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Action buttons for mobile - matching admin_profile.dart pattern
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               color: Colors.transparent,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
