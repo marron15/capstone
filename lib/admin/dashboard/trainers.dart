@@ -23,6 +23,7 @@ class _TrainersPageState extends State<TrainersPage> {
   bool _showArchived = false;
   static const double _drawerWidth = 280;
   bool _navCollapsed = false;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   Widget _buildArchiveEmpty({
     required String title,
@@ -174,21 +175,34 @@ class _TrainersPageState extends State<TrainersPage> {
     final isMobile = screenWidth < 768;
 
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: const Color.fromARGB(255, 245, 245, 245),
+      drawer:
+          isMobile
+              ? Drawer(
+                width: _drawerWidth,
+                child: SideNav(
+                  width: _drawerWidth,
+                  onClose: () => Navigator.of(context).pop(),
+                ),
+              )
+              : null,
       body: Container(
         decoration: const BoxDecoration(color: Colors.white),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              curve: Curves.easeOutCubic,
-              width: _navCollapsed ? 0 : _drawerWidth,
-              child: SideNav(
-                width: _drawerWidth,
-                onClose: () => setState(() => _navCollapsed = true),
+            // Desktop sidebar - hidden on mobile
+            if (!isMobile)
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeOutCubic,
+                width: _navCollapsed ? 0 : _drawerWidth,
+                child: SideNav(
+                  width: _drawerWidth,
+                  onClose: () => setState(() => _navCollapsed = true),
+                ),
               ),
-            ),
             Expanded(
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 250),
@@ -205,6 +219,87 @@ class _TrainersPageState extends State<TrainersPage> {
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
+                                  // Header row with menu button, title, and search
+                                  Row(
+                                    children: [
+                                      IconButton(
+                                        tooltip: 'Open Menu',
+                                        onPressed:
+                                            () =>
+                                                _scaffoldKey.currentState
+                                                    ?.openDrawer(),
+                                        icon: const Icon(Icons.menu),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      const Expanded(
+                                        child: Text(
+                                          'Trainers',
+                                          style: TextStyle(
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.w800,
+                                            color: Colors.black,
+                                          ),
+                                        ),
+                                      ),
+                                      // Search bar
+                                      Flexible(
+                                        child: SizedBox(
+                                          height: 36,
+                                          child: TextField(
+                                            controller: searchController,
+                                            onChanged: _filterTrainers,
+                                            style: const TextStyle(
+                                              color: Colors.black87,
+                                              fontSize: 14,
+                                            ),
+                                            decoration: InputDecoration(
+                                              hintText: 'Search',
+                                              hintStyle: TextStyle(
+                                                fontSize: 14,
+                                                color: Colors.grey.shade500,
+                                              ),
+                                              prefixIcon: const Icon(
+                                                Icons.search,
+                                                size: 18,
+                                                color: Colors.black54,
+                                              ),
+                                              filled: true,
+                                              fillColor: Colors.white,
+                                              border: OutlineInputBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(20),
+                                                borderSide: BorderSide(
+                                                  color: Colors.grey.shade300,
+                                                ),
+                                              ),
+                                              enabledBorder: OutlineInputBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(20),
+                                                borderSide: BorderSide(
+                                                  color: Colors.grey.shade300,
+                                                ),
+                                              ),
+                                              focusedBorder: OutlineInputBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(20),
+                                                borderSide: BorderSide(
+                                                  color: Colors.grey.shade400,
+                                                  width: 1.5,
+                                                ),
+                                              ),
+                                              contentPadding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 12,
+                                                    vertical: 8,
+                                                  ),
+                                              isDense: true,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
                                   // First row with Export and View Archives buttons
                                   Row(
                                     children: [

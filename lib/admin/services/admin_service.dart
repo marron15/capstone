@@ -292,8 +292,6 @@ class AdminService {
   // Restore admin (activate)
   static Future<bool> restoreAdmin(int id) async {
     try {
-      debugPrint('🔄 Restoring admin with ID: $id');
-
       final response = await http.post(
         Uri.parse('$baseUrl/activateAdminByID.php'),
         headers: {'Content-Type': 'application/json'},

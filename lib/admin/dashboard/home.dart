@@ -24,9 +24,11 @@ class _StatisticPageState extends State<StatisticPage>
   // Drawer state no longer needed (side nav is fixed)
   bool _isLoading = true;
   String? _errorMessage;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   // Simple filter UI state removed per request
   final ScrollController _kpiController = ScrollController();
+  final ScrollController _tableScrollController = ScrollController();
   String _startsView = 'Week';
   String _kpiPeriodFilter = 'Daily'; // Daily | This Week | This Month
   final List<bool> _periodSelected = [true, false, false]; // Daily, Week, Month
@@ -550,6 +552,7 @@ class _StatisticPageState extends State<StatisticPage>
 
   // Header cell with dropdown for membership filter
   Widget _buildMembershipHeader() {
+    final bool isMobile = _isMobile(context);
     return Container(
       width: double.infinity,
       child: FittedBox(
@@ -558,19 +561,19 @@ class _StatisticPageState extends State<StatisticPage>
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-              'Membership Type',
+            Text(
+              isMobile ? 'Type' : 'Membership Type',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 16,
+                fontSize: isMobile ? 12 : 16,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 0.3,
               ),
             ),
-            const SizedBox(width: 4),
+            SizedBox(width: isMobile ? 2 : 4),
             PopupMenuButton<String>(
               tooltip: 'Filter membership type',
-              icon: const Icon(Icons.arrow_drop_down, size: 18),
+              icon: Icon(Icons.arrow_drop_down, size: isMobile ? 16 : 18),
               onSelected: (val) => setState(() => _membershipFilter = val),
               itemBuilder:
                   (context) => const [
@@ -591,6 +594,7 @@ class _StatisticPageState extends State<StatisticPage>
 
   // Header cell with dropdown for expiration filter
   Widget _buildExpirationHeader() {
+    final bool isMobile = _isMobile(context);
     return Container(
       width: double.infinity,
       child: FittedBox(
@@ -599,19 +603,19 @@ class _StatisticPageState extends State<StatisticPage>
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-              'Expiration Date',
+            Text(
+              isMobile ? 'Exp Date' : 'Expiration Date',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 16,
+                fontSize: isMobile ? 12 : 16,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 0.3,
               ),
             ),
-            const SizedBox(width: 4),
+            SizedBox(width: isMobile ? 2 : 4),
             PopupMenuButton<String>(
               tooltip: 'Filter expiration',
-              icon: const Icon(Icons.arrow_drop_down, size: 18),
+              icon: Icon(Icons.arrow_drop_down, size: isMobile ? 16 : 18),
               onSelected:
                   (val) => setState(() {
                     if (val == 'all') {
@@ -674,7 +678,7 @@ class _StatisticPageState extends State<StatisticPage>
   }
 
   // Build styled phone number button for desktop view
-  Widget _buildPhoneNumberButton(String phoneNumber) {
+  Widget _buildPhoneNumberButton(String phoneNumber, bool isMobile) {
     if (phoneNumber == 'N/A' ||
         phoneNumber.isEmpty ||
         phoneNumber == 'Not provided') {
@@ -682,7 +686,7 @@ class _StatisticPageState extends State<StatisticPage>
         child: Text(
           'N/A',
           style: TextStyle(
-            fontSize: 16,
+            fontSize: isMobile ? 12 : 16,
             color: Colors.grey.shade500,
             fontStyle: FontStyle.italic,
           ),
@@ -692,7 +696,10 @@ class _StatisticPageState extends State<StatisticPage>
 
     return Center(
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: EdgeInsets.symmetric(
+          horizontal: isMobile ? 8 : 12,
+          vertical: isMobile ? 6 : 8,
+        ),
         decoration: BoxDecoration(
           color: const Color(0xFFE8F5E8), // Light green background
           borderRadius: BorderRadius.circular(20),
@@ -706,16 +713,19 @@ class _StatisticPageState extends State<StatisticPage>
           children: [
             Icon(
               Icons.phone,
-              size: 16,
+              size: isMobile ? 14 : 16,
               color: const Color(0xFF2E7D32), // Darker green icon
             ),
-            const SizedBox(width: 6),
-            Text(
-              phoneNumber,
-              style: const TextStyle(
-                fontSize: 14,
-                color: Color(0xFF2E7D32), // Darker green text
-                fontWeight: FontWeight.w500,
+            SizedBox(width: isMobile ? 4 : 6),
+            Flexible(
+              child: Text(
+                phoneNumber,
+                style: TextStyle(
+                  fontSize: isMobile ? 11 : 14,
+                  color: const Color(0xFF2E7D32), // Darker green text
+                  fontWeight: FontWeight.w500,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
@@ -850,7 +860,7 @@ class _StatisticPageState extends State<StatisticPage>
 
     await exportStatsToPDF(
       context,
-      title: 'Status Change Report ($period)',
+      title: 'Statistics Report ($period)',
       rows: rows,
       customerTableRows: customerTableRows,
       todayMemberships: todayMemberships,
@@ -936,250 +946,495 @@ class _StatisticPageState extends State<StatisticPage>
     await _exportOverallReportForPeriod(context, confirmed);
   }
 
-  Widget _buildCustomerTable() {
+  Widget _buildCustomerTable(bool isMobile) {
+    // Build header row content
+    Widget headerRow = Container(
+      padding: EdgeInsets.symmetric(
+        vertical: isMobile ? 12 : 18,
+        horizontal: isMobile ? 8 : 16,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(12),
+          topRight: Radius.circular(12),
+        ),
+        border: Border(
+          bottom: BorderSide(color: Colors.grey.shade300, width: 2),
+        ),
+      ),
+      child:
+          isMobile
+              ? Row(
+                children: [
+                  SizedBox(
+                    width: 100,
+                    child: const Text(
+                      'Customer ID',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ),
+                  SizedBox(
+                    width: 120,
+                    child: const Text(
+                      'Name',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ),
+                  SizedBox(
+                    width: 130,
+                    child: const Text(
+                      'Contact',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 110, child: _buildMembershipHeader()),
+                  SizedBox(
+                    width: 120,
+                    child: const Text(
+                      'Start Date',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 120, child: _buildExpirationHeader()),
+                ],
+              )
+              : Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: const Text(
+                      'Customer ID',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    flex: 3,
+                    child: const Text(
+                      'Name',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    flex: 3,
+                    child: const Text(
+                      'Contact Number',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                  Expanded(flex: 3, child: _buildMembershipHeader()),
+                  Expanded(
+                    flex: 3,
+                    child: const Text(
+                      'Membership Start Date',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ),
+                  Expanded(flex: 3, child: _buildExpirationHeader()),
+                ],
+              ),
+    );
+
+    // Build data rows
+    List<Widget> dataRows =
+        _getVisibleCustomers().map((customer) {
+          final expirationDate = customer['expirationDate'] as DateTime;
+          final startDate = customer['startDate'] as DateTime;
+          final formattedExpiry = _formatExpirationDate(expirationDate);
+          final formattedStart = _formatExpirationDate(startDate);
+          final bool isExpired = customer['isExpired'] == true;
+          final membershipType = customer['membershipType'] as String;
+          return Column(
+            children: [
+              Container(
+                color: isExpired ? Colors.red.shade50 : null,
+                child:
+                    isMobile
+                        ? Row(
+                          children: [
+                            SizedBox(
+                              width: 100,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 10,
+                                  horizontal: 4,
+                                ),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.blue.shade50,
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(
+                                      color: Colors.blue.shade200,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    '#${customer['customerId'] ?? 'N/A'}',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.blue.shade700,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            SizedBox(
+                              width: 120,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 10,
+                                  horizontal: 4,
+                                ),
+                                child: Text(
+                                  customer['name'] ?? '',
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(fontSize: 13),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ),
+                            SizedBox(
+                              width: 130,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 10,
+                                  horizontal: 4,
+                                ),
+                                child: _buildPhoneNumberButton(
+                                  customer['contactNumber'] ?? 'N/A',
+                                  isMobile,
+                                ),
+                              ),
+                            ),
+                            SizedBox(
+                              width: 110,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 10,
+                                  horizontal: 4,
+                                ),
+                                child: Text(
+                                  membershipType,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: _getMembershipTypeColor(
+                                      membershipType,
+                                    ),
+                                    fontSize: 12,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ),
+                            SizedBox(
+                              width: 120,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 10,
+                                  horizontal: 4,
+                                ),
+                                child: Text(
+                                  formattedStart,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    color: Colors.black87,
+                                    fontSize: 12,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ),
+                            SizedBox(
+                              width: 120,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 10,
+                                  horizontal: 4,
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        formattedExpiry,
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color:
+                                              isExpired
+                                                  ? Colors.red
+                                                  : Colors.black87,
+                                          fontSize: 12,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    if (isExpired) ...[
+                                      const SizedBox(width: 4),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 6,
+                                          vertical: 2,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.red.shade100,
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                          border: Border.all(
+                                            color: Colors.red.shade300,
+                                          ),
+                                        ),
+                                        child: const Text(
+                                          'Exp',
+                                          style: TextStyle(
+                                            color: Colors.red,
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        )
+                        : Row(
+                          children: [
+                            Expanded(
+                              flex: 2,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                  horizontal: 8,
+                                ),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.blue.shade50,
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(
+                                      color: Colors.blue.shade200,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    '#${customer['customerId'] ?? 'N/A'}',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.blue.shade700,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              flex: 3,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                  horizontal: 8,
+                                ),
+                                child: Text(
+                                  customer['name'] ?? '',
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(fontSize: 16),
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              flex: 3,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                  horizontal: 8,
+                                ),
+                                child: _buildPhoneNumberButton(
+                                  customer['contactNumber'] ?? 'N/A',
+                                  isMobile,
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              flex: 3,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                  horizontal: 8,
+                                ),
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    membershipType,
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: _getMembershipTypeColor(
+                                        membershipType,
+                                      ),
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              flex: 3,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                  horizontal: 8,
+                                ),
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    formattedStart,
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      color: Colors.black87,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              flex: 3,
+                              child: Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                  horizontal: 8,
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      child: Text(
+                                        formattedExpiry,
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color:
+                                              isExpired
+                                                  ? Colors.red
+                                                  : Colors.black87,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ),
+                                    if (isExpired) ...[
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 2,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.red.shade100,
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                          border: Border.all(
+                                            color: Colors.red.shade300,
+                                          ),
+                                        ),
+                                        child: const Text(
+                                          'Expired',
+                                          style: TextStyle(
+                                            color: Colors.red,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+              ),
+              Divider(height: 1, color: Colors.grey.shade200),
+            ],
+          );
+        }).toList();
+
+    // Wrap everything in a single scroll view on mobile
+    if (isMobile) {
+      return Card(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 2,
+        child: SingleChildScrollView(
+          controller: _tableScrollController,
+          scrollDirection: Axis.horizontal,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [headerRow, ...dataRows],
+          ),
+        ),
+      );
+    }
+
+    // Desktop layout - no scroll view needed
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 2,
-      child: Column(
-        children: [
-          // Header Row
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade100,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(12),
-                topRight: Radius.circular(12),
-              ),
-              border: Border(
-                bottom: BorderSide(color: Colors.grey.shade300, width: 2),
-              ),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: const Text(
-                    'Customer ID',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 3,
-                  child: const Text(
-                    'Name',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 3,
-                  child: const Text(
-                    'Contact Number',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-                Expanded(flex: 3, child: _buildMembershipHeader()),
-                Expanded(
-                  flex: 3,
-                  child: const Text(
-                    'Membership Start Date',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.3,
-                    ),
-                  ),
-                ),
-                Expanded(flex: 3, child: _buildExpirationHeader()),
-              ],
-            ),
-          ),
-          // Data Rows
-          ..._getVisibleCustomers().map((customer) {
-            final expirationDate = customer['expirationDate'] as DateTime;
-            final startDate = customer['startDate'] as DateTime;
-            final formattedExpiry = _formatExpirationDate(expirationDate);
-            final formattedStart = _formatExpirationDate(startDate);
-            final bool isExpired = customer['isExpired'] == true;
-            final membershipType = customer['membershipType'] as String;
-            return Column(
-              children: [
-                Container(
-                  color: isExpired ? Colors.red.shade50 : null,
-                  child: Row(
-                    children: [
-                      Expanded(
-                        flex: 2,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 14,
-                            horizontal: 8,
-                          ),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.blue.shade50,
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(color: Colors.blue.shade200),
-                            ),
-                            child: Text(
-                              '#${customer['customerId'] ?? 'N/A'}',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.blue.shade700,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        flex: 3,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 14,
-                            horizontal: 8,
-                          ),
-                          child: Text(
-                            customer['name'] ?? '',
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(fontSize: 16),
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        flex: 3,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 14,
-                            horizontal: 8,
-                          ),
-                          child: _buildPhoneNumberButton(
-                            customer['contactNumber'] ?? 'N/A',
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        flex: 3,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 14,
-                            horizontal: 8,
-                          ),
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Text(
-                              membershipType,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: _getMembershipTypeColor(membershipType),
-                                fontSize: 14,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        flex: 3,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 14,
-                            horizontal: 8,
-                          ),
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Text(
-                              formattedStart,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                color: Colors.black87,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        flex: 3,
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 14,
-                            horizontal: 8,
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              FittedBox(
-                                fit: BoxFit.scaleDown,
-                                child: Text(
-                                  formattedExpiry,
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color:
-                                        isExpired ? Colors.red : Colors.black87,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ),
-                              if (isExpired) ...[
-                                const SizedBox(width: 8),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.red.shade100,
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: Colors.red.shade300,
-                                    ),
-                                  ),
-                                  child: const Text(
-                                    'Expired',
-                                    style: TextStyle(
-                                      color: Colors.red,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Divider(height: 1, color: Colors.grey.shade200),
-              ],
-            );
-          }),
-        ],
-      ),
+      child: Column(children: [headerRow, ...dataRows]),
     );
   }
 
@@ -1191,11 +1446,18 @@ class _StatisticPageState extends State<StatisticPage>
     RefreshService().unregisterRefreshCallback(_refreshData);
 
     _kpiController.dispose();
+    _tableScrollController.dispose();
     super.dispose();
+  }
+
+  // Helper method to check if screen is mobile
+  bool _isMobile(BuildContext context) {
+    return MediaQuery.of(context).size.width < 768;
   }
 
   @override
   Widget build(BuildContext context) {
+    final bool isMobile = _isMobile(context);
     return Focus(
       onFocusChange: (hasFocus) {
         // Refresh data when this page gains focus (e.g., returning from customers.dart)
@@ -1204,51 +1466,76 @@ class _StatisticPageState extends State<StatisticPage>
         }
       },
       child: Scaffold(
+        key: _scaffoldKey,
         backgroundColor: const Color.fromARGB(255, 245, 245, 245),
+        drawer:
+            isMobile
+                ? Drawer(
+                  width: _drawerWidth,
+                  child: SideNav(
+                    width: _drawerWidth,
+                    onClose: () => Navigator.of(context).pop(),
+                  ),
+                )
+                : null,
         body: Container(
           decoration: const BoxDecoration(color: Colors.white),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 250),
-                curve: Curves.easeOutCubic,
-                width: _navCollapsed ? 0 : _drawerWidth,
-                child: SideNav(
-                  width: _drawerWidth,
-                  onClose: () => setState(() => _navCollapsed = true),
+              // Desktop sidebar - hidden on mobile
+              if (!isMobile)
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeOutCubic,
+                  width: _navCollapsed ? 0 : _drawerWidth,
+                  child: SideNav(
+                    width: _drawerWidth,
+                    onClose: () => setState(() => _navCollapsed = true),
+                  ),
                 ),
-              ),
               Expanded(
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 250),
                   curve: Curves.easeOutCubic,
-                  padding: const EdgeInsets.all(24.0),
+                  padding: EdgeInsets.all(isMobile ? 12.0 : 24.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Header Row
                       Row(
                         children: [
-                          IconButton(
-                            tooltip:
-                                _navCollapsed
-                                    ? 'Open Sidebar'
-                                    : 'Close Sidebar',
-                            onPressed:
-                                () => setState(
-                                  () => _navCollapsed = !_navCollapsed,
-                                ),
-                            icon: Icon(
-                              _navCollapsed ? Icons.menu : Icons.chevron_left,
+                          if (isMobile)
+                            IconButton(
+                              tooltip: 'Open Menu',
+                              onPressed:
+                                  () => _scaffoldKey.currentState?.openDrawer(),
+                              icon: const Icon(Icons.menu),
+                            )
+                          else
+                            IconButton(
+                              tooltip:
+                                  _navCollapsed
+                                      ? 'Open Sidebar'
+                                      : 'Close Sidebar',
+                              onPressed:
+                                  () => setState(
+                                    () => _navCollapsed = !_navCollapsed,
+                                  ),
+                              icon: Icon(
+                                _navCollapsed ? Icons.menu : Icons.chevron_left,
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          const Text(
-                            'Status Change Report',
-                            style: TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.black,
+                          SizedBox(width: isMobile ? 4 : 8),
+                          Flexible(
+                            child: Text(
+                              'Statistics Report',
+                              style: TextStyle(
+                                fontSize: isMobile ? 20 : 28,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.black,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           const Spacer(),
@@ -1257,9 +1544,9 @@ class _StatisticPageState extends State<StatisticPage>
                             icon: Icon(
                               Icons.picture_as_pdf,
                               color: Colors.red.shade700,
-                              size: 20,
+                              size: isMobile ? 18 : 20,
                             ),
-                            label: const Text('Export PDF'),
+                            label: Text(isMobile ? 'PDF' : 'Export PDF'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.white,
                               foregroundColor: Colors.black87,
@@ -1268,18 +1555,19 @@ class _StatisticPageState extends State<StatisticPage>
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(20),
                               ),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 10,
+                              padding: EdgeInsets.symmetric(
+                                horizontal: isMobile ? 12 : 16,
+                                vertical: isMobile ? 8 : 10,
                               ),
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 8),
+                      SizedBox(height: isMobile ? 8 : 8),
                       // Global period filter (Daily | This Week | This Month)
                       Align(
-                        alignment: Alignment.centerRight,
+                        alignment:
+                            isMobile ? Alignment.center : Alignment.centerRight,
                         child: ToggleButtons(
                           isSelected: _periodSelected,
                           onPressed: (index) {
@@ -1288,25 +1576,40 @@ class _StatisticPageState extends State<StatisticPage>
                             if (index == 2) _setGlobalPeriod('This Month');
                           },
                           borderRadius: BorderRadius.circular(18),
-                          constraints: const BoxConstraints(
-                            minHeight: 36,
-                            minWidth: 110,
+                          constraints: BoxConstraints(
+                            minHeight: isMobile ? 40 : 36,
+                            minWidth: isMobile ? 90 : 110,
                           ),
                           selectedColor: Colors.white,
                           color: Colors.black87,
                           fillColor: Colors.black87,
-                          children: const [
+                          children: [
                             Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 8),
-                              child: Text('Daily'),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: isMobile ? 6 : 8,
+                              ),
+                              child: Text(
+                                'Daily',
+                                style: TextStyle(fontSize: isMobile ? 12 : 14),
+                              ),
                             ),
                             Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 8),
-                              child: Text('This Week'),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: isMobile ? 6 : 8,
+                              ),
+                              child: Text(
+                                'This Week',
+                                style: TextStyle(fontSize: isMobile ? 12 : 14),
+                              ),
                             ),
                             Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 8),
-                              child: Text('This Month'),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: isMobile ? 6 : 8,
+                              ),
+                              child: Text(
+                                'This Month',
+                                style: TextStyle(fontSize: isMobile ? 12 : 14),
+                              ),
                             ),
                           ],
                         ),
@@ -1444,15 +1747,18 @@ class _StatisticPageState extends State<StatisticPage>
                                     ),
                                     const SizedBox(height: 16),
                                     // Customer table
-                                    _buildCustomerTable(),
+                                    _buildCustomerTable(isMobile),
                                     const SizedBox(height: 16),
                                     // Charts area
                                     LayoutBuilder(
                                       builder: (context, constraints) {
+                                        final bool isMobile =
+                                            MediaQuery.of(context).size.width <
+                                            768;
                                         // Full-width first chart to occupy space
                                         return Wrap(
-                                          spacing: 24,
-                                          runSpacing: 24,
+                                          spacing: isMobile ? 12 : 24,
+                                          runSpacing: isMobile ? 12 : 24,
                                           children: [
                                             SizedBox(
                                               width: constraints.maxWidth,
@@ -1463,8 +1769,8 @@ class _StatisticPageState extends State<StatisticPage>
                                                 ),
                                                 elevation: 2,
                                                 child: Padding(
-                                                  padding: const EdgeInsets.all(
-                                                    16.0,
+                                                  padding: EdgeInsets.all(
+                                                    isMobile ? 12.0 : 16.0,
                                                   ),
                                                   child: Column(
                                                     crossAxisAlignment:
@@ -1473,29 +1779,42 @@ class _StatisticPageState extends State<StatisticPage>
                                                     children: [
                                                       Row(
                                                         children: [
-                                                          Text(
-                                                            _kpiPeriodFilter ==
-                                                                    'Daily'
-                                                                ? 'New Memberships Today'
-                                                                : (_startsView ==
-                                                                        'Week'
-                                                                    ? 'New Memberships this Week'
-                                                                    : 'New Memberships this Month'),
-                                                            style:
-                                                                const TextStyle(
-                                                                  fontSize: 18,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .w700,
-                                                                ),
+                                                          Flexible(
+                                                            child: Text(
+                                                              _kpiPeriodFilter ==
+                                                                      'Daily'
+                                                                  ? 'New Memberships Today'
+                                                                  : (_startsView ==
+                                                                          'Week'
+                                                                      ? 'New Memberships this Week'
+                                                                      : 'New Memberships this Month'),
+                                                              style: TextStyle(
+                                                                fontSize:
+                                                                    isMobile
+                                                                        ? 16
+                                                                        : 18,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w700,
+                                                              ),
+                                                              overflow:
+                                                                  TextOverflow
+                                                                      .ellipsis,
+                                                            ),
                                                           ),
                                                           const Spacer(),
                                                           // Chart filter removed; controlled by global filter
                                                         ],
                                                       ),
-                                                      const SizedBox(height: 8),
                                                       SizedBox(
-                                                        height: 260,
+                                                        height:
+                                                            isMobile ? 6 : 8,
+                                                      ),
+                                                      SizedBox(
+                                                        height:
+                                                            isMobile
+                                                                ? 200
+                                                                : 260,
                                                         child: () {
                                                           if (_kpiPeriodFilter ==
                                                               'Daily') {
@@ -1664,10 +1983,17 @@ class _KpiRibbonGroups extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isMobile = MediaQuery.of(context).size.width < 768;
     Widget tile(_KpiTile t) => Container(
-      width: 220,
-      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      width: isMobile ? 180 : 220,
+      margin: EdgeInsets.symmetric(
+        horizontal: isMobile ? 6 : 8,
+        vertical: isMobile ? 4 : 6,
+      ),
+      padding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 12 : 16,
+        vertical: isMobile ? 10 : 12,
+      ),
       decoration: BoxDecoration(
         color: t.color.withAlpha(26),
         borderRadius: BorderRadius.circular(12),
@@ -1676,26 +2002,34 @@ class _KpiRibbonGroups extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 10,
-            height: 10,
+            width: isMobile ? 8 : 10,
+            height: isMobile ? 8 : 10,
             decoration: BoxDecoration(color: t.color, shape: BoxShape.circle),
           ),
-          const SizedBox(width: 10),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                t.value.toString(),
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
+          SizedBox(width: isMobile ? 8 : 10),
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  t.value.toString(),
+                  style: TextStyle(
+                    fontSize: isMobile ? 18 : 22,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
-              ),
-              Text(
-                t.label,
-                style: const TextStyle(fontSize: 12, color: Colors.black54),
-              ),
-            ],
+                Text(
+                  t.label,
+                  style: TextStyle(
+                    fontSize: isMobile ? 11 : 12,
+                    color: Colors.black54,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -1827,25 +2161,26 @@ class _ChartCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isMobile = MediaQuery.of(context).size.width < 768;
     return SizedBox(
       width: width,
       child: Card(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         elevation: 2,
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: EdgeInsets.all(isMobile ? 12.0 : 16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 title,
-                style: const TextStyle(
-                  fontSize: 18,
+                style: TextStyle(
+                  fontSize: isMobile ? 16 : 18,
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              const SizedBox(height: 8),
-              SizedBox(height: 260, child: child),
+              SizedBox(height: isMobile ? 6 : 8),
+              SizedBox(height: isMobile ? 200 : 260, child: child),
             ],
           ),
         ),

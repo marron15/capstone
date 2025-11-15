@@ -12,6 +12,7 @@ class AdminProfileTable extends StatelessWidget {
   final List<Map<String, dynamic>> admins;
   final Function(List<Map<String, dynamic>>) updateFilteredAdmins;
   final VoidCallback recomputeFilters;
+  final VoidCallback? onRefresh;
 
   const AdminProfileTable({
     super.key,
@@ -23,6 +24,7 @@ class AdminProfileTable extends StatelessWidget {
     required this.admins,
     required this.updateFilteredAdmins,
     required this.recomputeFilters,
+    this.onRefresh,
   });
 
   @override
@@ -676,23 +678,41 @@ class AdminProfileTable extends StatelessWidget {
               onPressed: () async {
                 Navigator.of(context).pop();
 
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Row(
-                      children: [
-                        SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                        SizedBox(width: 16),
-                        Text('Processing...'),
-                      ],
-                    ),
-                    duration: Duration(seconds: 2),
-                  ),
-                );
+                // Store original status for rollback if needed
+                final String originalStatus = admin['status'] ?? 'active';
 
+                // Update UI instantly (optimistic update)
+                admin['status'] = isInactive ? 'active' : 'inactive';
+
+                // Update the admin in the parent list immediately
+                final adminIndex = admins.indexWhere(
+                  (a) => a['id'] == admin['id'],
+                );
+                if (adminIndex != -1) {
+                  admins[adminIndex] = Map<String, dynamic>.from(admin);
+                }
+
+                // Trigger UI update immediately
+                onEdit(admin);
+                recomputeFilters();
+
+                // Show success message immediately
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        isInactive
+                            ? '$firstName $lastName restored successfully!'
+                            : '$firstName $lastName archived successfully!',
+                      ),
+                      backgroundColor:
+                          isInactive ? Colors.green : Colors.orange,
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                }
+
+                // Make API call in the background
                 try {
                   final adminId = admin['id'];
                   final bool success =
@@ -702,22 +722,18 @@ class AdminProfileTable extends StatelessWidget {
 
                   if (!context.mounted) return;
 
-                  if (success) {
-                    admin['status'] = isInactive ? 'active' : 'inactive';
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          isInactive
-                              ? '$firstName $lastName restored successfully!'
-                              : '$firstName $lastName archived successfully!',
-                        ),
-                        backgroundColor:
-                            isInactive ? Colors.green : Colors.orange,
-                      ),
+                  if (!success) {
+                    // Rollback on failure
+                    admin['status'] = originalStatus;
+                    final adminIndex = admins.indexWhere(
+                      (a) => a['id'] == admin['id'],
                     );
-
+                    if (adminIndex != -1) {
+                      admins[adminIndex] = Map<String, dynamic>.from(admin);
+                    }
+                    onEdit(admin);
                     recomputeFilters();
-                  } else {
+
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
@@ -728,9 +744,25 @@ class AdminProfileTable extends StatelessWidget {
                         backgroundColor: Colors.red,
                       ),
                     );
+                  } else {
+                    // Refresh the admin list from API in the background to sync
+                    if (onRefresh != null) {
+                      onRefresh!();
+                    }
                   }
                 } catch (e) {
                   if (!context.mounted) return;
+
+                  // Rollback on error
+                  admin['status'] = originalStatus;
+                  final adminIndex = admins.indexWhere(
+                    (a) => a['id'] == admin['id'],
+                  );
+                  if (adminIndex != -1) {
+                    admins[adminIndex] = Map<String, dynamic>.from(admin);
+                  }
+                  onEdit(admin);
+                  recomputeFilters();
 
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
