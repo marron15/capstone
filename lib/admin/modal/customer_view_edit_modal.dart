@@ -229,30 +229,18 @@ class CustomerViewEditModal {
                 ? rawCustomerId
                 : int.tryParse('$rawCustomerId') ?? -1;
 
-        final String lockedFirstName =
-            firstNameController.text.trim().isNotEmpty
-                ? firstNameController.text.trim()
-                : originalFirstName;
-        final String lockedMiddleName =
-            middleNameController.text.trim().isNotEmpty
-                ? middleNameController.text.trim()
-                : originalMiddleName;
-        final String lockedLastName =
-            lastNameController.text.trim().isNotEmpty
-                ? lastNameController.text.trim()
-                : originalLastName;
-        final String lockedBirthdate =
-            birthdateController.text.trim().isNotEmpty
-                ? birthdateController.text.trim()
-                : originalBirthdate;
+        final String lockedFirstName = originalFirstName;
+        final String lockedMiddleName = originalMiddleName;
+        final String lockedLastName = originalLastName;
+        final String lockedBirthdate = originalBirthdate;
         final String lockedEmail =
             emailController.text.trim().isNotEmpty
                 ? emailController.text.trim()
                 : originalEmail;
 
-        final bool firstNameChanged = lockedFirstName != originalFirstName;
-        final bool middleNameChanged = lockedMiddleName != originalMiddleName;
-        final bool lastNameChanged = lockedLastName != originalLastName;
+        const bool firstNameChanged = false;
+        const bool middleNameChanged = false;
+        const bool lastNameChanged = false;
         final bool emailChanged = lockedEmail != originalEmail;
         final bool phoneChanged = phone != originalPhone;
         final bool emergencyNameChanged =
@@ -347,6 +335,10 @@ class CustomerViewEditModal {
           'phone_number': phone,
           'emergency_contact_name': emergencyNameController.text.trim(),
           'emergency_contact_number': emergencyPhone,
+          'status':
+              (customer['status'] ?? 'active').toString().isEmpty
+                  ? 'active'
+                  : (customer['status'] ?? 'active').toString(),
           'password':
               passwordController.text.trim().isNotEmpty
                   ? passwordController.text.trim()

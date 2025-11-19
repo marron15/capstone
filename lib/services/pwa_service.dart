@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-// ignore: deprecated_member_use
-import 'dart:js' as js;
+import 'pwa_js_bridge.dart' as pwa_js;
 
 /// Service for PWA install functionality
 ///
@@ -10,40 +9,18 @@ import 'dart:js' as js;
 class PwaService {
   /// Check if PWA install is available
   static bool isInstallAvailable() {
-    try {
-      if (kIsWeb) {
-        try {
-          // ignore: deprecated_member_use
-          final result = js.context.callMethod('isPwaInstallAvailable', []);
-          return result == true;
-        } catch (e) {
-          return false;
-        }
-      }
-      return false;
-    } catch (e) {
-      print('Error checking PWA install availability: $e');
+    if (!kIsWeb) {
       return false;
     }
+    return pwa_js.isInstallAvailable();
   }
 
   /// Trigger PWA install prompt
   static Future<bool> triggerInstall() async {
-    try {
-      if (kIsWeb) {
-        try {
-          // ignore: deprecated_member_use
-          final result = js.context.callMethod('triggerPwaInstall', []);
-          return result == true || result == 'accepted';
-        } catch (e) {
-          return false;
-        }
-      }
-      return false;
-    } catch (e) {
-      print('Error triggering PWA install: $e');
+    if (!kIsWeb) {
       return false;
     }
+    return pwa_js.triggerInstall();
   }
 
   /// Show install button based on availability
@@ -73,59 +50,6 @@ class _PwaInstallButtonWidgetState extends State<_PwaInstallButtonWidget> {
     });
     // Set up periodic checking with longer intervals
     _startPeriodicCheck();
-    // Also listen for JavaScript events
-    _setupEventListeners();
-  }
-
-  void _setupEventListeners() {
-    if (kIsWeb) {
-      try {
-        // ignore: deprecated_member_use
-        js.context.callMethod('eval', [
-          '''
-          (function() {
-            const triggerCheck = function() {
-              // Trigger Flutter to check availability
-              if (window.flutterPwaCheck) {
-                window.flutterPwaCheck();
-              }
-            };
-            
-            window.addEventListener('pwa-installable', function() {
-              window.pwaInstallable = true;
-              triggerCheck();
-            });
-            window.addEventListener('pwa-manifest-ready', function() {
-              window.pwaManifestReady = true;
-              triggerCheck();
-            });
-            window.addEventListener('pwa-installed', function() {
-              window.pwaInstalled = true;
-              triggerCheck();
-            });
-            window.addEventListener('pwa-check-availability', function() {
-              triggerCheck();
-            });
-            
-            // Expose function for Flutter to call
-            window.flutterPwaCheck = function() {
-              triggerCheck();
-            };
-          })();
-          ''',
-        ]);
-
-        // Set up a callback that Flutter can use
-        // ignore: deprecated_member_use
-        js.context['flutterPwaCheck'] = () {
-          if (mounted) {
-            _checkAvailability();
-          }
-        };
-      } catch (e) {
-        print('Error setting up PWA event listeners: $e');
-      }
-    }
   }
 
   void _startPeriodicCheck() {
