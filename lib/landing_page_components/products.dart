@@ -33,37 +33,14 @@ class _ProductsSectionState extends State<ProductsSection> {
   Future<void> _bootstrap() async {
     setState(() => _isLoading = true);
 
-    // Default four items (kept first, always visible)
-    final defaults = <_ProductItem>[
-      _ProductItem(
-        title: 'Whey Protein',
-        description: 'Whey protein with vitamins C. Convenient sachets.',
-        image: const AssetImage('assets/images/services&products/whey.png'),
-      ),
-      _ProductItem(
-        title: 'Serious Mass',
-        description: 'High-calorie mass gainer. 12 lbs, chocolate flavor.',
-        image: const AssetImage('assets/images/services&products/mass.png'),
-      ),
-      _ProductItem(
-        title: 'Prothin Creatine',
-        description: 'Monohydrate creatine powder. 60 servings.',
-        image: const AssetImage('assets/images/services&products/creatine.png'),
-      ),
-      _ProductItem(
-        title: 'Amino 2222 Tabs',
-        description: 'Full spectrum blend micronized aminos. 320 tablets.',
-        image: const AssetImage('assets/images/services&products/amino.png'),
-      ),
-    ];
-
-    // Load active products from API and append after defaults
     final apiRows = await ApiService.getProductsByStatus('active');
     final apiItems = <_ProductItem>[];
     for (final row in apiRows) {
       final String title = (row['name'] ?? '').toString();
       final String description = (row['description'] ?? '').toString();
       final String img = (row['img'] ?? '').toString();
+      final int quantity =
+          int.tryParse((row['quantity'] ?? '0').toString()) ?? 0;
       ImageProvider? provider;
       try {
         if (img.startsWith('uploads/') || img.startsWith('http')) {
@@ -81,7 +58,12 @@ class _ProductsSectionState extends State<ProductsSection> {
       }
       if (title.isEmpty || description.isEmpty || provider == null) continue;
       apiItems.add(
-        _ProductItem(title: title, description: description, image: provider),
+        _ProductItem(
+          title: title,
+          description: description,
+          image: provider,
+          quantity: quantity,
+        ),
       );
     }
 
@@ -89,7 +71,6 @@ class _ProductsSectionState extends State<ProductsSection> {
     setState(() {
       _items
         ..clear()
-        ..addAll(defaults)
         ..addAll(apiItems);
       _isLoading = false;
     });
@@ -204,6 +185,7 @@ class _ProductsSectionState extends State<ProductsSection> {
                                       image: p.image,
                                       title: p.title,
                                       description: p.description,
+                                      quantity: p.quantity,
                                       isSmallScreen: isSmallScreen,
                                       screenWidth: screenWidth,
                                     ),
@@ -286,6 +268,18 @@ class _ProductsSectionState extends State<ProductsSection> {
               );
             },
           ),
+        if (!_isLoading && _items.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Text(
+              'No products available yet. Please check back soon!',
+              style: TextStyle(
+                color: Colors.white70,
+                fontWeight: FontWeight.w500,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
         SizedBox(height: screenHeight * 0.06),
       ],
     );
@@ -296,10 +290,13 @@ class _ProductItem {
   final String title;
   final String description;
   final ImageProvider image;
+  final int quantity;
+  bool get isSoldOut => quantity <= 0;
   _ProductItem({
     required this.title,
     required this.description,
     required this.image,
+    required this.quantity,
   });
 }
 
@@ -307,6 +304,7 @@ class _FlexibleProductCard extends StatelessWidget {
   final ImageProvider image;
   final String title;
   final String description;
+  final int quantity;
   final bool isSmallScreen;
   final double screenWidth;
 
@@ -314,6 +312,7 @@ class _FlexibleProductCard extends StatelessWidget {
     required this.image,
     required this.title,
     required this.description,
+    required this.quantity,
     required this.isSmallScreen,
     required this.screenWidth,
   });
@@ -329,6 +328,7 @@ class _FlexibleProductCard extends StatelessWidget {
         image: image,
         title: title,
         description: description,
+        quantity: quantity,
         isSmallScreen: isSmallScreen,
         screenWidth: screenWidth,
       ),
@@ -340,6 +340,7 @@ class _ProductCard extends StatelessWidget {
   final ImageProvider image;
   final String title;
   final String description;
+  final int quantity;
   final bool isSmallScreen;
   final double screenWidth;
 
@@ -347,12 +348,14 @@ class _ProductCard extends StatelessWidget {
     required this.image,
     required this.title,
     required this.description,
+    required this.quantity,
     required this.isSmallScreen,
     required this.screenWidth,
   });
 
   @override
   Widget build(BuildContext context) {
+    final bool soldOut = quantity <= 0;
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(18),
@@ -377,6 +380,28 @@ class _ProductCard extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(18),
               color: Colors.black.withAlpha((0.35 * 255).toInt()),
+            ),
+          ),
+          Positioned(
+            top: 12,
+            right: 12,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color:
+                    soldOut
+                        ? Colors.redAccent.withAlpha((0.85 * 255).toInt())
+                        : Colors.black.withAlpha((0.55 * 255).toInt()),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                'Qty: ${quantity.clamp(0, 9999)}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.4,
+                ),
+              ),
             ),
           ),
           Padding(
@@ -407,9 +432,44 @@ class _ProductCard extends StatelessWidget {
                         .clamp(11.0, 16.0),
                   ),
                 ),
+                const SizedBox(height: 6),
+                Text(
+                  soldOut ? 'Out of stock' : 'In stock: $quantity',
+                  style: TextStyle(
+                    color: soldOut ? Colors.redAccent : Colors.greenAccent,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                    letterSpacing: 0.3,
+                  ),
+                ),
               ],
             ),
           ),
+          if (soldOut)
+            Positioned.fill(
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withAlpha((0.65 * 255).toInt()),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: Colors.white24),
+                  ),
+                  child: const Text(
+                    'Sold Out',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );

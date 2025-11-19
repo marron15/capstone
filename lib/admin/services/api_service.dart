@@ -378,6 +378,7 @@ class ApiService {
     required String description,
     required Uint8List imageBytes,
     required String imageFileName,
+    required int quantity,
   }) async {
     try {
       final String mime = _detectMimeFromFilename(imageFileName);
@@ -391,6 +392,7 @@ class ApiService {
         'name': name,
         'description': description,
         'img': dataUrl,
+        'quantity': quantity,
       });
 
       final res = await http.post(
@@ -419,7 +421,12 @@ class ApiService {
       final resForm = await http.post(
         Uri.parse(insertProductEndpoint),
         headers: {'Accept': 'application/json'},
-        body: {'name': name, 'description': description, 'img': dataUrl},
+        body: {
+          'name': name,
+          'description': description,
+          'img': dataUrl,
+          'quantity': quantity.toString(),
+        },
       );
       // Hide insertProduct form raw response
       if (resForm.statusCode == 200) {

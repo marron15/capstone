@@ -2,34 +2,43 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:ui';
 import 'dart:typed_data';
+import 'dart:convert';
 import '../services/api_service.dart';
 
 class Product {
+  final int? id;
   final String name;
   final double price;
   final String description;
+  final int quantity;
   final Uint8List? imageBytes;
   final String? imageFileName;
   final String? imageUrl; // when loaded from server path/URL
+  final String? imagePath; // raw path returned by API (uploads/..)
 
   Product({
+    this.id,
     required this.name,
     required this.price,
     required this.description,
+    required this.quantity,
     this.imageBytes,
     this.imageFileName,
     this.imageUrl,
+    this.imagePath,
   });
 }
 
 class AddProductModal extends StatefulWidget {
   final Function(Product) onProductAdded;
   final Product? initialProduct;
+  final int? productId;
 
   const AddProductModal({
     super.key,
     required this.onProductAdded,
     this.initialProduct,
+    this.productId,
   });
 
   @override
@@ -41,19 +50,24 @@ class _AddProductModalState extends State<AddProductModal> {
   final _nameController = TextEditingController();
   final _priceController = TextEditingController();
   final _descriptionController = TextEditingController();
+  final _quantityController = TextEditingController();
 
   Uint8List? _imageBytes;
   String? _imageFileName;
+  String? _existingImagePath;
 
   @override
   void initState() {
     super.initState();
+    _quantityController.text = '0';
     if (widget.initialProduct != null) {
       _nameController.text = widget.initialProduct!.name;
       _priceController.text = widget.initialProduct!.price.toString();
       _descriptionController.text = widget.initialProduct!.description;
       _imageBytes = widget.initialProduct!.imageBytes;
       _imageFileName = widget.initialProduct!.imageFileName;
+      _quantityController.text = widget.initialProduct!.quantity.toString();
+      _existingImagePath = widget.initialProduct!.imagePath;
     }
   }
 
@@ -62,6 +76,7 @@ class _AddProductModalState extends State<AddProductModal> {
     _nameController.dispose();
     _priceController.dispose();
     _descriptionController.dispose();
+    _quantityController.dispose();
     super.dispose();
   }
 
@@ -95,6 +110,7 @@ class _AddProductModalState extends State<AddProductModal> {
       setState(() {
         _imageBytes = result.files.single.bytes;
         _imageFileName = result.files.single.name;
+        _existingImagePath = null;
       });
     }
   }
@@ -118,37 +134,47 @@ class _AddProductModalState extends State<AddProductModal> {
                   borderRadius: BorderRadius.circular(13),
                   child: Image.memory(_imageBytes!, fit: BoxFit.cover),
                 )
-                : Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.blueAccent.withAlpha((0.25 * 255).toInt()),
-                            Colors.lightBlueAccent.withAlpha(
-                              (0.18 * 255).toInt(),
+                : (widget.initialProduct?.imageUrl != null
+                    ? ClipRRect(
+                      borderRadius: BorderRadius.circular(13),
+                      child: Image.network(
+                        widget.initialProduct!.imageUrl!,
+                        fit: BoxFit.cover,
+                      ),
+                    )
+                    : Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.blueAccent.withAlpha(
+                                  (0.25 * 255).toInt(),
+                                ),
+                                Colors.lightBlueAccent.withAlpha(
+                                  (0.18 * 255).toInt(),
+                                ),
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
                             ),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
+                          ),
+                          child: const Icon(
+                            Icons.cloud_upload_outlined,
+                            color: Colors.lightBlueAccent,
+                          ),
                         ),
-                      ),
-                      child: const Icon(
-                        Icons.cloud_upload_outlined,
-                        color: Colors.lightBlueAccent,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    const Text(
-                      'Click to upload image',
-                      style: TextStyle(color: Colors.white70, fontSize: 14),
-                    ),
-                  ],
-                ),
+                        const SizedBox(height: 10),
+                        const Text(
+                          'Click to upload image',
+                          style: TextStyle(color: Colors.white70, fontSize: 14),
+                        ),
+                      ],
+                    )),
       ),
     );
   }
@@ -157,57 +183,148 @@ class _AddProductModalState extends State<AddProductModal> {
     _nameController.clear();
     _priceController.clear();
     _descriptionController.clear();
+    _quantityController.text = '0';
     setState(() {
       _imageBytes = null;
       _imageFileName = null;
+      _existingImagePath = null;
     });
   }
 
-  void _handleSubmit() {
-    if (_formKey.currentState!.validate() && _imageBytes != null) {
-      final newProduct = Product(
-        name: _nameController.text,
-        price: 0.0,
-        description: _descriptionController.text,
-        imageBytes: _imageBytes,
-        imageFileName: _imageFileName,
-      );
+  String _detectMimeFromFilename(String? filename) {
+    final lower = (filename ?? '').toLowerCase();
+    if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg';
+    if (lower.endsWith('.webp')) return 'image/webp';
+    return 'image/png';
+  }
 
-      // Persist to API
-      ApiService.insertProduct(
-        name: newProduct.name,
-        description: newProduct.description,
-        imageBytes: newProduct.imageBytes!,
-        imageFileName: newProduct.imageFileName ?? 'image.png',
-      ).then((bool ok) {
-        if (ok) {
-          widget.onProductAdded(newProduct);
-          _clearForm();
-          Navigator.of(context).pop();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                widget.initialProduct == null
-                    ? 'Product added successfully!'
-                    : 'Product updated!',
-              ),
-              backgroundColor:
-                  widget.initialProduct == null ? Colors.green : Colors.blue,
-            ),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Failed to save product'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      });
-    } else if (_imageBytes == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
+  String? _currentImagePayload() {
+    if (_imageBytes != null) {
+      final mime = _detectMimeFromFilename(_imageFileName);
+      final encoded = base64Encode(_imageBytes!);
+      return 'data:$mime;base64,$encoded';
+    }
+    if (_existingImagePath != null && _existingImagePath!.isNotEmpty) {
+      return _existingImagePath;
+    }
+    return widget.initialProduct?.imagePath;
+  }
+
+  Future<void> _handleSubmit() async {
+    if (!_formKey.currentState!.validate()) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final int? parsedQuantity = int.tryParse(_quantityController.text.trim());
+    if (parsedQuantity == null || parsedQuantity < 0) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a valid quantity (0 or above)'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final bool isEditing =
+        widget.initialProduct != null && widget.productId != null;
+
+    if (isEditing) {
+      final String? imagePayload = _currentImagePayload();
+      if (imagePayload == null) {
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text('Please provide an image for this product'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+      final bool ok = await ApiService.updateProduct(
+        id: widget.productId!,
+        data: {
+          'name': _nameController.text,
+          'description': _descriptionController.text,
+          'quantity': parsedQuantity,
+          'img': imagePayload,
+        },
+      );
+      if (!mounted) return;
+      if (ok) {
+        final Product updatedProduct = Product(
+          id: widget.productId,
+          name: _nameController.text,
+          price: 0.0,
+          description: _descriptionController.text,
+          quantity: parsedQuantity,
+          imageBytes: _imageBytes ?? widget.initialProduct?.imageBytes,
+          imageFileName: _imageFileName ?? widget.initialProduct?.imageFileName,
+          imageUrl:
+              _imageBytes != null ? null : widget.initialProduct?.imageUrl,
+          imagePath:
+              _imageBytes != null
+                  ? null
+                  : (_existingImagePath ?? widget.initialProduct?.imagePath),
+        );
+        widget.onProductAdded(updatedProduct);
+        Navigator.of(context).pop();
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text('Product updated!'),
+            backgroundColor: Colors.blue,
+          ),
+        );
+      } else {
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text('Failed to update product'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
+
+    if (_imageBytes == null) {
+      messenger.showSnackBar(
         const SnackBar(
           content: Text('Please select an image for the product'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final Product newProduct = Product(
+      name: _nameController.text,
+      price: 0.0,
+      description: _descriptionController.text,
+      quantity: parsedQuantity,
+      imageBytes: _imageBytes,
+      imageFileName: _imageFileName,
+    );
+
+    final bool ok = await ApiService.insertProduct(
+      name: newProduct.name,
+      description: newProduct.description,
+      imageBytes: newProduct.imageBytes!,
+      imageFileName: newProduct.imageFileName ?? 'image.png',
+      quantity: parsedQuantity,
+    );
+
+    if (!mounted) return;
+    if (ok) {
+      widget.onProductAdded(newProduct);
+      _clearForm();
+      Navigator.of(context).pop();
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Product added successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } else {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Failed to save product'),
           backgroundColor: Colors.red,
         ),
       );
@@ -333,7 +450,23 @@ class _AddProductModalState extends State<AddProductModal> {
                               return null;
                             },
                           ),
-                          // Price removed per request; defaulting to 0.0 in submission
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: _quantityController,
+                            style: const TextStyle(color: Colors.white),
+                            keyboardType: TextInputType.number,
+                            decoration: _inputDecoration('Quantity'),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter quantity';
+                              }
+                              final int? parsed = int.tryParse(value);
+                              if (parsed == null || parsed < 0) {
+                                return 'Quantity must be 0 or greater';
+                              }
+                              return null;
+                            },
+                          ),
                           const SizedBox(height: 16),
                           TextFormField(
                             controller: _descriptionController,

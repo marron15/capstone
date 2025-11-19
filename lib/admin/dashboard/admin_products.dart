@@ -94,6 +94,11 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
             final String name = (row['name'] ?? '').toString();
             final String description = (row['description'] ?? '').toString();
             final String img = (row['img'] ?? '').toString();
+            final int quantity =
+                int.tryParse((row['quantity'] ?? '0').toString()) ?? 0;
+            final dynamic rawId =
+                row['id'] ?? row['product_id'] ?? row['productId'];
+            final int parsedId = int.tryParse((rawId ?? '0').toString()) ?? 0;
             Uint8List? bytes;
             String? url;
             try {
@@ -111,12 +116,15 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
               bytes = null;
             }
             return Product(
+              id: parsedId == 0 ? null : parsedId,
               name: name,
               price: double.tryParse((row['price'] ?? '0').toString()) ?? 0.0,
               description: description,
+              quantity: quantity,
               imageBytes: bytes,
               imageFileName: 'image',
               imageUrl: url,
+              imagePath: img,
             );
           }),
         );
@@ -143,6 +151,7 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
   }
 
   Widget _buildMobileProductCard(Product product, int index) {
+    final bool soldOut = product.quantity <= 0;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -249,6 +258,52 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color:
+                                  soldOut
+                                      ? Colors.red.shade50
+                                      : Colors.green.shade50,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color:
+                                    soldOut
+                                        ? Colors.red.shade200
+                                        : Colors.green.shade200,
+                              ),
+                            ),
+                            child: Text(
+                              'Qty: ${product.quantity}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color:
+                                    soldOut
+                                        ? Colors.red.shade700
+                                        : Colors.green.shade700,
+                              ),
+                            ),
+                          ),
+                          if (soldOut) ...[
+                            const SizedBox(width: 8),
+                            Text(
+                              'Sold Out',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.red.shade600,
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ],
                   ),
@@ -368,6 +423,11 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
+        final int? productId =
+            product?.id ??
+            ((index != null && index >= 0 && index < _productIds.length)
+                ? _productIds[index]
+                : null);
         return AddProductModal(
           onProductAdded: (Product newProduct) {
             setState(() {
@@ -379,6 +439,7 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
             });
           },
           initialProduct: product,
+          productId: productId,
         );
       },
     );
@@ -840,6 +901,18 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                                             Expanded(
                                               flex: 1,
                                               child: Text(
+                                                'Quantity',
+                                                textAlign: TextAlign.center,
+                                                style: TextStyle(
+                                                  fontSize: 18,
+                                                  fontWeight: FontWeight.w700,
+                                                  letterSpacing: 0.5,
+                                                ),
+                                              ),
+                                            ),
+                                            Expanded(
+                                              flex: 1,
+                                              child: Text(
                                                 'Actions',
                                                 textAlign: TextAlign.center,
                                                 style: TextStyle(
@@ -873,6 +946,8 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                                         ) {
                                           final index = entry.key;
                                           final product = entry.value;
+                                          final bool soldOut =
+                                              product.quantity <= 0;
                                           return Column(
                                             children: [
                                               Row(
@@ -1021,6 +1096,82 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                                                           fontSize: 16,
                                                         ),
                                                       ),
+                                                    ),
+                                                  ),
+                                                  Expanded(
+                                                    flex: 1,
+                                                    child: Column(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .center,
+                                                      children: [
+                                                        Container(
+                                                          padding:
+                                                              const EdgeInsets.symmetric(
+                                                                horizontal: 12,
+                                                                vertical: 6,
+                                                              ),
+                                                          decoration: BoxDecoration(
+                                                            color:
+                                                                soldOut
+                                                                    ? Colors
+                                                                        .red
+                                                                        .shade50
+                                                                    : Colors
+                                                                        .green
+                                                                        .shade50,
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  12,
+                                                                ),
+                                                            border: Border.all(
+                                                              color:
+                                                                  soldOut
+                                                                      ? Colors
+                                                                          .red
+                                                                          .shade200
+                                                                      : Colors
+                                                                          .green
+                                                                          .shade200,
+                                                            ),
+                                                          ),
+                                                          child: Text(
+                                                            'Qty: ${product.quantity}',
+                                                            style: TextStyle(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w700,
+                                                              color:
+                                                                  soldOut
+                                                                      ? Colors
+                                                                          .red
+                                                                          .shade700
+                                                                      : Colors
+                                                                          .green
+                                                                          .shade700,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                        if (soldOut)
+                                                          Padding(
+                                                            padding:
+                                                                const EdgeInsets.only(
+                                                                  top: 4,
+                                                                ),
+                                                            child: Text(
+                                                              'Sold Out',
+                                                              style: TextStyle(
+                                                                color:
+                                                                    Colors
+                                                                        .red
+                                                                        .shade600,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                      ],
                                                     ),
                                                   ),
                                                   Expanded(
