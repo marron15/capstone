@@ -43,17 +43,17 @@ class _ProductsSectionState extends State<ProductsSection> {
       _ProductItem(
         title: 'Serious Mass',
         description: 'High-calorie mass gainer. 12 lbs, chocolate flavor.',
-        image: const AssetImage('assets/images/services&products/Mass.png'),
+        image: const AssetImage('assets/images/services&products/mass.png'),
       ),
       _ProductItem(
         title: 'Prothin Creatine',
         description: 'Monohydrate creatine powder. 60 servings.',
-        image: const AssetImage('assets/images/services&products/Creatine.png'),
+        image: const AssetImage('assets/images/services&products/creatine.png'),
       ),
       _ProductItem(
         title: 'Amino 2222 Tabs',
         description: 'Full spectrum blend micronized aminos. 320 tablets.',
-        image: const AssetImage('assets/images/services&products/Amino.png'),
+        image: const AssetImage('assets/images/services&products/amino.png'),
       ),
     ];
 
