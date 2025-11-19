@@ -1862,8 +1862,14 @@ class _StatisticPageState extends State<StatisticPage>
                                                           }
                                                           return _startsView ==
                                                                   'Week'
-                                                              ? const NewMembersBarGraph()
-                                                              : const NewMembersMonthBarGraph();
+                                                              ? NewMembersBarGraph(
+                                                                  customers:
+                                                                      _customers,
+                                                                )
+                                                              : NewMembersMonthBarGraph(
+                                                                  customers:
+                                                                      _customers,
+                                                                );
                                                         }(),
                                                       ),
                                                     ],

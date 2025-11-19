@@ -1,46 +1,45 @@
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
-import '../services/api_service.dart';
 
-class NewMembersBarGraph extends StatefulWidget {
-  const NewMembersBarGraph({super.key});
-
-  @override
-  State<NewMembersBarGraph> createState() => _NewMembersBarGraphState();
-}
-
-class _NewMembersBarGraphState extends State<NewMembersBarGraph> {
-  List<_BarData> _data = const [
-    _BarData('Mon', 0),
-    _BarData('Tue', 0),
-    _BarData('Wed', 0),
-    _BarData('Thu', 0),
-    _BarData('Fri', 0),
-    _BarData('Sat', 0),
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  Future<void> _load() async {
-    final Map<String, int> res = await ApiService.getNewMembersThisWeek();
-    setState(() {
-      _data = [
-        _BarData('Mon', res['Monday'] ?? 0),
-        _BarData('Tue', res['Tuesday'] ?? 0),
-        _BarData('Wed', res['Wednesday'] ?? 0),
-        _BarData('Thu', res['Thursday'] ?? 0),
-        _BarData('Fri', res['Friday'] ?? 0),
-        _BarData('Sat', res['Saturday'] ?? 0),
-      ];
-    });
-  }
+class NewMembersBarGraph extends StatelessWidget {
+  final List<Map<String, dynamic>> customers;
+  const NewMembersBarGraph({super.key, required this.customers});
 
   @override
   Widget build(BuildContext context) {
+    List<_BarData> _buildData() {
+      final DateTime now = DateTime.now();
+      final DateTime startOfWeek = DateTime(now.year, now.month, now.day)
+          .subtract(Duration(days: now.weekday - DateTime.monday));
+      final DateTime endOfWeek = startOfWeek.add(const Duration(days: 7));
+      final Map<int, int> counts = {
+        DateTime.monday: 0,
+        DateTime.tuesday: 0,
+        DateTime.wednesday: 0,
+        DateTime.thursday: 0,
+        DateTime.friday: 0,
+        DateTime.saturday: 0,
+        DateTime.sunday: 0,
+      };
+
+      for (final customer in customers) {
+        final DateTime? start = _extractStartDate(customer);
+        if (start == null) continue;
+        if (start.isBefore(startOfWeek) || !start.isBefore(endOfWeek)) continue;
+        counts[start.weekday] = (counts[start.weekday] ?? 0) + 1;
+      }
+
+      return [
+        _BarData('Mon', counts[DateTime.monday] ?? 0),
+        _BarData('Tue', counts[DateTime.tuesday] ?? 0),
+        _BarData('Wed', counts[DateTime.wednesday] ?? 0),
+        _BarData('Thu', counts[DateTime.thursday] ?? 0),
+        _BarData('Fri', counts[DateTime.friday] ?? 0),
+        _BarData('Sat', counts[DateTime.saturday] ?? 0),
+        _BarData('Sun', counts[DateTime.sunday] ?? 0),
+      ];
+    }
+
     String _formatWeekRange(DateTime date) {
       const months = [
         'Jan',
@@ -56,14 +55,19 @@ class _NewMembersBarGraphState extends State<NewMembersBarGraph> {
         'Nov',
         'Dec',
       ];
-      final int weekday = date.weekday; // 1=Mon .. 7=Sun
-      final DateTime start = date.subtract(Duration(days: weekday - 1));
+      final DateTime start =
+          date.subtract(Duration(days: date.weekday - DateTime.monday));
       final DateTime end = start.add(const Duration(days: 6));
       String fmt(DateTime d) => '${months[d.month - 1]} ${d.day}';
       return '${fmt(start)} - ${fmt(end)}';
     }
 
     final String subtitle = _formatWeekRange(DateTime.now());
+    final List<_BarData> data = _buildData();
+    final int maxCount = data.fold<int>(0, (max, d) => d.count > max ? d.count : max);
+    final double yMax = (maxCount <= 10 ? 10 : ((maxCount + 9) ~/ 10) * 10)
+        .toDouble();
+
     return SfCartesianChart(
       title: ChartTitle(
         text: subtitle,
@@ -71,10 +75,10 @@ class _NewMembersBarGraphState extends State<NewMembersBarGraph> {
         textStyle: const TextStyle(fontSize: 12, color: Colors.black54),
       ),
       primaryXAxis: const CategoryAxis(),
-      primaryYAxis: const NumericAxis(minimum: 0, maximum: 50, interval: 10),
+      primaryYAxis: NumericAxis(minimum: 0, maximum: yMax, interval: yMax / 5),
       series: <CartesianSeries>[
         ColumnSeries<_BarData, String>(
-          dataSource: _data,
+          dataSource: data,
           xValueMapper: (_BarData d, _) => d.day,
           yValueMapper: (_BarData d, _) => d.count,
           color: Colors.blueAccent,
@@ -82,6 +86,23 @@ class _NewMembersBarGraphState extends State<NewMembersBarGraph> {
         ),
       ],
     );
+  }
+
+  DateTime? _extractStartDate(Map<String, dynamic> customer) {
+    final dynamic direct = customer['startDate'] ?? customer['start_date'];
+    if (direct is DateTime) return direct;
+    if (direct is String && direct.isNotEmpty) {
+      return DateTime.tryParse(direct);
+    }
+    final dynamic membership = customer['membership'];
+    if (membership is Map<String, dynamic>) {
+      final dynamic nested = membership['start_date'] ?? membership['startDate'];
+      if (nested is DateTime) return nested;
+      if (nested is String && nested.isNotEmpty) {
+        return DateTime.tryParse(nested);
+      }
+    }
+    return null;
   }
 }
 

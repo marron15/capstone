@@ -127,6 +127,7 @@ class CustomerViewEditModal {
     final String originalState = stateController.text.trim();
     final String originalPostalCode = postalCodeController.text.trim();
     final String originalCountry = countryController.text.trim();
+    final String originalBirthdate = birthdateController.text.trim();
 
     // Membership Type state with normalization and fallback
     String normalizeMembershipType(String? raw) {
@@ -155,42 +156,11 @@ class CustomerViewEditModal {
     bool isLoading = false;
     bool isPasswordVisible = false;
     String? errorMessage;
-    DateTime? selectedDate;
     // Image-related state removed
     String? contactError;
     String? emergencyPhoneError;
 
     // Transaction-related state removed
-
-    // Function to pick date
-    Future<void> pickDate(StateSetter setModalState) async {
-      final DateTime? picked = await showDatePicker(
-        context: context,
-        initialDate: selectedDate ?? DateTime.now(),
-        firstDate: DateTime(1950),
-        lastDate: DateTime.now(),
-        builder: (context, child) {
-          return Theme(
-            data: Theme.of(context).copyWith(
-              colorScheme: const ColorScheme.light(
-                primary: Colors.blue,
-                onPrimary: Colors.white,
-                surface: Colors.white,
-                onSurface: Colors.black,
-              ),
-            ),
-            child: child!,
-          );
-        },
-      );
-      if (picked != null && picked != selectedDate) {
-        setModalState(() {
-          selectedDate = picked;
-          birthdateController.text =
-              "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
-        });
-      }
-    }
 
     // Image picker removed
 
@@ -259,13 +229,31 @@ class CustomerViewEditModal {
                 ? rawCustomerId
                 : int.tryParse('$rawCustomerId') ?? -1;
 
-        final bool firstNameChanged =
-            firstNameController.text.trim() != originalFirstName;
-        final bool middleNameChanged =
-            middleNameController.text.trim() != originalMiddleName;
-        final bool lastNameChanged =
-            lastNameController.text.trim() != originalLastName;
-        final bool emailChanged = emailController.text.trim() != originalEmail;
+        final String lockedFirstName =
+            firstNameController.text.trim().isNotEmpty
+                ? firstNameController.text.trim()
+                : originalFirstName;
+        final String lockedMiddleName =
+            middleNameController.text.trim().isNotEmpty
+                ? middleNameController.text.trim()
+                : originalMiddleName;
+        final String lockedLastName =
+            lastNameController.text.trim().isNotEmpty
+                ? lastNameController.text.trim()
+                : originalLastName;
+        final String lockedBirthdate =
+            birthdateController.text.trim().isNotEmpty
+                ? birthdateController.text.trim()
+                : originalBirthdate;
+        final String lockedEmail =
+            emailController.text.trim().isNotEmpty
+                ? emailController.text.trim()
+                : originalEmail;
+
+        final bool firstNameChanged = lockedFirstName != originalFirstName;
+        final bool middleNameChanged = lockedMiddleName != originalMiddleName;
+        final bool lastNameChanged = lockedLastName != originalLastName;
+        final bool emailChanged = lockedEmail != originalEmail;
         final bool phoneChanged = phone != originalPhone;
         final bool emergencyNameChanged =
             emergencyNameController.text.trim() != originalEmergencyName;
@@ -351,11 +339,11 @@ class CustomerViewEditModal {
 
         // Prepare update data
         final Map<String, dynamic> updateData = {
-          'first_name': firstNameController.text.trim(),
-          'middle_name': middleNameController.text.trim(),
-          'last_name': lastNameController.text.trim(),
-          'email': emailController.text.trim(),
-          'birthdate': birthdateController.text.trim(),
+          'first_name': lockedFirstName,
+          'middle_name': lockedMiddleName,
+          'last_name': lockedLastName,
+          'email': lockedEmail,
+          'birthdate': lockedBirthdate,
           'phone_number': phone,
           'emergency_contact_name': emergencyNameController.text.trim(),
           'emergency_contact_number': emergencyPhone,
@@ -402,11 +390,11 @@ class CustomerViewEditModal {
 
         if (result['success'] == true) {
           // Success - update local customer data with new values
-          customer['first_name'] = firstNameController.text.trim();
-          customer['middle_name'] = middleNameController.text.trim();
-          customer['last_name'] = lastNameController.text.trim();
-          customer['email'] = emailController.text.trim();
-          customer['birthdate'] = birthdateController.text.trim();
+          customer['first_name'] = lockedFirstName;
+          customer['middle_name'] = lockedMiddleName;
+          customer['last_name'] = lockedLastName;
+          customer['email'] = lockedEmail;
+          customer['birthdate'] = lockedBirthdate;
           customer['phone_number'] = phone;
           customer['emergency_contact_name'] =
               emergencyNameController.text.trim();
@@ -484,6 +472,12 @@ class CustomerViewEditModal {
       bool isRequired = false,
       String? fieldError,
     }) {
+      final bool isEditable = isEditing && !isReadOnly;
+      final String normalizedLabel = label.toLowerCase();
+      final bool isPhoneField =
+          normalizedLabel.contains('phone') ||
+          normalizedLabel.contains('number');
+      final bool isEmailField = normalizedLabel.contains('email');
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -508,17 +502,17 @@ class CustomerViewEditModal {
           TextField(
             controller: controller,
             obscureText: isPassword,
-            readOnly: isReadOnly || !isEditing,
+            readOnly: !isEditable,
             onTap: onTap,
-            style: const TextStyle(color: Colors.white),
+            style: TextStyle(color: isEditable ? Colors.white : Colors.white70),
             keyboardType:
-                label.toLowerCase().contains('contact')
+                isPhoneField
                     ? TextInputType.phone
+                    : isEmailField
+                    ? TextInputType.emailAddress
                     : null,
             inputFormatters:
-                label.toLowerCase().contains('contact')
-                    ? [PhoneFormatter.phoneNumberFormatter]
-                    : null,
+                isPhoneField ? [PhoneFormatter.phoneNumberFormatter] : null,
             decoration: InputDecoration(
               filled: true,
               fillColor: Colors.black.withAlpha((0.3 * 255).toInt()),
@@ -847,6 +841,7 @@ class CustomerViewEditModal {
                                                         "First Name",
                                                         firstNameController,
                                                         isRequired: true,
+                                                        isReadOnly: true,
                                                       ),
                                                       const SizedBox(
                                                         height: 20,
@@ -978,6 +973,7 @@ class CustomerViewEditModal {
                                                   child: buildFormField(
                                                     "Middle Name",
                                                     middleNameController,
+                                                    isReadOnly: true,
                                                   ),
                                                 ),
                                                 const SizedBox(width: 20),
@@ -986,6 +982,7 @@ class CustomerViewEditModal {
                                                     "Last Name",
                                                     lastNameController,
                                                     isRequired: true,
+                                                    isReadOnly: true,
                                                   ),
                                                 ),
                                               ],
@@ -998,10 +995,6 @@ class CustomerViewEditModal {
                                                     "Date of Birth",
                                                     birthdateController,
                                                     isReadOnly: true,
-                                                    onTap:
-                                                        () => pickDate(
-                                                          setModalState,
-                                                        ),
                                                   ),
                                                 ),
                                                 const SizedBox(width: 20),
