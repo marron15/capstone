@@ -41,6 +41,9 @@ class _ProfilePageState extends State<ProfilePage>
   // Password listener removed
   String? _contactError;
   String? _emergencyPhoneError;
+  String? _emailError;
+  bool _isSavingPersonal = false;
+  bool _isSavingEmergency = false;
 
   DateTime? _birthdate;
   // Password field removed; no controller needed
@@ -102,7 +105,10 @@ class _ProfilePageState extends State<ProfilePage>
       _validateContactInline();
       setState(() {});
     };
-    _emailListener = () => setState(() {});
+    _emailListener = () {
+      _validateEmailInline();
+      setState(() {});
+    };
 
     _firstNameController.addListener(_firstNameListener);
     _middleNameController.addListener(_middleNameListener);
@@ -181,6 +187,9 @@ class _ProfilePageState extends State<ProfilePage>
     profileNotifier.addListener(_profileListener);
     // Run an initial sync in case profile data was already restored before this page mounted
     _profileListener();
+    _validateContactInline();
+    _validateEmailInline();
+    _validateEmergencyPhoneInline();
 
     // As a fallback, fetch profile from API on first mount if fields are empty after auth restore
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -237,17 +246,38 @@ class _ProfilePageState extends State<ProfilePage>
 
   void _validateContactInline() {
     final String v = _contactController.text.trim();
-    if (v.isEmpty) {
-      _contactError = null;
+    final String digits = _digitsOnly(v);
+    if (digits.isEmpty) {
+      _contactError = 'Contact number is required';
       return;
     }
     // Enforce length and digits only
-    final String digits = _digitsOnly(v);
-    if (digits.length != 11 || digits.length != v.trim().length) {
+    if (digits.length != 11) {
       _contactError = 'Contact number must be exactly 11 digits';
     } else {
       _contactError = null;
     }
+  }
+
+  void _validateEmailInline() {
+    final String value = _emailController.text.trim();
+    if (value.isEmpty) {
+      _emailError = null;
+      return;
+    }
+    if (_isValidEmail(value)) {
+      _emailError = null;
+    } else {
+      _emailError = 'Please enter a valid email address';
+    }
+  }
+
+  bool _isValidEmail(String value) {
+    final RegExp pattern = RegExp(
+      r'^[\w\.\-+]+@([\w-]+\.)+[a-zA-Z]{2,}$',
+      caseSensitive: false,
+    );
+    return pattern.hasMatch(value);
   }
 
   void _validateEmergencyPhoneInline() {
@@ -362,38 +392,12 @@ class _ProfilePageState extends State<ProfilePage>
                 SizedBox(height: 16),
 
                 _buildLabel('Contact Number', labelFontSize),
-                TextField(
+                _buildPhoneInput(
                   controller: _contactController,
-                  readOnly: true,
-                  enabled: false,
-                  enableInteractiveSelection: false,
-                  keyboardType: TextInputType.phone,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly,
-                    LengthLimitingTextInputFormatter(11),
-                  ],
-                  decoration: InputDecoration(
-                    hintText: 'Contact Number',
-                    filled: true,
-                    fillColor: Colors.grey[50],
-                    contentPadding: EdgeInsets.symmetric(
-                      vertical: 14,
-                      horizontal: 16,
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Colors.grey[300]!),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Colors.black87, width: 1.5),
-                    ),
-                    errorText: _contactError,
-                  ),
-                  style: TextStyle(
-                    fontSize: textFieldFontSize,
-                    color: Colors.black87,
-                  ),
+                  hintText: 'Contact Number',
+                  fontSize: textFieldFontSize,
+                  enabled: !_isSavingPersonal,
+                  errorText: _contactError,
                 ),
                 SizedBox(height: 16),
 
@@ -403,7 +407,10 @@ class _ProfilePageState extends State<ProfilePage>
                   'Email',
                   keyboardType: TextInputType.emailAddress,
                   fontSize: textFieldFontSize,
-                  readOnly: true,
+                  readOnly: false,
+                  enabled: !_isSavingPersonal,
+                  enableInteractiveSelection: true,
+                  errorText: _emailError,
                 ),
                 SizedBox(height: 16),
 
@@ -445,41 +452,12 @@ class _ProfilePageState extends State<ProfilePage>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _buildLabel('Contact Number', labelFontSize),
-                      TextField(
+                      _buildPhoneInput(
                         controller: _contactController,
-                        readOnly: true,
-                        enabled: false,
-                        enableInteractiveSelection: false,
-                        keyboardType: TextInputType.phone,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                          LengthLimitingTextInputFormatter(11),
-                        ],
-                        decoration: InputDecoration(
-                          hintText: 'Contact Number',
-                          filled: true,
-                          fillColor: Colors.grey[50],
-                          contentPadding: EdgeInsets.symmetric(
-                            vertical: 14,
-                            horizontal: 16,
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: BorderSide(color: Colors.grey[300]!),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: BorderSide(
-                              color: Colors.black87,
-                              width: 1.5,
-                            ),
-                          ),
-                          errorText: _contactError,
-                        ),
-                        style: TextStyle(
-                          fontSize: textFieldFontSize,
-                          color: Colors.black87,
-                        ),
+                        hintText: 'Contact Number',
+                        fontSize: textFieldFontSize,
+                        enabled: !_isSavingPersonal,
+                        errorText: _contactError,
                       ),
                     ],
                   ),
@@ -493,6 +471,10 @@ class _ProfilePageState extends State<ProfilePage>
                     labelFontSize,
                     textFieldFontSize,
                     keyboardType: TextInputType.emailAddress,
+                    readOnly: false,
+                    enabled: !_isSavingPersonal,
+                    enableInteractiveSelection: true,
+                    errorText: _emailError,
                   ),
                   right: _buildLabeledDate(
                     'Birthdate',
@@ -506,7 +488,13 @@ class _ProfilePageState extends State<ProfilePage>
               ],
               SizedBox(height: 32),
 
-              // Buttons removed for read-only mode
+              _buildActionButtons(
+                hasChanges: _hasPersonalChanges,
+                isSaving: _isSavingPersonal,
+                canSave: _canSavePersonal,
+                onCancel: _resetPersonalFields,
+                onSave: _savePersonalInfo,
+              ),
             ],
           ),
         ),
@@ -652,40 +640,18 @@ class _ProfilePageState extends State<ProfilePage>
                   _emergencyNameController,
                   'Emergency Contact Name',
                   fontSize: textFieldFontSize,
-                  readOnly: true,
+                  readOnly: false,
+                  enabled: !_isSavingEmergency,
+                  enableInteractiveSelection: true,
                 ),
                 SizedBox(height: 16),
                 _buildLabel('Emergency Contact Phone', labelFontSize),
-                TextField(
+                _buildPhoneInput(
                   controller: _emergencyPhoneController,
-                  readOnly: true,
-                  keyboardType: TextInputType.phone,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly,
-                    LengthLimitingTextInputFormatter(11),
-                  ],
-                  decoration: InputDecoration(
-                    hintText: 'Emergency Contact Phone',
-                    filled: true,
-                    fillColor: Colors.grey[50],
-                    contentPadding: EdgeInsets.symmetric(
-                      vertical: 14,
-                      horizontal: 16,
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Colors.grey[300]!),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Colors.black87, width: 1.5),
-                    ),
-                    errorText: _emergencyPhoneError,
-                  ),
-                  style: TextStyle(
-                    fontSize: textFieldFontSize,
-                    color: Colors.black87,
-                  ),
+                  hintText: 'Emergency Contact Phone',
+                  fontSize: textFieldFontSize,
+                  enabled: !_isSavingEmergency,
+                  errorText: _emergencyPhoneError,
                 ),
               ] else ...[
                 _buildRow(
@@ -695,46 +661,20 @@ class _ProfilePageState extends State<ProfilePage>
                     'Emergency Contact Name',
                     labelFontSize,
                     textFieldFontSize,
+                    readOnly: false,
+                    enabled: !_isSavingEmergency,
+                    enableInteractiveSelection: true,
                   ),
                   right: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _buildLabel('Emergency Contact Phone', labelFontSize),
-                      TextField(
+                      _buildPhoneInput(
                         controller: _emergencyPhoneController,
-                        readOnly: true,
-                        enabled: false,
-                        enableInteractiveSelection: false,
-                        keyboardType: TextInputType.phone,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                          LengthLimitingTextInputFormatter(11),
-                        ],
-                        decoration: InputDecoration(
-                          hintText: 'Emergency Contact Phone',
-                          filled: true,
-                          fillColor: Colors.grey[50],
-                          contentPadding: EdgeInsets.symmetric(
-                            vertical: 14,
-                            horizontal: 16,
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: BorderSide(color: Colors.grey[300]!),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: BorderSide(
-                              color: Colors.black87,
-                              width: 1.5,
-                            ),
-                          ),
-                          errorText: _emergencyPhoneError,
-                        ),
-                        style: TextStyle(
-                          fontSize: textFieldFontSize,
-                          color: Colors.black87,
-                        ),
+                        hintText: 'Emergency Contact Phone',
+                        fontSize: textFieldFontSize,
+                        enabled: !_isSavingEmergency,
+                        errorText: _emergencyPhoneError,
                       ),
                     ],
                   ),
@@ -742,7 +682,13 @@ class _ProfilePageState extends State<ProfilePage>
               ],
               SizedBox(height: 32),
 
-              // Buttons removed for read-only mode
+              _buildActionButtons(
+                hasChanges: _hasEmergencyChanges,
+                isSaving: _isSavingEmergency,
+                canSave: _canSaveEmergency,
+                onCancel: _resetEmergencyFields,
+                onSave: _saveEmergencyContact,
+              ),
             ],
           ),
         ),
@@ -803,6 +749,177 @@ class _ProfilePageState extends State<ProfilePage>
           fontSize: fontSize,
           color: _isDarkMode ? Colors.white : Colors.black87,
         ),
+      ),
+    );
+  }
+
+  bool get _hasPersonalChanges {
+    final profile = profileNotifier.value;
+    final String contactInput = _digitsOnly(_contactController.text.trim());
+    final String storedContact = _digitsOnly(profile.contactNumber);
+    final String emailInput = _emailController.text.trim();
+    return contactInput != storedContact || emailInput != (profile.email ?? '');
+  }
+
+  bool get _hasEmergencyChanges {
+    final profile = profileNotifier.value;
+    final String nameInput = _emergencyNameController.text.trim();
+    final String phoneInput = _digitsOnly(
+      _emergencyPhoneController.text.trim(),
+    );
+    final String storedPhone = _digitsOnly(profile.emergencyContactPhone ?? '');
+    return nameInput != (profile.emergencyContactName ?? '') ||
+        phoneInput != storedPhone;
+  }
+
+  bool get _canSavePersonal {
+    if (_isSavingPersonal || !_hasPersonalChanges) return false;
+    final String contactInput = _digitsOnly(_contactController.text.trim());
+    if (contactInput.length != 11) return false;
+    if (_emailError != null) return false;
+    return true;
+  }
+
+  bool get _canSaveEmergency {
+    if (_isSavingEmergency || !_hasEmergencyChanges) return false;
+    final String phoneInput = _digitsOnly(
+      _emergencyPhoneController.text.trim(),
+    );
+    if (phoneInput.length != 11) return false;
+    if (_emergencyNameController.text.trim().isEmpty) return false;
+    if (_emergencyPhoneError != null) return false;
+    return true;
+  }
+
+  void _resetPersonalFields() {
+    final profile = profileNotifier.value;
+    _contactController.text = profile.contactNumber;
+    _emailController.text = profile.email ?? '';
+    _validateContactInline();
+    _validateEmailInline();
+    setState(() {});
+  }
+
+  void _resetEmergencyFields() {
+    final profile = profileNotifier.value;
+    _emergencyNameController.text = profile.emergencyContactName ?? '';
+    _emergencyPhoneController.text = profile.emergencyContactPhone ?? '';
+    _validateEmergencyPhoneInline();
+  }
+
+  Future<void> _savePersonalInfo() async {
+    if (!_canSavePersonal) return;
+    final int? customerId = unifiedAuthState.customerId;
+    if (customerId == null) {
+      _showSnack(
+        'Unable to update profile: missing customer ID',
+        isError: true,
+      );
+      return;
+    }
+
+    final String contact = _digitsOnly(_contactController.text.trim());
+    final String email = _emailController.text.trim();
+
+    setState(() => _isSavingPersonal = true);
+    final Map<String, dynamic> payload = {
+      'customer_id': customerId,
+      'phone_number': contact,
+      'email': email,
+    }..removeWhere(
+      (key, value) =>
+          value == null || (value is String && value.trim().isEmpty),
+    );
+
+    final result = await AuthService.updateProfile(payload);
+    if (!mounted) return;
+    setState(() => _isSavingPersonal = false);
+
+    if (result.success) {
+      final String updatedEmail =
+          email.isEmpty ? (profileNotifier.value.email ?? '') : email;
+      _patchProfileData(contactNumber: contact, email: updatedEmail);
+      _showSnack('Personal information updated');
+    } else {
+      _showSnack(result.message, isError: true);
+    }
+  }
+
+  Future<void> _saveEmergencyContact() async {
+    if (!_canSaveEmergency) return;
+    final int? customerId = unifiedAuthState.customerId;
+    if (customerId == null) {
+      _showSnack(
+        'Unable to update profile: missing customer ID',
+        isError: true,
+      );
+      return;
+    }
+
+    final String contactName = _emergencyNameController.text.trim();
+    final String contactPhone = _digitsOnly(
+      _emergencyPhoneController.text.trim(),
+    );
+
+    setState(() => _isSavingEmergency = true);
+    final Map<String, dynamic> payload = {
+      'customer_id': customerId,
+      'emergency_contact_name': contactName,
+      'emergency_contact_number': contactPhone,
+    };
+
+    final result = await AuthService.updateProfile(payload);
+    if (!mounted) return;
+    setState(() => _isSavingEmergency = false);
+
+    if (result.success) {
+      _patchProfileData(
+        emergencyContactName: contactName,
+        emergencyContactPhone: contactPhone,
+      );
+      _showSnack('Emergency contact updated');
+    } else {
+      _showSnack(result.message, isError: true);
+    }
+  }
+
+  void _patchProfileData({
+    String? contactNumber,
+    String? email,
+    String? emergencyContactName,
+    String? emergencyContactPhone,
+  }) {
+    final current = profileNotifier.value;
+    profileNotifier.value = ProfileData(
+      imageFile: current.imageFile,
+      webImageBytes: current.webImageBytes,
+      firstName: current.firstName,
+      middleName: current.middleName,
+      lastName: current.lastName,
+      contactNumber: contactNumber ?? current.contactNumber,
+      email: email ?? current.email,
+      birthdate: current.birthdate,
+      emergencyContactName:
+          emergencyContactName ?? current.emergencyContactName,
+      emergencyContactPhone:
+          emergencyContactPhone ?? current.emergencyContactPhone,
+      password: current.password,
+      address: current.address,
+      street: current.street,
+      city: current.city,
+      stateProvince: current.stateProvince,
+      postalCode: current.postalCode,
+      country: current.country,
+      membershipExpiration: current.membershipExpiration,
+    );
+  }
+
+  void _showSnack(String message, {bool isError = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.redAccent : Colors.green,
       ),
     );
   }
@@ -876,6 +993,7 @@ class _ProfilePageState extends State<ProfilePage>
     TextInputType? keyboardType,
     Widget? suffixIcon,
     double fontSize = 16.0,
+    String? errorText,
   }) {
     return TextField(
       controller: controller,
@@ -898,6 +1016,7 @@ class _ProfilePageState extends State<ProfilePage>
           borderSide: BorderSide(color: Colors.black87, width: 1.5),
         ),
         suffixIcon: suffixIcon,
+        errorText: errorText,
       ),
       style: TextStyle(fontSize: fontSize, color: Colors.black87),
     );
@@ -921,6 +1040,10 @@ class _ProfilePageState extends State<ProfilePage>
     double labelFontSize,
     double textFieldFontSize, {
     TextInputType? keyboardType,
+    bool readOnly = true,
+    bool enabled = false,
+    bool enableInteractiveSelection = false,
+    String? errorText,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -931,7 +1054,10 @@ class _ProfilePageState extends State<ProfilePage>
           hint,
           keyboardType: keyboardType,
           fontSize: textFieldFontSize,
-          readOnly: true,
+          readOnly: readOnly,
+          enabled: enabled,
+          enableInteractiveSelection: enableInteractiveSelection,
+          errorText: errorText,
         ),
       ],
     );
@@ -977,6 +1103,73 @@ class _ProfilePageState extends State<ProfilePage>
       children: [
         _buildLabel(label, labelFontSize),
         _buildDateField(textFieldFontSize, context),
+      ],
+    );
+  }
+
+  Widget _buildPhoneInput({
+    required TextEditingController controller,
+    required String hintText,
+    required double fontSize,
+    required bool enabled,
+    String? errorText,
+  }) {
+    return TextField(
+      controller: controller,
+      readOnly: false,
+      enabled: enabled,
+      keyboardType: TextInputType.phone,
+      inputFormatters: [
+        FilteringTextInputFormatter.digitsOnly,
+        LengthLimitingTextInputFormatter(11),
+      ],
+      decoration: InputDecoration(
+        hintText: hintText,
+        filled: true,
+        fillColor: enabled ? Colors.grey[50] : Colors.grey[200],
+        contentPadding: EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: Colors.grey[300]!),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: Colors.black87, width: 1.5),
+        ),
+        errorText: errorText,
+      ),
+      style: TextStyle(fontSize: fontSize, color: Colors.black87),
+    );
+  }
+
+  Widget _buildActionButtons({
+    required bool hasChanges,
+    required bool isSaving,
+    required bool canSave,
+    required VoidCallback onCancel,
+    required Future<void> Function() onSave,
+  }) {
+    return Row(
+      children: [
+        OutlinedButton(
+          onPressed: (!hasChanges || isSaving) ? null : onCancel,
+          child: const Text('Cancel'),
+        ),
+        SizedBox(width: 12),
+        ElevatedButton(
+          onPressed: canSave ? () => onSave() : null,
+          child:
+              isSaving
+                  ? SizedBox(
+                    height: 18,
+                    width: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                  : const Text('Save Changes'),
+        ),
       ],
     );
   }
