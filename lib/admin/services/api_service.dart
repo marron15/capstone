@@ -37,8 +37,6 @@ class ApiService {
   static const String restoreTrainerEndpoint =
       '$baseUrl/gymTrainers/restoreTrainerByID.php';
   // Membership endpoints
-  static const String insertMembershipEndpoint =
-      '$baseUrl/membership/insertMembership.php';
   static const String getAllMembershipsEndpoint =
       '$baseUrl/membership/getAllMembership.php';
   // Address endpoints (these PHP scripts read from $_POST)
@@ -46,6 +44,8 @@ class ApiService {
       '$baseUrl/address/insertAddress.php';
   static const String updateAddressByIdEndpoint =
       '$baseUrl/address/updatedAddressByID.php';
+  static const String upsertMembershipEndpoint =
+      '$baseUrl/membership/insertMembership.php';
 
   // Products endpoints
   static const String getAllProductsEndpoint =
@@ -813,64 +813,6 @@ class ApiService {
     }
   }
 
-  // Create or update membership for a customer by posting to insertMembership.php
-  static Future<bool> createMembershipForCustomer({
-    required int customerId,
-    required String membershipType,
-  }) async {
-    try {
-      final DateTime now = DateTime.now();
-      int addDays;
-      switch (membershipType) {
-        case 'Daily':
-          addDays = 1;
-          break;
-        case 'Half Month':
-          addDays = 15;
-          break;
-        case 'Monthly':
-          addDays = 30;
-          break;
-        default:
-          addDays = 30;
-      }
-      final DateTime expiration = now.add(Duration(days: addDays));
-
-      String formatDate(DateTime d) =>
-          '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
-
-      final response = await http.post(
-        Uri.parse(insertMembershipEndpoint),
-        headers: {'Accept': 'application/json'},
-        body: {
-          'customerId': customerId.toString(),
-          'membershipType': membershipType,
-          'startDate': formatDate(now),
-          'expirationDate': formatDate(expiration),
-          'status': membershipType,
-        },
-      );
-
-      if (response.statusCode == 200) {
-        try {
-          final parsed = jsonDecode(response.body);
-          if (parsed is bool) return parsed;
-          if (parsed is Map<String, dynamic> && parsed['success'] != null) {
-            return parsed['success'] == true;
-          }
-        } catch (_) {
-          // Non-JSON truthy response handling
-          return response.body.toLowerCase().contains('true') ||
-              response.body.toLowerCase().contains('success');
-        }
-      }
-      return false;
-    } catch (e) {
-      debugPrint('createMembershipForCustomer error: $e');
-      return false;
-    }
-  }
-
   // Update a customer by ID
   static Future<Map<String, dynamic>> updateCustomer({
     required int id,
@@ -1016,6 +958,62 @@ class ApiService {
       return false;
     } catch (e) {
       debugPrint('updateCustomerAddressById error: $e');
+      return false;
+    }
+  }
+
+  static Future<bool> upsertCustomerMembership({
+    required int customerId,
+    required String membershipType,
+  }) async {
+    try {
+      final DateTime now = DateTime.now();
+      int addDays;
+      switch (membershipType) {
+        case 'Daily':
+          addDays = 1;
+          break;
+        case 'Half Month':
+          addDays = 15;
+          break;
+        case 'Monthly':
+        default:
+          addDays = 30;
+      }
+      final DateTime expiration = now.add(Duration(days: addDays));
+
+      String formatDate(DateTime d) =>
+          '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+      final response = await http.post(
+        Uri.parse(upsertMembershipEndpoint),
+        headers: {'Accept': 'application/json'},
+        body: {
+          'customerId': customerId.toString(),
+          'membershipType': membershipType,
+          'startDate': formatDate(now),
+          'expirationDate': formatDate(expiration),
+          'status': membershipType,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        try {
+          final parsed = jsonDecode(response.body);
+          if (parsed is Map<String, dynamic>) {
+            return parsed['success'] == true;
+          }
+          if (parsed is bool) {
+            return parsed;
+          }
+        } catch (_) {
+          return response.body.toLowerCase().contains('success') ||
+              response.body.toLowerCase().contains('true');
+        }
+      }
+      return false;
+    } catch (e) {
+      debugPrint('upsertCustomerMembership error: $e');
       return false;
     }
   }

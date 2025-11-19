@@ -110,6 +110,24 @@ class CustomerViewEditModal {
               : 'Philippines'),
     );
 
+    // Preserve original values for change detection
+    final String originalFirstName = firstNameController.text.trim();
+    final String originalMiddleName = middleNameController.text.trim();
+    final String originalLastName = lastNameController.text.trim();
+    final String originalEmail = emailController.text.trim();
+    final String originalPhone = PhoneFormatter.cleanPhoneNumber(
+      contactController.text.trim(),
+    );
+    final String originalEmergencyName = emergencyNameController.text.trim();
+    final String originalEmergencyPhone = PhoneFormatter.cleanPhoneNumber(
+      emergencyPhoneController.text.trim(),
+    );
+    final String originalStreet = streetController.text.trim();
+    final String originalCity = cityController.text.trim();
+    final String originalState = stateController.text.trim();
+    final String originalPostalCode = postalCodeController.text.trim();
+    final String originalCountry = countryController.text.trim();
+
     // Membership Type state with normalization and fallback
     String normalizeMembershipType(String? raw) {
       final String value = (raw ?? '').trim();
@@ -130,6 +148,7 @@ class CustomerViewEditModal {
               customer['membershipType'])
           .toString(),
     );
+    final String originalMembershipType = membershipType;
 
     // State variables
     bool isEditing = true;
@@ -225,6 +244,111 @@ class CustomerViewEditModal {
           contactError = null;
           emergencyPhoneError = null;
         });
+        final dynamic rawCustomerId =
+            customer['customerId'] ?? customer['customer_id'] ?? customer['id'];
+        if (rawCustomerId == null) {
+          setModalState(() {
+            errorMessage =
+                'Customer ID not found. Available keys: ${customer.keys.join(', ')}';
+            isLoading = false;
+          });
+          return;
+        }
+        final int customerId =
+            rawCustomerId is int
+                ? rawCustomerId
+                : int.tryParse('$rawCustomerId') ?? -1;
+
+        final bool firstNameChanged =
+            firstNameController.text.trim() != originalFirstName;
+        final bool middleNameChanged =
+            middleNameController.text.trim() != originalMiddleName;
+        final bool lastNameChanged =
+            lastNameController.text.trim() != originalLastName;
+        final bool emailChanged = emailController.text.trim() != originalEmail;
+        final bool phoneChanged = phone != originalPhone;
+        final bool emergencyNameChanged =
+            emergencyNameController.text.trim() != originalEmergencyName;
+        final bool emergencyPhoneChanged =
+            emergencyPhone != originalEmergencyPhone;
+        final bool addressChanged =
+            streetController.text.trim() != originalStreet ||
+            cityController.text.trim() != originalCity ||
+            stateController.text.trim() != originalState ||
+            postalCodeController.text.trim() != originalPostalCode ||
+            countryController.text.trim() != originalCountry;
+        final bool hasPasswordChange =
+            passwordController.text.trim().isNotEmpty;
+        final bool membershipChanged =
+            membershipType.isNotEmpty &&
+            membershipType != originalMembershipType;
+
+        final bool hasProfileChanges =
+            firstNameChanged ||
+            middleNameChanged ||
+            lastNameChanged ||
+            emailChanged ||
+            phoneChanged ||
+            emergencyNameChanged ||
+            emergencyPhoneChanged ||
+            addressChanged ||
+            hasPasswordChange;
+
+        Future<void> applyLocalMembershipUpdates() async {
+          customer['membership_type'] = membershipType;
+          customer['membershipType'] = membershipType;
+          final DateTime newStartDate = DateTime.now();
+          int addDays;
+          switch (membershipType) {
+            case 'Daily':
+              addDays = 1;
+              break;
+            case 'Half Month':
+              addDays = 15;
+              break;
+            case 'Monthly':
+            default:
+              addDays = 30;
+          }
+          final DateTime newExpirationDate = newStartDate.add(
+            Duration(days: addDays),
+          );
+          customer['startDate'] = newStartDate;
+          customer['expirationDate'] = newExpirationDate;
+          customer['start_date'] =
+              '${newStartDate.year.toString().padLeft(4, '0')}-${newStartDate.month.toString().padLeft(2, '0')}-${newStartDate.day.toString().padLeft(2, '0')}';
+          customer['expiration_date'] =
+              '${newExpirationDate.year.toString().padLeft(4, '0')}-${newExpirationDate.month.toString().padLeft(2, '0')}-${newExpirationDate.day.toString().padLeft(2, '0')}';
+        }
+
+        if (membershipChanged && !hasProfileChanges) {
+          final bool upserted = await ApiService.upsertCustomerMembership(
+            customerId: customerId,
+            membershipType: membershipType,
+          );
+          if (upserted) {
+            await applyLocalMembershipUpdates();
+            setModalState(() {
+              isLoading = false;
+            });
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Membership updated successfully'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+              Navigator.of(context).pop(true);
+            }
+          } else {
+            setModalState(() {
+              errorMessage = 'Failed to update membership';
+              isLoading = false;
+            });
+          }
+          return;
+        }
+
         // Prepare update data
         final Map<String, dynamic> updateData = {
           'first_name': firstNameController.text.trim(),
@@ -238,27 +362,12 @@ class CustomerViewEditModal {
           'password':
               passwordController.text.trim().isNotEmpty
                   ? passwordController.text.trim()
-                  : null, // Only send password if user entered something new
+                  : null,
           'updated_by': 'admin',
           'updated_at': DateTime.now().toIso8601String(),
         };
 
-        // Call API to update customer with timeout
-        final customerId =
-            customer['customerId'] ?? customer['customer_id'] ?? customer['id'];
-        if (customerId == null) {
-          setModalState(() {
-            errorMessage =
-                'Customer ID not found. Available keys: ${customer.keys.join(', ')}';
-            isLoading = false;
-          });
-          return;
-        }
-
-        // Do not log sensitive update payloads
-
-        // Add address details to update data
-        final hasAnyAddress =
+        final bool hasAnyAddress =
             streetController.text.trim().isNotEmpty ||
             cityController.text.trim().isNotEmpty ||
             stateController.text.trim().isNotEmpty ||
@@ -275,20 +384,12 @@ class CustomerViewEditModal {
           };
         }
 
-        // Persist membership type if changed via Membership endpoint
-        await ApiService.createMembershipForCustomer(
-          customerId:
-              customerId is int
-                  ? customerId
-                  : int.tryParse(customerId.toString()) ?? -1,
-          membershipType: membershipType,
-        );
+        if (membershipType.isNotEmpty) {
+          updateData['membership_type'] = membershipType;
+        }
 
         final result = await ApiService.updateCustomerByAdmin(
-          id:
-              customerId is int
-                  ? customerId
-                  : int.tryParse(customerId.toString()) ?? -1,
+          id: customerId,
           data: updateData,
         ).timeout(
           const Duration(seconds: 30),
@@ -328,31 +429,10 @@ class CustomerViewEditModal {
           }
 
           // Update local membership type and dates for UI immediately
-          customer['membership_type'] = membershipType;
-          customer['membershipType'] = membershipType;
-          final DateTime newStartDate = DateTime.now();
-          int addDays;
-          switch (membershipType) {
-            case 'Daily':
-              addDays = 1;
-              break;
-            case 'Half Month':
-              addDays = 15;
-              break;
-            case 'Monthly':
-            default:
-              addDays = 30;
+          if (membershipType.isNotEmpty &&
+              membershipType != originalMembershipType) {
+            await applyLocalMembershipUpdates();
           }
-          final DateTime newExpirationDate = newStartDate.add(
-            Duration(days: addDays),
-          );
-          customer['startDate'] = newStartDate;
-          customer['expirationDate'] = newExpirationDate;
-          // Also set potential backend field names for future syncing
-          customer['start_date'] =
-              '${newStartDate.year.toString().padLeft(4, '0')}-${newStartDate.month.toString().padLeft(2, '0')}-${newStartDate.day.toString().padLeft(2, '0')}';
-          customer['expiration_date'] =
-              '${newExpirationDate.year.toString().padLeft(4, '0')}-${newExpirationDate.month.toString().padLeft(2, '0')}-${newExpirationDate.day.toString().padLeft(2, '0')}';
 
           // Do not log updated customer data
 

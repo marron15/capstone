@@ -403,39 +403,7 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
         // Customer created
 
         // If we have a valid customer id and address fields, insert address record
-        if (customerId != null) {
-          final hasAnyAddress =
-              (_streetController.text.trim().isNotEmpty ||
-                  _cityController.text.trim().isNotEmpty ||
-                  _stateProvinceController.text.trim().isNotEmpty ||
-                  _postalCodeController.text.trim().isNotEmpty ||
-                  _countryController.text.trim().isNotEmpty);
-          if (hasAnyAddress) {
-            await ApiService.insertCustomerAddress(
-              customerId: customerId,
-              street: _streetController.text.trim(),
-              city: _cityController.text.trim(),
-              state:
-                  _stateProvinceController.text.trim().isNotEmpty
-                      ? _stateProvinceController.text.trim()
-                      : null,
-              postalCode: _postalCodeController.text.trim(),
-              country: _countryController.text.trim(),
-            );
-          }
-
-          // Persist membership immediately for new customers
-          try {
-            await ApiService.createMembershipForCustomer(
-              customerId: customerId,
-              membershipType: _selectedMembershipType ?? 'Monthly',
-            );
-          } catch (e) {
-            debugPrint(
-              'Warning: failed to create membership for new customer: $e',
-            );
-          }
-        }
+        // Membership creation is handled on the backend during signup
         // Membership creation result is handled via createMembershipForCustomer
 
         if (mounted) {
