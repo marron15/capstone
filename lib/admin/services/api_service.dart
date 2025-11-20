@@ -62,6 +62,12 @@ class ApiService {
       '$baseUrl/products/getImage.php';
   static const String getProductsByStatusEndpoint =
       '$baseUrl/products/getAllProducts.php';
+  static const String createReservationEndpoint =
+      '$baseUrl/products/createReservation.php';
+  static const String getReservedProductsEndpoint =
+      '$baseUrl/products/getReservedProducts.php';
+  static const String updateReservationStatusEndpoint =
+      '$baseUrl/products/updateReservationStatus.php';
 
   static Future<Map<String, dynamic>> signupCustomer({
     required String firstName,
@@ -551,6 +557,88 @@ class ApiService {
       return false;
     } catch (e) {
       debugPrint('restoreProduct error: $e');
+      return false;
+    }
+  }
+
+  static Future<Map<String, dynamic>> createProductReservation({
+    required int customerId,
+    required int productId,
+    required int quantity,
+    String? notes,
+  }) async {
+    try {
+      final res = await http.post(
+        Uri.parse(createReservationEndpoint),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode({
+          'customer_id': customerId,
+          'product_id': productId,
+          'quantity': quantity,
+          'notes': notes ?? '',
+        }),
+      );
+      final Map<String, dynamic> parsed =
+          jsonDecode(res.body) as Map<String, dynamic>;
+      if (res.statusCode == 200) {
+        return parsed;
+      }
+      return {
+        'success': false,
+        'message': parsed['message'] ?? 'Failed to reserve product',
+      };
+    } catch (e) {
+      debugPrint('createProductReservation error: $e');
+      return {'success': false, 'message': 'Network error: $e'};
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> getReservedProducts({
+    String? status,
+  }) async {
+    try {
+      final Uri uri =
+          (status == null || status.isEmpty)
+              ? Uri.parse(getReservedProductsEndpoint)
+              : Uri.parse('$getReservedProductsEndpoint?status=$status');
+      final res = await http.get(uri, headers: {'Accept': 'application/json'});
+      if (res.statusCode == 200 && res.body.isNotEmpty) {
+        final dynamic parsed = jsonDecode(res.body);
+        if (parsed is List) {
+          return List<Map<String, dynamic>>.from(parsed);
+        }
+      }
+      return [];
+    } catch (e) {
+      debugPrint('getReservedProducts error: $e');
+      return [];
+    }
+  }
+
+  static Future<bool> updateReservationStatus({
+    required int reservationId,
+    required String status,
+  }) async {
+    try {
+      final res = await http.post(
+        Uri.parse(updateReservationStatusEndpoint),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode({'reservation_id': reservationId, 'status': status}),
+      );
+      if (res.statusCode == 200 && res.body.isNotEmpty) {
+        final Map<String, dynamic> parsed =
+            jsonDecode(res.body) as Map<String, dynamic>;
+        return parsed['success'] == true;
+      }
+      return false;
+    } catch (e) {
+      debugPrint('updateReservationStatus error: $e');
       return false;
     }
   }

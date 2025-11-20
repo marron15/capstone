@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../services/api_service.dart';
 import '../sidenav.dart';
 
 class ReservedProductsPage extends StatefulWidget {
@@ -13,8 +14,11 @@ enum _ReservationStatus { pending, accepted, declined }
 
 class _ReservedProductRequest {
   final int id;
+  final int productId;
+  final int customerId;
   final String productName;
   final String customerName;
+  final String customerEmail;
   final String notes;
   final int requestedQty;
   final DateTime requestedAt;
@@ -22,13 +26,54 @@ class _ReservedProductRequest {
 
   _ReservedProductRequest({
     required this.id,
+    required this.productId,
+    required this.customerId,
     required this.productName,
     required this.customerName,
+    required this.customerEmail,
     required this.notes,
     required this.requestedQty,
     required this.requestedAt,
     this.status = _ReservationStatus.pending,
   });
+
+  factory _ReservedProductRequest.fromMap(Map<String, dynamic> map) {
+    final String statusString =
+        (map['status'] ?? 'pending').toString().toLowerCase();
+    return _ReservedProductRequest(
+      id: int.tryParse((map['id'] ?? '').toString()) ?? 0,
+      productId: int.tryParse((map['product_id'] ?? '').toString()) ?? 0,
+      customerId: int.tryParse((map['customer_id'] ?? '').toString()) ?? 0,
+      productName: (map['product_name'] ?? 'Unknown Product').toString(),
+      customerName: _composeCustomerName(map),
+      customerEmail: (map['email'] ?? '').toString(),
+      notes: (map['notes'] ?? '').toString(),
+      requestedQty: int.tryParse((map['quantity'] ?? '0').toString()) ?? 0,
+      requestedAt:
+          DateTime.tryParse((map['created_at'] ?? '').toString()) ??
+          DateTime.now(),
+      status: _statusFromString(statusString),
+    );
+  }
+
+  static _ReservationStatus _statusFromString(String status) {
+    switch (status) {
+      case 'accepted':
+        return _ReservationStatus.accepted;
+      case 'declined':
+        return _ReservationStatus.declined;
+      default:
+        return _ReservationStatus.pending;
+    }
+  }
+
+  static String _composeCustomerName(Map<String, dynamic> map) {
+    final String firstName = (map['first_name'] ?? '').toString().trim();
+    final String lastName = (map['last_name'] ?? '').toString().trim();
+    final String full = '$firstName $lastName'.trim();
+    if (full.isEmpty) return (map['customerName'] ?? 'Customer').toString();
+    return full;
+  }
 }
 
 class _ReservedProductsPageState extends State<ReservedProductsPage> {
@@ -36,43 +81,9 @@ class _ReservedProductsPageState extends State<ReservedProductsPage> {
   bool _navCollapsed = false;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  bool _isLoading = false;
 
-  final List<_ReservedProductRequest> _reservations = [
-    _ReservedProductRequest(
-      id: 101,
-      productName: 'Whey Protein – Chocolate',
-      customerName: 'Alicia Santos',
-      notes: 'Pickup preferred on Saturday afternoon.',
-      requestedQty: 2,
-      requestedAt: DateTime.now().subtract(const Duration(hours: 4)),
-    ),
-    _ReservedProductRequest(
-      id: 102,
-      productName: 'Serious Mass 12 lbs',
-      customerName: 'Michael Reyes',
-      notes: 'Needs confirmation before Friday.',
-      requestedQty: 1,
-      requestedAt: DateTime.now().subtract(const Duration(days: 1, hours: 2)),
-    ),
-    _ReservedProductRequest(
-      id: 103,
-      productName: 'Prothin Creatine',
-      customerName: 'Diana Cruz',
-      notes: 'Will pay cash upon pickup.',
-      requestedQty: 3,
-      requestedAt: DateTime.now().subtract(const Duration(days: 2, hours: 5)),
-      status: _ReservationStatus.accepted,
-    ),
-    _ReservedProductRequest(
-      id: 104,
-      productName: 'Amino 2222 Tabs',
-      customerName: 'Jared Mercado',
-      notes: 'Requesting delivery to gym locker.',
-      requestedQty: 1,
-      requestedAt: DateTime.now().subtract(const Duration(days: 3, hours: 3)),
-      status: _ReservationStatus.declined,
-    ),
-  ];
+  final List<_ReservedProductRequest> _reservations = [];
 
   List<_ReservedProductRequest> get _filteredReservations {
     if (_searchQuery.trim().isEmpty) return _reservations;
@@ -107,20 +118,72 @@ class _ReservedProductsPageState extends State<ReservedProductsPage> {
     }
   }
 
-  void _handleDecision(_ReservedProductRequest request, _ReservationStatus status) {
+  String _statusValue(_ReservationStatus status) {
+    switch (status) {
+      case _ReservationStatus.accepted:
+        return 'accepted';
+      case _ReservationStatus.declined:
+        return 'declined';
+      case _ReservationStatus.pending:
+        return 'pending';
+    }
+  }
+
+  Future<void> _handleDecision(
+    _ReservedProductRequest request,
+    _ReservationStatus status,
+  ) async {
     if (request.status == status) return;
+    final previousStatus = request.status;
     setState(() => request.status = status);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          status == _ReservationStatus.accepted
-              ? 'Reservation accepted'
-              : 'Reservation declined',
-        ),
-        backgroundColor:
-            status == _ReservationStatus.accepted ? Colors.green : Colors.red,
-      ),
+
+    final bool ok = await ApiService.updateReservationStatus(
+      reservationId: request.id,
+      status: _statusValue(status),
     );
+    if (!mounted) return;
+    if (ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            status == _ReservationStatus.accepted
+                ? 'Reservation accepted'
+                : 'Reservation declined',
+          ),
+          backgroundColor:
+              status == _ReservationStatus.accepted ? Colors.green : Colors.red,
+        ),
+      );
+      await _fetchReservations();
+    } else {
+      setState(() => request.status = previousStatus);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to update reservation. Please try again.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchReservations();
+  }
+
+  Future<void> _fetchReservations() async {
+    setState(() => _isLoading = true);
+    final data = await ApiService.getReservedProducts();
+    final requests =
+        data.map<_ReservedProductRequest>(_ReservedProductRequest.fromMap).toList();
+    if (!mounted) return;
+    setState(() {
+      _reservations
+        ..clear()
+        ..addAll(requests);
+      _isLoading = false;
+    });
   }
 
   @override
@@ -245,7 +308,10 @@ class _ReservedProductsPageState extends State<ReservedProductsPage> {
                           const SizedBox(width: 12),
                           if (!isMobile)
                             OutlinedButton.icon(
-                              onPressed: () => setState(() => _searchQuery = ''),
+                              onPressed: () => setState(() {
+                                _searchController.clear();
+                                _searchQuery = '';
+                              }),
                               icon: const Icon(Icons.refresh),
                               label: const Text('Reset'),
                               style: OutlinedButton.styleFrom(
@@ -376,7 +442,12 @@ class _ReservedProductsPageState extends State<ReservedProductsPage> {
                               ],
                             ),
                           ),
-                          if (_filteredReservations.isEmpty)
+                          if (_isLoading)
+                            const Padding(
+                              padding: EdgeInsets.all(48),
+                              child: CircularProgressIndicator(),
+                            )
+                          else if (_filteredReservations.isEmpty)
                             Padding(
                               padding: const EdgeInsets.all(48),
                               child: Column(

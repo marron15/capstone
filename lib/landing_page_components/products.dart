@@ -27,6 +27,15 @@ class _ProductsSectionState extends State<ProductsSection> {
   int _slideDir = 0;
 
   Future<void> _handleProductTap(_ProductItem item) async {
+    if (item.productId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('This product is not available for reservation yet.'),
+          backgroundColor: Colors.orangeAccent,
+        ),
+      );
+      return;
+    }
     if (item.quantity <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -46,23 +55,46 @@ class _ProductsSectionState extends State<ProductsSection> {
       return;
     }
 
-    final bool? reserved = await showDialog<bool>(
+    final Map<String, dynamic>? request = await showDialog<Map<String, dynamic>>(
       context: context,
       barrierDismissible: false,
-      builder:
-          (dialogContext) => ReserveProductModal(
-            productName: item.title,
-            description: item.description,
-            availableQuantity: item.quantity,
-            image: item.image,
-          ),
+      builder: (dialogContext) => ReserveProductModal(
+        productName: item.title,
+        description: item.description,
+        availableQuantity: item.quantity,
+        image: item.image,
+      ),
     );
     if (!mounted) return;
-    if (reserved == true) {
+    if (request == null) return;
+
+    final int? customerId = unifiedAuthState.customerId;
+    if (customerId == null) return;
+
+    final int quantity = request['quantity'] as int? ?? 0;
+    final String notes = (request['notes'] as String?) ?? '';
+
+    final Map<String, dynamic> response = await ApiService.createProductReservation(
+      customerId: customerId,
+      productId: item.productId!,
+      quantity: quantity,
+      notes: notes,
+    );
+
+    if (!mounted) return;
+    if (response['success'] == true) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Reservation request for ${item.title} submitted!'),
           backgroundColor: Colors.green,
+        ),
+      );
+      await _bootstrap();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(response['message']?.toString() ?? 'Failed to reserve product.'),
+          backgroundColor: Colors.redAccent,
         ),
       );
     }
@@ -80,6 +112,9 @@ class _ProductsSectionState extends State<ProductsSection> {
     final apiRows = await ApiService.getProductsByStatus('active');
     final apiItems = <_ProductItem>[];
     for (final row in apiRows) {
+      final dynamic idValue = row['id'] ?? row['product_id'] ?? row['productId'];
+      final int? productId =
+          idValue == null ? null : int.tryParse(idValue.toString());
       final String title = (row['name'] ?? '').toString();
       final String description = (row['description'] ?? '').toString();
       final String img = (row['img'] ?? '').toString();
@@ -103,6 +138,7 @@ class _ProductsSectionState extends State<ProductsSection> {
       if (title.isEmpty || description.isEmpty || provider == null) continue;
       apiItems.add(
         _ProductItem(
+          productId: productId,
           title: title,
           description: description,
           image: provider,
@@ -232,7 +268,10 @@ class _ProductsSectionState extends State<ProductsSection> {
                                       quantity: p.quantity,
                                       isSmallScreen: isSmallScreen,
                                       screenWidth: screenWidth,
-                                      onTap: () => _handleProductTap(p),
+                                      onTap:
+                                          p.canReserve
+                                              ? () => _handleProductTap(p)
+                                              : null,
                                     ),
                                   ),
                                 )
@@ -332,12 +371,15 @@ class _ProductsSectionState extends State<ProductsSection> {
 }
 
 class _ProductItem {
+  final int? productId;
   final String title;
   final String description;
   final ImageProvider image;
   final int quantity;
   bool get isSoldOut => quantity <= 0;
+  bool get canReserve => productId != null;
   _ProductItem({
+    required this.productId,
     required this.title,
     required this.description,
     required this.image,

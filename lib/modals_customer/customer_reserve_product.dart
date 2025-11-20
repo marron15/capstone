@@ -22,7 +22,6 @@ class _ReserveProductModalState extends State<ReserveProductModal> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _quantityController = TextEditingController();
   final TextEditingController _notesController = TextEditingController();
-  bool _isSubmitting = false;
 
   @override
   void initState() {
@@ -46,11 +45,11 @@ class _ReserveProductModalState extends State<ReserveProductModal> {
   Future<void> _submit() async {
     if (widget.availableQuantity <= 0) return;
     if (!_formKey.currentState!.validate()) return;
-    setState(() => _isSubmitting = true);
-    await Future.delayed(const Duration(milliseconds: 400));
-    if (!mounted) return;
-    setState(() => _isSubmitting = false);
-    Navigator.of(context).pop(true);
+    final int parsedQty = int.parse(_quantityController.text.trim());
+    final String notes = _notesController.text.trim();
+    Navigator.of(
+      context,
+    ).pop(<String, dynamic>{'quantity': parsedQty, 'notes': notes});
   }
 
   @override
@@ -201,10 +200,7 @@ class _ReserveProductModalState extends State<ReserveProductModal> {
                   children: [
                     Expanded(
                       child: TextButton(
-                        onPressed:
-                            _isSubmitting
-                                ? null
-                                : () => Navigator.of(context).pop(false),
+                        onPressed: () => Navigator.of(context).pop(false),
                         style: TextButton.styleFrom(
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 14),
@@ -215,7 +211,7 @@ class _ReserveProductModalState extends State<ReserveProductModal> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: _isSubmitting ? null : _submit,
+                        onPressed: soldOut ? null : _submit,
                         style: ElevatedButton.styleFrom(
                           backgroundColor:
                               soldOut ? Colors.grey : Colors.orangeAccent,
@@ -225,16 +221,7 @@ class _ReserveProductModalState extends State<ReserveProductModal> {
                             borderRadius: BorderRadius.circular(16),
                           ),
                         ),
-                        child:
-                            _isSubmitting
-                                ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                                : const Text('Submit Reservation'),
+                        child: const Text('Submit Reservation'),
                       ),
                     ),
                   ],
