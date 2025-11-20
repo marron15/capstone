@@ -95,6 +95,8 @@ class MyApp extends StatelessWidget {
   ThemeData _buildTheme() {
     return ThemeData(
       useMaterial3: true,
+      fontFamily: 'NotoSans',
+      fontFamilyFallback: const ['Roboto', 'Arial', 'sans-serif'],
       colorScheme: ColorScheme.fromSeed(
         seedColor: const Color(0xFF2196F3),
         brightness: Brightness.light,

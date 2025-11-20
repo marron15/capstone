@@ -20,7 +20,7 @@ class _SideNavState extends State<SideNav> {
   }
 
   Widget _navItem({
-    required IconData icon,
+    IconData? icon,
     required String label,
     required String route,
     required String? currentRoute,
@@ -44,7 +44,7 @@ class _SideNavState extends State<SideNav> {
                 : null,
       ),
       child: ListTile(
-        leading: Icon(icon, color: Colors.black),
+        leading: icon != null ? Icon(icon, color: Colors.black) : null,
         title: Text(label),
         selected: isSelected,
         selectedTileColor: Colors.grey.shade200,
@@ -94,7 +94,6 @@ class _SideNavState extends State<SideNav> {
           secondChild: Column(
             children: [
               _navItem(
-                icon: Icons.list_alt,
                 label: 'Product List',
                 route: '/admin-products',
                 currentRoute: currentRoute,
@@ -102,7 +101,6 @@ class _SideNavState extends State<SideNav> {
                 leftBorderWidth: 3,
               ),
               _navItem(
-                icon: Icons.assignment_turned_in,
                 label: 'Reserved Products',
                 route: '/admin-reserved-products',
                 currentRoute: currentRoute,
