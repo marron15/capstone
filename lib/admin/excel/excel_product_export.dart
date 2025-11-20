@@ -91,7 +91,7 @@ Future<void> exportProductsToExcel(
     await FileSaver.instance.saveFile(
       name: fileName,
       bytes: Uint8List.fromList(bytes),
-      ext: 'xlsx',
+      fileExtension: 'xlsx',
       mimeType: MimeType.microsoftExcel,
     );
 

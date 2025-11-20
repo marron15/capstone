@@ -88,7 +88,7 @@ Future<void> exportStatsToExcel(
     await FileSaver.instance.saveFile(
       name: '${sheetName}_$ts',
       bytes: u8,
-      ext: 'xlsx',
+      fileExtension: 'xlsx',
       mimeType: MimeType.microsoftExcel,
     );
 
@@ -194,7 +194,7 @@ Future<void> exportMultipleSheetsToExcel(
     await FileSaver.instance.saveFile(
       name: '${baseName}_$ts',
       bytes: u8,
-      ext: 'xlsx',
+      fileExtension: 'xlsx',
       mimeType: MimeType.microsoftExcel,
     );
 

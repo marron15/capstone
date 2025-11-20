@@ -73,7 +73,7 @@ Future<void> exportAdminsToExcel(
     await FileSaver.instance.saveFile(
       name: fileName,
       bytes: u8,
-      ext: 'xlsx',
+      fileExtension: 'xlsx',
       mimeType: MimeType.microsoftExcel,
     );
 

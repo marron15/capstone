@@ -36,12 +36,12 @@ dependencies:
   google_fonts: ^6.2.1
   fl_chart: ^1.0.0
   flutter_charts: ^0.5.2
-  syncfusion_flutter_charts: ^29.2.4
+  syncfusion_flutter_charts: ^31.2.12
   http: ^1.1.0
   shared_preferences: ^2.2.2
-  file_saver: ^0.2.12
-  syncfusion_flutter_xlsio: ^29.2.7
-  syncfusion_officechart: ^29.2.7
+  file_saver: ^0.3.1
+  syncfusion_flutter_xlsio: ^31.2.12
+  syncfusion_officechart: ^31.2.12
   pdf: ^3.10.7
   js: ^0.7.0
 

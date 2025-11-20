@@ -318,7 +318,7 @@ Future<void> exportStatsToPDF(
     await FileSaver.instance.saveFile(
       name: '${title.replaceAll(' ', '_')}_$timestamp',
       bytes: pdfBytes,
-      ext: 'pdf',
+      fileExtension: 'pdf',
       mimeType: MimeType.pdf,
     );
 
@@ -1400,7 +1400,7 @@ Future<void> exportMultipleReportsToPDF(
     await FileSaver.instance.saveFile(
       name: '${baseName}_$timestamp',
       bytes: pdfBytes,
-      ext: 'pdf',
+      fileExtension: 'pdf',
       mimeType: MimeType.pdf,
     );
 
