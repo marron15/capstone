@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import '../admin/services/api_service.dart';
+import '../services/unified_auth_state.dart';
+import '../modals_customer/customer_reserve_product.dart';
 
 class ProductsSection extends StatefulWidget {
   final bool isSmallScreen;
@@ -23,6 +25,48 @@ class _ProductsSectionState extends State<ProductsSection> {
   bool _isLoading = false;
   int _pageIndex = 0;
   int _slideDir = 0;
+
+  Future<void> _handleProductTap(_ProductItem item) async {
+    if (item.quantity <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('This product is currently sold out.'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+    if (!unifiedAuthState.isCustomerLoggedIn) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please log in to reserve a product.'),
+          backgroundColor: Colors.orangeAccent,
+        ),
+      );
+      return;
+    }
+
+    final bool? reserved = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder:
+          (dialogContext) => ReserveProductModal(
+            productName: item.title,
+            description: item.description,
+            availableQuantity: item.quantity,
+            image: item.image,
+          ),
+    );
+    if (!mounted) return;
+    if (reserved == true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Reservation request for ${item.title} submitted!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
+  }
 
   @override
   void initState() {
@@ -188,6 +232,7 @@ class _ProductsSectionState extends State<ProductsSection> {
                                       quantity: p.quantity,
                                       isSmallScreen: isSmallScreen,
                                       screenWidth: screenWidth,
+                                      onTap: () => _handleProductTap(p),
                                     ),
                                   ),
                                 )
@@ -307,6 +352,7 @@ class _FlexibleProductCard extends StatelessWidget {
   final int quantity;
   final bool isSmallScreen;
   final double screenWidth;
+  final VoidCallback? onTap;
 
   const _FlexibleProductCard({
     required this.image,
@@ -315,22 +361,30 @@ class _FlexibleProductCard extends StatelessWidget {
     required this.quantity,
     required this.isSmallScreen,
     required this.screenWidth,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     double cardWidth = isSmallScreen ? screenWidth * 0.6 : screenWidth * 0.18;
     cardWidth = cardWidth.clamp(150.0, 260.0);
-    return SizedBox(
-      width: cardWidth,
-      height: 260,
-      child: _ProductCard(
-        image: image,
-        title: title,
-        description: description,
-        quantity: quantity,
-        isSmallScreen: isSmallScreen,
-        screenWidth: screenWidth,
+    return MouseRegion(
+      cursor:
+          onTap != null ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      child: GestureDetector(
+        onTap: onTap,
+        child: SizedBox(
+          width: cardWidth,
+          height: 260,
+          child: _ProductCard(
+            image: image,
+            title: title,
+            description: description,
+            quantity: quantity,
+            isSmallScreen: isSmallScreen,
+            screenWidth: screenWidth,
+          ),
+        ),
       ),
     );
   }
@@ -360,7 +414,11 @@ class _ProductCard extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
-          BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 4)),
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: Stack(
@@ -409,7 +467,7 @@ class _ProductCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Spacer(),
+                const Spacer(),
                 Text(
                   title,
                   style: TextStyle(
@@ -421,7 +479,7 @@ class _ProductCard extends StatelessWidget {
                         .clamp(14.0, 22.0),
                   ),
                 ),
-                SizedBox(height: 6),
+                const SizedBox(height: 6),
                 Text(
                   description,
                   style: TextStyle(

@@ -8,6 +8,7 @@ import 'admin/dashboard/home.dart';
 import 'admin/dashboard/trainers.dart';
 import 'admin/dashboard/customers.dart';
 import 'admin/dashboard/admin_products.dart';
+import 'admin/dashboard/reserved_products.dart';
 import 'services/unified_auth_state.dart';
 import 'services/auth_guard.dart';
 import 'User Profile/profile.dart';
@@ -82,6 +83,8 @@ class MyApp extends StatelessWidget {
             (context) => const AdminAuthGuard(child: CustomersPage()),
         '/admin-products':
             (context) => const AdminAuthGuard(child: AdminProductsPage()),
+        '/admin-reserved-products':
+            (context) => const AdminAuthGuard(child: ReservedProductsPage()),
         '/customer-profile':
             (context) => CustomerAuthGuard(child: ProfilePage()),
       },
