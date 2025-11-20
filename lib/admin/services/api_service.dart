@@ -596,6 +596,60 @@ class ApiService {
     }
   }
 
+  static const String getCustomerReservationsEndpoint =
+      '$baseUrl/products/getCustomerReservations.php';
+
+  static Future<List<Map<String, dynamic>>> getCustomerReservations({
+    required int customerId,
+  }) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$getCustomerReservationsEndpoint?customer_id=$customerId'),
+        headers: {'Accept': 'application/json'},
+      );
+
+      if (response.statusCode == 200 && response.body.isNotEmpty) {
+        final dynamic parsed = jsonDecode(response.body);
+
+        // Handle case where API returns a List directly
+        if (parsed is List) {
+          return parsed
+              .map((item) {
+                if (item is Map<String, dynamic>) {
+                  return item;
+                } else if (item is Map) {
+                  return Map<String, dynamic>.from(item);
+                }
+                return <String, dynamic>{};
+              })
+              .where((item) => item.isNotEmpty)
+              .toList();
+        }
+
+        // Handle case where API returns a Map with 'data' field
+        if (parsed is Map<String, dynamic>) {
+          if (parsed['success'] == true && parsed['data'] is List) {
+            return (parsed['data'] as List)
+                .map((item) {
+                  if (item is Map<String, dynamic>) {
+                    return item;
+                  } else if (item is Map) {
+                    return Map<String, dynamic>.from(item);
+                  }
+                  return <String, dynamic>{};
+                })
+                .where((item) => item.isNotEmpty)
+                .toList();
+          }
+        }
+      }
+      return [];
+    } catch (e) {
+      debugPrint('getCustomerReservations error: $e');
+      return [];
+    }
+  }
+
   static Future<List<Map<String, dynamic>>> getReservedProducts({
     String? status,
   }) async {
@@ -621,15 +675,24 @@ class ApiService {
   static Future<bool> updateReservationStatus({
     required int reservationId,
     required String status,
+    String? declineNote,
   }) async {
     try {
+      final body = <String, dynamic>{
+        'reservation_id': reservationId,
+        'status': status,
+      };
+      if (declineNote != null && declineNote.isNotEmpty) {
+        body['decline_note'] = declineNote;
+      }
+
       final res = await http.post(
         Uri.parse(updateReservationStatusEndpoint),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        body: jsonEncode({'reservation_id': reservationId, 'status': status}),
+        body: jsonEncode(body),
       );
       if (res.statusCode == 200 && res.body.isNotEmpty) {
         final Map<String, dynamic> parsed =

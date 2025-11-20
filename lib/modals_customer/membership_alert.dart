@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../services/unified_auth_state.dart';
+import '../admin/services/api_service.dart';
 
 class MembershipAlertModal extends StatefulWidget {
   const MembershipAlertModal({Key? key}) : super(key: key);
@@ -18,7 +19,8 @@ class _MembershipAlertModalState extends State<MembershipAlertModal>
   late Animation<double> _fadeAnim;
   late Animation<double> _slideAnim;
 
-  Timer? _countdownTimer;
+  bool _isLoadingReservations = true;
+  Map<String, dynamic>? _latestReservation;
 
   @override
   void initState() {
@@ -43,56 +45,58 @@ class _MembershipAlertModalState extends State<MembershipAlertModal>
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
 
     _controller.forward();
-    _startCountdownTimer();
+    _fetchReservations();
+  }
+
+  Future<void> _fetchReservations() async {
+    if (unifiedAuthState.customerId == null) {
+      setState(() => _isLoadingReservations = false);
+      return;
+    }
+
+    try {
+      final reservations = await ApiService.getCustomerReservations(
+        customerId: unifiedAuthState.customerId!,
+      );
+
+      if (mounted) {
+        setState(() {
+          _isLoadingReservations = false;
+
+          // Get the latest reservation with accepted or declined status
+          final processedReservations =
+              reservations.where((r) {
+                final status = (r['status'] ?? '').toString().toLowerCase();
+                return status == 'accepted' || status == 'declined';
+              }).toList();
+
+          if (processedReservations.isNotEmpty) {
+            // Sort by created_at descending to get the latest
+            processedReservations.sort((a, b) {
+              final dateA =
+                  DateTime.tryParse((a['created_at'] ?? '').toString()) ??
+                  DateTime(1970);
+              final dateB =
+                  DateTime.tryParse((b['created_at'] ?? '').toString()) ??
+                  DateTime(1970);
+              return dateB.compareTo(dateA);
+            });
+            _latestReservation = processedReservations.first;
+          }
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingReservations = false);
+      }
+    }
   }
 
   @override
   void dispose() {
-    _countdownTimer?.cancel();
     _controller.dispose();
     _timerController.dispose();
     super.dispose();
-  }
-
-  void _startCountdownTimer() {
-    _countdownTimer?.cancel();
-    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (mounted) {
-        setState(() {
-          // This will trigger a rebuild and update the time remaining display
-        });
-      } else {
-        timer.cancel();
-      }
-    });
-  }
-
-  // Helper method to get time remaining
-  String _getTimeRemaining(DateTime expirationDate) {
-    final now = DateTime.now();
-    final difference = expirationDate.difference(now);
-
-    if (difference.isNegative) return 'Expired';
-
-    final days = difference.inDays;
-    final hours = difference.inHours % 24;
-    final minutes = difference.inMinutes % 60;
-    final seconds = difference.inSeconds % 60;
-
-    if (days > 0) {
-      return '${days}d ${hours}h ${minutes}m ${seconds}s';
-    } else if (hours > 0) {
-      return '${hours}h ${minutes}m ${seconds}s';
-    } else if (minutes > 0) {
-      return '${minutes}m ${seconds}s';
-    } else {
-      return '${seconds}s';
-    }
-  }
-
-  // Helper method to check if membership is active
-  bool _isMembershipActive(DateTime expirationDate) {
-    return DateTime.now().isBefore(expirationDate);
   }
 
   @override
@@ -100,19 +104,9 @@ class _MembershipAlertModalState extends State<MembershipAlertModal>
     final screenSize = MediaQuery.of(context).size;
     final isSmallScreen = screenSize.width < 600;
 
-    // Check if membership is expired
-    final isExpired =
-        unifiedAuthState.membershipData != null &&
-        !_isMembershipActive(unifiedAuthState.membershipData!.expirationDate);
-
-    const Color expiredBackgroundStart = Color(0xFF4A1111);
-    const Color expiredBackgroundMid = Color(0xFFAB1E1E);
-    const Color expiredBackgroundEnd = Color(0xFFE53935);
-    const Color expiredAccent = Color(0xFFFFEBEE);
     const Color activeBackgroundStart = Color(0xFF161C2C);
     const Color activeBackgroundEnd = Color(0xFF1F283C);
     const Color activeAccent = Color(0xFFFFB74D);
-    const Color activePrimary = Color(0xFFE0F7FA);
 
     return Center(
       child: Material(
@@ -140,30 +134,13 @@ class _MembershipAlertModalState extends State<MembershipAlertModal>
                       width: double.infinity,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(24),
-                        gradient:
-                            isExpired
-                                ? const LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: [
-                                    expiredBackgroundStart,
-                                    expiredBackgroundMid,
-                                    expiredBackgroundEnd,
-                                  ],
-                                )
-                                : const LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: [
-                                    activeBackgroundStart,
-                                    activeBackgroundEnd,
-                                  ],
-                                ),
+                        gradient: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [activeBackgroundStart, activeBackgroundEnd],
+                        ),
                         border: Border.all(
-                          color:
-                              isExpired
-                                  ? Colors.black.withValues(alpha: 0.18)
-                                  : Colors.black.withValues(alpha: 0.35),
+                          color: Colors.black.withValues(alpha: 0.35),
                           width: 1.4,
                         ),
                         boxShadow: [
@@ -174,10 +151,7 @@ class _MembershipAlertModalState extends State<MembershipAlertModal>
                             offset: const Offset(0, 8),
                           ),
                           BoxShadow(
-                            color:
-                                isExpired
-                                    ? Colors.black.withValues(alpha: 0.35)
-                                    : Colors.black.withValues(alpha: 0.45),
+                            color: Colors.black.withValues(alpha: 0.45),
                             blurRadius: 42,
                             spreadRadius: 4,
                             offset: const Offset(0, 16),
@@ -198,30 +172,39 @@ class _MembershipAlertModalState extends State<MembershipAlertModal>
                                     Container(
                                       padding: const EdgeInsets.all(8),
                                       decoration: BoxDecoration(
-                                        color:
-                                            isExpired
-                                                ? Colors.white.withValues(
-                                                  alpha: 0.12,
-                                                )
-                                                : activeAccent.withValues(
-                                                  alpha: 0.18,
-                                                ),
+                                        color: activeAccent.withValues(
+                                          alpha: 0.18,
+                                        ),
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: Icon(
-                                        isExpired ? Icons.warning : Icons.timer,
+                                        _latestReservation != null
+                                            ? (_latestReservation!['status'] ??
+                                                            '')
+                                                        .toString()
+                                                        .toLowerCase() ==
+                                                    'accepted'
+                                                ? Icons.check_circle
+                                                : Icons.cancel
+                                            : Icons.inventory_2,
                                         color:
-                                            isExpired
-                                                ? expiredAccent
+                                            _latestReservation != null
+                                                ? (_latestReservation!['status'] ??
+                                                                '')
+                                                            .toString()
+                                                            .toLowerCase() ==
+                                                        'accepted'
+                                                    ? Colors.green.shade300
+                                                    : Colors.red.shade300
                                                 : activeAccent,
                                         size: 24,
                                       ),
                                     ),
                                     const SizedBox(width: 12),
                                     Text(
-                                      isExpired
-                                          ? 'Membership Expired'
-                                          : 'Membership Alert',
+                                      _latestReservation != null
+                                          ? 'Reservation Update'
+                                          : 'Product Reservations',
                                       style: TextStyle(
                                         color: Colors.white,
                                         fontSize: isSmallScreen ? 20 : 24,
@@ -245,259 +228,300 @@ class _MembershipAlertModalState extends State<MembershipAlertModal>
 
                             const SizedBox(height: 20),
 
-                            // Time remaining section
-                            if (unifiedAuthState.membershipData != null) ...[
+                            // Reservation Status section
+                            if (_isLoadingReservations)
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(20),
+                                child: const Center(
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              )
+                            else if (_latestReservation != null) ...[
                               Container(
                                 width: double.infinity,
                                 padding: const EdgeInsets.all(20),
                                 decoration: BoxDecoration(
-                                  gradient:
-                                      isExpired
-                                          ? LinearGradient(
-                                            begin: Alignment.topLeft,
-                                            end: Alignment.bottomRight,
-                                            colors: [
-                                              Colors.white.withValues(
-                                                alpha: 0.24,
-                                              ),
-                                              Colors.white.withValues(
-                                                alpha: 0.14,
-                                              ),
-                                            ],
-                                          )
-                                          : LinearGradient(
-                                            begin: Alignment.topLeft,
-                                            end: Alignment.bottomRight,
-                                            colors: [
-                                              Colors.white.withValues(
-                                                alpha: 0.12,
-                                              ),
-                                              Colors.white.withValues(
-                                                alpha: 0.06,
-                                              ),
-                                            ],
-                                          ),
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      Colors.white.withValues(alpha: 0.12),
+                                      Colors.white.withValues(alpha: 0.06),
+                                    ],
+                                  ),
                                   borderRadius: BorderRadius.circular(16),
                                   border: Border.all(
-                                    color:
-                                        isExpired
-                                            ? Colors.white.withValues(
-                                              alpha: 0.3,
-                                            )
-                                            : Colors.white.withValues(
-                                              alpha: 0.18,
-                                            ),
+                                    color: Colors.white.withValues(alpha: 0.18),
                                     width: 1.2,
                                   ),
                                 ),
                                 child: Column(
                                   children: [
                                     Text(
-                                      isExpired
-                                          ? 'Membership Status'
-                                          : 'Time Remaining',
+                                      'Reservation Status',
                                       style: TextStyle(
-                                        color:
-                                            isExpired
-                                                ? Colors.white
-                                                : Colors.white.withValues(
-                                                  alpha: 0.85,
-                                                ),
+                                        color: Colors.white.withValues(
+                                          alpha: 0.85,
+                                        ),
                                         fontSize: isSmallScreen ? 14 : 16,
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
                                     const SizedBox(height: 8),
-                                    Text(
-                                      isExpired
-                                          ? 'EXPIRED'
-                                          : _getTimeRemaining(
-                                            unifiedAuthState
-                                                .membershipData!
-                                                .expirationDate,
-                                          ),
-                                      style: TextStyle(
-                                        color:
-                                            isExpired
-                                                ? expiredAccent
-                                                : activePrimary,
-                                        fontSize: isSmallScreen ? 28 : 32,
-                                        fontWeight: FontWeight.bold,
-                                        letterSpacing: 1.0,
+                                    // Show status based on accepted/declined
+                                    if ((_latestReservation!['status'] ?? '')
+                                            .toString()
+                                            .toLowerCase() ==
+                                        'declined') ...[
+                                      // Declined status
+                                      Text(
+                                        'DECLINED',
+                                        style: TextStyle(
+                                          color: Colors.red.shade300,
+                                          fontSize: isSmallScreen ? 28 : 32,
+                                          fontWeight: FontWeight.bold,
+                                          letterSpacing: 1.0,
+                                        ),
                                       ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    if (!isExpired) ...[
-                                      Container(
-                                        height: 4,
-                                        decoration: BoxDecoration(
-                                          color: Colors.white.withValues(
-                                            alpha: 0.2,
+                                      // Show admin note if available
+                                      if (_latestReservation!['decline_note'] !=
+                                              null &&
+                                          (_latestReservation!['decline_note'] ??
+                                                  '')
+                                              .toString()
+                                              .isNotEmpty) ...[
+                                        const SizedBox(height: 16),
+                                        Container(
+                                          width: double.infinity,
+                                          padding: const EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                            color: Colors.white.withValues(
+                                              alpha: 0.1,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
                                           ),
-                                          borderRadius: BorderRadius.circular(
-                                            2,
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                'Admin Note:',
+                                                style: TextStyle(
+                                                  color: Colors.white
+                                                      .withValues(alpha: 0.8),
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                (_latestReservation!['decline_note'])
+                                                    .toString(),
+                                                style: TextStyle(
+                                                  color: Colors.white
+                                                      .withValues(alpha: 0.9),
+                                                  fontSize: 14,
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ),
-                                        child: LinearProgressIndicator(
-                                          value: _getMembershipProgress(
-                                            unifiedAuthState
-                                                .membershipData!
-                                                .startDate,
-                                            unifiedAuthState
-                                                .membershipData!
-                                                .expirationDate,
+                                      ],
+                                    ] else ...[
+                                      // Accepted status
+                                      Text(
+                                        'Your Reserve Request has been accepted',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color: Colors.green.shade300,
+                                          fontSize: isSmallScreen ? 20 : 24,
+                                          fontWeight: FontWeight.bold,
+                                          letterSpacing: 0.5,
+                                        ),
+                                      ),
+                                    ],
+                                    if (_latestReservation!['product_name'] !=
+                                        null) ...[
+                                      const SizedBox(height: 12),
+                                      Text(
+                                        'Product: ${_latestReservation!['product_name']}',
+                                        style: TextStyle(
+                                          color: Colors.white.withValues(
+                                            alpha: 0.7,
                                           ),
-                                          backgroundColor: Colors.transparent,
-                                          valueColor:
-                                              AlwaysStoppedAnimation<Color>(
-                                                activeAccent,
-                                              ),
-                                          borderRadius: BorderRadius.circular(
-                                            2,
-                                          ),
+                                          fontSize: 12,
                                         ),
                                       ),
                                     ],
                                   ],
                                 ),
                               ),
-
+                              const SizedBox(height: 20),
+                            ] else ...[
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(20),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      Colors.white.withValues(alpha: 0.12),
+                                      Colors.white.withValues(alpha: 0.06),
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.18),
+                                    width: 1.2,
+                                  ),
+                                ),
+                                child: Column(
+                                  children: [
+                                    Icon(
+                                      Icons.inventory_2_outlined,
+                                      color: Colors.white.withValues(
+                                        alpha: 0.6,
+                                      ),
+                                      size: 32,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'No Reservations',
+                                      style: TextStyle(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.85,
+                                        ),
+                                        fontSize: isSmallScreen ? 16 : 18,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'You have no product reservations',
+                                      style: TextStyle(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.6,
+                                        ),
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                               const SizedBox(height: 20),
                             ],
 
-                            // Extension message
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(20),
-                              decoration: BoxDecoration(
-                                gradient:
-                                    isExpired
-                                        ? LinearGradient(
-                                          begin: Alignment.topCenter,
-                                          end: Alignment.bottomCenter,
-                                          colors: [
-                                            Colors.white.withValues(
-                                              alpha: 0.18,
-                                            ),
-                                            Colors.white.withValues(
-                                              alpha: 0.08,
-                                            ),
-                                          ],
-                                        )
-                                        : LinearGradient(
-                                          begin: Alignment.topCenter,
-                                          end: Alignment.bottomCenter,
-                                          colors: [
-                                            Colors.white.withValues(
-                                              alpha: 0.12,
-                                            ),
-                                            Colors.white.withValues(
-                                              alpha: 0.05,
-                                            ),
-                                          ],
+                            // Information message
+                            if (_latestReservation != null)
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(20),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [
+                                      Colors.white.withValues(alpha: 0.12),
+                                      Colors.white.withValues(alpha: 0.05),
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.18),
+                                    width: 1.2,
+                                  ),
+                                ),
+                                child: Column(
+                                  children: [
+                                    Icon(
+                                      (_latestReservation!['status'] ?? '')
+                                                  .toString()
+                                                  .toLowerCase() ==
+                                              'accepted'
+                                          ? Icons.check_circle_outline
+                                          : Icons.info_outline,
+                                      color:
+                                          (_latestReservation!['status'] ?? '')
+                                                      .toString()
+                                                      .toLowerCase() ==
+                                                  'accepted'
+                                              ? Colors.green.shade300
+                                              : Colors.orange.shade300,
+                                      size: isSmallScreen ? 24 : 28,
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Text(
+                                      (_latestReservation!['status'] ?? '')
+                                                  .toString()
+                                                  .toLowerCase() ==
+                                              'accepted'
+                                          ? 'Reservation Accepted!'
+                                          : 'Reservation Declined',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.92,
                                         ),
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color:
-                                      isExpired
-                                          ? Colors.white.withValues(alpha: 0.28)
-                                          : Colors.white.withValues(
-                                            alpha: 0.18,
-                                          ),
-                                  width: 1.2,
+                                        fontSize: isSmallScreen ? 16 : 18,
+                                        fontWeight: FontWeight.bold,
+                                        letterSpacing: 0.3,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      (_latestReservation!['status'] ?? '')
+                                                  .toString()
+                                                  .toLowerCase() ==
+                                              'accepted'
+                                          ? 'You can pick up your reserved product at the gym.'
+                                          : 'Please see the admin note above for details.',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.78,
+                                        ),
+                                        fontSize: isSmallScreen ? 12 : 14,
+                                        fontWeight: FontWeight.w400,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      '875 RIZAL AVENUE WEST TAPINAC, OLONGAPO CITY',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        color: activeAccent,
+                                        fontSize: isSmallScreen ? 13 : 15,
+                                        fontWeight: FontWeight.w600,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                              child: Column(
-                                children: [
-                                  Icon(
-                                    isExpired
-                                        ? Icons.warning
-                                        : Icons.location_on,
-                                    color:
-                                        isExpired
-                                            ? expiredAccent
-                                            : activeAccent,
-                                    size: isSmallScreen ? 24 : 28,
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    isExpired
-                                        ? 'Membership Has Expired!'
-                                        : 'Want to Extend Membership?',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color:
-                                          isExpired
-                                              ? Colors.white
-                                              : Colors.white.withValues(
-                                                alpha: 0.92,
-                                              ),
-                                      fontSize: isSmallScreen ? 16 : 18,
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: 0.3,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    isExpired
-                                        ? 'Your membership has expired. Please renew to continue using our facilities.'
-                                        : 'Go to RNR GYM to Extend your Membership at',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.78,
-                                      ),
-                                      fontSize: isSmallScreen ? 12 : 14,
-                                      fontWeight: FontWeight.w400,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    '875 RIZAL AVENUE WEST TAPINAC, OLONGAPO CITY',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color:
-                                          isExpired
-                                              ? expiredAccent
-                                              : activeAccent,
-                                      fontSize: isSmallScreen ? 13 : 15,
-                                      fontWeight: FontWeight.w600,
-                                      letterSpacing: 0.5,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
 
                             const SizedBox(height: 20),
 
                             // Action buttons
-                            if (isExpired) ...[
-                              // Only Close button for expired memberships
-                              SizedBox(
-                                width: double.infinity,
-                                child: _AnimatedButton(
-                                  onPressed: () => Navigator.of(context).pop(),
-                                  backgroundColor: expiredBackgroundEnd,
-                                  textColor: Colors.white,
-                                  text: 'Close',
-                                ),
-                              ),
-                            ] else ...[
-                              // Two buttons for active memberships
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _AnimatedButton(
-                                      onPressed:
-                                          () => Navigator.of(context).pop(),
-                                      backgroundColor: Colors.white.withValues(
-                                        alpha: 0.1,
-                                      ),
-                                      textColor: Colors.white,
-                                      text: 'Later',
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _AnimatedButton(
+                                    onPressed:
+                                        () => Navigator.of(context).pop(),
+                                    backgroundColor: Colors.white.withValues(
+                                      alpha: 0.1,
                                     ),
+                                    textColor: Colors.white,
+                                    text: 'Close',
                                   ),
+                                ),
+                                if (_latestReservation != null) ...[
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: _AnimatedButton(
@@ -514,8 +538,8 @@ class _MembershipAlertModalState extends State<MembershipAlertModal>
                                     ),
                                   ),
                                 ],
-                              ),
-                            ],
+                              ],
+                            ),
                           ],
                         ),
                       ),
@@ -528,19 +552,6 @@ class _MembershipAlertModalState extends State<MembershipAlertModal>
         ),
       ),
     );
-  }
-
-  // Helper method to get membership progress (0.0 to 1.0)
-  double _getMembershipProgress(DateTime startDate, DateTime expirationDate) {
-    final now = DateTime.now();
-    final totalDuration = expirationDate.difference(startDate);
-    final elapsed = now.difference(startDate);
-
-    if (totalDuration.inMilliseconds == 0) return 0.0;
-    if (elapsed.isNegative) return 0.0;
-    if (elapsed.inMilliseconds > totalDuration.inMilliseconds) return 1.0;
-
-    return elapsed.inMilliseconds / totalDuration.inMilliseconds;
   }
 }
 

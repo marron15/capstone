@@ -1185,6 +1185,60 @@ class _LandingPageState extends State<LandingPage>
                                                       ),
 
                                                       SizedBox(height: 16),
+
+                                                      // Reserve Request Button
+                                                      AnimatedBuilder(
+                                                        animation: unifiedAuthState,
+                                                        builder: (context, child) {
+                                                          if (!unifiedAuthState.isCustomerLoggedIn) {
+                                                            return const SizedBox.shrink();
+                                                          }
+                                                          return SizedBox(
+                                                            width: double.infinity,
+                                                            child: ElevatedButton(
+                                                              onPressed: () {
+                                                                showDialog(
+                                                                  context: context,
+                                                                  barrierDismissible: true,
+                                                                  builder: (context) => const MembershipAlertModal(),
+                                                                );
+                                                              },
+                                                              style: ElevatedButton.styleFrom(
+                                                                backgroundColor: const Color(0xFFFFA812),
+                                                                foregroundColor: Colors.black,
+                                                                padding: EdgeInsets.symmetric(
+                                                                  horizontal: isSmallScreen ? 20 : 24,
+                                                                  vertical: isSmallScreen ? 14 : 16,
+                                                                ),
+                                                                shape: RoundedRectangleBorder(
+                                                                  borderRadius: BorderRadius.circular(12),
+                                                                ),
+                                                                elevation: 4,
+                                                              ),
+                                                              child: Row(
+                                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                                children: [
+                                                                  Icon(
+                                                                    Icons.inventory_2_outlined,
+                                                                    size: isSmallScreen ? 20 : 22,
+                                                                  ),
+                                                                  SizedBox(width: 8),
+                                                                  Text(
+                                                                    'Reserve Request',
+                                                                    style: TextStyle(
+                                                                      fontSize: isSmallScreen ? 14 : 16,
+                                                                      fontWeight: FontWeight.bold,
+                                                                      letterSpacing: 0.5,
+                                                                    ),
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                            ),
+                                                          );
+                                                        },
+                                                      ),
+
+                                                      SizedBox(height: 16),
                                                     ],
                                                   ),
                                                 ),

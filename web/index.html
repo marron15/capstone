@@ -35,6 +35,20 @@
 </head>
 <body>
   <script>
+    // Suppress Noto font warnings from Flutter
+    (function() {
+      const originalWarn = console.warn;
+      console.warn = function(...args) {
+        const message = args.join(' ');
+        // Suppress Noto font related warnings
+        if (message.includes('Noto fonts') || message.includes('missing characters')) {
+          return; // Suppress this warning
+        }
+        // Call original warn for other messages
+        originalWarn.apply(console, args);
+      };
+    })();
+
     (function () {
       const shouldLogIntlFix =
         ['localhost', '127.0.0.1', ''].includes(window.location.hostname);

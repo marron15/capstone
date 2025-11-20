@@ -134,36 +134,141 @@ class _ReservedProductsPageState extends State<ReservedProductsPage> {
     _ReservationStatus status,
   ) async {
     if (request.status == status) return;
-    final previousStatus = request.status;
-    setState(() => request.status = status);
 
-    final bool ok = await ApiService.updateReservationStatus(
-      reservationId: request.id,
-      status: _statusValue(status),
-    );
-    if (!mounted) return;
-    if (ok) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            status == _ReservationStatus.accepted
-                ? 'Reservation accepted'
-                : 'Reservation declined',
+    // If declining, show modal for decline note
+    if (status == _ReservationStatus.declined) {
+      final String? declineNote = await _showDeclineModal();
+      if (declineNote == null) return; // User cancelled
+
+      final previousStatus = request.status;
+      setState(() => request.status = status);
+
+      final bool ok = await ApiService.updateReservationStatus(
+        reservationId: request.id,
+        status: _statusValue(status),
+        declineNote: declineNote,
+      );
+      if (!mounted) return;
+      if (ok) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Reservation declined'),
+            backgroundColor: Colors.red,
           ),
-          backgroundColor:
-              status == _ReservationStatus.accepted ? Colors.green : Colors.red,
-        ),
-      );
-      await _fetchReservations();
+        );
+        await _fetchReservations();
+      } else {
+        setState(() => request.status = previousStatus);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to update reservation. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     } else {
-      setState(() => request.status = previousStatus);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Failed to update reservation. Please try again.'),
-          backgroundColor: Colors.red,
-        ),
+      // Accepting - no note needed
+      final previousStatus = request.status;
+      setState(() => request.status = status);
+
+      final bool ok = await ApiService.updateReservationStatus(
+        reservationId: request.id,
+        status: _statusValue(status),
       );
+      if (!mounted) return;
+      if (ok) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Reservation accepted'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        await _fetchReservations();
+      } else {
+        setState(() => request.status = previousStatus);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to update reservation. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
+  }
+
+  Future<String?> _showDeclineModal() async {
+    final TextEditingController noteController = TextEditingController();
+
+    return showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Row(
+            children: [
+              Icon(Icons.cancel_outlined, color: Colors.red, size: 24),
+              SizedBox(width: 8),
+              Text('Decline Reservation'),
+            ],
+          ),
+          content: SizedBox(
+            width: 400,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Please provide a reason for declining this reservation:',
+                  style: TextStyle(fontSize: 14),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: noteController,
+                  maxLines: 4,
+                  decoration: InputDecoration(
+                    hintText: 'Enter decline reason...',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: Colors.red, width: 2),
+                    ),
+                  ),
+                  autofocus: true,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final note = noteController.text.trim();
+                if (note.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Please enter a decline reason'),
+                      backgroundColor: Colors.orange,
+                    ),
+                  );
+                  return;
+                }
+                Navigator.of(context).pop(note);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Decline'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -468,114 +573,120 @@ class _ReservedProductsPageState extends State<ReservedProductsPage> {
                                   );
                                   return Column(
                                     children: [
-                                      Row(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          SizedBox(
-                                            width: 60,
-                                            child: Padding(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    vertical: 18,
+                                      SizedBox(
+                                        height: actionHeight,
+                                        child: Row(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.center,
+                                          children: [
+                                            SizedBox(
+                                              width: 60,
+                                              child: Center(
+                                                child: Text(
+                                                  '#${request.id}',
+                                                  textAlign: TextAlign.center,
+                                                  style: const TextStyle(
+                                                    fontWeight: FontWeight.w600,
                                                   ),
-                                              child: Text(
-                                                '#${request.id}',
-                                                textAlign: TextAlign.center,
-                                                style: const TextStyle(
-                                                  fontWeight: FontWeight.w600,
                                                 ),
                                               ),
                                             ),
-                                          ),
-                                          Expanded(
-                                            flex: 2,
-                                            child: Padding(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    vertical: 14,
-                                                    horizontal: 8,
-                                                  ),
-                                              child: Text(
-                                                request.productName,
-                                                textAlign: TextAlign.center,
-                                                style: const TextStyle(
-                                                  fontSize: 15,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                          Expanded(
-                                            flex: 2,
-                                            child: Padding(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    vertical: 14,
-                                                    horizontal: 8,
-                                                  ),
-                                              child: Column(
-                                                children: [
-                                                  Text(
-                                                    request.customerName,
+                                            Expanded(
+                                              flex: 2,
+                                              child: Center(
+                                                child: Padding(
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 8,
+                                                      ),
+                                                  child: Text(
+                                                    request.productName,
                                                     textAlign: TextAlign.center,
                                                     style: const TextStyle(
+                                                      fontSize: 15,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            Expanded(
+                                              flex: 2,
+                                              child: Center(
+                                                child: Padding(
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 8,
+                                                      ),
+                                                  child: Column(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .center,
+                                                    children: [
+                                                      Text(
+                                                        request.customerName,
+                                                        textAlign:
+                                                            TextAlign.center,
+                                                        style: const TextStyle(
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                        ),
+                                                      ),
+                                                      const SizedBox(height: 4),
+                                                      Text(
+                                                        'Requested ${_timeAgo(request.requestedAt)}',
+                                                        style: const TextStyle(
+                                                          fontSize: 12,
+                                                          color: Colors.black54,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            Expanded(
+                                              flex: 2,
+                                              child: Center(
+                                                child: Padding(
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 8,
+                                                      ),
+                                                  child: Text(
+                                                    request.notes,
+                                                    maxLines: 2,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    textAlign: TextAlign.center,
+                                                    style: const TextStyle(
+                                                      fontSize: 14,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            Expanded(
+                                              flex: 1,
+                                              child: Center(
+                                                child: Padding(
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 8,
+                                                      ),
+                                                  child: Text(
+                                                    'x${request.requestedQty}',
+                                                    textAlign: TextAlign.center,
+                                                    style: const TextStyle(
+                                                      fontSize: 15,
                                                       fontWeight:
                                                           FontWeight.w600,
                                                     ),
                                                   ),
-                                                  const SizedBox(height: 4),
-                                                  Text(
-                                                    'Requested ${_timeAgo(request.requestedAt)}',
-                                                    style: const TextStyle(
-                                                      fontSize: 12,
-                                                      color: Colors.black54,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                          Expanded(
-                                            flex: 2,
-                                            child: Padding(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    vertical: 14,
-                                                    horizontal: 8,
-                                                  ),
-                                              child: Text(
-                                                request.notes,
-                                                maxLines: 2,
-                                                overflow: TextOverflow.ellipsis,
-                                                textAlign: TextAlign.center,
-                                                style: const TextStyle(
-                                                  fontSize: 14,
                                                 ),
                                               ),
                                             ),
-                                          ),
-                                          Expanded(
-                                            flex: 1,
-                                            child: Padding(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    vertical: 18,
-                                                    horizontal: 8,
-                                                  ),
-                                              child: Text(
-                                                'x${request.requestedQty}',
-                                                textAlign: TextAlign.center,
-                                                style: const TextStyle(
-                                                  fontSize: 15,
-                                                  fontWeight: FontWeight.w600,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                          Expanded(
-                                            flex: 1,
-                                            child: SizedBox(
-                                              height: actionHeight,
+                                            Expanded(
+                                              flex: 1,
                                               child: Center(
                                                 child: Container(
                                                   padding:
@@ -608,23 +719,24 @@ class _ReservedProductsPageState extends State<ReservedProductsPage> {
                                                 ),
                                               ),
                                             ),
-                                          ),
-                                          Expanded(
-                                            flex: 2,
-                                            child: Padding(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    vertical: 12,
-                                                    horizontal: 6,
+                                            Expanded(
+                                              flex: 2,
+                                              child: Center(
+                                                child: Padding(
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 6,
+                                                      ),
+                                                  child: _buildActionButtons(
+                                                    request,
+                                                    isCompactTable,
+                                                    actionHeight,
                                                   ),
-                                              child: _buildActionButtons(
-                                                request,
-                                                isCompactTable,
-                                                actionHeight,
+                                                ),
                                               ),
                                             ),
-                                          ),
-                                        ],
+                                          ],
+                                        ),
                                       ),
                                       Divider(
                                         height: 1,
@@ -650,12 +762,57 @@ class _ReservedProductsPageState extends State<ReservedProductsPage> {
 
   String _timeAgo(DateTime dateTime) {
     final Duration diff = DateTime.now().difference(dateTime);
-    if (diff.inMinutes < 60) {
-      return '${diff.inMinutes} minute(s) ago';
-    } else if (diff.inHours < 24) {
-      return '${diff.inHours} hour(s) ago';
+
+    // If less than 1 minute, show seconds
+    if (diff.inSeconds < 60) {
+      return diff.inSeconds <= 1
+          ? '${diff.inSeconds} second ago'
+          : '${diff.inSeconds} seconds ago';
     }
-    return '${diff.inDays} day(s) ago';
+
+    // If less than 1 hour, show minutes
+    if (diff.inMinutes < 60) {
+      return diff.inMinutes == 1
+          ? '${diff.inMinutes} minute ago'
+          : '${diff.inMinutes} minutes ago';
+    }
+
+    // If less than 24 hours, show hours
+    if (diff.inHours < 24) {
+      return diff.inHours == 1
+          ? '${diff.inHours} hour ago'
+          : '${diff.inHours} hours ago';
+    }
+
+    // If 24+ hours (days), show actual date and time
+    final months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+
+    final month = months[dateTime.month - 1];
+    final day = dateTime.day;
+    final year = dateTime.year;
+
+    // Format time (12-hour format with AM/PM)
+    int hour = dateTime.hour;
+    final String period = hour >= 12 ? 'PM' : 'AM';
+    if (hour > 12) hour -= 12;
+    if (hour == 0) hour = 12;
+
+    final minute = dateTime.minute.toString().padLeft(2, '0');
+
+    return '$month $day, $year at $hour:$minute $period';
   }
 
   Widget _buildActionButtons(
@@ -674,46 +831,52 @@ class _ReservedProductsPageState extends State<ReservedProductsPage> {
       height: actionHeight,
       child: Row(
         children: [
-          Expanded(
-            child: ElevatedButton(
-              onPressed:
-                  isAccepted
-                      ? null
-                      : () =>
-                          _handleDecision(request, _ReservationStatus.accepted),
-              child: const Text(
-                'Accept',
-                softWrap: false,
-                overflow: TextOverflow.fade,
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green.shade50,
-                foregroundColor: Colors.green.shade700,
-                elevation: 0,
-                padding: buttonPadding,
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: OutlinedButton(
-              onPressed:
-                  isDeclined
-                      ? null
-                      : () =>
-                          _handleDecision(request, _ReservationStatus.declined),
-              child: const Text(
-                'Decline',
-                softWrap: false,
-                overflow: TextOverflow.fade,
-              ),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.red.shade600,
-                side: BorderSide(color: Colors.red.shade200),
-                padding: buttonPadding,
+          if (!isDeclined)
+            Expanded(
+              child: ElevatedButton(
+                onPressed:
+                    isAccepted
+                        ? null
+                        : () => _handleDecision(
+                          request,
+                          _ReservationStatus.accepted,
+                        ),
+                child: const Text(
+                  'Accept',
+                  softWrap: false,
+                  overflow: TextOverflow.fade,
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green.shade50,
+                  foregroundColor: Colors.green.shade700,
+                  elevation: 0,
+                  padding: buttonPadding,
+                ),
               ),
             ),
-          ),
+          if (!isDeclined && !isAccepted) const SizedBox(width: 8),
+          if (!isAccepted)
+            Expanded(
+              child: OutlinedButton(
+                onPressed:
+                    isDeclined
+                        ? null
+                        : () => _handleDecision(
+                          request,
+                          _ReservationStatus.declined,
+                        ),
+                child: const Text(
+                  'Decline',
+                  softWrap: false,
+                  overflow: TextOverflow.fade,
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.red.shade600,
+                  side: BorderSide(color: Colors.red.shade200),
+                  padding: buttonPadding,
+                ),
+              ),
+            ),
         ],
       ),
     );
