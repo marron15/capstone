@@ -9,6 +9,7 @@ Future<void> exportStatsToPDF(
   required String title,
   required List<List<dynamic>> rows,
   List<List<dynamic>>? customerTableRows,
+  List<List<dynamic>>? reservationTableRows,
   Map<String, int>? todayMemberships,
   Map<String, int>? weeklyMemberships,
   Map<String, int>? monthlyMemberships,
@@ -29,13 +30,13 @@ Future<void> exportStatsToPDF(
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.all(32),
+        margin: const pw.EdgeInsets.all(24),
         build: (pw.Context context) {
           return [
             // Header
             pw.Container(
               width: double.infinity,
-              padding: const pw.EdgeInsets.only(bottom: 20),
+              padding: const pw.EdgeInsets.only(bottom: 16),
               decoration: const pw.BoxDecoration(
                 border: pw.Border(
                   bottom: pw.BorderSide(color: PdfColors.grey300, width: 1),
@@ -60,7 +61,7 @@ Future<void> exportStatsToPDF(
                 ],
               ),
             ),
-            pw.SizedBox(height: 20),
+            pw.SizedBox(height: 16),
 
             // Data table
             _buildDataTable(rows),
@@ -109,6 +110,51 @@ Future<void> exportStatsToPDF(
               ),
               pw.SizedBox(height: 16),
               _buildCustomerTable(customerTableRows),
+            ];
+          },
+        ),
+      );
+    }
+
+    if (reservationTableRows != null && reservationTableRows.isNotEmpty) {
+      pdf.addPage(
+        pw.MultiPage(
+          pageFormat: PdfPageFormat.a4.landscape,
+          margin: const pw.EdgeInsets.all(24),
+          build: (pw.Context context) {
+            return [
+              pw.Container(
+                width: double.infinity,
+                padding: const pw.EdgeInsets.only(bottom: 16),
+                decoration: const pw.BoxDecoration(
+                  border: pw.Border(
+                    bottom: pw.BorderSide(color: PdfColors.grey300, width: 1),
+                  ),
+                ),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text(
+                      'Product Reservations',
+                      style: pw.TextStyle(
+                        fontSize: 22,
+                        fontWeight: pw.FontWeight.bold,
+                        color: PdfColors.blue800,
+                      ),
+                    ),
+                    pw.SizedBox(height: 6),
+                    pw.Text(
+                      'Generated on: ${DateTime.now().toString().split(' ')[0]}',
+                      style: pw.TextStyle(
+                        fontSize: 11,
+                        color: PdfColors.grey600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              pw.SizedBox(height: 16),
+              _buildReservationTable(reservationTableRows),
             ];
           },
         ),
@@ -362,7 +408,7 @@ pw.Widget _buildCustomerTable(List<List<dynamic>> rows) {
                     (h) => pw.Padding(
                       padding: const pw.EdgeInsets.symmetric(
                         horizontal: 8,
-                        vertical: 10,
+                        vertical: 8,
                       ),
                       child: pw.Text(
                         h,
@@ -390,7 +436,7 @@ pw.Widget _buildCustomerTable(List<List<dynamic>> rows) {
                 pw.Padding(
                   padding: const pw.EdgeInsets.symmetric(
                     horizontal: 8,
-                    vertical: 8,
+                    vertical: 6,
                   ),
                   child: pw.Text(
                     row[i].toString(),
@@ -416,7 +462,79 @@ pw.Widget _buildCustomerTable(List<List<dynamic>> rows) {
   );
 }
 
+pw.Widget _buildReservationTable(List<List<dynamic>> rows) {
+  final headers = rows.first.map((c) => c.toString()).toList();
+  final dataRows = rows.skip(1).toList();
+
+  return pw.Container(
+    width: double.infinity,
+    child: pw.Table(
+      border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
+      columnWidths: const {
+        0: pw.FlexColumnWidth(1.4),
+        1: pw.FlexColumnWidth(2.2),
+        2: pw.FlexColumnWidth(2.4),
+        3: pw.FlexColumnWidth(1.2),
+        4: pw.FlexColumnWidth(2.2),
+        5: pw.FlexColumnWidth(1.4),
+      },
+      children: [
+        pw.TableRow(
+          decoration: const pw.BoxDecoration(color: PdfColors.grey200),
+          children:
+              headers
+                  .map(
+                    (h) => pw.Padding(
+                      padding: const pw.EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 8,
+                      ),
+                      child: pw.Text(
+                        h,
+                        style: pw.TextStyle(
+                          fontWeight: pw.FontWeight.bold,
+                          fontSize: 11,
+                          color: PdfColors.blue800,
+                        ),
+                        textAlign: pw.TextAlign.center,
+                      ),
+                    ),
+                  )
+                  .toList(),
+        ),
+        ...dataRows.map((row) {
+          final String status = row[5].toString().toLowerCase();
+          return pw.TableRow(
+            children: List.generate(6, (index) {
+              return pw.Padding(
+                padding: const pw.EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 6,
+                ),
+                child: pw.Text(
+                  row[index].toString(),
+                  style: pw.TextStyle(
+                    fontSize: 10,
+                    color:
+                        index == 5 ? _getStatusColor(status) : PdfColors.black,
+                    fontWeight:
+                        index == 0 ? pw.FontWeight.bold : pw.FontWeight.normal,
+                  ),
+                  textAlign: pw.TextAlign.center,
+                ),
+              );
+            }),
+          );
+        }),
+      ],
+    ),
+  );
+}
+
 pw.Widget _buildDataTable(List<List<dynamic>> rows) {
+  const double headerPadV = 8;
+  const double rowPadV = 5;
+
   // Group rows by section for better organization
   final Map<String, List<List<dynamic>>> groupedRows = {};
   final List<List<dynamic>> dataRows = rows.skip(1).toList();
@@ -446,7 +564,7 @@ pw.Widget _buildDataTable(List<List<dynamic>> rows) {
             pw.Container(
               padding: const pw.EdgeInsets.symmetric(
                 horizontal: 8,
-                vertical: 10,
+                vertical: headerPadV,
               ),
               child: pw.Text(
                 'Category',
@@ -460,7 +578,7 @@ pw.Widget _buildDataTable(List<List<dynamic>> rows) {
             pw.Container(
               padding: const pw.EdgeInsets.symmetric(
                 horizontal: 8,
-                vertical: 10,
+                vertical: headerPadV,
               ),
               child: pw.Text(
                 'Status/Type',
@@ -474,7 +592,7 @@ pw.Widget _buildDataTable(List<List<dynamic>> rows) {
             pw.Container(
               padding: const pw.EdgeInsets.symmetric(
                 horizontal: 8,
-                vertical: 10,
+                vertical: headerPadV,
               ),
               child: pw.Text(
                 'Count',
@@ -500,7 +618,7 @@ pw.Widget _buildDataTable(List<List<dynamic>> rows) {
                 pw.Container(
                   padding: const pw.EdgeInsets.symmetric(
                     horizontal: 8,
-                    vertical: 8,
+                    vertical: rowPadV,
                   ),
                   child: pw.Text(
                     section,
@@ -514,14 +632,14 @@ pw.Widget _buildDataTable(List<List<dynamic>> rows) {
                 pw.Container(
                   padding: const pw.EdgeInsets.symmetric(
                     horizontal: 8,
-                    vertical: 8,
+                    vertical: rowPadV,
                   ),
                   child: pw.Text(''),
                 ),
                 pw.Container(
                   padding: const pw.EdgeInsets.symmetric(
                     horizontal: 8,
-                    vertical: 8,
+                    vertical: rowPadV,
                   ),
                   child: pw.Text(''),
                 ),
@@ -532,7 +650,12 @@ pw.Widget _buildDataTable(List<List<dynamic>> rows) {
               (row) => pw.TableRow(
                 children: [
                   pw.Container(
-                    padding: const pw.EdgeInsets.fromLTRB(16, 6, 8, 6),
+                    padding: const pw.EdgeInsets.fromLTRB(
+                      16,
+                      rowPadV,
+                      8,
+                      rowPadV,
+                    ),
                     child: pw.Text(
                       '', // Empty for indentation
                       style: const pw.TextStyle(fontSize: 10),
@@ -541,7 +664,7 @@ pw.Widget _buildDataTable(List<List<dynamic>> rows) {
                   pw.Container(
                     padding: const pw.EdgeInsets.symmetric(
                       horizontal: 8,
-                      vertical: 6,
+                      vertical: rowPadV,
                     ),
                     child: pw.Text(
                       row[1].toString(),
@@ -554,7 +677,7 @@ pw.Widget _buildDataTable(List<List<dynamic>> rows) {
                   pw.Container(
                     padding: const pw.EdgeInsets.symmetric(
                       horizontal: 8,
-                      vertical: 6,
+                      vertical: rowPadV,
                     ),
                     child: pw.Text(
                       row[2].toString(),
@@ -573,7 +696,12 @@ pw.Widget _buildDataTable(List<List<dynamic>> rows) {
               decoration: const pw.BoxDecoration(color: PdfColors.grey50),
               children: [
                 pw.Container(
-                  padding: const pw.EdgeInsets.fromLTRB(16, 6, 8, 6),
+                  padding: const pw.EdgeInsets.fromLTRB(
+                    16,
+                    rowPadV,
+                    8,
+                    rowPadV,
+                  ),
                   child: pw.Text(
                     '', // Empty for indentation
                     style: const pw.TextStyle(fontSize: 10),
@@ -582,14 +710,14 @@ pw.Widget _buildDataTable(List<List<dynamic>> rows) {
                 pw.Container(
                   padding: const pw.EdgeInsets.symmetric(
                     horizontal: 8,
-                    vertical: 6,
+                    vertical: rowPadV,
                   ),
                   child: pw.Text(''),
                 ),
                 pw.Container(
                   padding: const pw.EdgeInsets.symmetric(
                     horizontal: 8,
-                    vertical: 6,
+                    vertical: rowPadV,
                   ),
                   child: pw.Text(
                     'Total ${sectionRows.fold<int>(0, (sum, row) => sum + (row[2] as int))}',

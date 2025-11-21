@@ -80,6 +80,9 @@ class _StatisticPageState extends State<StatisticPage>
   int customersExpired = 0;
   int trainersActive = 0;
   int trainersArchived = 0;
+  int reservationsAddedDay = 0,
+      reservationsAddedWeek = 0,
+      reservationsAddedMonth = 0;
 
   // KPI: added this day/week/month
   int adminsAddedDay = 0, adminsAddedWeek = 0, adminsAddedMonth = 0;
@@ -87,6 +90,7 @@ class _StatisticPageState extends State<StatisticPage>
   int customersAddedDay = 0, customersAddedWeek = 0, customersAddedMonth = 0;
   int productsAddedDay = 0, productsAddedWeek = 0, productsAddedMonth = 0;
   Map<String, int> membershipTotals = const {};
+  List<Map<String, dynamic>> _reservations = [];
 
   // Customer table data
   List<Map<String, dynamic>> _customers = [];
@@ -152,6 +156,7 @@ class _StatisticPageState extends State<StatisticPage>
         ApiService.getCustomersByStatus(status: 'inactive'),
         ApiService.getAllTrainers(),
         ApiService.getMembershipTotals(),
+        ApiService.getReservedProducts(),
       ]);
 
       final List<Map<String, dynamic>> prodActive =
@@ -175,6 +180,11 @@ class _StatisticPageState extends State<StatisticPage>
       final Map<String, int> memTotals = Map<String, int>.from(
         futures[6] as Map<String, int>,
       );
+      final List<Map<String, dynamic>> reservations =
+          (futures[7] as List<dynamic>? ?? const [])
+              .whereType<Map<String, dynamic>>()
+              .map((entry) => Map<String, dynamic>.from(entry))
+              .toList();
 
       // Compute counts
       productsActive = prodActive.length;
@@ -324,9 +334,19 @@ class _StatisticPageState extends State<StatisticPage>
         nowTs,
         'Month',
       );
+      reservationsAddedDay = _countAdded(reservations, nowTs, 'Day');
+      reservationsAddedWeek = _countAdded(reservations, nowTs, 'Week');
+      reservationsAddedMonth = _countAdded(reservations, nowTs, 'Month');
 
       if (mounted) {
         setState(() {
+          _reservations =
+              reservations.map((reservation) {
+                final DateTime? createdAt = _extractReservationDate(
+                  reservation,
+                );
+                return {...reservation, 'createdAt': createdAt};
+              }).toList();
           _isLoading = false;
         });
       }
@@ -444,6 +464,62 @@ class _StatisticPageState extends State<StatisticPage>
       'isExpired': isExpired,
       'status': customerData['status'] ?? 'active',
     };
+  }
+
+  DateTime? _extractReservationDate(Map<String, dynamic> reservation) {
+    final dynamic raw = reservation['createdAt'] ?? reservation['created_at'];
+    if (raw is DateTime) return raw;
+    if (raw == null) return null;
+    if (raw is String && raw.isNotEmpty) return DateTime.tryParse(raw);
+    return null;
+  }
+
+  List<Map<String, dynamic>> _filterReservationsByPeriod(String period) {
+    final DateTime now = DateTime.now();
+    return _reservations.where((reservation) {
+      final DateTime? createdAt = _extractReservationDate(reservation);
+      if (createdAt == null) return false;
+      if (period == 'Daily') return _isSameDay(createdAt, now);
+      if (period == 'This Week') return _isThisWeek(createdAt, now);
+      return _isThisMonth(createdAt, now);
+    }).toList();
+  }
+
+  String _reservationStatus(Map<String, dynamic> reservation) {
+    return (reservation['status'] ?? 'pending').toString().toLowerCase();
+  }
+
+  String _formatReservationStatusLabel(String status) {
+    switch (status.toLowerCase()) {
+      case 'accepted':
+        return 'Accepted';
+      case 'declined':
+        return 'Declined';
+      default:
+        return 'Pending';
+    }
+  }
+
+  String _composeReservationCustomerName(Map<String, dynamic> reservation) {
+    final String firstName =
+        (reservation['first_name'] ?? '').toString().trim();
+    final String lastName = (reservation['last_name'] ?? '').toString().trim();
+    final String combined = '$firstName $lastName'.trim();
+    if (combined.isNotEmpty) return combined;
+    final String fallback =
+        (reservation['customer_name'] ?? reservation['customerName'] ?? '')
+            .toString()
+            .trim();
+    return fallback.isNotEmpty ? fallback : 'Customer';
+  }
+
+  String _formatReservationTimestamp(DateTime date) {
+    final String mm = date.month.toString().padLeft(2, '0');
+    final String dd = date.day.toString().padLeft(2, '0');
+    final String yyyy = date.year.toString();
+    final String hh = date.hour.toString().padLeft(2, '0');
+    final String min = date.minute.toString().padLeft(2, '0');
+    return '$mm/$dd/$yyyy $hh:$min';
   }
 
   // Returns the list currently visible, filtered by search
@@ -734,11 +810,95 @@ class _StatisticPageState extends State<StatisticPage>
     );
   }
 
+  Widget _buildExportButton(bool isMobile) {
+    return SizedBox(
+      height: isMobile ? 36 : 40,
+      child: ElevatedButton.icon(
+        onPressed: () => _promptExportPeriod(context),
+        icon: Icon(
+          Icons.picture_as_pdf,
+          color: Colors.red.shade700,
+          size: isMobile ? 18 : 18,
+        ),
+        label: Text(isMobile ? 'PDF' : 'Export PDF'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black87,
+          elevation: 0,
+          side: BorderSide(color: Colors.grey.shade300),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          padding: EdgeInsets.symmetric(horizontal: isMobile ? 12 : 18),
+          minimumSize: Size(isMobile ? 72 : 150, isMobile ? 36 : 40),
+          maximumSize: Size(
+            isMobile ? double.infinity : 200,
+            isMobile ? 36 : 40,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPeriodToggleButtons(bool isMobile) {
+    return ToggleButtons(
+      isSelected: _periodSelected,
+      onPressed: (index) {
+        if (index == 0) _setGlobalPeriod('Daily');
+        if (index == 1) _setGlobalPeriod('This Week');
+        if (index == 2) _setGlobalPeriod('This Month');
+      },
+      borderRadius: BorderRadius.circular(18),
+      constraints: BoxConstraints(
+        minHeight: isMobile ? 40 : 36,
+        minWidth: isMobile ? 90 : 110,
+      ),
+      selectedColor: Colors.white,
+      color: Colors.black87,
+      fillColor: Colors.black87,
+      children: [
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: isMobile ? 6 : 8),
+          child: Text('Daily', style: TextStyle(fontSize: isMobile ? 12 : 14)),
+        ),
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: isMobile ? 6 : 8),
+          child: Text(
+            'This Week',
+            style: TextStyle(fontSize: isMobile ? 12 : 14),
+          ),
+        ),
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: isMobile ? 6 : 8),
+          child: Text(
+            'This Month',
+            style: TextStyle(fontSize: isMobile ? 12 : 14),
+          ),
+        ),
+      ],
+    );
+  }
+
   // Export report for a specific period without mutating on-screen filters
   Future<void> _exportOverallReportForPeriod(
     BuildContext context,
     String period,
   ) async {
+    final List<Map<String, dynamic>> reservationsForExport =
+        _filterReservationsByPeriod(period);
+    final int pendingReservations =
+        reservationsForExport
+            .where((r) => _reservationStatus(r) == 'pending')
+            .length;
+    final int acceptedReservations =
+        reservationsForExport
+            .where((r) => _reservationStatus(r) == 'accepted')
+            .length;
+    final int declinedReservations =
+        reservationsForExport
+            .where((r) => _reservationStatus(r) == 'declined')
+            .length;
+
     final rows = <List<dynamic>>[
       ['Section', 'Metric', 'Value'],
       ['Products', 'Active', productsActive],
@@ -753,6 +913,10 @@ class _StatisticPageState extends State<StatisticPage>
       ['Memberships', 'Daily', membershipTotals['Daily'] ?? 0],
       ['Memberships', 'Half Month', membershipTotals['Half Month'] ?? 0],
       ['Memberships', 'Monthly', membershipTotals['Monthly'] ?? 0],
+      ['Reservations', 'Requests ($period)', reservationsForExport.length],
+      ['Reservations', 'Pending', pendingReservations],
+      ['Reservations', 'Accepted', acceptedReservations],
+      ['Reservations', 'Declined', declinedReservations],
     ];
 
     // Prepare customers filtered by selected export period (without changing UI state)
@@ -804,6 +968,35 @@ class _StatisticPageState extends State<StatisticPage>
         );
         final bool isExpired = c['isExpired'] == true;
         return [id, name, contact, membership, start, exp, isExpired];
+      }),
+    ];
+
+    final reservationTableRows = <List<dynamic>>[
+      [
+        'Reservation ID',
+        'Product',
+        'Customer',
+        'Quantity',
+        'Requested At',
+        'Status',
+      ],
+      ...reservationsForExport.map((reservation) {
+        final String id = '#${reservation['id'] ?? 'N/A'}';
+        final String product =
+            (reservation['product_name'] ?? reservation['productName'] ?? 'N/A')
+                .toString();
+        final String customer = _composeReservationCustomerName(reservation);
+        final String qty =
+            (reservation['quantity'] ?? reservation['qty'] ?? 0).toString();
+        final DateTime? requestedAt = _extractReservationDate(reservation);
+        final String requestedAtLabel =
+            requestedAt != null
+                ? _formatReservationTimestamp(requestedAt)
+                : 'N/A';
+        final String statusLabel = _formatReservationStatusLabel(
+          _reservationStatus(reservation),
+        );
+        return [id, product, customer, qty, requestedAtLabel, statusLabel];
       }),
     ];
 
@@ -863,6 +1056,8 @@ class _StatisticPageState extends State<StatisticPage>
       title: 'Statistics Report ($period)',
       rows: rows,
       customerTableRows: customerTableRows,
+      reservationTableRows:
+          reservationTableRows.length > 1 ? reservationTableRows : null,
       todayMemberships: todayMemberships,
       weeklyMemberships: weeklyMemberships,
       monthlyMemberships: monthlyMemberships,
@@ -1504,6 +1699,7 @@ class _StatisticPageState extends State<StatisticPage>
                     children: [
                       // Header Row
                       Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           if (isMobile)
                             IconButton(
@@ -1527,93 +1723,48 @@ class _StatisticPageState extends State<StatisticPage>
                               ),
                             ),
                           SizedBox(width: isMobile ? 4 : 8),
-                          Flexible(
-                            child: Text(
-                              'Statistics Report',
-                              style: TextStyle(
-                                fontSize: isMobile ? 20 : 28,
-                                fontWeight: FontWeight.w800,
-                                color: Colors.black,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const Spacer(),
-                          ElevatedButton.icon(
-                            onPressed: () => _promptExportPeriod(context),
-                            icon: Icon(
-                              Icons.picture_as_pdf,
-                              color: Colors.red.shade700,
-                              size: isMobile ? 18 : 20,
-                            ),
-                            label: Text(isMobile ? 'PDF' : 'Export PDF'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: Colors.black87,
-                              elevation: 0,
-                              side: BorderSide(color: Colors.grey.shade300),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              padding: EdgeInsets.symmetric(
-                                horizontal: isMobile ? 12 : 16,
-                                vertical: isMobile ? 8 : 10,
-                              ),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Statistics Report',
+                                  style: TextStyle(
+                                    fontSize: isMobile ? 20 : 28,
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.black,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                SizedBox(height: isMobile ? 8 : 12),
+                                if (isMobile)
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      _buildExportButton(isMobile),
+                                      SizedBox(height: 8),
+                                      Center(
+                                        child: _buildPeriodToggleButtons(
+                                          isMobile,
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                else
+                                  Row(
+                                    children: [
+                                      _buildExportButton(isMobile),
+                                      const Spacer(),
+                                      _buildPeriodToggleButtons(isMobile),
+                                    ],
+                                  ),
+                              ],
                             ),
                           ),
                         ],
                       ),
                       SizedBox(height: isMobile ? 8 : 8),
-                      // Global period filter (Daily | This Week | This Month)
-                      Align(
-                        alignment:
-                            isMobile ? Alignment.center : Alignment.centerRight,
-                        child: ToggleButtons(
-                          isSelected: _periodSelected,
-                          onPressed: (index) {
-                            if (index == 0) _setGlobalPeriod('Daily');
-                            if (index == 1) _setGlobalPeriod('This Week');
-                            if (index == 2) _setGlobalPeriod('This Month');
-                          },
-                          borderRadius: BorderRadius.circular(18),
-                          constraints: BoxConstraints(
-                            minHeight: isMobile ? 40 : 36,
-                            minWidth: isMobile ? 90 : 110,
-                          ),
-                          selectedColor: Colors.white,
-                          color: Colors.black87,
-                          fillColor: Colors.black87,
-                          children: [
-                            Padding(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: isMobile ? 6 : 8,
-                              ),
-                              child: Text(
-                                'Daily',
-                                style: TextStyle(fontSize: isMobile ? 12 : 14),
-                              ),
-                            ),
-                            Padding(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: isMobile ? 6 : 8,
-                              ),
-                              child: Text(
-                                'This Week',
-                                style: TextStyle(fontSize: isMobile ? 12 : 14),
-                              ),
-                            ),
-                            Padding(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: isMobile ? 6 : 8,
-                              ),
-                              child: Text(
-                                'This Month',
-                                style: TextStyle(fontSize: isMobile ? 12 : 14),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
                       const SizedBox(height: 12),
                       if (_isLoading)
                         const Expanded(
@@ -1743,6 +1894,29 @@ class _StatisticPageState extends State<StatisticPage>
                                             ),
                                           ],
                                         ),
+                                        _KpiGroup(
+                                          title: 'Reserved Products',
+                                          tiles: [
+                                            _KpiTile(
+                                              label:
+                                                  'Reservations Requested Today',
+                                              value: reservationsAddedDay,
+                                              color: const Color(0xFF2E7D32),
+                                            ),
+                                            _KpiTile(
+                                              label:
+                                                  'Reservations Requested This Week',
+                                              value: reservationsAddedWeek,
+                                              color: const Color(0xFF1565C0),
+                                            ),
+                                            _KpiTile(
+                                              label:
+                                                  'Reservations Requested This Month',
+                                              value: reservationsAddedMonth,
+                                              color: const Color(0xFF6A1B9A),
+                                            ),
+                                          ],
+                                        ),
                                       ],
                                     ),
                                     const SizedBox(height: 16),
@@ -1863,13 +2037,13 @@ class _StatisticPageState extends State<StatisticPage>
                                                           return _startsView ==
                                                                   'Week'
                                                               ? NewMembersBarGraph(
-                                                                  customers:
-                                                                      _customers,
-                                                                )
+                                                                customers:
+                                                                    _customers,
+                                                              )
                                                               : NewMembersMonthBarGraph(
-                                                                  customers:
-                                                                      _customers,
-                                                                );
+                                                                customers:
+                                                                    _customers,
+                                                              );
                                                         }(),
                                                       ),
                                                     ],
