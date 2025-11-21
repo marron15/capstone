@@ -40,14 +40,16 @@ class _StatisticPageState extends State<StatisticPage>
   }
 
   void _setGlobalPeriod(String period) {
-    if (!mounted) return;
-    setState(() {
-      _kpiPeriodFilter = period;
-      _syncPeriodSelection();
-      if (period == 'Daily') _startsView = 'Day';
-      if (period == 'This Week') _startsView = 'Week';
-      if (period == 'This Month') _startsView = 'Month';
-    });
+    if (!mounted || _isDisposed) return;
+    if (mounted && !_isDisposed) {
+      setState(() {
+        _kpiPeriodFilter = period;
+        _syncPeriodSelection();
+        if (period == 'Daily') _startsView = 'Day';
+        if (period == 'This Week') _startsView = 'Week';
+        if (period == 'This Month') _startsView = 'Month';
+      });
+    }
   }
 
   // Date helpers for filtering
@@ -83,6 +85,15 @@ class _StatisticPageState extends State<StatisticPage>
   int reservationsAddedDay = 0,
       reservationsAddedWeek = 0,
       reservationsAddedMonth = 0;
+  int reservationsPendingDay = 0,
+      reservationsPendingWeek = 0,
+      reservationsPendingMonth = 0;
+  int reservationsAcceptedDay = 0,
+      reservationsAcceptedWeek = 0,
+      reservationsAcceptedMonth = 0;
+  int reservationsDeclinedDay = 0,
+      reservationsDeclinedWeek = 0,
+      reservationsDeclinedMonth = 0;
 
   // KPI: added this day/week/month
   int adminsAddedDay = 0, adminsAddedWeek = 0, adminsAddedMonth = 0;
@@ -99,10 +110,12 @@ class _StatisticPageState extends State<StatisticPage>
   bool _showNotExpiredOnly = false;
 
   // Manual refresh only - no auto refresh timer
+  bool _isDisposed = false;
 
   @override
   void initState() {
     super.initState();
+    _isDisposed = false;
     WidgetsBinding.instance.addObserver(this);
 
     // Register with refresh service
@@ -115,31 +128,35 @@ class _StatisticPageState extends State<StatisticPage>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Refresh data when returning from other pages (like customers.dart)
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      _refreshData();
-    });
+    // Removed automatic refresh to prevent setState after disposal
+    // Focus widget handles refresh when returning from other pages
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
-    if (state == AppLifecycleState.resumed) {
+    if (state == AppLifecycleState.resumed && mounted && !_isDisposed) {
       // Refresh data when app becomes active again
-      if (mounted) _refreshData();
+      // Use a small delay to ensure widget is fully mounted
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted && !_isDisposed) {
+          _refreshData();
+        }
+      });
     }
   }
 
   // Add a method to manually refresh data (can be called from other pages)
   void refreshCustomerData() {
-    if (mounted) {
+    if (mounted && !_isDisposed) {
       _refreshData();
     }
   }
 
   Future<void> _loadOverallReport() async {
-    if (mounted) {
+    if (!mounted || _isDisposed) return;
+
+    if (mounted && !_isDisposed) {
       setState(() {
         _isLoading = true;
         _errorMessage = null;
@@ -158,6 +175,9 @@ class _StatisticPageState extends State<StatisticPage>
         ApiService.getMembershipTotals(),
         ApiService.getReservedProducts(),
       ]);
+
+      // Check if widget is still mounted after async operations
+      if (!mounted || _isDisposed) return;
 
       final List<Map<String, dynamic>> prodActive =
           List<Map<String, dynamic>>.from(futures[0] as List);
@@ -334,11 +354,67 @@ class _StatisticPageState extends State<StatisticPage>
         nowTs,
         'Month',
       );
-      reservationsAddedDay = _countAdded(reservations, nowTs, 'Day');
-      reservationsAddedWeek = _countAdded(reservations, nowTs, 'Week');
-      reservationsAddedMonth = _countAdded(reservations, nowTs, 'Month');
+      Map<String, int> _countReservationsByStatus(String period) {
+        final DateTime now = nowTs;
+        int total = 0, pending = 0, accepted = 0, declined = 0;
+        for (final reservation in reservations) {
+          final DateTime? createdAt = _extractReservationDate(reservation);
+          if (createdAt == null) continue;
+          bool matches = false;
+          if (period == 'Day') {
+            matches = _isSameDay(createdAt, now);
+          } else if (period == 'Week') {
+            matches = _isThisWeek(createdAt, now);
+          } else {
+            matches = _isThisMonth(createdAt, now);
+          }
+          if (!matches) continue;
+          total++;
+          final String status = _reservationStatus(reservation);
+          if (status == 'accepted') {
+            accepted++;
+          } else if (status == 'declined') {
+            declined++;
+          } else {
+            pending++;
+          }
+        }
+        return {
+          'total': total,
+          'pending': pending,
+          'accepted': accepted,
+          'declined': declined,
+        };
+      }
 
-      if (mounted) {
+      final Map<String, int> reservationDayCounts = _countReservationsByStatus(
+        'Day',
+      );
+      final Map<String, int> reservationWeekCounts = _countReservationsByStatus(
+        'Week',
+      );
+      final Map<String, int> reservationMonthCounts =
+          _countReservationsByStatus('Month');
+
+      reservationsAddedDay = reservationDayCounts['total'] ?? 0;
+      reservationsPendingDay = reservationDayCounts['pending'] ?? 0;
+      reservationsAcceptedDay = reservationDayCounts['accepted'] ?? 0;
+      reservationsDeclinedDay = reservationDayCounts['declined'] ?? 0;
+
+      reservationsAddedWeek = reservationWeekCounts['total'] ?? 0;
+      reservationsPendingWeek = reservationWeekCounts['pending'] ?? 0;
+      reservationsAcceptedWeek = reservationWeekCounts['accepted'] ?? 0;
+      reservationsDeclinedWeek = reservationWeekCounts['declined'] ?? 0;
+
+      reservationsAddedMonth = reservationMonthCounts['total'] ?? 0;
+      reservationsPendingMonth = reservationMonthCounts['pending'] ?? 0;
+      reservationsAcceptedMonth = reservationMonthCounts['accepted'] ?? 0;
+      reservationsDeclinedMonth = reservationMonthCounts['declined'] ?? 0;
+
+      // Final check before setState
+      if (!mounted || _isDisposed) return;
+
+      if (mounted && !_isDisposed) {
         setState(() {
           _reservations =
               reservations.map((reservation) {
@@ -351,7 +427,7 @@ class _StatisticPageState extends State<StatisticPage>
         });
       }
     } catch (e) {
-      if (mounted) {
+      if (mounted && !_isDisposed) {
         setState(() {
           _errorMessage = 'Failed to load report: $e';
           _isLoading = false;
@@ -362,15 +438,25 @@ class _StatisticPageState extends State<StatisticPage>
 
   Future<void> _refreshData() async {
     // Refresh both overall report and customers when returning from other pages
-    if (!mounted) return;
-    await Future.wait([_loadOverallReport(), _loadCustomers()]);
+    if (!mounted || _isDisposed) return;
+    try {
+      await Future.wait([_loadOverallReport(), _loadCustomers()]);
+    } catch (e) {
+      // Silently handle errors if widget is disposed
+      if (mounted && !_isDisposed) {
+        debugPrint('Error refreshing data: $e');
+      }
+    }
   }
 
   Future<void> _loadCustomers() async {
+    if (!mounted || _isDisposed) return;
     try {
       final result = await ApiService.getCustomersByStatusWithPasswords(
         status: 'active',
       );
+
+      if (!mounted || _isDisposed) return;
 
       if (result['success'] == true && result['data'] != null) {
         List<Map<String, dynamic>> loadedCustomers = [];
@@ -380,14 +466,16 @@ class _StatisticPageState extends State<StatisticPage>
           loadedCustomers.add(customer);
         }
 
-        if (mounted) {
+        if (mounted && !_isDisposed) {
           setState(() {
             _customers = loadedCustomers;
           });
         }
       }
     } catch (e) {
-      debugPrint('_loadCustomers error: $e');
+      if (mounted && !_isDisposed) {
+        debugPrint('_loadCustomers error: $e');
+      }
     }
   }
 
@@ -1635,6 +1723,7 @@ class _StatisticPageState extends State<StatisticPage>
 
   @override
   void dispose() {
+    _isDisposed = true;
     WidgetsBinding.instance.removeObserver(this);
 
     // Unregister from refresh service
@@ -1656,8 +1745,13 @@ class _StatisticPageState extends State<StatisticPage>
     return Focus(
       onFocusChange: (hasFocus) {
         // Refresh data when this page gains focus (e.g., returning from customers.dart)
-        if (hasFocus) {
-          _refreshData();
+        if (hasFocus && mounted && !_isDisposed) {
+          // Use a small delay to ensure widget is fully mounted
+          Future.delayed(const Duration(milliseconds: 100), () {
+            if (mounted && !_isDisposed) {
+              _refreshData();
+            }
+          });
         }
       },
       child: Scaffold(
@@ -1897,23 +1991,62 @@ class _StatisticPageState extends State<StatisticPage>
                                         _KpiGroup(
                                           title: 'Reserved Products',
                                           tiles: [
+                                            // Pending reservations
                                             _KpiTile(
                                               label:
-                                                  'Reservations Requested Today',
-                                              value: reservationsAddedDay,
+                                                  'Pending Reservations Today',
+                                              value: reservationsPendingDay,
+                                              color: const Color(0xFFF57C00),
+                                            ),
+                                            _KpiTile(
+                                              label:
+                                                  'Pending Reservations This Week',
+                                              value: reservationsPendingWeek,
+                                              color: const Color(0xFFF57C00),
+                                            ),
+                                            _KpiTile(
+                                              label:
+                                                  'Pending Reservations This Month',
+                                              value: reservationsPendingMonth,
+                                              color: const Color(0xFFF57C00),
+                                            ),
+                                            // Accepted reservations
+                                            _KpiTile(
+                                              label:
+                                                  'Accepted Reservations Today',
+                                              value: reservationsAcceptedDay,
                                               color: const Color(0xFF2E7D32),
                                             ),
                                             _KpiTile(
                                               label:
-                                                  'Reservations Requested This Week',
-                                              value: reservationsAddedWeek,
-                                              color: const Color(0xFF1565C0),
+                                                  'Accepted Reservations This Week',
+                                              value: reservationsAcceptedWeek,
+                                              color: const Color(0xFF2E7D32),
                                             ),
                                             _KpiTile(
                                               label:
-                                                  'Reservations Requested This Month',
-                                              value: reservationsAddedMonth,
-                                              color: const Color(0xFF6A1B9A),
+                                                  'Accepted Reservations This Month',
+                                              value: reservationsAcceptedMonth,
+                                              color: const Color(0xFF2E7D32),
+                                            ),
+                                            // Declined reservations
+                                            _KpiTile(
+                                              label:
+                                                  'Declined Reservations Today',
+                                              value: reservationsDeclinedDay,
+                                              color: const Color(0xFFD32F2F),
+                                            ),
+                                            _KpiTile(
+                                              label:
+                                                  'Declined Reservations This Week',
+                                              value: reservationsDeclinedWeek,
+                                              color: const Color(0xFFD32F2F),
+                                            ),
+                                            _KpiTile(
+                                              label:
+                                                  'Declined Reservations This Month',
+                                              value: reservationsDeclinedMonth,
+                                              color: const Color(0xFFD32F2F),
                                             ),
                                           ],
                                         ),
@@ -2107,43 +2240,7 @@ class _KpiTile {
 
 // (legacy) _KpiRibbon removed; replaced by grouped version below
 
-class _RibbonArrow extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback? onTap;
-  const _RibbonArrow({required this.icon, this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return IgnorePointer(
-      ignoring: onTap == null,
-      child: GestureDetector(
-        onTap: onTap,
-        behavior: HitTestBehavior.opaque,
-        child: Container(
-          width: 28,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.white.withAlpha(0), Colors.white],
-              begin:
-                  icon == Icons.chevron_left
-                      ? Alignment.centerRight
-                      : Alignment.centerLeft,
-              end:
-                  icon == Icons.chevron_left
-                      ? Alignment.centerLeft
-                      : Alignment.centerRight,
-            ),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          alignment: Alignment.center,
-          child: Icon(icon, size: 18, color: Colors.black54),
-        ),
-      ),
-    );
-  }
-}
-
-// Grouped KPI ribbon (two stacked tiles per entity)
+// Grouped KPI ribbon (2x2 grid layout for main groups)
 class _KpiGroup {
   final String title;
   final List<_KpiTile> tiles; // expects Day, Week, Month in order
@@ -2164,164 +2261,214 @@ class _KpiRibbonGroups extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool isMobile = MediaQuery.of(context).size.width < 768;
-    Widget tile(_KpiTile t) => Container(
-      width: isMobile ? 180 : 220,
-      margin: EdgeInsets.symmetric(
-        horizontal: isMobile ? 6 : 8,
-        vertical: isMobile ? 4 : 6,
-      ),
-      padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 12 : 16,
-        vertical: isMobile ? 10 : 12,
-      ),
-      decoration: BoxDecoration(
-        color: t.color.withAlpha(26),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: t.color.withAlpha(64)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: isMobile ? 8 : 10,
-            height: isMobile ? 8 : 10,
-            decoration: BoxDecoration(color: t.color, shape: BoxShape.circle),
-          ),
-          SizedBox(width: isMobile ? 8 : 10),
-          Flexible(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
+    Widget tile(_KpiTile t) {
+      return Container(
+        width: isMobile ? 180 : 220,
+        margin: EdgeInsets.zero,
+        padding: EdgeInsets.symmetric(
+          horizontal: isMobile ? 10 : 14,
+          vertical: isMobile ? 8 : 10,
+        ),
+        decoration: BoxDecoration(
+          color: t.color.withAlpha(26),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: t.color.withAlpha(64)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
               children: [
-                Text(
-                  t.value.toString(),
-                  style: TextStyle(
-                    fontSize: isMobile ? 18 : 22,
-                    fontWeight: FontWeight.w800,
+                Container(
+                  width: isMobile ? 8 : 10,
+                  height: isMobile ? 8 : 10,
+                  decoration: BoxDecoration(
+                    color: t.color,
+                    shape: BoxShape.circle,
                   ),
                 ),
-                Text(
-                  t.label,
-                  style: TextStyle(
-                    fontSize: isMobile ? 11 : 12,
-                    color: Colors.black54,
+                SizedBox(width: isMobile ? 6 : 8),
+                Flexible(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        t.value.toString(),
+                        style: TextStyle(
+                          fontSize: isMobile ? 18 : 22,
+                          fontWeight: FontWeight.w800,
+                          height: 1.1,
+                        ),
+                      ),
+                      SizedBox(height: isMobile ? 2 : 3),
+                      Text(
+                        t.label,
+                        style: TextStyle(
+                          fontSize: isMobile ? 10 : 11,
+                          color: Colors.black54,
+                          height: 1.2,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
+          ],
+        ),
+      );
+    }
+
+    // Separate main groups from Reserved Products
+    final List<_KpiGroup> mainGroups =
+        groups.where((g) => g.title != 'Reserved Products').toList();
+    final _KpiGroup? reservedProductsGroup = groups.firstWhere(
+      (g) => g.title == 'Reserved Products',
+      orElse: () => _KpiGroup(title: 'Reserved Products', tiles: []),
+    );
+
+    // Helper to get selected tile for a group based on period
+    Widget buildGroupTile(_KpiGroup g) {
+      int index = 0; // Daily
+      if (periodFilter == 'This Week')
+        index = 1;
+      else if (periodFilter == 'This Month')
+        index = 2;
+      final _KpiTile selected =
+          (index >= 0 && index < g.tiles.length)
+              ? g.tiles[index]
+              : g.tiles.first;
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: EdgeInsets.only(
+              left: isMobile ? 2 : 4,
+              bottom: isMobile ? 4 : 6,
+            ),
+            child: Text(
+              g.title,
+              style: TextStyle(
+                fontSize: isMobile ? 10 : 11,
+                color: Colors.black54,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          tile(selected),
+        ],
+      );
+    }
+
+    // Build Reserved Products section with all 3 status tiles
+    Widget? buildReservedProductsSection() {
+      if (reservedProductsGroup == null || reservedProductsGroup.tiles.isEmpty)
+        return null;
+
+      int periodIndex = 0; // Daily
+      if (periodFilter == 'This Week')
+        periodIndex = 1;
+      else if (periodFilter == 'This Month')
+        periodIndex = 2;
+
+      // Tiles are arranged as: Pending(0,1,2), Accepted(3,4,5), Declined(6,7,8)
+      final int pendingIndex = periodIndex;
+      final int acceptedIndex = periodIndex + 3;
+      final int declinedIndex = periodIndex + 6;
+
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: EdgeInsets.only(
+              left: isMobile ? 2 : 4,
+              bottom: isMobile ? 4 : 6,
+            ),
+            child: Text(
+              reservedProductsGroup.title,
+              style: TextStyle(
+                fontSize: isMobile ? 10 : 11,
+                color: Colors.black54,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (pendingIndex < reservedProductsGroup.tiles.length)
+                tile(reservedProductsGroup.tiles[pendingIndex]),
+              SizedBox(height: isMobile ? 6 : 8),
+              if (acceptedIndex < reservedProductsGroup.tiles.length)
+                tile(reservedProductsGroup.tiles[acceptedIndex]),
+              SizedBox(height: isMobile ? 6 : 8),
+              if (declinedIndex < reservedProductsGroup.tiles.length)
+                tile(reservedProductsGroup.tiles[declinedIndex]),
+            ],
           ),
         ],
-      ),
-    );
+      );
+    }
 
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       elevation: 2,
       child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Stack(
+        padding: EdgeInsets.all(isMobile ? 8.0 : 12.0),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Scrollbar(
-              controller: controller,
-              thumbVisibility: true,
-              child: SingleChildScrollView(
-                controller: controller,
-                scrollDirection: Axis.horizontal,
-                child: Builder(
-                  builder: (context) {
-                    final double screenW = MediaQuery.of(context).size.width;
-                    final double contentW =
-                        (screenW - 360).clamp(300, screenW).toDouble();
-                    return ConstrainedBox(
-                      constraints: BoxConstraints(minWidth: contentW),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children:
-                            groups
-                                .map(
-                                  (g) => Container(
-                                    margin: const EdgeInsets.symmetric(
-                                      horizontal: 6,
-                                    ),
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Padding(
-                                          padding: const EdgeInsets.only(
-                                            left: 12,
-                                            bottom: 4,
-                                          ),
-                                          child: Text(
-                                            g.title,
-                                            style: const TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.black54,
-                                              fontWeight: FontWeight.w700,
-                                            ),
-                                          ),
-                                        ),
-                                        ...(() {
-                                          int index = 0; // Daily
-                                          if (periodFilter == 'This Week')
-                                            index = 1;
-                                          else if (periodFilter == 'This Month')
-                                            index = 2;
-                                          final _KpiTile selected =
-                                              (index >= 0 &&
-                                                      index < g.tiles.length)
-                                                  ? g.tiles[index]
-                                                  : g.tiles.first;
-                                          return [tile(selected)];
-                                        }()),
-                                      ],
-                                    ),
-                                  ),
-                                )
-                                .toList(),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-            Positioned(
-              left: 0,
-              top: 0,
-              bottom: 0,
-              child: _RibbonArrow(
-                icon: Icons.chevron_left,
-                onTap:
-                    () => controller?.animateTo(
-                      (controller!.offset - 260).clamp(
-                        0,
-                        controller!.position.maxScrollExtent,
-                      ),
-                      duration: const Duration(milliseconds: 200),
-                      curve: Curves.easeOut,
+            // 2x2 Grid for main groups: Admins, Trainers, Customers, Products
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (mainGroups.length >= 4)
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Left column: Admins (top), Trainers (bottom)
+                        Expanded(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              buildGroupTile(mainGroups[0]), // Admins
+                              SizedBox(height: isMobile ? 10 : 12),
+                              buildGroupTile(mainGroups[1]), // Trainers
+                            ],
+                          ),
+                        ),
+                        SizedBox(width: isMobile ? 8 : 12),
+                        // Right column: Customers (top), Products (bottom)
+                        Expanded(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              buildGroupTile(mainGroups[2]), // Customers
+                              SizedBox(height: isMobile ? 10 : 12),
+                              buildGroupTile(mainGroups[3]), // Products
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
+                ],
               ),
             ),
-            Positioned(
-              right: 0,
-              top: 0,
-              bottom: 0,
-              child: _RibbonArrow(
-                icon: Icons.chevron_right,
-                onTap:
-                    () => controller?.animateTo(
-                      (controller!.offset + 260).clamp(
-                        0,
-                        controller!.position.maxScrollExtent,
-                      ),
-                      duration: const Duration(milliseconds: 200),
-                      curve: Curves.easeOut,
-                    ),
-              ),
-            ),
-            // Ribbon filter removed
+            // Reserved Products section on the right
+            if (buildReservedProductsSection() != null) ...[
+              SizedBox(width: isMobile ? 8 : 12),
+              buildReservedProductsSection()!,
+            ],
           ],
         ),
       ),
