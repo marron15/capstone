@@ -529,6 +529,18 @@ class _CustomersPageState extends State<CustomersPage> {
     );
   }
 
+  Widget _buildHeaderLabel(String text) {
+    return Text(
+      text,
+      textAlign: TextAlign.center,
+      style: const TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.3,
+      ),
+    );
+  }
+
   Color _getMembershipTypeColor(String membershipType) {
     switch (membershipType) {
       case 'Daily':
@@ -1527,10 +1539,7 @@ class _CustomersPageState extends State<CustomersPage> {
                     children: [
                       // Header Row (match admin_profile.dart styling)
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 18,
-                          horizontal: 16,
-                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
                         decoration: BoxDecoration(
                           color: Colors.grey.shade100,
                           borderRadius: const BorderRadius.only(
@@ -1548,65 +1557,22 @@ class _CustomersPageState extends State<CustomersPage> {
                           children: [
                             Expanded(
                               flex: 2,
-                              child: const Text(
-                                'Customer ID',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
+                              child: _buildHeaderLabel('Customer ID'),
                             ),
+                            Expanded(flex: 3, child: _buildHeaderLabel('Name')),
                             Expanded(
                               flex: 3,
-                              child: const Text(
-                                'Name',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              flex: 3,
-                              child: const Text(
-                                'Contact Number',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
+                              child: _buildHeaderLabel('Contact Number'),
                             ),
                             Expanded(flex: 3, child: _buildMembershipHeader()),
                             Expanded(
                               flex: 3,
-                              child: const Text(
-                                'Membership Start Date',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.3,
-                                ),
-                              ),
+                              child: _buildHeaderLabel('Membership Start Date'),
                             ),
                             Expanded(flex: 3, child: _buildExpirationHeader()),
                             SizedBox(
                               width: 160,
-                              child: const Text(
-                                'Actions',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.3,
-                                ),
-                              ),
+                              child: _buildHeaderLabel('Actions'),
                             ),
                           ],
                         ),
@@ -1662,7 +1628,7 @@ class _CustomersPageState extends State<CustomersPage> {
                                           '#${customer['customerId'] ?? 'N/A'}',
                                           textAlign: TextAlign.center,
                                           style: TextStyle(
-                                            fontSize: 14,
+                                            fontSize: 15,
                                             fontWeight: FontWeight.w600,
                                             color: Colors.blue.shade700,
                                           ),
@@ -1680,7 +1646,10 @@ class _CustomersPageState extends State<CustomersPage> {
                                       child: Text(
                                         customer['name'] ?? '',
                                         textAlign: TextAlign.center,
-                                        style: const TextStyle(fontSize: 16),
+                                        style: const TextStyle(
+                                          fontSize: 17,
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -1712,7 +1681,8 @@ class _CustomersPageState extends State<CustomersPage> {
                                             color: _getMembershipTypeColor(
                                               membershipType,
                                             ),
-                                            fontSize: 14,
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w600,
                                           ),
                                         ),
                                       ),
@@ -1732,7 +1702,8 @@ class _CustomersPageState extends State<CustomersPage> {
                                           textAlign: TextAlign.center,
                                           style: const TextStyle(
                                             color: Colors.black87,
-                                            fontSize: 14,
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w600,
                                           ),
                                         ),
                                       ),
@@ -1760,7 +1731,8 @@ class _CustomersPageState extends State<CustomersPage> {
                                                     isExpired
                                                         ? Colors.red
                                                         : Colors.black87,
-                                                fontSize: 14,
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.w600,
                                               ),
                                             ),
                                           ),
@@ -1784,7 +1756,7 @@ class _CustomersPageState extends State<CustomersPage> {
                                                 'Expired',
                                                 style: TextStyle(
                                                   color: Colors.red,
-                                                  fontSize: 12,
+                                                  fontSize: 13,
                                                   fontWeight: FontWeight.w600,
                                                 ),
                                               ),
@@ -1960,7 +1932,7 @@ class _CustomersPageState extends State<CustomersPage> {
             Text(
               phoneNumber,
               style: const TextStyle(
-                fontSize: 14,
+                fontSize: 15,
                 color: Color(0xFF2E7D32), // Darker green text
                 fontWeight: FontWeight.w500,
               ),
