@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+  import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'landing_page_components/landing_page.dart';
@@ -9,6 +9,7 @@ import 'admin/dashboard/trainers.dart';
 import 'admin/dashboard/customers.dart';
 import 'admin/dashboard/admin_products.dart';
 import 'admin/dashboard/reserved_products.dart';
+import 'admin/dashboard/attendance_log.dart';
 import 'services/unified_auth_state.dart';
 import 'services/auth_guard.dart';
 import 'User Profile/profile.dart';
@@ -81,6 +82,8 @@ class MyApp extends StatelessWidget {
             (context) => const AdminAuthGuard(child: TrainersPage()),
         '/admin-customers':
             (context) => const AdminAuthGuard(child: CustomersPage()),
+        '/admin-attendance':
+            (context) => const AdminAuthGuard(child: AttendanceLogPage()),
         '/admin-products':
             (context) => const AdminAuthGuard(child: AdminProductsPage()),
         '/admin-reserved-products':

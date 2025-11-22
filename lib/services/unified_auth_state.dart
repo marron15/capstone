@@ -1,6 +1,10 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
+
+import 'attendance_service.dart';
 import 'auth_service.dart';
 import 'membership_service.dart';
 import '../User Profile/profile_data.dart';
@@ -18,6 +22,13 @@ class UnifiedAuthState extends ChangeNotifier {
   String? _customerAccessToken;
   String? _customerRefreshToken;
   MembershipData? _membershipData;
+  AttendanceSnapshot? _attendanceSnapshot;
+  StreamSubscription<AttendanceSnapshot>? _attendanceSubscription;
+  UnifiedAuthState() {
+    _attendanceSubscription =
+        AttendanceService.updates.listen(_handleAttendanceUpdate);
+  }
+
 
   // Admin data
   Map<String, dynamic>? _adminData;
@@ -38,6 +49,7 @@ class UnifiedAuthState extends ChangeNotifier {
   String? get customerAccessToken => _customerAccessToken;
   String? get customerRefreshToken => _customerRefreshToken;
   MembershipData? get membershipData => _membershipData;
+  AttendanceSnapshot? get attendanceSnapshot => _attendanceSnapshot;
 
   // Admin getters
   Map<String, dynamic>? get adminData => _adminData;
@@ -102,6 +114,7 @@ class UnifiedAuthState extends ChangeNotifier {
 
     // Fetch membership data
     await _fetchMembershipData(customerId);
+    await _fetchAttendanceSnapshot(customerId);
 
     // Store tokens in SharedPreferences
     await _saveCustomerTokens();
@@ -166,6 +179,7 @@ class UnifiedAuthState extends ChangeNotifier {
 
         // Fetch membership data when restoring auth state
         await _fetchMembershipData(customerData['customer_id']);
+        await _fetchAttendanceSnapshot(customerData['customer_id']);
 
         // Customer auth restored
       } else if (refreshToken != null) {
@@ -287,6 +301,7 @@ class UnifiedAuthState extends ChangeNotifier {
         _customerRefreshToken = refreshResult['refresh_token'];
 
         await _fetchMembershipData(customerData['customer_id']);
+        await _fetchAttendanceSnapshot(customerData['customer_id']);
         await _saveCustomerTokens();
         notifyListeners();
       } else {
@@ -339,6 +354,34 @@ class UnifiedAuthState extends ChangeNotifier {
     }
   }
 
+  Future<void> _fetchAttendanceSnapshot(int customerId) async {
+    try {
+      final snapshot = await AttendanceService.fetchSnapshot(customerId);
+      _attendanceSnapshot = snapshot;
+    } catch (e) {
+      debugPrint('Attendance fetch error: $e');
+    }
+  }
+
+  Future<void> refreshAttendanceStatus() async {
+    if (_customerId == null) return;
+    await _fetchAttendanceSnapshot(_customerId!);
+    notifyListeners();
+  }
+
+  void applyAttendanceSnapshot(AttendanceSnapshot snapshot) {
+    if (snapshot.customerId != _customerId) return;
+    _attendanceSnapshot = snapshot;
+    notifyListeners();
+  }
+
+  void _handleAttendanceUpdate(AttendanceSnapshot snapshot) {
+    if (_customerId == null) return;
+    if (snapshot.customerId != _customerId) return;
+    _attendanceSnapshot = snapshot;
+    notifyListeners();
+  }
+
   // Save customer tokens
   Future<void> _saveCustomerTokens() async {
     try {
@@ -389,6 +432,7 @@ class UnifiedAuthState extends ChangeNotifier {
     _customerAccessToken = null;
     _customerRefreshToken = null;
     _membershipData = null;
+    _attendanceSnapshot = null;
   }
 
   // Clear admin data
@@ -429,6 +473,11 @@ class UnifiedAuthState extends ChangeNotifier {
     try {
       profileNotifier.value = ProfileData();
     } catch (_) {}
+  }
+  @override
+  void dispose() {
+    _attendanceSubscription?.cancel();
+    super.dispose();
   }
 }
 

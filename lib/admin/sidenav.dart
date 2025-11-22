@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/unified_auth_state.dart';
+import '../main.dart' show navigatorKey;
 
 class SideNav extends StatefulWidget {
   final double? width;
@@ -11,12 +12,55 @@ class SideNav extends StatefulWidget {
 }
 
 class _SideNavState extends State<SideNav> {
-  bool _productsExpanded = false;
+  bool _isNavigating = false;
 
-  void _navigate(BuildContext context, String? currentRoute, String route) {
-    if (currentRoute != route) {
-      Navigator.pushNamed(context, route);
-    }
+  void _navigate(String? currentRoute, String route) {
+    if (currentRoute == route) return;
+    if (_isNavigating) return; // Prevent multiple simultaneous navigations
+
+    _isNavigating = true;
+
+    // Use microtask to defer navigation until after current execution
+    // This prevents navigation during build or frame rendering
+    Future.microtask(() {
+      if (!mounted) {
+        _isNavigating = false;
+        return;
+      }
+
+      // Use global navigator key to avoid context disposal issues
+      final navigator = navigatorKey.currentState;
+      if (navigator == null || !navigator.mounted) {
+        _isNavigating = false;
+        return;
+      }
+
+      try {
+        // Use pushNamedAndRemoveUntil to replace current route
+        // This is more reliable than pushReplacementNamed for Flutter web
+        navigator
+            .pushNamedAndRemoveUntil(
+              route,
+              (route) => false, // Remove all previous routes
+            )
+            .then((_) {
+              if (mounted) {
+                _isNavigating = false;
+              }
+            })
+            .catchError((e) {
+              _isNavigating = false;
+              if (mounted) {
+                debugPrint('Navigation error: $e');
+              }
+            });
+      } catch (e) {
+        _isNavigating = false;
+        if (mounted) {
+          debugPrint('Navigation error: $e');
+        }
+      }
+    });
   }
 
   Widget _navItem({
@@ -49,68 +93,8 @@ class _SideNavState extends State<SideNav> {
         selected: isSelected,
         selectedTileColor: Colors.grey.shade200,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        onTap: () => _navigate(context, currentRoute, route),
+        onTap: () => _navigate(currentRoute, route),
       ),
-    );
-  }
-
-  Widget _productsGroup(String? currentRoute) {
-    final bool isProductsRoute = currentRoute == '/admin-products';
-    final bool isReservedRoute = currentRoute == '/admin-reserved-products';
-    final bool isExpanded =
-        _productsExpanded || isProductsRoute || isReservedRoute;
-
-    return Column(
-      children: [
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: isExpanded ? Colors.grey.shade100 : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-            border:
-                isExpanded
-                    ? Border(
-                      left: BorderSide(color: Colors.grey.shade400, width: 4),
-                    )
-                    : null,
-          ),
-          child: ListTile(
-            leading: const Icon(Icons.inventory, color: Colors.black),
-            title: const Text('Products'),
-            trailing: Icon(
-              isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-              color: Colors.black54,
-            ),
-            onTap: () => setState(() => _productsExpanded = !_productsExpanded),
-          ),
-        ),
-        AnimatedCrossFade(
-          duration: const Duration(milliseconds: 200),
-          firstCurve: Curves.easeOutCubic,
-          secondCurve: Curves.easeInCubic,
-          crossFadeState:
-              isExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
-          firstChild: const SizedBox.shrink(),
-          secondChild: Column(
-            children: [
-              _navItem(
-                label: 'Product List',
-                route: '/admin-products',
-                currentRoute: currentRoute,
-                margin: const EdgeInsets.only(left: 32, right: 8, bottom: 4),
-                leftBorderWidth: 3,
-              ),
-              _navItem(
-                label: 'Reserved Products',
-                route: '/admin-reserved-products',
-                currentRoute: currentRoute,
-                margin: const EdgeInsets.only(left: 32, right: 8, bottom: 4),
-                leftBorderWidth: 3,
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 
@@ -180,7 +164,24 @@ class _SideNavState extends State<SideNav> {
                     route: '/admin-customers',
                     currentRoute: currentRoute,
                   ),
-                  _productsGroup(currentRoute),
+                  _navItem(
+                    icon: Icons.access_time,
+                    label: 'Attendance Log',
+                    route: '/admin-attendance',
+                    currentRoute: currentRoute,
+                  ),
+                  _navItem(
+                    icon: Icons.inventory,
+                    label: 'Product List',
+                    route: '/admin-products',
+                    currentRoute: currentRoute,
+                  ),
+                  _navItem(
+                    icon: Icons.shopping_cart,
+                    label: 'Reserved Products',
+                    route: '/admin-reserved-products',
+                    currentRoute: currentRoute,
+                  ),
                   Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
