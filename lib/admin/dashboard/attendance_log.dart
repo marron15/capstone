@@ -27,6 +27,7 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
   bool _navCollapsed = false;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   StreamSubscription<AttendanceSnapshot>? _attendanceSubscription;
+  Timer? _dateRefreshTimer;
 
   @override
   void initState() {
@@ -37,12 +38,14 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
       if (!mounted) return;
       _loadAttendanceRecords();
     });
+    _scheduleMidnightRefresh();
   }
 
   @override
   void dispose() {
     _searchController.dispose();
     _attendanceSubscription?.cancel();
+    _dateRefreshTimer?.cancel();
     super.dispose();
   }
 
@@ -83,28 +86,29 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
     final String q = _searchQuery.trim().toLowerCase();
     List<AttendanceRecord> filtered =
         _attendanceRecords.where((record) {
-      final String customerName = record.customerName.toLowerCase();
-      final String customerId = record.customerId.toString();
-      final String adminName =
-          (record.verifyingAdminName ?? '').toLowerCase();
-      final String status = record.statusLabel.toLowerCase();
+          final String customerName = record.customerName.toLowerCase();
+          final String customerId = record.customerId.toString();
+          final String adminName =
+              (record.verifyingAdminName ?? '').toLowerCase();
+          final String status = record.statusLabel.toLowerCase();
 
-      if (q.isEmpty) return true;
-      return customerName.contains(q) ||
-          customerId.contains(q) ||
-          adminName.contains(q) ||
-          status.contains(q);
-    }).toList();
+          if (q.isEmpty) return true;
+          return customerName.contains(q) ||
+              customerId.contains(q) ||
+              adminName.contains(q) ||
+              status.contains(q);
+        }).toList();
 
     // Filter by selected date if provided
     if (_selectedDate != null) {
-      filtered = filtered.where((record) {
-        final DateTime? recordDate = record.date;
-        if (recordDate == null) return false;
-        return recordDate.year == _selectedDate!.year &&
-            recordDate.month == _selectedDate!.month &&
-            recordDate.day == _selectedDate!.day;
-      }).toList();
+      filtered =
+          filtered.where((record) {
+            final DateTime? recordDate = record.date;
+            if (recordDate == null) return false;
+            return recordDate.year == _selectedDate!.year &&
+                recordDate.month == _selectedDate!.month &&
+                recordDate.day == _selectedDate!.day;
+          }).toList();
     }
 
     setState(() {
@@ -124,7 +128,27 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
         _selectedDate = picked;
       });
       _loadAttendanceRecords();
+      _scheduleMidnightRefresh();
     }
+  }
+
+  void _scheduleMidnightRefresh() {
+    _dateRefreshTimer?.cancel();
+    final DateTime now = DateTime.now();
+    final DateTime nextMidnight = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    ).add(const Duration(days: 1));
+    final Duration delay = nextMidnight.difference(now);
+    _dateRefreshTimer = Timer(delay, () {
+      if (!mounted) return;
+      setState(() {
+        _selectedDate = DateTime.now();
+      });
+      _loadAttendanceRecords();
+      _scheduleMidnightRefresh();
+    });
   }
 
   String _formatTime(DateTime? dateTime) {
@@ -191,10 +215,7 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
       return;
     }
 
-    final String adminName = [
-      adminData['first_name'],
-      adminData['last_name'],
-    ]
+    final String adminName = [adminData['first_name'], adminData['last_name']]
         .whereType<String>()
         .where((segment) => segment.trim().isNotEmpty)
         .join(' ');
@@ -202,10 +223,7 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
     await Navigator.of(context).push(
       MaterialPageRoute(
         fullscreenDialog: true,
-        builder: (_) => _AdminQrScreen(
-          adminName: adminName,
-          payload: payload,
-        ),
+        builder: (_) => _AdminQrScreen(adminName: adminName, payload: payload),
       ),
     );
   }
@@ -216,14 +234,14 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
       key: _scaffoldKey,
       body: Row(
         children: [
-      if (!_navCollapsed)
-        SizedBox(
-          width: _drawerWidth,
-          child: SideNav(
-            width: _drawerWidth,
-            onClose: () => setState(() => _navCollapsed = true),
-          ),
-        ),
+          if (!_navCollapsed)
+            SizedBox(
+              width: _drawerWidth,
+              child: SideNav(
+                width: _drawerWidth,
+                onClose: () => setState(() => _navCollapsed = true),
+              ),
+            ),
           Expanded(
             child: Container(
               color: Colors.grey.shade50,
@@ -247,7 +265,8 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
                         if (_navCollapsed)
                           IconButton(
                             icon: const Icon(Icons.menu),
-                            onPressed: () => setState(() => _navCollapsed = false),
+                            onPressed:
+                                () => setState(() => _navCollapsed = false),
                           ),
                         const SizedBox(width: 8),
                         const Text(
@@ -299,18 +318,20 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
                     child: TextField(
                       controller: _searchController,
                       decoration: InputDecoration(
-                        hintText: 'Search by customer name, ID, time in, or time out...',
+                        hintText:
+                            'Search by customer name, ID, time in, or time out...',
                         prefixIcon: const Icon(Icons.search),
-                        suffixIcon: _searchQuery.isNotEmpty
-                            ? IconButton(
-                                icon: const Icon(Icons.clear),
-                                onPressed: () {
-                                  _searchController.clear();
-                                  setState(() => _searchQuery = '');
-                                  _filterRecords();
-                                },
-                              )
-                            : null,
+                        suffixIcon:
+                            _searchQuery.isNotEmpty
+                                ? IconButton(
+                                  icon: const Icon(Icons.clear),
+                                  onPressed: () {
+                                    _searchController.clear();
+                                    setState(() => _searchQuery = '');
+                                    _filterRecords();
+                                  },
+                                )
+                                : null,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -325,263 +346,277 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
                   ),
                   // Content
                   Expanded(
-                    child: _isLoading
-                        ? const Center(child: CircularProgressIndicator())
-                        : _errorMessage != null
+                    child:
+                        _isLoading
+                            ? const Center(child: CircularProgressIndicator())
+                            : _errorMessage != null
                             ? Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.error_outline,
-                                      size: 64,
-                                      color: Colors.red.shade300,
-                                    ),
-                                    const SizedBox(height: 16),
-                                    Text(
-                                      _errorMessage!,
-                                      style: const TextStyle(fontSize: 16),
-                                    ),
-                                    const SizedBox(height: 16),
-                                    ElevatedButton(
-                                      onPressed: _loadAttendanceRecords,
-                                      child: const Text('Retry'),
-                                    ),
-                                  ],
-                                ),
-                              )
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.error_outline,
+                                    size: 64,
+                                    color: Colors.red.shade300,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    _errorMessage!,
+                                    style: const TextStyle(fontSize: 16),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  ElevatedButton(
+                                    onPressed: _loadAttendanceRecords,
+                                    child: const Text('Retry'),
+                                  ),
+                                ],
+                              ),
+                            )
                             : _filteredRecords.isEmpty
-                                ? Center(
-                                    child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Icon(
-                                          Icons.access_time_outlined,
-                                          size: 64,
-                                          color: Colors.grey.shade400,
-                                        ),
-                                        const SizedBox(height: 16),
-                                        Text(
-                                          'No attendance records found',
-                                          style: TextStyle(
-                                            fontSize: 18,
-                                            color: Colors.grey.shade600,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Text(
-                                          _selectedDate != null
-                                              ? 'for ${_formatDate(_selectedDate)}'
-                                              : '',
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            color: Colors.grey.shade500,
-                                          ),
-                                        ),
-                                      ],
+                            ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.access_time_outlined,
+                                    size: 64,
+                                    color: Colors.grey.shade400,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'No attendance records found',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      color: Colors.grey.shade600,
                                     ),
-                                  )
-                                : SingleChildScrollView(
-                                    padding: const EdgeInsets.all(16),
-                                    child: Card(
-                                      elevation: 2,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    _selectedDate != null
+                                        ? 'for ${_formatDate(_selectedDate)}'
+                                        : '',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey.shade500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                            : SingleChildScrollView(
+                              padding: const EdgeInsets.all(16),
+                              child: Card(
+                                elevation: 2,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Column(
+                                  children: [
+                                    // Table header
+                                    Container(
+                                      padding: const EdgeInsets.all(16),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey.shade100,
+                                        borderRadius: const BorderRadius.only(
+                                          topLeft: Radius.circular(12),
+                                          topRight: Radius.circular(12),
+                                        ),
                                       ),
-                                      child: Column(
+                                      child: Row(
                                         children: [
-                                          // Table header
-                                          Container(
-                                            padding: const EdgeInsets.all(16),
-                                            decoration: BoxDecoration(
-                                              color: Colors.grey.shade100,
-                                              borderRadius: const BorderRadius.only(
-                                                topLeft: Radius.circular(12),
-                                                topRight: Radius.circular(12),
+                                          Expanded(
+                                            flex: 2,
+                                            child: Text(
+                                              'Customer',
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.grey.shade800,
                                               ),
                                             ),
-                                            child: Row(
-                                              children: [
-                                                Expanded(
-                                                  flex: 2,
-                                                  child: Text(
-                                                    'Customer',
-                                                    style: TextStyle(
-                                                      fontWeight: FontWeight.bold,
-                                                      color: Colors.grey.shade800,
-                                                    ),
-                                                  ),
-                                                ),
-                                                Expanded(
-                                                  child: Text(
-                                                    'Date',
-                                                    style: TextStyle(
-                                                      fontWeight: FontWeight.bold,
-                                                      color: Colors.grey.shade800,
-                                                    ),
-                                                    textAlign: TextAlign.center,
-                                                  ),
-                                                ),
-                                                Expanded(
-                                                  child: Text(
-                                                    'Time In',
-                                                    style: TextStyle(
-                                                      fontWeight: FontWeight.bold,
-                                                      color: Colors.grey.shade800,
-                                                    ),
-                                                    textAlign: TextAlign.center,
-                                                  ),
-                                                ),
-                                                Expanded(
-                                                  child: Text(
-                                                    'Time Out',
-                                                    style: TextStyle(
-                                                      fontWeight: FontWeight.bold,
-                                                      color: Colors.grey.shade800,
-                                                    ),
-                                                    textAlign: TextAlign.center,
-                                                  ),
-                                                ),
-                                                Expanded(
-                                                  child: Text(
-                                                    'Duration',
-                                                    style: TextStyle(
-                                                      fontWeight: FontWeight.bold,
-                                                      color: Colors.grey.shade800,
-                                                    ),
-                                                    textAlign: TextAlign.center,
-                                                  ),
-                                                ),
-                                                Expanded(
-                                                  flex: 2,
-                                                  child: Text(
-                                                    'Verified By',
-                                                    style: TextStyle(
-                                                      fontWeight: FontWeight.bold,
-                                                      color: Colors.grey.shade800,
-                                                    ),
-                                                    textAlign: TextAlign.center,
-                                                  ),
-                                                ),
-                                                Expanded(
-                                                  child: Text(
-                                                    'Status',
-                                                    style: TextStyle(
-                                                      fontWeight: FontWeight.bold,
-                                                      color: Colors.grey.shade800,
-                                                    ),
-                                                    textAlign: TextAlign.center,
-                                                  ),
-                                                ),
-                                              ],
+                                          ),
+                                          Expanded(
+                                            child: Text(
+                                              'Date',
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.grey.shade800,
+                                              ),
+                                              textAlign: TextAlign.center,
                                             ),
                                           ),
-                                          // Table rows
-                                          ListView.separated(
-                                            shrinkWrap: true,
-                                            physics: const NeverScrollableScrollPhysics(),
-                                            itemCount: _filteredRecords.length,
-                                            separatorBuilder: (context, index) => Divider(
-                                              height: 1,
-                                              color: Colors.grey.shade200,
+                                          Expanded(
+                                            child: Text(
+                                              'Time In',
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.grey.shade800,
+                                              ),
+                                              textAlign: TextAlign.center,
                                             ),
-                                            itemBuilder: (context, index) {
-                                              final AttendanceRecord record = _filteredRecords[index];
-                                              final DateTime? timeIn = record.timeIn;
-                                              final DateTime? timeOut = record.timeOut;
-                                              final DateTime? date = record.date;
-                                              final Duration? duration = record.duration;
-
-                                              return Container(
-                                                padding: const EdgeInsets.all(16),
-                                                color: index % 2 == 0
-                                                    ? Colors.white
-                                                    : Colors.grey.shade50,
-                                                child: Row(
-                                                  children: [
-                                                    Expanded(
-                                                      flex: 2,
-                                                      child: Column(
-                                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                                        children: [
-                                                          Text(
-                                                            record.customerName,
-                                                            style: const TextStyle(
-                                                              fontWeight: FontWeight.w600,
-                                                            ),
-                                                          ),
-                                                          Text(
-                                                            'ID: ${record.customerId}',
-                                                            style: TextStyle(
-                                                              fontSize: 12,
-                                                              color: Colors.grey.shade600,
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ),
-                                                    Expanded(
-                                                      child: Text(
-                                                        _formatDate(date),
-                                                        textAlign: TextAlign.center,
-                                                        style: TextStyle(
-                                                          color: Colors.grey.shade700,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                    Expanded(
-                                                      child: Text(
-                                                        _formatTime(timeIn),
-                                                        textAlign: TextAlign.center,
-                                                        style: TextStyle(
-                                                          color: Colors.green.shade700,
-                                                          fontWeight: FontWeight.w500,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                    Expanded(
-                                                      child: Text(
-                                                        _formatTime(timeOut),
-                                                        textAlign: TextAlign.center,
-                                                        style: TextStyle(
-                                                          color: Colors.red.shade700,
-                                                          fontWeight: FontWeight.w500,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                    Expanded(
-                                                      child: Text(
-                                                        _formatDuration(duration),
-                                                        textAlign: TextAlign.center,
-                                                        style: TextStyle(
-                                                          color: Colors.blue.shade700,
-                                                          fontWeight: FontWeight.w500,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                    Expanded(
-                                                      flex: 2,
-                                                      child: Text(
-                                                        record.verifyingAdminName ?? '—',
-                                                        textAlign: TextAlign.center,
-                                                        style: TextStyle(
-                                                          color: Colors.grey.shade700,
-                                                          fontSize: 13,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                    Expanded(
-                                                      child: _buildStatusChip(record),
-                                                    ),
-                                                  ],
-                                                ),
-                                              );
-                                            },
+                                          ),
+                                          Expanded(
+                                            child: Text(
+                                              'Time Out',
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.grey.shade800,
+                                              ),
+                                              textAlign: TextAlign.center,
+                                            ),
+                                          ),
+                                          Expanded(
+                                            child: Text(
+                                              'Duration',
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.grey.shade800,
+                                              ),
+                                              textAlign: TextAlign.center,
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 2,
+                                            child: Text(
+                                              'Verified By',
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.grey.shade800,
+                                              ),
+                                              textAlign: TextAlign.center,
+                                            ),
+                                          ),
+                                          Expanded(
+                                            child: Text(
+                                              'Status',
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.grey.shade800,
+                                              ),
+                                              textAlign: TextAlign.center,
+                                            ),
                                           ),
                                         ],
                                       ),
                                     ),
-                                  ),
+                                    // Table rows
+                                    ListView.separated(
+                                      shrinkWrap: true,
+                                      physics:
+                                          const NeverScrollableScrollPhysics(),
+                                      itemCount: _filteredRecords.length,
+                                      separatorBuilder:
+                                          (context, index) => Divider(
+                                            height: 1,
+                                            color: Colors.grey.shade200,
+                                          ),
+                                      itemBuilder: (context, index) {
+                                        final AttendanceRecord record =
+                                            _filteredRecords[index];
+                                        final DateTime? timeIn = record.timeIn;
+                                        final DateTime? timeOut =
+                                            record.timeOut;
+                                        final DateTime? date = record.date;
+                                        final Duration? duration =
+                                            record.duration;
+
+                                        return Container(
+                                          padding: const EdgeInsets.all(16),
+                                          color:
+                                              index % 2 == 0
+                                                  ? Colors.white
+                                                  : Colors.grey.shade50,
+                                          child: Row(
+                                            children: [
+                                              Expanded(
+                                                flex: 2,
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      record.customerName,
+                                                      style: const TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                      ),
+                                                    ),
+                                                    Text(
+                                                      'ID: ${record.customerId}',
+                                                      style: TextStyle(
+                                                        fontSize: 12,
+                                                        color:
+                                                            Colors
+                                                                .grey
+                                                                .shade600,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                              Expanded(
+                                                child: Text(
+                                                  _formatDate(date),
+                                                  textAlign: TextAlign.center,
+                                                  style: TextStyle(
+                                                    color: Colors.grey.shade700,
+                                                  ),
+                                                ),
+                                              ),
+                                              Expanded(
+                                                child: Text(
+                                                  _formatTime(timeIn),
+                                                  textAlign: TextAlign.center,
+                                                  style: TextStyle(
+                                                    color:
+                                                        Colors.green.shade700,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                              ),
+                                              Expanded(
+                                                child: Text(
+                                                  _formatTime(timeOut),
+                                                  textAlign: TextAlign.center,
+                                                  style: TextStyle(
+                                                    color: Colors.red.shade700,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                              ),
+                                              Expanded(
+                                                child: Text(
+                                                  _formatDuration(duration),
+                                                  textAlign: TextAlign.center,
+                                                  style: TextStyle(
+                                                    color: Colors.blue.shade700,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                              ),
+                                              Expanded(
+                                                flex: 2,
+                                                child: Text(
+                                                  record.verifyingAdminName ??
+                                                      '—',
+                                                  textAlign: TextAlign.center,
+                                                  style: TextStyle(
+                                                    color: Colors.grey.shade700,
+                                                    fontSize: 13,
+                                                  ),
+                                                ),
+                                              ),
+                                              Expanded(
+                                                child: _buildStatusChip(record),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
                   ),
                 ],
               ),
@@ -594,10 +629,7 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
 }
 
 class _AdminQrScreen extends StatelessWidget {
-  const _AdminQrScreen({
-    required this.adminName,
-    required this.payload,
-  });
+  const _AdminQrScreen({required this.adminName, required this.payload});
 
   final String adminName;
   final String payload;
@@ -606,9 +638,7 @@ class _AdminQrScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final messenger = ScaffoldMessenger.of(context);
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Admin QR Code'),
-      ),
+      appBar: AppBar(title: const Text('Admin QR Code')),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -668,4 +698,3 @@ class _AdminQrScreen extends StatelessWidget {
     );
   }
 }
-
