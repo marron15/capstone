@@ -65,7 +65,10 @@ class _MembershipAlertModalState extends State<MembershipAlertModal>
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
 
     _controller.forward();
-    _fetchReservations();
+    // Fetch reservations when modal opens
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchReservations();
+    });
   }
 
   Future<void> _fetchReservations() async {
@@ -83,53 +86,70 @@ class _MembershipAlertModalState extends State<MembershipAlertModal>
         setState(() {
           _isLoadingReservations = false;
 
-          // Get the latest reservation with accepted or declined status
-          final processedReservations =
-              reservations.where((r) {
-                final status = (r['status'] ?? '').toString().toLowerCase();
-                return status == 'accepted' || status == 'declined';
-              }).toList();
+          // Normalize all reservations
+          final normalizedReservations =
+              reservations
+                  .map<Map<String, dynamic>>((dynamic raw) {
+                    if (raw is Map<String, dynamic>) {
+                      return _normalizeReservation(raw);
+                    }
+                    if (raw is Map) {
+                      return _normalizeReservation(
+                        raw.map(
+                          (key, value) => MapEntry(key.toString(), value),
+                        ),
+                      );
+                    }
+                    return <String, dynamic>{};
+                  })
+                  .where((reservation) => reservation.isNotEmpty)
+                  .toList();
 
-          if (processedReservations.isNotEmpty) {
-            // Sort by created_at descending to get the latest
-            processedReservations.sort((a, b) {
-              final dateA =
-                  DateTime.tryParse((a['created_at'] ?? '').toString()) ??
-                  DateTime(1970);
-              final dateB =
-                  DateTime.tryParse((b['created_at'] ?? '').toString()) ??
-                  DateTime(1970);
-              return dateB.compareTo(dateA);
-            });
-            final normalizedReservations =
-                processedReservations
-                    .map<Map<String, dynamic>>((dynamic raw) {
-                      if (raw is Map<String, dynamic>) {
-                        return _normalizeReservation(raw);
-                      }
-                      if (raw is Map) {
-                        return _normalizeReservation(
-                          raw.map(
-                            (key, value) => MapEntry(key.toString(), value),
-                          ),
-                        );
-                      }
-                      return <String, dynamic>{};
-                    })
-                    .where((reservation) => reservation.isNotEmpty)
-                    .toList();
+          // Sort all reservations by created_at descending (most recent first)
+          normalizedReservations.sort((a, b) {
+            final dateA =
+                DateTime.tryParse((a['created_at'] ?? '').toString()) ??
+                DateTime(1970);
+            final dateB =
+                DateTime.tryParse((b['created_at'] ?? '').toString()) ??
+                DateTime(1970);
+            return dateB.compareTo(dateA);
+          });
 
-            _reservationHistory = normalizedReservations;
-            _latestReservation =
-                normalizedReservations.isNotEmpty
-                    ? normalizedReservations.first
-                    : null;
-            _historyPage = 0;
-          } else {
-            _reservationHistory = [];
-            _latestReservation = null;
-            _historyPage = 0;
+          // Helper function to normalize status string
+          String _normalizeStatus(dynamic status) {
+            if (status == null) return '';
+            final str = status.toString().trim().toLowerCase();
+            // Handle common variations
+            if (str.isEmpty) return '';
+            return str;
           }
+
+          // Find the latest pending reservation for _latestReservation
+          // Since normalizedReservations is sorted by date descending,
+          // the first pending we find is the most recent
+          Map<String, dynamic>? latestPending;
+          for (final r in normalizedReservations) {
+            // Check both 'status' and 'reservation_status' fields
+            final status = _normalizeStatus(r['status'] ?? r['reservation_status']);
+            if (status == 'pending') {
+              latestPending = r;
+              break; // Found the most recent pending, stop searching
+            }
+          }
+
+          // Get accepted/declined reservations for history only
+          final processedReservations = normalizedReservations.where((r) {
+            final status = _normalizeStatus(r['status'] ?? r['reservation_status']);
+            return status == 'accepted' || status == 'declined';
+          }).toList();
+
+          // Set latest reservation to the most recent pending, if any
+          _latestReservation = latestPending;
+
+          // Set history to only accepted/declined reservations
+          _reservationHistory = processedReservations;
+          _historyPage = 0;
         });
       }
     } catch (e) {
@@ -266,7 +286,13 @@ class _MembershipAlertModalState extends State<MembershipAlertModal>
                                                                 .toLowerCase() ==
                                                             'accepted'
                                                         ? Icons.check_circle
-                                                        : Icons.cancel
+                                                        : (_latestReservation!['status'] ??
+                                                                        '')
+                                                                    .toString()
+                                                                    .toLowerCase() ==
+                                                                'declined'
+                                                            ? Icons.cancel
+                                                            : Icons.hourglass_bottom
                                                     : Icons.inventory_2,
                                                 color:
                                                     _latestReservation != null
@@ -278,9 +304,17 @@ class _MembershipAlertModalState extends State<MembershipAlertModal>
                                                             ? Colors
                                                                 .green
                                                                 .shade300
-                                                            : Colors
-                                                                .red
-                                                                .shade300
+                                                            : (_latestReservation!['status'] ??
+                                                                                '')
+                                                                            .toString()
+                                                                            .toLowerCase() ==
+                                                                        'declined'
+                                                                    ? Colors
+                                                                        .red
+                                                                        .shade300
+                                                                    : Colors
+                                                                        .orange
+                                                                        .shade300
                                                         : activeAccent,
                                                 size: 24,
                                               ),
@@ -428,6 +462,34 @@ class _MembershipAlertModalState extends State<MembershipAlertModal>
                                                   ),
                                                 ),
                                               ],
+                                            ] else if ((_latestReservation!['status'] ??
+                                                        '')
+                                                    .toString()
+                                                    .toLowerCase() ==
+                                                'pending') ...[
+                                              Text(
+                                                'PENDING',
+                                                style: TextStyle(
+                                                  color: Colors.orange.shade300,
+                                                  fontSize:
+                                                      isSmallScreen ? 28 : 32,
+                                                  fontWeight: FontWeight.bold,
+                                                  letterSpacing: 1.0,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 8),
+                                              Text(
+                                                'Your reservation request is being reviewed',
+                                                textAlign: TextAlign.center,
+                                                style: TextStyle(
+                                                  color: Colors.white.withValues(
+                                                    alpha: 0.8,
+                                                  ),
+                                                  fontSize:
+                                                      isSmallScreen ? 14 : 16,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
                                             ] else ...[
                                               Text(
                                                 'Your Reserve Request has been accepted',
@@ -556,7 +618,13 @@ class _MembershipAlertModalState extends State<MembershipAlertModal>
                                                           .toLowerCase() ==
                                                       'accepted'
                                                   ? Icons.check_circle_outline
-                                                  : Icons.info_outline,
+                                                  : (_latestReservation!['status'] ??
+                                                                      '')
+                                                                  .toString()
+                                                                  .toLowerCase() ==
+                                                              'pending'
+                                                          ? Icons.hourglass_bottom
+                                                          : Icons.info_outline,
                                               color:
                                                   (_latestReservation!['status'] ??
                                                                   '')
@@ -564,7 +632,13 @@ class _MembershipAlertModalState extends State<MembershipAlertModal>
                                                               .toLowerCase() ==
                                                           'accepted'
                                                       ? Colors.green.shade300
-                                                      : Colors.orange.shade300,
+                                                      : (_latestReservation!['status'] ??
+                                                                          '')
+                                                                      .toString()
+                                                                      .toLowerCase() ==
+                                                                  'pending'
+                                                              ? Colors.orange.shade300
+                                                              : Colors.orange.shade300,
                                               size: isSmallScreen ? 24 : 28,
                                             ),
                                             const SizedBox(height: 12),
@@ -575,7 +649,13 @@ class _MembershipAlertModalState extends State<MembershipAlertModal>
                                                           .toLowerCase() ==
                                                       'accepted'
                                                   ? 'Reservation Accepted!'
-                                                  : 'Reservation Declined',
+                                                  : (_latestReservation!['status'] ??
+                                                                      '')
+                                                                  .toString()
+                                                                  .toLowerCase() ==
+                                                              'pending'
+                                                          ? 'Reservation Pending'
+                                                          : 'Reservation Declined',
                                               textAlign: TextAlign.center,
                                               style: TextStyle(
                                                 color: Colors.white.withValues(
@@ -595,7 +675,13 @@ class _MembershipAlertModalState extends State<MembershipAlertModal>
                                                           .toLowerCase() ==
                                                       'accepted'
                                                   ? 'You can pick up your reserved product at the gym.'
-                                                  : 'Please see the admin note above for details.',
+                                                  : (_latestReservation!['status'] ??
+                                                                      '')
+                                                                  .toString()
+                                                                  .toLowerCase() ==
+                                                              'pending'
+                                                          ? 'Please wait for admin approval. You will be notified once your reservation is processed.'
+                                                          : 'Please see the admin note above for details.',
                                               textAlign: TextAlign.center,
                                               style: TextStyle(
                                                 color: Colors.white.withValues(
@@ -606,18 +692,29 @@ class _MembershipAlertModalState extends State<MembershipAlertModal>
                                                 fontWeight: FontWeight.w400,
                                               ),
                                             ),
-                                            const SizedBox(height: 8),
-                                            Text(
-                                              '875 RIZAL AVENUE WEST TAPINAC, OLONGAPO CITY',
-                                              textAlign: TextAlign.center,
-                                              style: TextStyle(
-                                                color: activeAccent,
-                                                fontSize:
-                                                    isSmallScreen ? 13 : 15,
-                                                fontWeight: FontWeight.w600,
-                                                letterSpacing: 0.5,
+                                            if ((_latestReservation!['status'] ??
+                                                              '')
+                                                          .toString()
+                                                          .toLowerCase() ==
+                                                      'accepted' ||
+                                                  (_latestReservation!['status'] ??
+                                                                      '')
+                                                                  .toString()
+                                                                  .toLowerCase() ==
+                                                              'pending') ...[
+                                              const SizedBox(height: 8),
+                                              Text(
+                                                '875 RIZAL AVENUE WEST TAPINAC, OLONGAPO CITY',
+                                                textAlign: TextAlign.center,
+                                                style: TextStyle(
+                                                  color: activeAccent,
+                                                  fontSize:
+                                                      isSmallScreen ? 13 : 15,
+                                                  fontWeight: FontWeight.w600,
+                                                  letterSpacing: 0.5,
+                                                ),
                                               ),
-                                            ),
+                                            ],
                                           ],
                                         ),
                                       ),
