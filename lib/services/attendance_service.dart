@@ -36,11 +36,9 @@ class AttendanceSnapshot {
   final String? statusLabel;
 
   String get readableStatus =>
-      statusLabel ??
-      (isClockedIn ? 'Timed In' : 'Timed Out');
+      statusLabel ?? (isClockedIn ? 'Timed In' : 'Timed Out');
 
-  DateTime? get referenceTimestamp =>
-      isClockedIn ? lastTimeIn : lastTimeOut;
+  DateTime? get referenceTimestamp => isClockedIn ? lastTimeIn : lastTimeOut;
 
   AttendanceSnapshot copyWith({
     int? attendanceId,
@@ -94,14 +92,15 @@ class AttendanceSnapshot {
 
     return AttendanceSnapshot(
       attendanceId: json['attendance_id'] as int?,
-      customerId: json['customer_id'] is String
-          ? int.tryParse(json['customer_id'])
-          : json['customer_id'] ?? json['id'] ?? 0,
+      customerId:
+          json['customer_id'] is String
+              ? int.tryParse(json['customer_id'])
+              : json['customer_id'] ?? json['id'] ?? 0,
       isClockedIn: explicitClockedIn ?? clockedInFallback(textualStatus),
       lastTimeIn: parseDate(json['last_time_in'] ?? json['time_in']),
       lastTimeOut: parseDate(json['last_time_out'] ?? json['time_out']),
-      verifyingAdminName: json['verified_by']?.toString() ??
-          json['admin_name']?.toString(),
+      verifyingAdminName:
+          json['verified_by']?.toString() ?? json['admin_name']?.toString(),
       verifyingAdminCode: json['admin_code']?.toString(),
       statusLabel: textualStatus,
     );
@@ -130,12 +129,14 @@ class AttendanceRecord {
   final String? verifyingAdminName;
 
   Duration? get duration =>
-      (timeIn != null && timeOut != null)
-          ? timeOut!.difference(timeIn!)
-          : null;
+      (timeIn != null && timeOut != null) ? timeOut!.difference(timeIn!) : null;
 
   String get statusLabel =>
-      status.isEmpty ? 'Unknown' : status.toUpperCase() == 'IN' ? 'Timed In' : 'Timed Out';
+      status.isEmpty
+          ? 'Unknown'
+          : status.toUpperCase() == 'IN'
+          ? 'Timed In'
+          : 'Timed Out';
 
   factory AttendanceRecord.fromJson(Map<String, dynamic> json) {
     DateTime? parseDate(dynamic value) {
@@ -184,14 +185,14 @@ class AttendanceRecord {
     final DateTime? recordDate =
         parseDate(json['date']) ?? parseDate(json['created_at']);
 
-    final String customerName = [
-      json['customer_name'],
-      json['full_name'],
-      json['name'],
-    ].firstWhere(
-      (element) => element != null && element.toString().trim().isNotEmpty,
-      orElse: () => 'Unknown Member',
-    ).toString();
+    final String customerName =
+        [json['customer_name'], json['full_name'], json['name']]
+            .firstWhere(
+              (element) =>
+                  element != null && element.toString().trim().isNotEmpty,
+              orElse: () => 'Unknown Member',
+            )
+            .toString();
 
     int resolveId(dynamic value) {
       if (value == null) return 0;
@@ -236,10 +237,7 @@ class AttendanceService {
         queryParameters: {'customer_id': customerId.toString()},
       );
       final response = await http
-          .get(
-            uri,
-            headers: {'Accept': 'application/json'},
-          )
+          .get(uri, headers: {'Accept': 'application/json'})
           .timeout(_httpTimeout);
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -277,10 +275,7 @@ class AttendanceService {
       );
 
       final response = await http
-          .get(
-            uri,
-            headers: {'Accept': 'application/json'},
-          )
+          .get(uri, headers: {'Accept': 'application/json'})
           .timeout(_httpTimeout);
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -350,7 +345,9 @@ class AttendanceService {
     } catch (e) {
       if (e is AttendanceException) rethrow;
       debugPrint('recordScan error: $e');
-      throw AttendanceException('Unable to record attendance. Please try again.');
+      throw AttendanceException(
+        'Unable to record attendance. Please try again.',
+      );
     }
   }
 
@@ -368,10 +365,20 @@ class AttendanceService {
             ? adminData['phone_number'].toString()
             : (adminData['email']?.toString() ?? '');
 
+    final String firstName =
+        (adminData['first_name'] ?? adminData['firstName'] ?? '')
+            .toString()
+            .trim();
+    final String lastName =
+        (adminData['last_name'] ?? adminData['lastName'] ?? '')
+            .toString()
+            .trim();
+    final String displayName = '$firstName $lastName'.trim();
+
     final String saltSource =
         adminData['updated_at']?.toString() ??
-            adminData['created_at']?.toString() ??
-            DateTime.now().toIso8601String();
+        adminData['created_at']?.toString() ??
+        DateTime.now().toIso8601String();
 
     final payload = <String, dynamic>{
       'issuer': 'RNR_FITNESS',
@@ -381,6 +388,10 @@ class AttendanceService {
       'salt': base64Url.encode(utf8.encode('$contact|$adminId|$saltSource')),
       'generatedAt': DateTime.now().toUtc().toIso8601String(),
     };
+
+    if (firstName.isNotEmpty) payload['firstName'] = firstName;
+    if (lastName.isNotEmpty) payload['lastName'] = lastName;
+    if (displayName.isNotEmpty) payload['name'] = displayName;
 
     return jsonEncode(payload);
   }
@@ -423,4 +434,3 @@ class AttendanceService {
     }
   }
 }
-
