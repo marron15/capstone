@@ -113,7 +113,7 @@ class AdminService {
 
   // Login admin
   static Future<Map<String, dynamic>> loginAdmin({
-    required String contactNumber,
+    required String email,
     required String password,
   }) async {
     try {
@@ -122,7 +122,7 @@ class AdminService {
       final response = await http.post(
         Uri.parse('$baseUrl/Login.php'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'phone_number': contactNumber, 'password': password}),
+        body: jsonEncode({'email': email, 'password': password}),
       );
 
       // Avoid logging full response body
@@ -155,7 +155,7 @@ class AdminService {
             return {
               'success': false,
               'message': decoded['message'] ?? 'Login failed',
-              'field': decoded['field'], // 'phone' | 'password'
+              'field': decoded['field'], // 'email' | 'password'
             };
           }
         } catch (_) {}

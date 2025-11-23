@@ -15,12 +15,12 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-  final _contactController = TextEditingController();
+  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
   bool _isLoading = false;
   String? _errorMessage;
-  String? _contactError;
+  String? _emailError;
   String? _passwordError;
   bool _domAttributesScheduled = false;
 
@@ -54,7 +54,7 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   void dispose() {
-    _contactController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -64,9 +64,9 @@ class _LoginPageState extends State<LoginPage> {
     _domAttributesScheduled = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      setInputAttributes('input[autocomplete="tel"]', {
-        'id': 'admin-login-phone',
-        'name': 'admin-login-phone',
+      setInputAttributes('input[autocomplete="email"]', {
+        'id': 'admin-login-email',
+        'name': 'admin-login-email',
       });
       setInputAttributes('input[autocomplete="current-password"]', {
         'id': 'admin-login-password',
@@ -85,20 +85,13 @@ class _LoginPageState extends State<LoginPage> {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
-      _contactError = null;
+      _emailError = null;
       _passwordError = null;
     });
 
     try {
-      final contactDigits =
-          _contactController.text
-              .split('')
-              .where(
-                (char) => char.codeUnitAt(0) >= 48 && char.codeUnitAt(0) <= 57,
-              )
-              .join();
       final result = await AdminService.loginAdmin(
-        contactNumber: contactDigits,
+        email: _emailController.text.trim(),
         password: _passwordController.text,
       );
 
@@ -127,13 +120,13 @@ class _LoginPageState extends State<LoginPage> {
         setState(() {
           _errorMessage = null; // no global banner
           final String? field = result['field'] as String?;
-          if (field == 'phone') {
-            _contactError =
-                result['message'] as String? ?? 'Invalid contact number';
+          if (field == 'email') {
+            _emailError =
+                result['message'] as String? ?? 'Invalid email address';
           } else if (field == 'password') {
             _passwordError = result['message'] as String? ?? 'Invalid password';
           } else {
-            _contactError = null;
+            _emailError = null;
             _passwordError = null;
             _errorMessage = result['message'] as String? ?? 'Login failed';
           }
@@ -282,17 +275,17 @@ class _LoginPageState extends State<LoginPage> {
                                     ),
                                     const SizedBox(height: 32),
                                     TextFormField(
-                                      controller: _contactController,
+                                      controller: _emailController,
                                       style: const TextStyle(
                                         color: Colors.black,
                                       ),
                                       decoration: InputDecoration(
-                                        labelText: 'Contact Number',
+                                        labelText: 'Email Address',
                                         labelStyle: TextStyle(
                                           color: Colors.grey.shade600,
                                         ),
                                         prefixIcon: Icon(
-                                          Icons.phone,
+                                          Icons.email,
                                           color: Colors.grey.shade600,
                                         ),
                                         filled: true,
@@ -316,43 +309,28 @@ class _LoginPageState extends State<LoginPage> {
                                             width: 2,
                                           ),
                                         ),
-                                        errorText: _contactError,
+                                        errorText: _emailError,
                                       ),
                                       textInputAction: TextInputAction.next,
-                                      keyboardType: TextInputType.number,
-                                      inputFormatters: [
-                                        FilteringTextInputFormatter.digitsOnly,
-                                        LengthLimitingTextInputFormatter(11),
-                                      ],
+                                      keyboardType: TextInputType.emailAddress,
                                       autofillHints: const [
-                                        AutofillHints.telephoneNumber,
+                                        AutofillHints.email,
                                       ],
-                                      restorationId: 'admin_login_contact',
+                                      restorationId: 'admin_login_email',
                                       onFieldSubmitted:
                                           (_) =>
                                               FocusScope.of(
                                                 context,
                                               ).nextFocus(),
                                       validator: (value) {
-                                        final digitsBuffer = StringBuffer();
-                                        for (final rune
-                                            in (value ?? '').runes) {
-                                          if (rune >= 48 && rune <= 57) {
-                                            digitsBuffer.writeCharCode(rune);
-                                          }
+                                        if (value == null || value.isEmpty) {
+                                          return 'Please enter your email address';
                                         }
-                                        final digits = digitsBuffer.toString();
-                                        if (digits.isEmpty) {
-                                          return 'Please enter your contact number';
-                                        }
-                                        final isElevenDigits =
-                                            digits.length == 11 &&
-                                            digits.codeUnits.every(
-                                              (code) =>
-                                                  code >= 48 && code <= 57,
-                                            );
-                                        if (!isElevenDigits) {
-                                          return 'Contact number must be exactly 11 digits';
+                                        final emailRegex = RegExp(
+                                          r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+                                        );
+                                        if (!emailRegex.hasMatch(value.trim())) {
+                                          return 'Please enter a valid email address';
                                         }
                                         return null;
                                       },
