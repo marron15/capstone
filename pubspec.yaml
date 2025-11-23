@@ -44,8 +44,8 @@ dependencies:
   syncfusion_flutter_xlsio: ^31.2.12
   syncfusion_officechart: ^31.2.12
   pdf: ^3.10.7
-  js: ^0.7.0
   qr_flutter: ^4.1.0
+  web: ^1.1.1
 
 
 # The following adds the Cupertino Icons font to your application.
@@ -75,6 +75,7 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
+    - assets/icons/app_icon.png
     - assets/images/RNR.png
     - assets/images/RNR1.png
     - assets/images/gym_equipments/

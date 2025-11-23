@@ -1,4 +1,4 @@
-  import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'landing_page_components/landing_page.dart';
@@ -13,7 +13,7 @@ import 'admin/dashboard/attendance_log.dart';
 import 'services/unified_auth_state.dart';
 import 'services/auth_guard.dart';
 import 'User Profile/profile.dart';
-import 'services/pwa_service.dart';
+import 'services/apk_download_button.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -602,8 +602,7 @@ class _LoginChoicePageState extends State<LoginChoicePage>
                         ),
                       ),
                       const Spacer(),
-                      // PWA Install Button
-                      PwaService.buildInstallButton(context),
+                      const ApkDownloadButton(),
                     ],
                   ),
                 ),
