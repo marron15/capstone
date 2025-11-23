@@ -58,48 +58,33 @@ class _ApkDownloadButtonState extends State<ApkDownloadButton> {
     }
 
     return Tooltip(
-      message: _isBusy ? 'Preparing APK...' : 'Download Rnr Gym APK',
-      child: IconButton(
-        iconSize: 40,
-        padding: EdgeInsets.zero,
+      message: _isBusy ? 'Preparing APK...' : 'Install Rnr Gym App',
+      child: TextButton.icon(
         onPressed: _isBusy ? null : _handleDownload,
-        icon: Stack(
-          alignment: Alignment.center,
-          children: [
-            _ApkIcon(),
-            if (_isBusy)
-              const Positioned.fill(
-                child: ColoredBox(
-                  color: Color.fromARGB(150, 0, 0, 0),
-                  child: Center(
-                    child: SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
+        icon:
+            _isBusy
+                ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                   ),
-                ),
-              ),
-          ],
+                )
+                : const Icon(Icons.download, color: Colors.white, size: 18),
+        label: const Text(
+          'Install App',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
         ),
-      ),
-    );
-  }
-}
-
-class _ApkIcon extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: Image.asset(
-        'assets/icons/app_icon.png',
-        width: 32,
-        height: 32,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          return const Icon(Icons.android, color: Colors.white, size: 28);
-        },
+        style: TextButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          minimumSize: Size.zero,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
       ),
     );
   }
