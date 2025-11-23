@@ -4,6 +4,7 @@ import '../pdf/pdf_stats_export.dart';
 import '../services/api_service.dart';
 import '../services/admin_service.dart';
 import '../services/refresh_service.dart';
+import '../../services/attendance_service.dart';
 import '../statistics/new_week_members.dart';
 import '../statistics/new_members_month.dart';
 import '../statistics/total_memberships.dart';
@@ -100,6 +101,9 @@ class _StatisticPageState extends State<StatisticPage>
   int trainersAddedDay = 0, trainersAddedWeek = 0, trainersAddedMonth = 0;
   int customersAddedDay = 0, customersAddedWeek = 0, customersAddedMonth = 0;
   int productsAddedDay = 0, productsAddedWeek = 0, productsAddedMonth = 0;
+  // Attendance KPI
+  int timeInDay = 0, timeInWeek = 0, timeInMonth = 0;
+  int timeOutDay = 0, timeOutWeek = 0, timeOutMonth = 0;
   Map<String, int> membershipTotals = const {};
   List<Map<String, dynamic>> _reservations = [];
 
@@ -174,6 +178,7 @@ class _StatisticPageState extends State<StatisticPage>
         ApiService.getAllTrainers(),
         ApiService.getMembershipTotals(),
         ApiService.getReservedProducts(),
+        AttendanceService.fetchRecords(), // Fetch all attendance records
       ]);
 
       // Check if widget is still mounted after async operations
@@ -205,6 +210,9 @@ class _StatisticPageState extends State<StatisticPage>
               .whereType<Map<String, dynamic>>()
               .map((entry) => Map<String, dynamic>.from(entry))
               .toList();
+      
+      // Fetch attendance records
+      final List<AttendanceRecord> attendanceRecords = futures[8] as List<AttendanceRecord>;
 
       // Compute counts
       productsActive = prodActive.length;
@@ -410,6 +418,49 @@ class _StatisticPageState extends State<StatisticPage>
       reservationsPendingMonth = reservationMonthCounts['pending'] ?? 0;
       reservationsAcceptedMonth = reservationMonthCounts['accepted'] ?? 0;
       reservationsDeclinedMonth = reservationMonthCounts['declined'] ?? 0;
+
+      // Count Time In and Time Out by period
+      int _countTimeIn(Iterable<AttendanceRecord> records, DateTime now, String period) {
+        int count = 0;
+        for (final record in records) {
+          final DateTime? timeIn = record.timeIn;
+          if (timeIn == null) continue;
+          
+          if (period == 'Day' && _isSameDay(timeIn, now)) {
+            count++;
+          } else if (period == 'Week' && _isThisWeek(timeIn, now)) {
+            count++;
+          } else if (period == 'Month' && _isThisMonth(timeIn, now)) {
+            count++;
+          }
+        }
+        return count;
+      }
+      
+      int _countTimeOut(Iterable<AttendanceRecord> records, DateTime now, String period) {
+        int count = 0;
+        for (final record in records) {
+          final DateTime? timeOut = record.timeOut;
+          if (timeOut == null) continue;
+          
+          if (period == 'Day' && _isSameDay(timeOut, now)) {
+            count++;
+          } else if (period == 'Week' && _isThisWeek(timeOut, now)) {
+            count++;
+          } else if (period == 'Month' && _isThisMonth(timeOut, now)) {
+            count++;
+          }
+        }
+        return count;
+      }
+      
+      timeInDay = _countTimeIn(attendanceRecords, nowTs, 'Day');
+      timeInWeek = _countTimeIn(attendanceRecords, nowTs, 'Week');
+      timeInMonth = _countTimeIn(attendanceRecords, nowTs, 'Month');
+      
+      timeOutDay = _countTimeOut(attendanceRecords, nowTs, 'Day');
+      timeOutWeek = _countTimeOut(attendanceRecords, nowTs, 'Week');
+      timeOutMonth = _countTimeOut(attendanceRecords, nowTs, 'Month');
 
       // Final check before setState
       if (!mounted || _isDisposed) return;
@@ -939,25 +990,25 @@ class _StatisticPageState extends State<StatisticPage>
       borderRadius: BorderRadius.circular(18),
       constraints: BoxConstraints(
         minHeight: isMobile ? 40 : 36,
-        minWidth: isMobile ? 90 : 110,
+        minWidth: isMobile ? 80 : 110,
       ),
       selectedColor: Colors.white,
       color: Colors.black87,
       fillColor: Colors.black87,
       children: [
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: isMobile ? 6 : 8),
+          padding: EdgeInsets.symmetric(horizontal: isMobile ? 8 : 8),
           child: Text('Daily', style: TextStyle(fontSize: isMobile ? 12 : 14)),
         ),
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: isMobile ? 6 : 8),
+          padding: EdgeInsets.symmetric(horizontal: isMobile ? 8 : 8),
           child: Text(
             'This Week',
             style: TextStyle(fontSize: isMobile ? 12 : 14),
           ),
         ),
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: isMobile ? 6 : 8),
+          padding: EdgeInsets.symmetric(horizontal: isMobile ? 8 : 8),
           child: Text(
             'This Month',
             style: TextStyle(fontSize: isMobile ? 12 : 14),
@@ -1821,29 +1872,29 @@ class _StatisticPageState extends State<StatisticPage>
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  'Statistics Report',
-                                  style: TextStyle(
-                                    fontSize: isMobile ? 20 : 28,
-                                    fontWeight: FontWeight.w800,
-                                    color: Colors.black,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                SizedBox(height: isMobile ? 8 : 12),
-                                if (isMobile)
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      _buildExportButton(isMobile),
-                                      SizedBox(height: 8),
-                                      Center(
-                                        child: _buildPeriodToggleButtons(
-                                          isMobile,
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        'Statistics Report',
+                                        style: TextStyle(
+                                          fontSize: isMobile ? 20 : 28,
+                                          fontWeight: FontWeight.w800,
+                                          color: Colors.black,
                                         ),
+                                        overflow: TextOverflow.ellipsis,
                                       ),
-                                    ],
+                                    ),
+                                    if (isMobile) _buildExportButton(isMobile),
+                                  ],
+                                ),
+                                SizedBox(height: isMobile ? 12 : 12),
+                                if (isMobile)
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: Center(
+                                      child: _buildPeriodToggleButtons(isMobile),
+                                    ),
                                   )
                                 else
                                   Row(
@@ -1984,6 +2035,66 @@ class _StatisticPageState extends State<StatisticPage>
                                               label:
                                                   'Products Added This Month',
                                               value: productsAddedMonth,
+                                              color: const Color(0xFF6A1B9A),
+                                            ),
+                                          ],
+                                        ),
+                                        _KpiGroup(
+                                          title: 'Time In',
+                                          tiles: [
+                                            _KpiTile(
+                                              label: 'Time In This Day',
+                                              value: timeInDay,
+                                              color: const Color(0xFF2E7D32),
+                                            ),
+                                            _KpiTile(
+                                              label: 'Time In This Week',
+                                              value: timeInWeek,
+                                              color: const Color(0xFF1565C0),
+                                            ),
+                                            _KpiTile(
+                                              label: 'Time In This Month',
+                                              value: timeInMonth,
+                                              color: const Color(0xFF6A1B9A),
+                                            ),
+                                          ],
+                                        ),
+                                        _KpiGroup(
+                                          title: 'Time Out',
+                                          tiles: [
+                                            _KpiTile(
+                                              label: 'Time Out This Day',
+                                              value: timeOutDay,
+                                              color: const Color(0xFFD32F2F),
+                                            ),
+                                            _KpiTile(
+                                              label: 'Time Out This Week',
+                                              value: timeOutWeek,
+                                              color: const Color(0xFFD32F2F),
+                                            ),
+                                            _KpiTile(
+                                              label: 'Time Out This Month',
+                                              value: timeOutMonth,
+                                              color: const Color(0xFFD32F2F),
+                                            ),
+                                          ],
+                                        ),
+                                        _KpiGroup(
+                                          title: 'Total Customers',
+                                          tiles: [
+                                            _KpiTile(
+                                              label: 'Total Active Customers',
+                                              value: customersActive,
+                                              color: const Color(0xFF2E7D32),
+                                            ),
+                                            _KpiTile(
+                                              label: 'Total Active Customers',
+                                              value: customersActive,
+                                              color: const Color(0xFF1565C0),
+                                            ),
+                                            _KpiTile(
+                                              label: 'Total Active Customers',
+                                              value: customersActive,
                                               color: const Color(0xFF6A1B9A),
                                             ),
                                           ],
@@ -2263,11 +2374,15 @@ class _KpiRibbonGroups extends StatelessWidget {
     final bool isMobile = MediaQuery.of(context).size.width < 768;
     Widget tile(_KpiTile t) {
       return Container(
-        width: isMobile ? 180 : 220,
-        margin: EdgeInsets.zero,
+        width: isMobile ? double.infinity : 220,
+        constraints: isMobile ? BoxConstraints(minHeight: 80) : null,
+        margin: EdgeInsets.only(
+          right: isMobile ? 0 : 0,
+          bottom: isMobile ? 10 : 12,
+        ),
         padding: EdgeInsets.symmetric(
-          horizontal: isMobile ? 10 : 14,
-          vertical: isMobile ? 8 : 10,
+          horizontal: isMobile ? 12 : 14,
+          vertical: isMobile ? 10 : 10,
         ),
         decoration: BoxDecoration(
           color: t.color.withAlpha(26),
@@ -2348,13 +2463,13 @@ class _KpiRibbonGroups extends StatelessWidget {
         children: [
           Padding(
             padding: EdgeInsets.only(
-              left: isMobile ? 2 : 4,
-              bottom: isMobile ? 4 : 6,
+              left: isMobile ? 0 : 4,
+              bottom: isMobile ? 6 : 6,
             ),
             child: Text(
               g.title,
               style: TextStyle(
-                fontSize: isMobile ? 10 : 11,
+                fontSize: isMobile ? 11 : 11,
                 color: Colors.black54,
                 fontWeight: FontWeight.w700,
               ),
@@ -2387,13 +2502,13 @@ class _KpiRibbonGroups extends StatelessWidget {
         children: [
           Padding(
             padding: EdgeInsets.only(
-              left: isMobile ? 2 : 4,
-              bottom: isMobile ? 4 : 6,
+              left: isMobile ? 0 : 4,
+              bottom: isMobile ? 6 : 6,
             ),
             child: Text(
               reservedProductsGroup.title,
               style: TextStyle(
-                fontSize: isMobile ? 10 : 11,
+                fontSize: isMobile ? 11 : 11,
                 color: Colors.black54,
                 fontWeight: FontWeight.w700,
               ),
@@ -2401,13 +2516,14 @@ class _KpiRibbonGroups extends StatelessWidget {
           ),
           Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: isMobile ? CrossAxisAlignment.stretch : CrossAxisAlignment.start,
             children: [
               if (pendingIndex < reservedProductsGroup.tiles.length)
                 tile(reservedProductsGroup.tiles[pendingIndex]),
-              SizedBox(height: isMobile ? 6 : 8),
+              SizedBox(height: isMobile ? 10 : 12),
               if (acceptedIndex < reservedProductsGroup.tiles.length)
                 tile(reservedProductsGroup.tiles[acceptedIndex]),
-              SizedBox(height: isMobile ? 6 : 8),
+              SizedBox(height: isMobile ? 10 : 12),
               if (declinedIndex < reservedProductsGroup.tiles.length)
                 tile(reservedProductsGroup.tiles[declinedIndex]),
             ],
@@ -2420,57 +2536,119 @@ class _KpiRibbonGroups extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       elevation: 2,
       child: Padding(
-        padding: EdgeInsets.all(isMobile ? 8.0 : 12.0),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 2x2 Grid for main groups: Admins, Trainers, Customers, Products
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
+        padding: EdgeInsets.all(isMobile ? 12.0 : 16.0),
+        child: isMobile
+            ? Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (mainGroups.length >= 4)
+                  // Main groups in grid - organized from most to least tiles
+                  if (mainGroups.isNotEmpty)
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Left column: Admins (top), Trainers (bottom)
+                        // Column 1: Customers column (4 tiles - most)
                         Expanded(
                           child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              buildGroupTile(mainGroups[0]), // Admins
-                              SizedBox(height: isMobile ? 10 : 12),
-                              buildGroupTile(mainGroups[1]), // Trainers
-                            ],
-                          ),
-                        ),
-                        SizedBox(width: isMobile ? 8 : 12),
-                        // Right column: Customers (top), Products (bottom)
-                        Expanded(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               buildGroupTile(mainGroups[2]), // Customers
-                              SizedBox(height: isMobile ? 10 : 12),
+                              if (mainGroups.length >= 5) ...[
+                                SizedBox(height: 12),
+                                buildGroupTile(mainGroups[4]), // Time In
+                              ],
+                              if (mainGroups.length >= 6) ...[
+                                SizedBox(height: 12),
+                                buildGroupTile(mainGroups[5]), // Time Out
+                              ],
+                              if (mainGroups.length >= 7) ...[
+                                SizedBox(height: 12),
+                                buildGroupTile(mainGroups[6]), // Total Customers
+                              ],
+                            ],
+                          ),
+                        ),
+                        SizedBox(width: 12),
+                        // Column 2: Products and Reserved Products (1 + 3 tiles)
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
                               buildGroupTile(mainGroups[3]), // Products
+                              if (buildReservedProductsSection() != null) ...[
+                                SizedBox(height: 12),
+                                buildReservedProductsSection()!,
+                              ],
+                            ],
+                          ),
+                        ),
+                        SizedBox(width: 12),
+                        // Column 3: Trainers and Admins (2 tiles)
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              buildGroupTile(mainGroups[1]), // Trainers
+                              SizedBox(height: 12),
+                              buildGroupTile(mainGroups[0]), // Admins
                             ],
                           ),
                         ),
                       ],
                     ),
                 ],
+              )
+            : Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Column 1: Customers column (4 tiles - most)
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        buildGroupTile(mainGroups[2]), // Customers
+                        if (mainGroups.length >= 5) ...[
+                          SizedBox(height: 16),
+                          buildGroupTile(mainGroups[4]), // Time In
+                        ],
+                        if (mainGroups.length >= 6) ...[
+                          SizedBox(height: 16),
+                          buildGroupTile(mainGroups[5]), // Time Out
+                        ],
+                        if (mainGroups.length >= 7) ...[
+                          SizedBox(height: 16),
+                          buildGroupTile(mainGroups[6]), // Total Customers
+                        ],
+                      ],
+                    ),
+                  ),
+                  SizedBox(width: 16),
+                  // Column 2: Products and Reserved Products (1 + 3 tiles)
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        buildGroupTile(mainGroups[3]), // Products
+                        if (buildReservedProductsSection() != null) ...[
+                          SizedBox(height: 16),
+                          buildReservedProductsSection()!,
+                        ],
+                      ],
+                    ),
+                  ),
+                  SizedBox(width: 16),
+                  // Column 3: Trainers and Admins (2 tiles)
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        buildGroupTile(mainGroups[1]), // Trainers
+                        SizedBox(height: 16),
+                        buildGroupTile(mainGroups[0]), // Admins
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ),
-            // Reserved Products section on the right
-            if (buildReservedProductsSection() != null) ...[
-              SizedBox(width: isMobile ? 8 : 12),
-              buildReservedProductsSection()!,
-            ],
-          ],
-        ),
       ),
     );
   }

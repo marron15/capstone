@@ -453,21 +453,32 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: const Color.fromARGB(255, 245, 245, 245),
-      drawer: null,
+      drawer:
+          isMobile
+              ? Drawer(
+                width: _drawerWidth,
+                child: SideNav(
+                  width: _drawerWidth,
+                  onClose: () => Navigator.of(context).pop(),
+                ),
+              )
+              : null,
       body: Container(
         decoration: const BoxDecoration(color: Colors.white),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              curve: Curves.easeOutCubic,
-              width: _navCollapsed ? 0 : _drawerWidth,
-              child: SideNav(
-                width: _drawerWidth,
-                onClose: () => setState(() => _navCollapsed = true),
+            // Desktop sidebar - hidden on mobile
+            if (!isMobile)
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeOutCubic,
+                width: _navCollapsed ? 0 : _drawerWidth,
+                child: SideNav(
+                  width: _drawerWidth,
+                  onClose: () => setState(() => _navCollapsed = true),
+                ),
               ),
-            ),
             Expanded(
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 250),
@@ -477,48 +488,103 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                     isMobile
                         ? Column(
                           children: [
-                            Row(
-                              children: [
-                                IconButton(
-                                  tooltip:
-                                      _navCollapsed
-                                          ? 'Open Sidebar'
-                                          : 'Close Sidebar',
-                                  onPressed:
-                                      () => setState(
-                                        () => _navCollapsed = !_navCollapsed,
-                                      ),
-                                  icon: Icon(
-                                    _navCollapsed
-                                        ? Icons.menu
-                                        : Icons.chevron_left,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Products',
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.w800,
-                                    color: Colors.black,
-                                  ),
-                                ),
-                                const Spacer(),
-                              ],
-                            ),
-                            // Action buttons for mobile
+                            // Header row with menu button and title
                             Container(
                               padding: const EdgeInsets.all(16),
+                              color: Colors.transparent,
+                              child: Row(
+                                children: [
+                                  IconButton(
+                                    tooltip: 'Open Menu',
+                                    onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+                                    icon: const Icon(Icons.menu),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: const Text(
+                                      'Products',
+                                      style: TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w800,
+                                        color: Colors.black,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            // Search bar for mobile
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              child: SizedBox(
+                                height: 36,
+                                child: TextField(
+                                  controller: _searchController,
+                                  onChanged: (value) {
+                                    setState(() => _searchQuery = value);
+                                  },
+                                  style: const TextStyle(
+                                    color: Colors.black87,
+                                    fontSize: 14,
+                                  ),
+                                  decoration: InputDecoration(
+                                    hintText: 'Search',
+                                    hintStyle: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey.shade500,
+                                    ),
+                                    prefixIcon: const Icon(
+                                      Icons.search,
+                                      size: 18,
+                                      color: Colors.black54,
+                                    ),
+                                    suffixIcon:
+                                        _searchQuery.isNotEmpty
+                                            ? IconButton(
+                                              icon: const Icon(Icons.clear, size: 18),
+                                              onPressed: () {
+                                                _searchController.clear();
+                                                setState(() => _searchQuery = '');
+                                              },
+                                            )
+                                            : null,
+                                    filled: true,
+                                    fillColor: Colors.white,
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                      borderSide: BorderSide(color: Colors.grey.shade300),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                      borderSide: BorderSide(color: Colors.grey.shade300),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                      borderSide: BorderSide(
+                                        color: Colors.grey.shade400,
+                                        width: 1.5,
+                                      ),
+                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 8,
+                                    ),
+                                    isDense: true,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            // Action buttons for mobile
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
                               color: Colors.transparent,
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  // First row with Export and View Archives buttons
+                                  // First row with View Archives button
                                   Row(
                                     children: [
-                                      // Export removed
-                                      const SizedBox(width: 8),
-                                      // View Archives toggle
                                       Expanded(
                                         child: ElevatedButton.icon(
                                           onPressed: () async {
@@ -532,7 +598,7 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                                           icon: Icon(
                                             _showArchived
                                                 ? Icons.inventory_2
-                                                : Icons.inventory,
+                                                : Icons.archive,
                                             size: 16,
                                           ),
                                           label: Text(
@@ -620,6 +686,7 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                                 ],
                               ),
                             ),
+                            const SizedBox(height: 16),
                             // Mobile product list
                             Expanded(
                               child: ListView(
