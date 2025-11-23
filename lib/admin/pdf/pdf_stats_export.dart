@@ -26,7 +26,24 @@ Future<void> exportStatsToPDF(
 
     final pdf = pw.Document();
 
-    // Page 1: Data table
+    // Split rows into main stats and memberships/reservations
+    final List<List<dynamic>> mainStatsRows = [
+      rows[0], // Header row
+    ];
+    final List<List<dynamic>> membershipsReservationsRows = [
+      rows[0], // Header row
+    ];
+
+    for (final row in rows.skip(1)) {
+      final section = row[0].toString();
+      if (section == 'Memberships' || section == 'Reservations') {
+        membershipsReservationsRows.add(row);
+      } else {
+        mainStatsRows.add(row);
+      }
+    }
+
+    // Page 1: Main stats (excluding Memberships and Reservations)
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
@@ -63,12 +80,58 @@ Future<void> exportStatsToPDF(
             ),
             pw.SizedBox(height: 16),
 
-            // Data table
-            _buildDataTable(rows),
+            // Main stats table (excluding Memberships and Reservations)
+            _buildDataTable(mainStatsRows),
           ];
         },
       ),
     );
+
+    // Page 2: Memberships and Reservations together
+    if (membershipsReservationsRows.length > 1) {
+      pdf.addPage(
+        pw.MultiPage(
+          pageFormat: PdfPageFormat.a4,
+          margin: const pw.EdgeInsets.all(24),
+          build: (pw.Context context) {
+            return [
+              // Header
+              pw.Container(
+                width: double.infinity,
+                padding: const pw.EdgeInsets.only(bottom: 16),
+                decoration: const pw.BoxDecoration(
+                  border: pw.Border(
+                    bottom: pw.BorderSide(color: PdfColors.grey300, width: 1),
+                  ),
+                ),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text(
+                      title,
+                      style: pw.TextStyle(
+                        fontSize: 24,
+                        fontWeight: pw.FontWeight.bold,
+                        color: PdfColors.blue800,
+                      ),
+                    ),
+                    pw.SizedBox(height: 8),
+                    pw.Text(
+                      'Generated on: ${DateTime.now().toString().split(' ')[0]}',
+                      style: pw.TextStyle(fontSize: 12, color: PdfColors.grey600),
+                    ),
+                  ],
+                ),
+              ),
+              pw.SizedBox(height: 16),
+
+              // Memberships and Reservations table
+              _buildDataTable(membershipsReservationsRows),
+            ];
+          },
+        ),
+      );
+    }
 
     // Optional: Page 2 containing Customer Table if provided
     if (customerTableRows != null && customerTableRows.isNotEmpty) {

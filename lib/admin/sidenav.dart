@@ -13,6 +13,8 @@ class SideNav extends StatefulWidget {
 
 class _SideNavState extends State<SideNav> {
   bool _isNavigating = false;
+  bool _customersExpanded = true;
+  bool _productsExpanded = true;
 
   void _navigate(String? currentRoute, String route) {
     if (currentRoute == route) return;
@@ -73,6 +75,7 @@ class _SideNavState extends State<SideNav> {
       vertical: 4,
     ),
     double leftBorderWidth = 4,
+    bool isNested = false,
   }) {
     final bool isSelected = currentRoute == route;
     return Container(
@@ -94,8 +97,84 @@ class _SideNavState extends State<SideNav> {
         selectedTileColor: Colors.grey.shade200,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         onTap: () => _navigate(currentRoute, route),
+        contentPadding: EdgeInsets.only(
+          left: isNested ? 56 : 16,
+          right: 16,
+          top: 4,
+          bottom: 4,
+        ),
       ),
     );
+  }
+
+  Widget _buildDropdownSection({
+    required String title,
+    required IconData icon,
+    required bool isExpanded,
+    required VoidCallback onExpansionChanged,
+    required List<Widget> children,
+    required String? currentRoute,
+    required List<String> routes,
+  }) {
+    final bool hasSelectedChild = routes.contains(currentRoute);
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: hasSelectedChild ? Colors.grey.shade200 : Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          ListTile(
+            leading: Icon(icon, color: Colors.black),
+            title: Text(title),
+            trailing: Icon(
+              isExpanded ? Icons.expand_less : Icons.expand_more,
+              color: Colors.black,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            onTap: onExpansionChanged,
+          ),
+          if (isExpanded) ...children,
+        ],
+      ),
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final String? currentRoute = ModalRoute.of(context)?.settings.name;
+
+    // Auto-expand dropdowns if current route is a child
+    if (currentRoute == '/admin-customers' ||
+        currentRoute == '/admin-attendance') {
+      if (!_customersExpanded) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            setState(() {
+              _customersExpanded = true;
+            });
+          }
+        });
+      }
+    }
+
+    if (currentRoute == '/admin-products' ||
+        currentRoute == '/admin-reserved-products') {
+      if (!_productsExpanded) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            setState(() {
+              _productsExpanded = true;
+            });
+          }
+        });
+      }
+    }
   }
 
   @override
@@ -158,29 +237,61 @@ class _SideNavState extends State<SideNav> {
                     route: '/admin-trainers',
                     currentRoute: currentRoute,
                   ),
-                  _navItem(
+                  _buildDropdownSection(
+                    title: 'Customers Management',
                     icon: Icons.people,
-                    label: 'Customers',
-                    route: '/admin-customers',
+                    isExpanded: _customersExpanded,
+                    onExpansionChanged: () {
+                      setState(() {
+                        _customersExpanded = !_customersExpanded;
+                      });
+                    },
                     currentRoute: currentRoute,
+                    routes: ['/admin-customers', '/admin-attendance'],
+                    children: [
+                      _navItem(
+                        icon: Icons.people,
+                        label: 'Customers',
+                        route: '/admin-customers',
+                        currentRoute: currentRoute,
+                        isNested: true,
+                      ),
+                      _navItem(
+                        icon: Icons.access_time,
+                        label: 'Time in/out',
+                        route: '/admin-attendance',
+                        currentRoute: currentRoute,
+                        isNested: true,
+                      ),
+                    ],
                   ),
-                  _navItem(
-                    icon: Icons.access_time,
-                    label: 'Attendance Log',
-                    route: '/admin-attendance',
-                    currentRoute: currentRoute,
-                  ),
-                  _navItem(
+                  _buildDropdownSection(
+                    title: 'Products',
                     icon: Icons.inventory,
-                    label: 'Product List',
-                    route: '/admin-products',
+                    isExpanded: _productsExpanded,
+                    onExpansionChanged: () {
+                      setState(() {
+                        _productsExpanded = !_productsExpanded;
+                      });
+                    },
                     currentRoute: currentRoute,
-                  ),
-                  _navItem(
-                    icon: Icons.shopping_cart,
-                    label: 'Reserved Products',
-                    route: '/admin-reserved-products',
-                    currentRoute: currentRoute,
+                    routes: ['/admin-products', '/admin-reserved-products'],
+                    children: [
+                      _navItem(
+                        icon: Icons.inventory,
+                        label: 'Product List',
+                        route: '/admin-products',
+                        currentRoute: currentRoute,
+                        isNested: true,
+                      ),
+                      _navItem(
+                        icon: Icons.shopping_cart,
+                        label: 'Reserved Products',
+                        route: '/admin-reserved-products',
+                        currentRoute: currentRoute,
+                        isNested: true,
+                      ),
+                    ],
                   ),
                   Padding(
                     padding: const EdgeInsets.symmetric(

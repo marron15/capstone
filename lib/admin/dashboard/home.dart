@@ -1038,6 +1038,20 @@ class _StatisticPageState extends State<StatisticPage>
             .where((r) => _reservationStatus(r) == 'declined')
             .length;
 
+    // Get Time In and Time Out values based on period
+    int timeInValue = 0;
+    int timeOutValue = 0;
+    if (period == 'Daily') {
+      timeInValue = timeInDay;
+      timeOutValue = timeOutDay;
+    } else if (period == 'This Week') {
+      timeInValue = timeInWeek;
+      timeOutValue = timeOutWeek;
+    } else if (period == 'This Month') {
+      timeInValue = timeInMonth;
+      timeOutValue = timeOutMonth;
+    }
+
     final rows = <List<dynamic>>[
       ['Section', 'Metric', 'Value'],
       ['Products', 'Active', productsActive],
@@ -1047,8 +1061,11 @@ class _StatisticPageState extends State<StatisticPage>
       ['Customers', 'Active', customersActive],
       ['Customers', 'Archived', customersArchived],
       ['Customers', 'Expired (of Active)', customersExpired],
+      ['Customers', 'Total Active Customers', customersActive],
       ['Trainers', 'Active', trainersActive],
       ['Trainers', 'Archived', trainersArchived],
+      ['Attendance', 'Time In ($period)', timeInValue],
+      ['Attendance', 'Time Out ($period)', timeOutValue],
       ['Memberships', 'Daily', membershipTotals['Daily'] ?? 0],
       ['Memberships', 'Half Month', membershipTotals['Half Month'] ?? 0],
       ['Memberships', 'Monthly', membershipTotals['Monthly'] ?? 0],
@@ -2461,17 +2478,23 @@ class _KpiRibbonGroups extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: EdgeInsets.only(
-              left: isMobile ? 0 : 4,
-              bottom: isMobile ? 6 : 6,
-            ),
-            child: Text(
-              g.title,
-              style: TextStyle(
-                fontSize: isMobile ? 11 : 11,
-                color: Colors.black54,
-                fontWeight: FontWeight.w700,
+          SizedBox(
+            height: isMobile ? 20 : 20, // Fixed height for title + bottom padding
+            child: Padding(
+              padding: EdgeInsets.only(
+                left: isMobile ? 0 : 4,
+                bottom: isMobile ? 6 : 6,
+              ),
+              child: Align(
+                alignment: Alignment.bottomLeft,
+                child: Text(
+                  g.title,
+                  style: TextStyle(
+                    fontSize: isMobile ? 11 : 11,
+                    color: Colors.black54,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ),
             ),
           ),
@@ -2500,17 +2523,23 @@ class _KpiRibbonGroups extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: EdgeInsets.only(
-              left: isMobile ? 0 : 4,
-              bottom: isMobile ? 6 : 6,
-            ),
-            child: Text(
-              reservedProductsGroup.title,
-              style: TextStyle(
-                fontSize: isMobile ? 11 : 11,
-                color: Colors.black54,
-                fontWeight: FontWeight.w700,
+          SizedBox(
+            height: isMobile ? 20 : 20, // Fixed height for title + bottom padding
+            child: Padding(
+              padding: EdgeInsets.only(
+                left: isMobile ? 0 : 4,
+                bottom: isMobile ? 6 : 6,
+              ),
+              child: Align(
+                alignment: Alignment.bottomLeft,
+                child: Text(
+                  reservedProductsGroup.title,
+                  style: TextStyle(
+                    fontSize: isMobile ? 11 : 11,
+                    color: Colors.black54,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ),
             ),
           ),
@@ -2545,11 +2574,13 @@ class _KpiRibbonGroups extends StatelessWidget {
                   if (mainGroups.isNotEmpty)
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.start,
                       children: [
                         // Column 1: Customers column (4 tiles - most)
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.start,
                             children: [
                               buildGroupTile(mainGroups[2]), // Customers
                               if (mainGroups.length >= 5) ...[
@@ -2572,6 +2603,7 @@ class _KpiRibbonGroups extends StatelessWidget {
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.start,
                             children: [
                               buildGroupTile(mainGroups[3]), // Products
                               if (buildReservedProductsSection() != null) ...[
@@ -2586,6 +2618,7 @@ class _KpiRibbonGroups extends StatelessWidget {
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.start,
                             children: [
                               buildGroupTile(mainGroups[1]), // Trainers
                               SizedBox(height: 12),
@@ -2599,11 +2632,13 @@ class _KpiRibbonGroups extends StatelessWidget {
               )
             : Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   // Column 1: Customers column (4 tiles - most)
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.start,
                       children: [
                         buildGroupTile(mainGroups[2]), // Customers
                         if (mainGroups.length >= 5) ...[
@@ -2626,6 +2661,7 @@ class _KpiRibbonGroups extends StatelessWidget {
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.start,
                       children: [
                         buildGroupTile(mainGroups[3]), // Products
                         if (buildReservedProductsSection() != null) ...[
@@ -2640,6 +2676,7 @@ class _KpiRibbonGroups extends StatelessWidget {
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.start,
                       children: [
                         buildGroupTile(mainGroups[1]), // Trainers
                         SizedBox(height: 16),
