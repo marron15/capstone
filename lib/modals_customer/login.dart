@@ -23,11 +23,10 @@ class _LoginModalState extends State<LoginModal>
   Animation<double>? _fadeAnim;
   // Removed unused icon animation
 
-  final FocusNode _contactFocus = FocusNode();
+  final FocusNode _emailFocus = FocusNode();
   final FocusNode _passFocus = FocusNode();
 
-  final TextEditingController _contactOrEmailController =
-      TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final GlobalKey<FormState> _loginFormKey = GlobalKey<FormState>();
   bool _domAttributesScheduled = false;
@@ -63,9 +62,9 @@ class _LoginModalState extends State<LoginModal>
   @override
   void dispose() {
     _controller.dispose();
-    _contactFocus.dispose();
+    _emailFocus.dispose();
     _passFocus.dispose();
-    _contactOrEmailController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -75,9 +74,9 @@ class _LoginModalState extends State<LoginModal>
     _domAttributesScheduled = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      setInputAttributes('input[autocomplete="tel"]', {
-        'id': 'customer-login-phone',
-        'name': 'customer-login-phone',
+      setInputAttributes('input[autocomplete="email"]', {
+        'id': 'customer-login-email',
+        'name': 'customer-login-email',
       });
       setInputAttributes('input[autocomplete="current-password"]', {
         'id': 'customer-login-password',
@@ -88,8 +87,7 @@ class _LoginModalState extends State<LoginModal>
   }
 
   Future<void> _handleLogin() async {
-    final contactOrEmail = _contactOrEmailController.text.trim();
-    final rawContact = contactOrEmail.replaceAll(' ', '');
+    final email = _emailController.text.trim();
     final password = _passwordController.text;
 
     // Clear previous error
@@ -98,20 +96,17 @@ class _LoginModalState extends State<LoginModal>
     });
 
     // Validate input
-    if (rawContact.isEmpty || password.isEmpty) {
+    if (email.isEmpty || password.isEmpty) {
       setState(() {
         _errorMessage = 'Email and password are required';
       });
       return;
     }
 
-    // Validate contact number (expects 11 digits like 09XXXXXXXXX)
-    final bool isValidPhone =
-        rawContact.length == 11 &&
-        rawContact.codeUnits.every((code) => code >= 48 && code <= 57);
-    if (!isValidPhone) {
+    final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
+    if (!emailRegex.hasMatch(email)) {
       setState(() {
-        _errorMessage = 'Please enter a valid contact number';
+        _errorMessage = 'Please enter a valid email address';
       });
       return;
     }
@@ -122,7 +117,7 @@ class _LoginModalState extends State<LoginModal>
     });
 
     try {
-      final result = await AuthService.login(rawContact, password);
+      final result = await AuthService.login(email, password);
 
       if (result.success && result.customerData != null) {
         // Login successful - update auth state with JWT tokens
@@ -394,27 +389,23 @@ class _LoginModalState extends State<LoginModal>
                                         CrossAxisAlignment.start,
                                     children: [
                                       TextFormField(
-                                        controller: _contactOrEmailController,
-                                        focusNode: _contactFocus,
+                                        controller: _emailController,
+                                        focusNode: _emailFocus,
                                         style: const TextStyle(
                                           color: Colors.white,
                                         ),
                                         decoration: _inputDecoration(
-                                          label: 'Contact Number',
-                                          icon: Icons.phone_outlined,
-                                          focusNode: _contactFocus,
+                                          label: 'Email',
+                                          icon: Icons.email_outlined,
+                                          focusNode: _emailFocus,
                                         ),
-                                        keyboardType: TextInputType.phone,
-                                        inputFormatters: [
-                                          FilteringTextInputFormatter
-                                              .digitsOnly,
-                                          LengthLimitingTextInputFormatter(11),
-                                        ],
+                                        keyboardType:
+                                            TextInputType.emailAddress,
                                         textInputAction: TextInputAction.next,
                                         autofillHints: const [
-                                          AutofillHints.telephoneNumber,
+                                          AutofillHints.email,
                                         ],
-                                        restorationId: 'login_contact_number',
+                                        restorationId: 'login_email',
                                         validator: (_) => null,
                                         onFieldSubmitted:
                                             (_) => FocusScope.of(

@@ -9,6 +9,10 @@ class ApiService {
 
   // API endpoints
   static const String signupEndpoint = '$baseUrl/customers/Signup.php';
+  static const String requestSignupCodeEndpoint =
+      '$baseUrl/customers/RequestSignupCode.php';
+  static const String verifySignupCodeEndpoint =
+      '$baseUrl/customers/VerifySignupCode.php';
   static const String getAllCustomersEndpoint =
       '$baseUrl/customers/getAllCustomers.php';
   static const String getAllCustomersByAdminEndpoint =
@@ -207,6 +211,146 @@ class ApiService {
       }
     } catch (e) {
       debugPrint('Error in signupCustomer: $e');
+      return {'success': false, 'message': 'Network error: $e'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> requestCustomerSignupCode({
+    required String firstName,
+    required String lastName,
+    String? middleName,
+    required String email,
+    required String password,
+    String? birthdate,
+    String? phoneNumber,
+    String? emergencyContactName,
+    String? emergencyContactNumber,
+    String? street,
+    String? city,
+    String? state,
+    String? postalCode,
+    String? country,
+    String? membershipType,
+    String? membershipStartDate,
+    String? expirationDate,
+  }) async {
+    try {
+      String? address;
+      final addressParts =
+          [
+            street ?? '',
+            city ?? '',
+            state ?? '',
+            postalCode ?? '',
+            country ?? '',
+          ].where((part) => part.trim().isNotEmpty).toList();
+      if (addressParts.isNotEmpty) address = addressParts.join(', ');
+
+      final Map<String, dynamic> requestBody = {
+        'first_name': firstName,
+        'last_name': lastName,
+        'email': email,
+        'password': password,
+        'created_by': 'admin_portal',
+      };
+
+      if (middleName != null && middleName.trim().isNotEmpty) {
+        requestBody['middle_name'] = middleName;
+      }
+      if (birthdate != null && birthdate.trim().isNotEmpty) {
+        requestBody['birthdate'] = birthdate;
+      }
+      if (phoneNumber != null && phoneNumber.trim().isNotEmpty) {
+        requestBody['phone_number'] = phoneNumber;
+      }
+      if (emergencyContactName != null &&
+          emergencyContactName.trim().isNotEmpty) {
+        requestBody['emergency_contact_name'] = emergencyContactName;
+      }
+      if (emergencyContactNumber != null &&
+          emergencyContactNumber.trim().isNotEmpty) {
+        requestBody['emergency_contact_number'] = emergencyContactNumber;
+      }
+      if (address != null) {
+        requestBody['address'] = address;
+      }
+
+      if (membershipType != null && membershipType.isNotEmpty) {
+        requestBody['membership_type'] = membershipType;
+      }
+      if (membershipStartDate != null && membershipStartDate.isNotEmpty) {
+        requestBody['membership_start_date'] = membershipStartDate;
+      }
+      if (expirationDate != null && expirationDate.isNotEmpty) {
+        requestBody['membership_end_date'] = expirationDate;
+      }
+
+      final response = await http.post(
+        Uri.parse(requestSignupCodeEndpoint),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode(requestBody),
+      );
+
+      final Map<String, dynamic> responseData = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && responseData['success'] == true) {
+        return {
+          'success': true,
+          'message':
+              responseData['message'] ?? 'Verification code sent successfully',
+          'expires_at': responseData['expires_at'],
+          'expires_in_minutes': responseData['expires_in_minutes'],
+        };
+      } else {
+        return {
+          'success': false,
+          'message': responseData['message'] ?? 'Failed to send verification',
+        };
+      }
+    } catch (e) {
+      debugPrint('Error in requestCustomerSignupCode: $e');
+      return {'success': false, 'message': 'Network error: $e'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> verifyCustomerSignupCode({
+    required String email,
+    required String verificationCode,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse(verifySignupCodeEndpoint),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode({
+          'email': email,
+          'verification_code': verificationCode,
+        }),
+      );
+
+      final Map<String, dynamic> responseData = jsonDecode(response.body);
+
+      if ((response.statusCode == 200 || response.statusCode == 201) &&
+          responseData['success'] == true) {
+        return {
+          'success': true,
+          'message': responseData['message'],
+          'data': responseData['data'],
+          'membership_created': responseData['membership_created'] ?? false,
+        };
+      } else {
+        return {
+          'success': false,
+          'message': responseData['message'] ?? 'Verification failed',
+        };
+      }
+    } catch (e) {
+      debugPrint('Error in verifyCustomerSignupCode: $e');
       return {'success': false, 'message': 'Network error: $e'};
     }
   }

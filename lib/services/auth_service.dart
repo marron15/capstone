@@ -14,7 +14,7 @@ class AuthService {
       'https://' + _apiHost() + '/gym_api/address';
 
   static Future<LoginResult> login(
-    String contactNumber,
+    String email,
     String password,
   ) async {
     try {
@@ -22,7 +22,7 @@ class AuthService {
         Uri.parse('$_customersBase/Login.php'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
-          'contact_number': contactNumber,
+          'email': email,
           'password': password,
         }),
       );
@@ -95,6 +95,97 @@ class AuthService {
       }
     } catch (e) {
       debugPrint('Signup API error: $e');
+      return SignupResult(
+        success: false,
+        message: 'Network error: ${e.toString()}',
+        customerData: null,
+      );
+    }
+  }
+
+  static Future<VerificationRequestResult> requestEmailVerification(
+    SignupData signupData,
+  ) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_customersBase/RequestSignupCode.php'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(signupData.toJson()),
+      );
+
+      final Map<String, dynamic> responseData = json.decode(response.body);
+      if (response.statusCode == 200 && responseData['success'] == true) {
+        return VerificationRequestResult(
+          success: true,
+          message: responseData['message'] ?? 'Verification code sent',
+          expiresAt: responseData['expires_at'] != null
+              ? DateTime.tryParse(responseData['expires_at'])
+              : null,
+          expiresInMinutes:
+              responseData['expires_in_minutes'] is int
+                  ? responseData['expires_in_minutes']
+                  : int.tryParse(
+                      responseData['expires_in_minutes']?.toString() ?? '',
+                    ),
+        );
+      } else {
+        return VerificationRequestResult(
+          success: false,
+          message: responseData['message'] ?? 'Failed to send verification code',
+          expiresAt: null,
+          expiresInMinutes: null,
+        );
+      }
+    } catch (e) {
+      debugPrint('Verification request error: $e');
+      return VerificationRequestResult(
+        success: false,
+        message: 'Network error: ${e.toString()}',
+        expiresAt: null,
+        expiresInMinutes: null,
+      );
+    }
+  }
+
+  static Future<SignupResult> verifySignupCode({
+    required String email,
+    required String verificationCode,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_customersBase/VerifySignupCode.php'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'email': email,
+          'verification_code': verificationCode,
+        }),
+      );
+
+      final Map<String, dynamic> responseData = json.decode(response.body);
+
+      if ((response.statusCode == 200 || response.statusCode == 201) &&
+          responseData['success'] == true) {
+        CustomerData customer = CustomerData.fromJson(responseData['data']);
+        if (customer.address == null || customer.address!.isEmpty) {
+          final addr = await _fetchAddressForCustomer(customer.customerId);
+          if (addr != null) customer = customer.copyWith(address: addr);
+        }
+        return SignupResult(
+          success: true,
+          message: responseData['message'],
+          customerData: customer,
+          accessToken: responseData['access_token'],
+          refreshToken: responseData['refresh_token'],
+        );
+      } else {
+        return SignupResult(
+          success: false,
+          message: responseData['message'] ?? 'Verification failed',
+          customerData: null,
+        );
+      }
+    } catch (e) {
+      debugPrint('Verify signup code API error: $e');
       return SignupResult(
         success: false,
         message: 'Network error: ${e.toString()}',
@@ -326,6 +417,20 @@ class SignupResult {
     this.customerData,
     this.accessToken,
     this.refreshToken,
+  });
+}
+
+class VerificationRequestResult {
+  final bool success;
+  final String message;
+  final DateTime? expiresAt;
+  final int? expiresInMinutes;
+
+  VerificationRequestResult({
+    required this.success,
+    required this.message,
+    this.expiresAt,
+    this.expiresInMinutes,
   });
 }
 

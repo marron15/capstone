@@ -112,6 +112,8 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _rePasswordController = TextEditingController();
+  final TextEditingController _verificationCodeController =
+      TextEditingController();
 
   // Error state variables for required fields
   String? _firstNameError;
@@ -139,6 +141,14 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
   String? _stateProvinceError;
   String? _postalCodeError;
   String? _countryError;
+  bool _verificationRequested = false;
+  bool _isRequestingVerification = false;
+  String? _verificationStatusMessage;
+  String? _verificationError;
+  String? _pendingVerificationEmail;
+  int? _verificationExpiresInMinutes;
+  DateTime? _pendingMembershipStartDate;
+  DateTime? _pendingMembershipExpirationDate;
 
   @override
   void initState() {
@@ -191,6 +201,7 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
     _birthdateController.dispose();
     _passwordController.dispose();
     _rePasswordController.dispose();
+    _verificationCodeController.dispose();
     _emailController.removeListener(_emailListener);
     _rePasswordController.removeListener(_validatePasswordMatch);
     super.dispose();
@@ -261,8 +272,28 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
     }
   }
 
+  void _clearVerificationStateFields() {
+    _verificationRequested = false;
+    _verificationStatusMessage = null;
+    _verificationError = null;
+    _pendingVerificationEmail = null;
+    _verificationExpiresInMinutes = null;
+    _pendingMembershipStartDate = null;
+    _pendingMembershipExpirationDate = null;
+    _verificationCodeController.clear();
+  }
+
   void _emailListener() {
-    // Implementation of _emailListener method
+    if (!_verificationRequested) return;
+    final normalized = _emailController.text.trim().toLowerCase();
+    if (_pendingVerificationEmail != null &&
+        normalized != _pendingVerificationEmail) {
+      if (mounted) {
+        setState(_clearVerificationStateFields);
+      } else {
+        _clearVerificationStateFields();
+      }
+    }
   }
 
   void _validatePasswordMatch() {
@@ -285,82 +316,122 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
     }
   }
 
-  Future<void> _handleSignup() async {
-    // Clear previous error
+  String? _composeAddressString() {
+    final parts =
+        [
+          _streetController.text.trim(),
+          _cityController.text.trim(),
+          _stateProvinceController.text.trim(),
+          _postalCodeController.text.trim(),
+          _countryController.text.trim(),
+        ].where((part) => part.isNotEmpty).toList();
+    if (parts.isEmpty) return null;
+    return parts.join(', ');
+  }
+
+  DateTime _calculateMembershipExpiration(DateTime startDate) {
+    final type = (_selectedMembershipType ?? 'Monthly').toLowerCase();
+    if (type == 'daily') return startDate.add(const Duration(days: 1));
+    if (type == 'half month') return startDate.add(const Duration(days: 15));
+    return startDate.add(const Duration(days: 30));
+  }
+
+  bool _validateFinalStepInputs() {
+    bool hasError = false;
+    String? contactError;
+    String? emailError;
+    String? passwordError;
+    String? emergencyPhoneError;
+
+    final cleanedContact = PhoneFormatter.cleanPhoneNumber(
+      _contactController.text.trim(),
+    );
+    if (cleanedContact.isNotEmpty && cleanedContact.length != 11) {
+      contactError = 'Contact number must be exactly 11 digits';
+      hasError = true;
+    }
+
+    final email = _emailController.text.trim();
+    if (email.isEmpty) {
+      emailError = 'Email is required.';
+      hasError = true;
+    } else if (!_isValidEmailAddress(email)) {
+      emailError = 'Please enter a valid email address';
+      hasError = true;
+    }
+
+    final password = _passwordController.text;
+    if (password.isEmpty) {
+      passwordError = 'Password is required.';
+      hasError = true;
+    } else if (password.length < 6) {
+      passwordError = 'Password must be at least 6 characters long';
+      hasError = true;
+    }
+
+    final emergency = PhoneFormatter.cleanPhoneNumber(
+      _emergencyPhoneController.text.trim(),
+    );
+    if (emergency.isNotEmpty && emergency.length != 11) {
+      emergencyPhoneError =
+          'Emergency contact number must be exactly 11 digits';
+      hasError = true;
+    }
+
+    if (_rePasswordError != null) {
+      hasError = true;
+    }
+
     setState(() {
+      _contactError = contactError;
+      _emailError = emailError;
+      _passwordError = passwordError;
+      _emergencyPhoneError = emergencyPhoneError;
+    });
+    return !hasError;
+  }
+
+  Future<void> _sendVerificationCode() async {
+    if (!_validateFinalStepInputs()) return;
+
+    final String firstName = _firstNameController.text.trim();
+    final String middleName = _middleNameController.text.trim();
+    final String lastName = _lastNameController.text.trim();
+    final String email = _emailController.text.trim().toLowerCase();
+    final String contactNumber = PhoneFormatter.cleanPhoneNumber(
+      _contactController.text.trim(),
+    );
+    final String emergencyContact = PhoneFormatter.cleanPhoneNumber(
+      _emergencyPhoneController.text.trim(),
+    );
+    final String? birthdate =
+        _selectedBirthdate != null ? _birthdateController.text.trim() : null;
+    final DateTime membershipStartDate = DateTime.now();
+    final DateTime membershipEndDate = _calculateMembershipExpiration(
+      membershipStartDate,
+    );
+
+    setState(() {
+      _isRequestingVerification = true;
       _signupError = null;
-      _isLoading = true;
+      _verificationError = null;
     });
 
     try {
-      // Collect all the data
-      String firstName = _firstNameController.text.trim();
-      String middleName = _middleNameController.text.trim();
-      String lastName = _lastNameController.text.trim();
-      String email = _emailController.text.trim();
-      String contact = PhoneFormatter.cleanPhoneNumber(
-        _contactController.text.trim(),
-      );
-
-      // Format birthdate
-      String? birthdate =
-          _selectedBirthdate != null
-              ? '${_selectedBirthdate!.year}-${_selectedBirthdate!.month.toString().padLeft(2, '0')}-${_selectedBirthdate!.day.toString().padLeft(2, '0')}'
-              : null;
-
-      // Combine address fields
-      String? fullAddress;
-      List<String> addressParts =
-          [
-            _streetController.text.trim(),
-            _cityController.text.trim(),
-            _stateProvinceController.text.trim(),
-            _postalCodeController.text.trim(),
-            _countryController.text.trim(),
-          ].where((part) => part.isNotEmpty).toList();
-
-      if (addressParts.isNotEmpty) {
-        fullAddress = addressParts.join(', ');
-      }
-
-      // Calculate expiration date based on membership type
-      DateTime expirationDate;
-      switch (_selectedMembershipType) {
-        case 'Daily':
-          expirationDate = DateTime.now().add(const Duration(days: 1));
-          break;
-        case 'Half Month':
-          expirationDate = DateTime.now().add(const Duration(days: 15));
-          break;
-        case 'Monthly':
-          expirationDate = DateTime.now().add(const Duration(days: 30));
-          break;
-        default:
-          expirationDate = DateTime.now().add(const Duration(days: 30));
-      }
-
-      // Call the API to create customer
-      String password = _passwordController.text;
-
-      // Creating customer account
-      final result = await ApiService.signupCustomer(
+      final result = await ApiService.requestCustomerSignupCode(
         firstName: firstName,
         lastName: lastName,
         middleName: middleName.isNotEmpty ? middleName : null,
-        email: email.isNotEmpty ? email : null,
-        password: password,
+        email: email,
+        password: _passwordController.text,
         birthdate: birthdate,
-        phoneNumber: contact.isNotEmpty ? contact : null,
+        phoneNumber: contactNumber.isNotEmpty ? contactNumber : null,
         emergencyContactName:
             _emergencyNameController.text.trim().isNotEmpty
                 ? _emergencyNameController.text.trim()
                 : null,
         emergencyContactNumber:
-            _emergencyPhoneController.text.trim().isNotEmpty
-                ? PhoneFormatter.cleanPhoneNumber(
-                  _emergencyPhoneController.text.trim(),
-                )
-                : null,
+            emergencyContact.isNotEmpty ? emergencyContact : null,
         street:
             _streetController.text.trim().isNotEmpty
                 ? _streetController.text.trim()
@@ -382,65 +453,137 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
                 ? _countryController.text.trim()
                 : null,
         membershipType: _selectedMembershipType,
+        membershipStartDate:
+            '${membershipStartDate.year}-${membershipStartDate.month.toString().padLeft(2, '0')}-${membershipStartDate.day.toString().padLeft(2, '0')}',
         expirationDate:
-            expirationDate.toIso8601String().split(
-              'T',
-            )[0], // Format as YYYY-MM-DD
+            '${membershipEndDate.year}-${membershipEndDate.month.toString().padLeft(2, '0')}-${membershipEndDate.day.toString().padLeft(2, '0')}',
       );
 
-      // Avoid logging full API response
-
-      if (result['success'] == true && mounted) {
-        // Get customer ID from response (support multiple shapes)
-        final dynamic rawId =
-            result['user']?['id'] ??
-            result['customer']?['id'] ??
-            result['data']?['customer_id'] ??
-            result['data']?['id'];
-        final int? customerId =
-            rawId is int ? rawId : int.tryParse(rawId?.toString() ?? '');
-
-        // Customer created
-
-        // If we have a valid customer id and address fields, insert address record
-        // Membership creation is handled on the backend during signup
-        // Membership creation result is handled via createMembershipForCustomer
-
+      if (result['success'] == true) {
+        setState(() {
+          _verificationRequested = true;
+          _verificationStatusMessage = result['message'];
+          _verificationError = null;
+          _pendingVerificationEmail = email;
+          _verificationExpiresInMinutes =
+              result['expires_in_minutes'] is int
+                  ? result['expires_in_minutes']
+                  : int.tryParse(
+                    result['expires_in_minutes']?.toString() ?? '',
+                  );
+          _pendingMembershipStartDate = membershipStartDate;
+          _pendingMembershipExpirationDate = membershipEndDate;
+        });
+        _verificationCodeController.clear();
         if (mounted) {
-          Navigator.of(context).pop({
-            'success': true,
-            'customerData': {
-              'name': '$firstName $lastName',
-              'contactNumber': contact,
-              'membershipType': _selectedMembershipType,
-              'expirationDate': expirationDate,
-              'startDate': DateTime.now(),
-              'email': email,
-              'fullName':
-                  '$firstName ${middleName.isNotEmpty ? '$middleName ' : ''}$lastName',
-              'birthdate': birthdate,
-              'address': fullAddress,
-              'emergencyContactName': _emergencyNameController.text.trim(),
-              'emergencyContactPhone': _emergencyPhoneController.text.trim(),
-              'customerId':
-                  customerId, // Store the customer ID from API response
-            },
-          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                result['message'] ?? 'Verification code sent successfully.',
+              ),
+              backgroundColor: Colors.green,
+            ),
+          );
         }
       } else {
-        // API call failed
-        final errorMessage =
-            result['message'] ?? 'Failed to create customer account.';
-        debugPrint('❌ Signup failed: $errorMessage');
-
         setState(() {
-          _signupError = errorMessage;
+          _verificationError =
+              result['message'] ?? 'Failed to send verification code.';
         });
       }
     } catch (e) {
-      debugPrint('❌ Unexpected error during signup: $e');
       setState(() {
-        _signupError = 'An unexpected error occurred. Please try again.';
+        _verificationError =
+            'Failed to send verification code. Please try again.';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isRequestingVerification = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _handleSignup() async {
+    if (!_verificationRequested) {
+      setState(() {
+        _signupError = 'Send a verification code before creating the account.';
+      });
+      return;
+    }
+
+    final String code = _verificationCodeController.text.trim();
+    if (code.length != 6) {
+      setState(() {
+        _verificationError = 'Enter the 6-digit verification code.';
+      });
+      return;
+    }
+
+    final String email =
+        (_pendingVerificationEmail ?? _emailController.text.trim())
+            .toLowerCase();
+
+    setState(() {
+      _signupError = null;
+      _verificationError = null;
+      _isLoading = true;
+    });
+
+    try {
+      final result = await ApiService.verifyCustomerSignupCode(
+        email: email,
+        verificationCode: code,
+      );
+
+      if (result['success'] == true && mounted) {
+        final String firstName = _firstNameController.text.trim();
+        final String middleName = _middleNameController.text.trim();
+        final String lastName = _lastNameController.text.trim();
+        final String contact = PhoneFormatter.cleanPhoneNumber(
+          _contactController.text.trim(),
+        );
+        final String? birthdate =
+            _selectedBirthdate != null
+                ? _birthdateController.text.trim()
+                : null;
+        final String? fullAddress = _composeAddressString();
+        final DateTime startDate =
+            _pendingMembershipStartDate ?? DateTime.now();
+        final DateTime expirationDate =
+            _pendingMembershipExpirationDate ??
+            _calculateMembershipExpiration(startDate);
+
+        _clearVerificationStateFields();
+
+        Navigator.of(context).pop({
+          'success': true,
+          'customerData': {
+            'name': '$firstName $lastName',
+            'contactNumber': contact,
+            'membershipType': _selectedMembershipType,
+            'expirationDate': expirationDate,
+            'startDate': startDate,
+            'email': email,
+            'fullName':
+                '$firstName ${middleName.isNotEmpty ? '$middleName ' : ''}$lastName',
+            'birthdate': birthdate,
+            'address': fullAddress,
+            'emergencyContactName': _emergencyNameController.text.trim(),
+            'emergencyContactPhone': _emergencyPhoneController.text.trim(),
+            'customerId': result['data']?['customer_id'],
+          },
+        });
+      } else {
+        setState(() {
+          _signupError =
+              result['message'] ?? 'Failed to verify the signup code.';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _signupError = 'Verification failed. Please try again.';
       });
     } finally {
       if (mounted) {
@@ -1133,6 +1276,7 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
                                           onPressed: () {
                                             setState(() {
                                               _currentStep = 0;
+                                              _clearVerificationStateFields();
                                             });
                                           },
                                           icon: const Icon(
@@ -1418,7 +1562,7 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
                                   focusNode: _contactFocus,
                                   style: const TextStyle(color: Colors.white),
                                   decoration: _inputDecoration(
-                                    label: 'Contact Number',
+                                    label: 'Contact Number (Optional)',
                                     icon: Icons.phone_outlined,
                                     focusNode: _contactFocus,
 
@@ -1435,7 +1579,7 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
                                   focusNode: _emailFocus,
                                   style: const TextStyle(color: Colors.white),
                                   decoration: _inputDecoration(
-                                    label: 'Email (Optional)',
+                                    label: 'Email',
                                     icon: Icons.email_outlined,
                                     focusNode: _emailFocus,
                                     hintText: 'example@email.com',
@@ -1496,6 +1640,54 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
                                   ).copyWith(errorText: _rePasswordError),
                                 ),
                                 const SizedBox(height: 16),
+                                if (_verificationRequested) ...[
+                                  TextField(
+                                    controller: _verificationCodeController,
+                                    style: const TextStyle(color: Colors.white),
+                                    keyboardType: TextInputType.number,
+                                    inputFormatters: [
+                                      FilteringTextInputFormatter.digitsOnly,
+                                      LengthLimitingTextInputFormatter(6),
+                                    ],
+                                    decoration: _inputDecoration(
+                                      label: 'Verification Code',
+                                      icon: Icons.verified_outlined,
+                                      errorText: _verificationError,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          _verificationStatusMessage ??
+                                              'Enter the 6-digit code sent to ${_pendingVerificationEmail ?? _emailController.text.trim()}',
+                                          style: const TextStyle(
+                                            color: Colors.white70,
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                      ),
+                                      TextButton(
+                                        onPressed:
+                                            _isRequestingVerification ||
+                                                    _isLoading
+                                                ? null
+                                                : _sendVerificationCode,
+                                        child: const Text('Resend code'),
+                                      ),
+                                    ],
+                                  ),
+                                  if (_verificationExpiresInMinutes != null)
+                                    Text(
+                                      'Code expires in $_verificationExpiresInMinutes minute(s)',
+                                      style: const TextStyle(
+                                        color: Colors.white54,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  const SizedBox(height: 12),
+                                ],
                                 // Error message display
                                 if (_signupError != null)
                                   Container(
@@ -1587,110 +1779,40 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
                                             ),
                                           ),
                                           onPressed:
-                                              _isLoading
+                                              (_isLoading ||
+                                                      _isRequestingVerification)
                                                   ? null
                                                   : () async {
-                                                    setState(() {
-                                                      _contactError = null;
-                                                      _emailError = null;
-                                                      _passwordError = null;
-                                                    });
-
-                                                    bool hasError = false;
-                                                    if (_contactController.text
-                                                        .trim()
-                                                        .isEmpty) {
-                                                      setState(() {
-                                                        _contactError =
-                                                            'Contact number is required.';
-                                                      });
-                                                      hasError = true;
-                                                    }
-                                                    // Email is now optional, so we skip the empty check
-                                                    if (_passwordController
-                                                        .text
-                                                        .isEmpty) {
-                                                      setState(() {
-                                                        _passwordError =
-                                                            'Password is required.';
-                                                      });
-                                                      hasError = true;
-                                                    }
-
-                                                    // Additional email validation (only if email is provided)
-                                                    if (_emailController.text
-                                                            .trim()
-                                                            .isNotEmpty &&
-                                                        !_isValidEmailAddress(
-                                                          _emailController.text
-                                                              .trim(),
-                                                        )) {
-                                                      setState(() {
-                                                        _emailError =
-                                                            'Please enter a valid email address';
-                                                      });
-                                                      hasError = true;
-                                                    }
-
-                                                    // Password length validation
-                                                    if (_passwordController
-                                                            .text
-                                                            .isNotEmpty &&
-                                                        _passwordController
-                                                                .text
-                                                                .length <
-                                                            6) {
-                                                      setState(() {
-                                                        _passwordError =
-                                                            'Password must be at least 6 characters long';
-                                                      });
-                                                      hasError = true;
-                                                    }
-
-                                                    if (_rePasswordError !=
-                                                        null) {
-                                                      hasError = true;
-                                                    }
-
-                                                    // Contact must be exactly 11 digits
-                                                    final String contact =
-                                                        PhoneFormatter.cleanPhoneNumber(
-                                                          _contactController
-                                                              .text
-                                                              .trim(),
-                                                        );
-                                                    if (contact.isNotEmpty &&
-                                                        contact.length != 11) {
-                                                      setState(() {
-                                                        _contactError =
-                                                            'Contact number must be exactly 11 digits';
-                                                      });
-                                                      hasError = true;
-                                                    }
-
-                                                    // Emergency contact (if provided) must be exactly 11 digits
-                                                    final String emergency =
-                                                        PhoneFormatter.cleanPhoneNumber(
-                                                          _emergencyPhoneController
-                                                              .text
-                                                              .trim(),
-                                                        );
-                                                    if (emergency.isNotEmpty &&
-                                                        emergency.length !=
-                                                            11) {
-                                                      setState(() {
-                                                        _emergencyPhoneError =
-                                                            'Emergency contact number must be exactly 11 digits';
-                                                      });
-                                                      hasError = true;
-                                                    }
-
-                                                    if (!hasError) {
+                                                    if (_verificationRequested) {
                                                       await _handleSignup();
+                                                    } else {
+                                                      await _sendVerificationCode();
                                                     }
                                                   },
                                           child:
-                                              _isLoading
+                                              _verificationRequested
+                                                  ? _isLoading
+                                                      ? const SizedBox(
+                                                        width: 20,
+                                                        height: 20,
+                                                        child: CircularProgressIndicator(
+                                                          strokeWidth: 2,
+                                                          valueColor:
+                                                              AlwaysStoppedAnimation<
+                                                                Color
+                                                              >(Colors.black),
+                                                        ),
+                                                      )
+                                                      : const Text(
+                                                        'Verify & Create Account',
+                                                        style: TextStyle(
+                                                          fontWeight:
+                                                              FontWeight.w500,
+                                                          fontSize: 15,
+                                                          color: Colors.black,
+                                                        ),
+                                                      )
+                                                  : _isRequestingVerification
                                                   ? const SizedBox(
                                                     width: 20,
                                                     height: 20,
@@ -1703,7 +1825,7 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
                                                     ),
                                                   )
                                                   : const Text(
-                                                    'Add Customer',
+                                                    'Send Verification Code',
                                                     style: TextStyle(
                                                       fontWeight:
                                                           FontWeight.w500,
