@@ -72,7 +72,7 @@ class _SideNavState extends State<SideNav> {
     required String? currentRoute,
     EdgeInsetsGeometry margin = const EdgeInsets.symmetric(
       horizontal: 8,
-      vertical: 4,
+      vertical: 2,
     ),
     double leftBorderWidth = 4,
     bool isNested = false,
@@ -91,18 +91,34 @@ class _SideNavState extends State<SideNav> {
                 : null,
       ),
       child: ListTile(
-        leading: icon != null ? Icon(icon, color: Colors.black) : null,
-        title: Text(label),
+        dense: true,
+        leading: icon != null
+            ? Icon(
+                icon,
+                color: isSelected ? Colors.blue : Colors.black87,
+                size: 20,
+              )
+            : null,
+        title: Text(
+          label,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+            color: isSelected ? Colors.blue : Colors.black87,
+          ),
+        ),
         selected: isSelected,
         selectedTileColor: Colors.grey.shade200,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         onTap: () => _navigate(currentRoute, route),
         contentPadding: EdgeInsets.only(
-          left: isNested ? 56 : 16,
+          left: isNested ? 56 : 20,
           right: 16,
           top: 4,
           bottom: 4,
         ),
+        minLeadingWidth: 24,
+        minVerticalPadding: 0,
       ),
     );
   }
@@ -119,24 +135,44 @@ class _SideNavState extends State<SideNav> {
     final bool hasSelectedChild = routes.contains(currentRoute);
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
         color: hasSelectedChild ? Colors.grey.shade200 : Colors.transparent,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           ListTile(
-            leading: Icon(icon, color: Colors.black),
-            title: Text(title),
+            dense: true,
+            leading: Icon(
+              icon,
+              color: hasSelectedChild ? Colors.blue : Colors.black87,
+              size: 20,
+            ),
+            title: Text(
+              title,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: hasSelectedChild ? FontWeight.w600 : FontWeight.w500,
+                color: hasSelectedChild ? Colors.blue : Colors.black87,
+              ),
+            ),
             trailing: Icon(
               isExpanded ? Icons.expand_less : Icons.expand_more,
-              color: Colors.black,
+              color: Colors.black87,
+              size: 18,
             ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
             onTap: onExpansionChanged,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: 4,
+            ),
+            minLeadingWidth: 24,
+            minVerticalPadding: 0,
           ),
           if (isExpanded) ...children,
         ],
@@ -200,20 +236,28 @@ class _SideNavState extends State<SideNav> {
                 padding: EdgeInsets.zero,
                 children: [
                   Container(
-                    height: 120,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    height: 70,
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                     alignment: Alignment.centerLeft,
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text(
                           'Admin Dashboard',
-                          style: TextStyle(color: Colors.black, fontSize: 24),
+                          style: TextStyle(
+                            color: Colors.black87,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.3,
+                          ),
                         ),
                         if (widget.onClose != null)
                           IconButton(
                             tooltip: 'Close',
-                            icon: const Icon(Icons.close),
+                            icon: const Icon(Icons.close, size: 20),
+                            iconSize: 20,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
                             onPressed: widget.onClose,
                           ),
                       ],
@@ -302,20 +346,30 @@ class _SideNavState extends State<SideNav> {
                   Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
-                      vertical: 16,
+                      vertical: 8,
                     ),
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red.shade50,
                         foregroundColor: Colors.red,
-                        minimumSize: const Size.fromHeight(48),
+                        minimumSize: const Size.fromHeight(40),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 10,
+                        ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                         elevation: 0,
                       ),
-                      icon: const Icon(Icons.logout),
-                      label: const Text('Logout'),
+                      icon: const Icon(Icons.logout, size: 18),
+                      label: const Text(
+                        'Logout',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                       onPressed: () async {
                         await unifiedAuthState.logout();
                         if (!context.mounted) return;
