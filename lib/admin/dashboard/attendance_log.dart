@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../services/attendance_service.dart';
@@ -143,8 +142,11 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
     final Duration delay = nextMidnight.difference(now);
     _dateRefreshTimer = Timer(delay, () {
       if (!mounted) return;
+      // Clear search query when date changes automatically
+      _searchController.clear();
       setState(() {
         _selectedDate = DateTime.now();
+        _searchQuery = '';
       });
       _loadAttendanceRecords();
       _scheduleMidnightRefresh();
@@ -282,81 +284,10 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
   }
 
   Widget _buildBody(bool isMobile) {
-    if (_isLoading) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 16),
-            Text('Loading attendance records...'),
-          ],
-        ),
-      );
-    }
-
-    if (_errorMessage != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
-            const SizedBox(height: 16),
-            Text(
-              'Error loading attendance records',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              _errorMessage!,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.grey),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _loadAttendanceRecords,
-              child: const Text('Retry'),
-            ),
-          ],
-        ),
-      );
-    }
-
-    if (_filteredRecords.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.access_time_outlined,
-              size: 64,
-              color: Colors.grey.shade400,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'No attendance records found',
-              style: TextStyle(
-                fontSize: 18,
-                color: Colors.grey.shade600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              _selectedDate != null
-                  ? 'for ${_formatDate(_selectedDate)}'
-                  : '',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey.shade500,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return isMobile
-        ? Column(
+    // Build header and search bar that should always be visible
+    Widget buildHeader() {
+      if (isMobile) {
+        return Column(
           children: [
             // Header row with menu button, title, and actions
             Container(
@@ -370,8 +301,8 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
                     icon: const Icon(Icons.menu),
                   ),
                   const SizedBox(width: 8),
-                  Expanded(
-                    child: const Text(
+                  const Expanded(
+                    child: Text(
                       'Attendance',
                       style: TextStyle(
                         fontSize: 20,
@@ -425,10 +356,7 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
                     setState(() => _searchQuery = value);
                     _filterRecords();
                   },
-                  style: const TextStyle(
-                    color: Colors.black87,
-                    fontSize: 14,
-                  ),
+                  style: const TextStyle(color: Colors.black87, fontSize: 14),
                   decoration: InputDecoration(
                     hintText: 'Search',
                     hintStyle: TextStyle(
@@ -478,10 +406,192 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
               ),
             ),
             const SizedBox(height: 16),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                children: _filteredRecords.map((record) {
+          ],
+        );
+      } else {
+        return Column(
+          children: [
+            // Header
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  IconButton(
+                    tooltip: _navCollapsed ? 'Open Sidebar' : 'Close Sidebar',
+                    onPressed:
+                        () => setState(() => _navCollapsed = !_navCollapsed),
+                    icon: Icon(_navCollapsed ? Icons.menu : Icons.chevron_left),
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Attendance Log',
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  ),
+                  const Spacer(),
+                  // Date picker
+                  OutlinedButton.icon(
+                    onPressed: () => _selectDate(context),
+                    icon: const Icon(Icons.calendar_today, size: 18),
+                    label: Text(
+                      _selectedDate != null
+                          ? _formatDate(_selectedDate)
+                          : 'Select Date',
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  if (unifiedAuthState.isAdminLoggedIn)
+                    OutlinedButton.icon(
+                      onPressed: _handleMyQrTap,
+                      icon: const Icon(Icons.qr_code_2, size: 18),
+                      label: const Text('My QR'),
+                    ),
+                  if (unifiedAuthState.isAdminLoggedIn)
+                    const SizedBox(width: 8),
+                  // Refresh button
+                  IconButton(
+                    icon: const Icon(Icons.refresh),
+                    tooltip: 'Refresh',
+                    onPressed: _loadAttendanceRecords,
+                  ),
+                ],
+              ),
+            ),
+            // Search bar
+            Container(
+              padding: const EdgeInsets.all(16),
+              color: Colors.white,
+              child: TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText:
+                      'Search by customer name, ID, time in, or time out...',
+                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon:
+                      _searchQuery.isNotEmpty
+                          ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() => _searchQuery = '');
+                              _filterRecords();
+                            },
+                          )
+                          : null,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey.shade50,
+                ),
+                onChanged: (value) {
+                  setState(() => _searchQuery = value);
+                  _filterRecords();
+                },
+              ),
+            ),
+          ],
+        );
+      }
+    }
+
+    // Build content area based on state
+    Widget buildContent() {
+      if (_isLoading) {
+        return const Expanded(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Loading attendance records...'),
+              ],
+            ),
+          ),
+        );
+      }
+
+      if (_errorMessage != null) {
+        return Expanded(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+                const SizedBox(height: 16),
+                Text(
+                  'Error loading attendance records',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _errorMessage!,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.grey),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: _loadAttendanceRecords,
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+
+      if (_filteredRecords.isEmpty) {
+        return Expanded(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.access_time_outlined,
+                  size: 64,
+                  color: Colors.grey.shade400,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'No attendance records found',
+                  style: TextStyle(fontSize: 18, color: Colors.grey.shade600),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _selectedDate != null
+                      ? 'for ${_formatDate(_selectedDate)}'
+                      : '',
+                  style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+
+      // Show records list/table
+      if (isMobile) {
+        return Expanded(
+          child: ListView(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            children:
+                _filteredRecords.map((record) {
                   final DateTime? timeIn = record.timeIn;
                   final DateTime? timeOut = record.timeOut;
                   final DateTime? date = record.date;
@@ -614,323 +724,211 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
                     ),
                   );
                 }).toList(),
+          ),
+        );
+      } else {
+        return Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
-            ),
-          ],
-        )
-        : Column(
-          children: [
-            // Header
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Row(
+              child: Column(
                 children: [
-                  IconButton(
-                    tooltip:
-                        _navCollapsed ? 'Open Sidebar' : 'Close Sidebar',
-                    onPressed:
-                        () => setState(() => _navCollapsed = !_navCollapsed),
-                    icon: Icon(
-                      _navCollapsed ? Icons.menu : Icons.chevron_left,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'Attendance Log',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const Spacer(),
-                  // Date picker
-                  OutlinedButton.icon(
-                    onPressed: () => _selectDate(context),
-                    icon: const Icon(Icons.calendar_today, size: 18),
-                    label: Text(
-                      _selectedDate != null
-                          ? _formatDate(_selectedDate)
-                          : 'Select Date',
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
+                  // Table header
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(12),
+                        topRight: Radius.circular(12),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  if (unifiedAuthState.isAdminLoggedIn)
-                    OutlinedButton.icon(
-                      onPressed: _handleMyQrTap,
-                      icon: const Icon(Icons.qr_code_2, size: 18),
-                      label: const Text('My QR'),
-                    ),
-                  if (unifiedAuthState.isAdminLoggedIn)
-                    const SizedBox(width: 8),
-                  // Refresh button
-                  IconButton(
-                    icon: const Icon(Icons.refresh),
-                    tooltip: 'Refresh',
-                    onPressed: _loadAttendanceRecords,
-                  ),
-                ],
-              ),
-            ),
-            // Search bar
-            Container(
-              padding: const EdgeInsets.all(16),
-              color: Colors.white,
-              child: TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  hintText:
-                      'Search by customer name, ID, time in, or time out...',
-                  prefixIcon: const Icon(Icons.search),
-                  suffixIcon:
-                      _searchQuery.isNotEmpty
-                          ? IconButton(
-                            icon: const Icon(Icons.clear),
-                            onPressed: () {
-                              _searchController.clear();
-                              setState(() => _searchQuery = '');
-                              _filterRecords();
-                            },
-                          )
-                          : null,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  filled: true,
-                  fillColor: Colors.grey.shade50,
-                ),
-                onChanged: (value) {
-                  setState(() => _searchQuery = value);
-                  _filterRecords();
-                },
-              ),
-            ),
-            // Content
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                physics: const AlwaysScrollableScrollPhysics(),
-                child: Card(
-                  elevation: 2,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    children: [
-                      // Table header
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(12),
-                            topRight: Radius.circular(12),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: Text(
+                            'Customer',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey.shade800,
+                            ),
                           ),
                         ),
+                        Expanded(
+                          child: Text(
+                            'Date',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey.shade800,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            'Time In',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey.shade800,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            'Time Out',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey.shade800,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            'Duration',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey.shade800,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        Expanded(
+                          flex: 2,
+                          child: Text(
+                            'Verified By',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey.shade800,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            'Status',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey.shade800,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Table rows
+                  ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: _filteredRecords.length,
+                    separatorBuilder:
+                        (context, index) =>
+                            Divider(height: 1, color: Colors.grey.shade200),
+                    itemBuilder: (context, index) {
+                      final AttendanceRecord record = _filteredRecords[index];
+                      final DateTime? timeIn = record.timeIn;
+                      final DateTime? timeOut = record.timeOut;
+                      final DateTime? date = record.date;
+                      final Duration? duration = record.duration;
+
+                      return Container(
+                        padding: const EdgeInsets.all(16),
+                        color:
+                            index % 2 == 0 ? Colors.white : Colors.grey.shade50,
                         child: Row(
                           children: [
                             Expanded(
                               flex: 2,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    record.customerName,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  Text(
+                                    'ID: ${record.customerId}',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Expanded(
                               child: Text(
-                                'Customer',
+                                _formatDate(date),
+                                textAlign: TextAlign.center,
+                                style: TextStyle(color: Colors.grey.shade700),
+                              ),
+                            ),
+                            Expanded(
+                              child: Text(
+                                _formatTime(timeIn),
+                                textAlign: TextAlign.center,
                                 style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.grey.shade800,
+                                  color: Colors.green.shade700,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                             ),
                             Expanded(
                               child: Text(
-                                'Date',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.grey.shade800,
-                                ),
+                                _formatTime(timeOut),
                                 textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Colors.red.shade700,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
                             ),
                             Expanded(
                               child: Text(
-                                'Time In',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.grey.shade800,
-                                ),
+                                _formatDuration(duration),
                                 textAlign: TextAlign.center,
-                              ),
-                            ),
-                            Expanded(
-                              child: Text(
-                                'Time Out',
                                 style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.grey.shade800,
+                                  color: Colors.blue.shade700,
+                                  fontWeight: FontWeight.w500,
                                 ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                            Expanded(
-                              child: Text(
-                                'Duration',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.grey.shade800,
-                                ),
-                                textAlign: TextAlign.center,
                               ),
                             ),
                             Expanded(
                               flex: 2,
                               child: Text(
-                                'Verified By',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.grey.shade800,
-                                ),
+                                record.verifyingAdminName ?? '—',
                                 textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Colors.grey.shade700,
+                                  fontSize: 13,
+                                ),
                               ),
                             ),
-                            Expanded(
-                              child: Text(
-                                'Status',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.grey.shade800,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
+                            Expanded(child: _buildStatusChip(record)),
                           ],
                         ),
-                      ),
-                      // Table rows
-                      ListView.separated(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: _filteredRecords.length,
-                        separatorBuilder:
-                            (context, index) => Divider(
-                              height: 1,
-                              color: Colors.grey.shade200,
-                            ),
-                        itemBuilder: (context, index) {
-                          final AttendanceRecord record =
-                              _filteredRecords[index];
-                          final DateTime? timeIn = record.timeIn;
-                          final DateTime? timeOut = record.timeOut;
-                          final DateTime? date = record.date;
-                          final Duration? duration = record.duration;
-
-                          return Container(
-                            padding: const EdgeInsets.all(16),
-                            color:
-                                index % 2 == 0
-                                    ? Colors.white
-                                    : Colors.grey.shade50,
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  flex: 2,
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        record.customerName,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      Text(
-                                        'ID: ${record.customerId}',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.grey.shade600,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Expanded(
-                                  child: Text(
-                                    _formatDate(date),
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: Colors.grey.shade700,
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: Text(
-                                    _formatTime(timeIn),
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: Colors.green.shade700,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: Text(
-                                    _formatTime(timeOut),
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: Colors.red.shade700,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: Text(
-                                    _formatDuration(duration),
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: Colors.blue.shade700,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  flex: 2,
-                                  child: Text(
-                                    record.verifyingAdminName ?? '—',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: Colors.grey.shade700,
-                                      fontSize: 13,
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: _buildStatusChip(record),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-                    ],
+                      );
+                    },
                   ),
-                ),
+                ],
               ),
             ),
-          ],
+          ),
         );
+      }
+    }
+
+    return Column(children: [buildHeader(), buildContent()]);
   }
 
   Widget _buildInfoCard(
@@ -992,68 +990,58 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
   }
 }
 
-class _AdminQrScreen extends StatelessWidget {
+class _AdminQrScreen extends StatefulWidget {
   const _AdminQrScreen({required this.adminName, required this.payload});
 
   final String adminName;
   final String payload;
 
   @override
+  State<_AdminQrScreen> createState() => _AdminQrScreenState();
+}
+
+class _AdminQrScreenState extends State<_AdminQrScreen> {
+  @override
   Widget build(BuildContext context) {
-    final messenger = ScaffoldMessenger.of(context);
+    final bool isMobile = MediaQuery.of(context).size.width < 768;
+    final double qrSize = isMobile ? 320.0 : 400.0;
+
     return Scaffold(
       appBar: AppBar(title: const Text('Admin QR Code')),
       body: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: EdgeInsets.all(isMobile ? 16 : 24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (adminName.isNotEmpty)
-                Text(
-                  adminName,
-                  style: Theme.of(context).textTheme.titleLarge,
-                  textAlign: TextAlign.center,
-                ),
-              const SizedBox(height: 16),
               Card(
                 elevation: 4,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
+                child: Container(
+                  padding: EdgeInsets.all(isMobile ? 20 : 32),
                   child: QrImageView(
-                    data: payload,
+                    data: widget.payload,
                     version: QrVersions.auto,
-                    size: 240,
+                    size: qrSize,
                     gapless: true,
                     backgroundColor: Colors.white,
+                    errorCorrectionLevel: QrErrorCorrectLevel.M,
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
-              Text(
-                'Display this QR code so members can record attendance.',
-                style: Theme.of(context).textTheme.bodyMedium,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              SelectableText(
-                payload,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton.icon(
-                onPressed: () {
-                  Clipboard.setData(ClipboardData(text: payload));
-                  messenger.showSnackBar(
-                    const SnackBar(content: Text('QR payload copied')),
-                  );
-                },
-                icon: const Icon(Icons.copy),
-                label: const Text('Copy Payload'),
+              SizedBox(height: isMobile ? 20 : 24),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 32),
+                child: Text(
+                  'Display this QR code so members can record attendance.',
+                  style: TextStyle(
+                    fontSize: isMobile ? 14 : 16,
+                    color: Colors.grey.shade700,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
               ),
             ],
           ),
