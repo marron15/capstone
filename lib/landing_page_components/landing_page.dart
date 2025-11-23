@@ -30,6 +30,7 @@ class _LandingPageState extends State<LandingPage>
     with TickerProviderStateMixin {
   final ScrollController _scrollController = ScrollController();
   bool _showScrollToTop = false;
+  static const Duration _minimumSessionDuration = Duration(minutes: 30);
 
   final GlobalKey _equipmentImagesKey = GlobalKey();
 
@@ -408,6 +409,25 @@ class _LandingPageState extends State<LandingPage>
     return '${_formatDate(timestamp)} at ${_formatTime(timestamp)}';
   }
 
+  Duration? _timeUntilTimeoutAllowed(AttendanceSnapshot? snapshot) {
+    if (snapshot == null || !snapshot.isClockedIn) return null;
+    final DateTime? lastTimeIn = snapshot.lastTimeIn;
+    if (lastTimeIn == null) return null;
+    final Duration elapsed = DateTime.now().difference(lastTimeIn);
+    if (elapsed >= _minimumSessionDuration) return null;
+    return _minimumSessionDuration - elapsed;
+  }
+
+  String _formatRemainingDuration(Duration duration) {
+    final Duration safeDuration =
+        duration.isNegative ? Duration.zero : duration;
+    final int minutes = safeDuration.inMinutes;
+    final int seconds = safeDuration.inSeconds.remainder(60);
+    if (minutes > 0 && seconds > 0) return '${minutes}m ${seconds}s';
+    if (minutes > 0) return '${minutes}m';
+    return '${seconds}s';
+  }
+
   Future<void> _startScanFlow() async {
     if (!unifiedAuthState.isCustomerLoggedIn) {
       _showScanError('Please login to scan the admin QR code.');
@@ -429,7 +449,32 @@ class _LandingPageState extends State<LandingPage>
     if (customerId == null) return;
 
     if (!AttendanceService.isValidAdminPayload(payload)) {
-      _showScanError('Only the admin-issued QR code can be used for attendance.');
+      _showScanError(
+        'Only the admin-issued QR code can be used for attendance.',
+      );
+      return;
+    }
+
+    final AttendanceSnapshot? currentSnapshot =
+        unifiedAuthState.attendanceSnapshot;
+    final Duration? remainingDuration = _timeUntilTimeoutAllowed(
+      currentSnapshot,
+    );
+    if (remainingDuration != null) {
+      final DateTime? nextAllowed = currentSnapshot?.lastTimeIn?.add(
+        _minimumSessionDuration,
+      );
+      final StringBuffer message = StringBuffer(
+        'You need at least 30 minutes between time-in and time-out. '
+        'Please wait ${_formatRemainingDuration(remainingDuration)}',
+      );
+      if (nextAllowed != null) {
+        message.write(
+          ' (available at ${_formatAttendanceTimestamp(nextAllowed)})',
+        );
+      }
+      message.write('.');
+      _showScanError(message.toString());
       return;
     }
 
@@ -472,9 +517,9 @@ class _LandingPageState extends State<LandingPage>
   void _showScanError(String message) {
     if (!mounted) return;
     setState(() => _scanErrorMessage = message);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Widget _buildAttendanceStatusContent(
@@ -484,7 +529,9 @@ class _LandingPageState extends State<LandingPage>
     final bool hasSnapshot = snapshot != null;
     final bool isClockedIn = snapshot?.isClockedIn ?? false;
     final Color badgeColor =
-        hasSnapshot ? (isClockedIn ? Colors.greenAccent : const Color(0xFFFFC857)) : Colors.grey;
+        hasSnapshot
+            ? (isClockedIn ? Colors.greenAccent : const Color(0xFFFFC857))
+            : Colors.grey;
     final DateTime? timestamp = snapshot?.referenceTimestamp;
     final String adminName = snapshot?.verifyingAdminName ?? 'Awaiting scan';
 
@@ -520,10 +567,7 @@ class _LandingPageState extends State<LandingPage>
               ),
             ),
             const Spacer(),
-            Icon(
-              Icons.lock_clock,
-              color: Colors.white.withValues(alpha: 0.7),
-            ),
+            Icon(Icons.lock_clock, color: Colors.white.withValues(alpha: 0.7)),
           ],
         ),
         const SizedBox(height: 12),
@@ -540,11 +584,7 @@ class _LandingPageState extends State<LandingPage>
         const SizedBox(height: 8),
         Row(
           children: [
-            Icon(
-              Icons.verified_user,
-              size: 16,
-              color: Colors.white70,
-            ),
+            Icon(Icons.verified_user, size: 16, color: Colors.white70),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -1359,51 +1399,101 @@ class _LandingPageState extends State<LandingPage>
 
                                                       // Reserve Request Button
                                                       AnimatedBuilder(
-                                                        animation: unifiedAuthState,
-                                                        builder: (context, child) {
-                                                          if (!unifiedAuthState.isCustomerLoggedIn) {
+                                                        animation:
+                                                            unifiedAuthState,
+                                                        builder: (
+                                                          context,
+                                                          child,
+                                                        ) {
+                                                          if (!unifiedAuthState
+                                                              .isCustomerLoggedIn) {
                                                             return const SizedBox.shrink();
                                                           }
                                                           return Column(
-                                                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                                                            crossAxisAlignment:
+                                                                CrossAxisAlignment
+                                                                    .stretch,
                                                             children: [
                                                               OutlinedButton(
-                                                                onPressed: _isSubmittingScan ? null : _startScanFlow,
+                                                                onPressed:
+                                                                    _isSubmittingScan
+                                                                        ? null
+                                                                        : _startScanFlow,
                                                                 style: OutlinedButton.styleFrom(
-                                                                  foregroundColor: Colors.white,
+                                                                  foregroundColor:
+                                                                      Colors
+                                                                          .white,
                                                                   side: BorderSide(
-                                                                    color: const Color(0xFFFFA812).withValues(alpha: 0.9),
+                                                                    color: const Color(
+                                                                      0xFFFFA812,
+                                                                    ).withValues(
+                                                                      alpha:
+                                                                          0.9,
+                                                                    ),
                                                                     width: 1.4,
                                                                   ),
                                                                   padding: EdgeInsets.symmetric(
-                                                                    horizontal: isSmallScreen ? 16 : 18,
-                                                                    vertical: isSmallScreen ? 12 : 14,
+                                                                    horizontal:
+                                                                        isSmallScreen
+                                                                            ? 16
+                                                                            : 18,
+                                                                    vertical:
+                                                                        isSmallScreen
+                                                                            ? 12
+                                                                            : 14,
                                                                   ),
                                                                   shape: RoundedRectangleBorder(
-                                                                    borderRadius: BorderRadius.circular(12),
+                                                                    borderRadius:
+                                                                        BorderRadius.circular(
+                                                                          12,
+                                                                        ),
                                                                   ),
                                                                 ),
                                                                 child: Row(
-                                                                  mainAxisAlignment: MainAxisAlignment.center,
+                                                                  mainAxisAlignment:
+                                                                      MainAxisAlignment
+                                                                          .center,
                                                                   children: [
-                                                                    const Icon(Icons.qr_code_scanner, size: 20),
-                                                                    const SizedBox(width: 8),
+                                                                    const Icon(
+                                                                      Icons
+                                                                          .qr_code_scanner,
+                                                                      size: 20,
+                                                                    ),
+                                                                    const SizedBox(
+                                                                      width: 8,
+                                                                    ),
                                                                     Text(
-                                                                      _isSubmittingScan ? 'Processing...' : 'Scan Admin QR',
+                                                                      _isSubmittingScan
+                                                                          ? 'Processing...'
+                                                                          : 'Scan Admin QR',
                                                                       style: TextStyle(
-                                                                        fontSize: isSmallScreen ? 14 : 15,
-                                                                        fontWeight: FontWeight.w600,
+                                                                        fontSize:
+                                                                            isSmallScreen
+                                                                                ? 14
+                                                                                : 15,
+                                                                        fontWeight:
+                                                                            FontWeight.w600,
                                                                       ),
                                                                     ),
                                                                     if (_isSubmittingScan) ...[
-                                                                      const SizedBox(width: 12),
+                                                                      const SizedBox(
+                                                                        width:
+                                                                            12,
+                                                                      ),
                                                                       SizedBox(
-                                                                        width: 16,
-                                                                        height: 16,
+                                                                        width:
+                                                                            16,
+                                                                        height:
+                                                                            16,
                                                                         child: const CircularProgressIndicator(
-                                                                          strokeWidth: 2,
-                                                                          valueColor: AlwaysStoppedAnimation<Color>(
-                                                                            Color(0xFFFFA812),
+                                                                          strokeWidth:
+                                                                              2,
+                                                                          valueColor: AlwaysStoppedAnimation<
+                                                                            Color
+                                                                          >(
+                                                                            Color(
+                                                                              0xFFFFA812,
+                                                                            ),
                                                                           ),
                                                                         ),
                                                                       ),
@@ -1411,54 +1501,101 @@ class _LandingPageState extends State<LandingPage>
                                                                   ],
                                                                 ),
                                                               ),
-                                                              if (_scanErrorMessage != null) ...[
-                                                                const SizedBox(height: 6),
+                                                              if (_scanErrorMessage !=
+                                                                  null) ...[
+                                                                const SizedBox(
+                                                                  height: 6,
+                                                                ),
                                                                 Text(
                                                                   _scanErrorMessage!,
-                                                                  textAlign: TextAlign.center,
+                                                                  textAlign:
+                                                                      TextAlign
+                                                                          .center,
                                                                   style: const TextStyle(
-                                                                    color: Colors.redAccent,
-                                                                    fontSize: 12,
+                                                                    color:
+                                                                        Colors
+                                                                            .redAccent,
+                                                                    fontSize:
+                                                                        12,
                                                                   ),
                                                                 ),
                                                               ],
-                                                              const SizedBox(height: 12),
+                                                              const SizedBox(
+                                                                height: 12,
+                                                              ),
                                                               SizedBox(
-                                                                width: double.infinity,
+                                                                width:
+                                                                    double
+                                                                        .infinity,
                                                                 child: ElevatedButton(
                                                                   onPressed: () {
                                                                     showDialog(
-                                                                      context: context,
-                                                                      barrierDismissible: true,
-                                                                      builder: (context) => const MembershipAlertModal(),
+                                                                      context:
+                                                                          context,
+                                                                      barrierDismissible:
+                                                                          true,
+                                                                      builder:
+                                                                          (
+                                                                            context,
+                                                                          ) =>
+                                                                              const MembershipAlertModal(),
                                                                     );
                                                                   },
                                                                   style: ElevatedButton.styleFrom(
-                                                                    backgroundColor: const Color(0xFFFFA812),
-                                                                    foregroundColor: Colors.black,
+                                                                    backgroundColor:
+                                                                        const Color(
+                                                                          0xFFFFA812,
+                                                                        ),
+                                                                    foregroundColor:
+                                                                        Colors
+                                                                            .black,
                                                                     padding: EdgeInsets.symmetric(
-                                                                      horizontal: isSmallScreen ? 20 : 24,
-                                                                      vertical: isSmallScreen ? 14 : 16,
+                                                                      horizontal:
+                                                                          isSmallScreen
+                                                                              ? 20
+                                                                              : 24,
+                                                                      vertical:
+                                                                          isSmallScreen
+                                                                              ? 14
+                                                                              : 16,
                                                                     ),
                                                                     shape: RoundedRectangleBorder(
-                                                                      borderRadius: BorderRadius.circular(12),
+                                                                      borderRadius:
+                                                                          BorderRadius.circular(
+                                                                            12,
+                                                                          ),
                                                                     ),
-                                                                    elevation: 4,
+                                                                    elevation:
+                                                                        4,
                                                                   ),
                                                                   child: Row(
-                                                                    mainAxisAlignment: MainAxisAlignment.center,
+                                                                    mainAxisAlignment:
+                                                                        MainAxisAlignment
+                                                                            .center,
                                                                     children: [
                                                                       Icon(
-                                                                        Icons.inventory_2_outlined,
-                                                                        size: isSmallScreen ? 20 : 22,
+                                                                        Icons
+                                                                            .inventory_2_outlined,
+                                                                        size:
+                                                                            isSmallScreen
+                                                                                ? 20
+                                                                                : 22,
                                                                       ),
-                                                                      const SizedBox(width: 8),
+                                                                      const SizedBox(
+                                                                        width:
+                                                                            8,
+                                                                      ),
                                                                       Text(
                                                                         'Reserve Request',
                                                                         style: TextStyle(
-                                                                          fontSize: isSmallScreen ? 14 : 16,
-                                                                          fontWeight: FontWeight.bold,
-                                                                          letterSpacing: 0.5,
+                                                                          fontSize:
+                                                                              isSmallScreen
+                                                                                  ? 14
+                                                                                  : 16,
+                                                                          fontWeight:
+                                                                              FontWeight.bold,
+                                                                          letterSpacing:
+                                                                              0.5,
                                                                         ),
                                                                       ),
                                                                     ],
@@ -1776,9 +1913,7 @@ class _QrScannerDialogState extends State<_QrScannerDialog> {
             Expanded(
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(18),
-                child: ReaderWidget(
-                  onScan: _handleScanResult,
-                ),
+                child: ReaderWidget(onScan: _handleScanResult),
               ),
             ),
             const Padding(
