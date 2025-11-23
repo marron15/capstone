@@ -72,6 +72,7 @@ class ApiService {
       '$baseUrl/products/getReservedProducts.php';
   static const String updateReservationStatusEndpoint =
       '$baseUrl/products/updateReservationStatus.php';
+  static const String getAuditLogsEndpoint = '$baseUrl/audit/getAuditLogs.php';
 
   static Future<Map<String, dynamic>> signupCustomer({
     required String firstName,
@@ -820,6 +821,8 @@ class ApiService {
     required int reservationId,
     required String status,
     String? declineNote,
+    int? adminId,
+    String? adminName,
   }) async {
     try {
       final body = <String, dynamic>{
@@ -828,6 +831,12 @@ class ApiService {
       };
       if (declineNote != null && declineNote.isNotEmpty) {
         body['decline_note'] = declineNote;
+      }
+      if (adminId != null) {
+        body['admin_id'] = adminId;
+      }
+      if (adminName != null && adminName.trim().isNotEmpty) {
+        body['admin_name'] = adminName.trim();
       }
 
       final res = await http.post(
@@ -847,6 +856,51 @@ class ApiService {
     } catch (e) {
       debugPrint('updateReservationStatus error: $e');
       return false;
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> getAuditLogs({
+    String? search,
+    String? activityCategory,
+    String? activityType,
+    int limit = 200,
+  }) async {
+    try {
+      final Map<String, String> query = {};
+      if (search != null && search.trim().isNotEmpty) {
+        query['search'] = search.trim();
+      }
+      if (activityCategory != null && activityCategory.isNotEmpty) {
+        query['activity_category'] = activityCategory;
+      }
+      if (activityType != null && activityType.isNotEmpty) {
+        query['activity_type'] = activityType;
+      }
+      if (limit > 0) {
+        query['limit'] = limit.toString();
+      }
+
+      Uri uri = Uri.parse(getAuditLogsEndpoint);
+      if (query.isNotEmpty) {
+        uri = uri.replace(queryParameters: query);
+      }
+
+      final response = await http.get(
+        uri,
+        headers: {'Accept': 'application/json'},
+      );
+
+      if (response.statusCode == 200 && response.body.isNotEmpty) {
+        final Map<String, dynamic> parsed =
+            jsonDecode(response.body) as Map<String, dynamic>;
+        if (parsed['success'] == true && parsed['data'] is List) {
+          return List<Map<String, dynamic>>.from(parsed['data'] as List);
+        }
+      }
+      return [];
+    } catch (e) {
+      debugPrint('getAuditLogs error: $e');
+      return [];
     }
   }
 
@@ -1152,15 +1206,25 @@ class ApiService {
   static Future<Map<String, dynamic>> updateCustomerByAdmin({
     required int id,
     required Map<String, dynamic> data,
+    int? adminId,
+    String? adminName,
   }) async {
     try {
+      final Map<String, dynamic> payload = {'id': id, ...data};
+      if (adminId != null) {
+        payload['admin_id'] = adminId;
+      }
+      if (adminName != null && adminName.trim().isNotEmpty) {
+        payload['admin_name'] = adminName.trim();
+      }
+
       final response = await http.post(
         Uri.parse(updateCustomerByAdminEndpoint),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        body: jsonEncode({'id': id, ...data}),
+        body: jsonEncode(payload),
       );
 
       if (response.statusCode == 200) {

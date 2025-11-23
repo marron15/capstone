@@ -1,0 +1,846 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+
+import '../services/api_service.dart';
+import '../sidenav.dart';
+
+class AuditLogsPage extends StatefulWidget {
+  const AuditLogsPage({super.key});
+
+  @override
+  State<AuditLogsPage> createState() => _AuditLogsPageState();
+}
+
+class _AuditLogsPageState extends State<AuditLogsPage> {
+  final double _drawerWidth = 280;
+  bool _navCollapsed = false;
+  final TextEditingController _searchController = TextEditingController();
+  final Map<String, String> _categories = const {
+    'all': 'All',
+    'profile': 'Profile Updates',
+    'reservation': 'Reservations',
+    'attendance': 'Time In/Out',
+    'auth': 'Login/Logout',
+  };
+
+  final List<AuditLogEntry> _logs = [];
+  bool _isLoading = true;
+  String _searchQuery = '';
+  String _selectedCategory = 'all';
+  Timer? _searchDebounce;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchLogs();
+  }
+
+  @override
+  void dispose() {
+    _searchDebounce?.cancel();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _fetchLogs() async {
+    setState(() => _isLoading = true);
+    final logs = await ApiService.getAuditLogs(
+      search: _searchQuery.trim().isEmpty ? null : _searchQuery.trim(),
+      activityCategory: _selectedCategory == 'all' ? null : _selectedCategory,
+      limit: 250,
+    );
+    if (!mounted) return;
+
+    setState(() {
+      _logs
+        ..clear()
+        ..addAll(logs.map(AuditLogEntry.fromJson));
+      _isLoading = false;
+    });
+  }
+
+  void _handleSearchChanged(String value) {
+    _searchQuery = value;
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 400), _fetchLogs);
+  }
+
+  void _handleCategoryChange(String category) {
+    if (_selectedCategory == category) return;
+    setState(() => _selectedCategory = category);
+    _fetchLogs();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final bool isMobile = screenWidth < 900;
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F5F5),
+      drawer:
+          isMobile
+              ? Drawer(
+                width: _drawerWidth,
+                child: SideNav(
+                  width: _drawerWidth,
+                  onClose: () => Navigator.of(context).pop(),
+                ),
+              )
+              : null,
+      body: SafeArea(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (!isMobile)
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                width: _navCollapsed ? 72 : _drawerWidth,
+                child: SideNav(
+                  width: _navCollapsed ? 72 : _drawerWidth,
+                  onClose: () => setState(() => _navCollapsed = !_navCollapsed),
+                ),
+              ),
+            Expanded(
+              child: Column(
+                children: [
+                  _buildHeader(context),
+                  Expanded(
+                    child: RefreshIndicator(
+                      onRefresh: _fetchLogs,
+                      child: _buildContent(isMobile),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 2)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Audit Logs',
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+              ),
+              FilledButton.icon(
+                onPressed: _fetchLogs,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Refresh'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _searchController,
+                  onChanged: _handleSearchChanged,
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.search),
+                    hintText: 'Search by customer, action, ID...',
+                    filled: true,
+                    fillColor: Colors.grey.shade100,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide.none,
+                    ),
+                    suffixIcon:
+                        _searchQuery.isNotEmpty
+                            ? IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () {
+                                _searchController.clear();
+                                _handleSearchChanged('');
+                              },
+                            )
+                            : null,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              SegmentedButton<String>(
+                segments:
+                    _categories.entries
+                        .map(
+                          (entry) => ButtonSegment<String>(
+                            value: entry.key,
+                            label: Text(entry.value),
+                          ),
+                        )
+                        .toList(),
+                selected: <String>{_selectedCategory},
+                onSelectionChanged: (selection) {
+                  if (selection.isNotEmpty) {
+                    _handleCategoryChange(selection.first);
+                  }
+                },
+                showSelectedIcon: false,
+                style: ButtonStyle(
+                  backgroundColor: WidgetStateProperty.resolveWith(
+                    (states) =>
+                        states.contains(WidgetState.selected)
+                            ? Colors.blue.shade50
+                            : Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContent(bool isMobile) {
+    if (_isLoading) {
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: const [
+          SizedBox(height: 200),
+          Center(child: CircularProgressIndicator()),
+        ],
+      );
+    }
+
+    if (_logs.isEmpty) {
+      return _EmptyState(onRefresh: _fetchLogs, searchQuery: _searchQuery);
+    }
+
+    if (isMobile) {
+      return ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        physics: const AlwaysScrollableScrollPhysics(),
+        itemCount: _logs.length,
+        itemBuilder: (context, index) => _AuditLogCard(entry: _logs[index]),
+      );
+    }
+
+    return _AuditLogTable(entries: _logs);
+  }
+}
+
+class _AuditLogCard extends StatelessWidget {
+  final AuditLogEntry entry;
+
+  const _AuditLogCard({required this.entry});
+
+  @override
+  Widget build(BuildContext context) {
+    final Color badgeColor = _categoryColor(entry.activityCategory);
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 22,
+                  backgroundColor: badgeColor.withValues(alpha: 0.15),
+                  child: Icon(
+                    _categoryIcon(entry.activityCategory),
+                    color: badgeColor,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        entry.activityTitle,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      const SizedBox.shrink(),
+                    ],
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      entry.formattedTimestamp,
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    if (entry.customerId != null)
+                      Text(
+                        '#${entry.customerId}',
+                        style: TextStyle(color: Colors.grey.shade500),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _InfoPill(
+                  label: 'Customer',
+                  value: entry.customerName ?? 'Unknown',
+                  icon: Icons.person_outline,
+                ),
+                _InfoPill(
+                  label: 'Category',
+                  value: entry.activityCategoryTitle,
+                  icon: Icons.category_outlined,
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            if (entry.sections.isNotEmpty)
+              Wrap(
+                spacing: 8,
+                children:
+                    entry.sections
+                        .map(
+                          (section) => Chip(
+                            label: Text(section),
+                            backgroundColor: badgeColor.withValues(alpha: 0.12),
+                            labelStyle: TextStyle(color: badgeColor),
+                          ),
+                        )
+                        .toList(),
+              ),
+            if (entry.changeRows.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children:
+                    entry.changeRows
+                        .map(
+                          (row) => Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 2),
+                            child: Text(
+                              '${row.label}: ${row.oldValue ?? '—'} → ${row.newValue ?? '—'}',
+                              style: const TextStyle(
+                                fontFamily: 'RobotoMono',
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        )
+                        .toList(),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  static IconData _categoryIcon(String category) {
+    switch (category) {
+      case 'profile':
+        return Icons.manage_accounts_outlined;
+      case 'reservation':
+        return Icons.shopping_cart_checkout_outlined;
+      case 'attendance':
+        return Icons.access_time;
+      case 'auth':
+        return Icons.login;
+      default:
+        return Icons.event_note;
+    }
+  }
+
+  static Color _categoryColor(String category) {
+    switch (category) {
+      case 'profile':
+        return Colors.blue;
+      case 'reservation':
+        return Colors.deepPurple;
+      case 'attendance':
+        return Colors.teal;
+      case 'auth':
+        return Colors.orange;
+      default:
+        return Colors.grey;
+    }
+  }
+}
+
+class _AuditLogTable extends StatelessWidget {
+  final List<AuditLogEntry> entries;
+
+  const _AuditLogTable({required this.entries});
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      child: Align(
+        alignment: Alignment.topCenter,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1200),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                _TableHeader(),
+                if (entries.isEmpty)
+                  const SizedBox.shrink()
+                else
+                  ...entries.map(_TableRow.new),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TableHeader extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(12),
+          topRight: Radius.circular(12),
+        ),
+        border: Border(
+          bottom: BorderSide(color: Colors.grey.shade300, width: 2),
+        ),
+      ),
+      child: Row(
+        children: const [
+          _HeaderCell(text: 'Activity', flex: 3),
+          _HeaderCell(text: 'Customer', flex: 2),
+          _HeaderCell(text: 'Category', flex: 2),
+          _HeaderCell(text: 'Date & Time (PH)', flex: 2),
+          _HeaderIdCell(text: 'Log ID'),
+        ],
+      ),
+    );
+  }
+}
+
+class _HeaderCell extends StatelessWidget {
+  final String text;
+  final int flex;
+  const _HeaderCell({required this.text, required this.flex});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      flex: flex,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        child: Text(
+          text,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: Colors.grey.shade800,
+            letterSpacing: 0.5,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HeaderIdCell extends StatelessWidget {
+  final String text;
+  const _HeaderIdCell({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 90,
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w700,
+          color: Colors.grey.shade800,
+          letterSpacing: 0.5,
+        ),
+      ),
+    );
+  }
+}
+
+class _TableRow extends StatelessWidget {
+  final AuditLogEntry entry;
+
+  const _TableRow(this.entry);
+
+  @override
+  Widget build(BuildContext context) {
+    final Color badgeColor = _AuditLogCard._categoryColor(
+      entry.activityCategory,
+    );
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+          child: Row(
+            children: [
+              Expanded(
+                flex: 3,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        entry.activityTitle,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      const SizedBox.shrink(),
+                    ],
+                  ),
+                ),
+              ),
+              Expanded(
+                flex: 2,
+                child: Text(
+                  entry.customerName ?? 'Unknown',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                  ),
+                ),
+              ),
+              Expanded(
+                flex: 2,
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: badgeColor.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      entry.activityCategoryTitle,
+                      style: TextStyle(
+                        color: badgeColor,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                flex: 2,
+                child: Text(
+                  entry.formattedTimestamp,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                  ),
+                ),
+              ),
+              SizedBox(
+                width: 90,
+                child: Text(
+                  '#${entry.id}',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Divider(height: 1, color: Colors.grey.shade200),
+      ],
+    );
+  }
+}
+
+class _InfoPill extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+
+  const _InfoPill({
+    required this.label,
+    required this.value,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: Colors.grey.shade600),
+          const SizedBox(width: 6),
+          Text(
+            '$label: $value',
+            style: TextStyle(
+              color: Colors.grey.shade700,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  final Future<void> Function() onRefresh;
+  final String searchQuery;
+
+  const _EmptyState({required this.onRefresh, required this.searchQuery});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 120),
+          child: Column(
+            children: [
+              Icon(Icons.history, size: 64, color: Colors.grey.shade400),
+              const SizedBox(height: 16),
+              Text(
+                searchQuery.isEmpty
+                    ? 'No audit records yet'
+                    : 'No audit records matched "$searchQuery"',
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Pull down to refresh or adjust your filters.',
+                style: TextStyle(color: Colors.grey.shade600),
+              ),
+              const SizedBox(height: 16),
+              OutlinedButton.icon(
+                onPressed: onRefresh,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Try again'),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class AuditLogEntry {
+  AuditLogEntry({
+    required this.id,
+    required this.activityCategory,
+    required this.activityType,
+    required this.activityTitle,
+    required this.createdAtRaw,
+    this.customerId,
+    this.customerName,
+    this.actorType = 'system',
+    this.actorName,
+    this.description,
+    this.metadata = const {},
+  });
+
+  factory AuditLogEntry.fromJson(Map<String, dynamic> json) {
+    final dynamic metadata = json['metadata'];
+    final String createdAtPh =
+        json['created_at_ph']?.toString().trim().replaceAll('T', ' ') ?? '';
+    final String createdAt =
+        json['created_at']?.toString().trim().replaceAll('T', ' ') ?? '';
+    return AuditLogEntry(
+      id:
+          json['id'] is int
+              ? json['id'] as int
+              : int.tryParse('${json['id']}') ?? 0,
+      customerId:
+          json['customer_id'] == null
+              ? null
+              : int.tryParse('${json['customer_id']}'),
+      customerName: json['customer_name']?.toString(),
+      actorType: json['actor_type']?.toString() ?? 'system',
+      actorName: json['actor_name']?.toString(),
+      activityCategory: json['activity_category']?.toString() ?? 'general',
+      activityType: json['activity_type']?.toString() ?? 'general',
+      activityTitle: json['activity_title']?.toString() ?? 'Activity',
+      description: json['description']?.toString(),
+      createdAtRaw:
+          createdAtPh.isNotEmpty
+              ? createdAtPh
+              : createdAt.isNotEmpty
+              ? createdAt
+              : _nowString(),
+      metadata:
+          metadata is Map<String, dynamic> ? metadata : <String, dynamic>{},
+    );
+  }
+
+  final int id;
+  final int? customerId;
+  final String? customerName;
+  final String activityCategory;
+  final String activityType;
+  final String activityTitle;
+  final String? description;
+  final String actorType;
+  final String? actorName;
+  final String createdAtRaw;
+  final Map<String, dynamic> metadata;
+
+  String get formattedTimestamp {
+    final String raw = createdAtRaw;
+    if (raw.isEmpty) return '--';
+    final parts = raw.split(' ');
+    if (parts.length != 2) return raw;
+    final dateParts = parts[0].split('-');
+    final timeParts = parts[1].split(':');
+    if (dateParts.length < 3 || timeParts.length < 2) return raw;
+
+    final int? year = int.tryParse(dateParts[0]);
+    final int? month = int.tryParse(dateParts[1]);
+    final int? day = int.tryParse(dateParts[2]);
+    final int? hour24 = int.tryParse(timeParts[0]);
+    final int? minute = int.tryParse(timeParts[1]);
+
+    if ([year, month, day, hour24, minute].any((value) => value == null)) {
+      return raw;
+    }
+
+    final bool isPm = hour24! >= 12;
+    final int hour12 = hour24 % 12 == 0 ? 12 : hour24 % 12;
+
+    return '${_pad2(month!)}'
+        '/${_pad2(day!)}'
+        '/$year '
+        '${_pad2(hour12)}:${_pad2(minute!)} ${isPm ? 'PM' : 'AM'}';
+  }
+
+  String get activityCategoryTitle {
+    if (activityCategory == 'auth') {
+      final normalized = activityType.toLowerCase();
+      if (normalized.contains('logout')) return 'Log out';
+      if (normalized.contains('login')) return 'Log in';
+    }
+    return _categoryTitles[activityCategory] ?? activityCategory;
+  }
+
+  List<String> get sections {
+    final dynamic sectionList = metadata['sections'];
+    if (sectionList is List) {
+      return sectionList
+          .map((item) => item.toString().replaceAll('_', ' '))
+          .toList();
+    }
+    return [];
+  }
+
+  List<_ChangeRow> get changeRows {
+    final dynamic changeMap = metadata['changes'];
+    if (changeMap is Map) {
+      return changeMap.entries.where((entry) => entry.value is Map).map((
+        entry,
+      ) {
+        final Map<String, dynamic> change = Map<String, dynamic>.from(
+          entry.value as Map,
+        );
+        return _ChangeRow(
+          label: entry.key.toString().replaceAll('_', ' '),
+          oldValue: change['old']?.toString(),
+          newValue: change['new']?.toString(),
+        );
+      }).toList();
+    }
+    return [];
+  }
+
+  static const Map<String, String> _categoryTitles = {
+    'profile': 'Profile Updates',
+    'reservation': 'Reservations',
+    'attendance': 'Time In/Out',
+    'auth': 'Login/Logout',
+  };
+
+  static String _pad2(int value) => value.toString().padLeft(2, '0');
+
+  static String _nowString() {
+    final DateTime now = DateTime.now();
+    return DateFormat('yyyy-MM-dd HH:mm:ss').format(now);
+  }
+}
+
+class _ChangeRow {
+  final String label;
+  final String? oldValue;
+  final String? newValue;
+
+  _ChangeRow({
+    required this.label,
+    required this.oldValue,
+    required this.newValue,
+  });
+}

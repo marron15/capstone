@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../services/unified_auth_state.dart';
 import '../services/api_service.dart';
 import '../sidenav.dart';
 
@@ -85,6 +86,26 @@ class _ReservedProductsPageState extends State<ReservedProductsPage> {
 
   final List<_ReservedProductRequest> _reservations = [];
 
+  int? _currentAdminId() {
+    final Map<String, dynamic>? admin = unifiedAuthState.adminData;
+    if (admin == null) return null;
+    final dynamic value = admin['id'];
+    if (value is int) return value;
+    return int.tryParse(value?.toString() ?? '');
+  }
+
+  String? _currentAdminName() {
+    final Map<String, dynamic>? admin = unifiedAuthState.adminData;
+    if (admin == null) return null;
+    final String first = (admin['first_name'] ?? '').toString().trim();
+    final String last = (admin['last_name'] ?? '').toString().trim();
+    final String combined = [
+      first,
+      last,
+    ].where((segment) => segment.isNotEmpty).join(' ');
+    return combined.isEmpty ? null : combined;
+  }
+
   List<_ReservedProductRequest> get _filteredReservations {
     if (_searchQuery.trim().isEmpty) return _reservations;
     final lower = _searchQuery.toLowerCase();
@@ -147,6 +168,8 @@ class _ReservedProductsPageState extends State<ReservedProductsPage> {
         reservationId: request.id,
         status: _statusValue(status),
         declineNote: declineNote,
+        adminId: _currentAdminId(),
+        adminName: _currentAdminName(),
       );
       if (!mounted) return;
       if (ok) {
@@ -174,6 +197,8 @@ class _ReservedProductsPageState extends State<ReservedProductsPage> {
       final bool ok = await ApiService.updateReservationStatus(
         reservationId: request.id,
         status: _statusValue(status),
+        adminId: _currentAdminId(),
+        adminName: _currentAdminName(),
       );
       if (!mounted) return;
       if (ok) {
@@ -351,11 +376,16 @@ class _ReservedProductsPageState extends State<ReservedProductsPage> {
                             children: [
                               if (isMobile)
                                 Builder(
-                                  builder: (context) => IconButton(
-                                    tooltip: 'Open Menu',
-                                    onPressed: () => Scaffold.of(context).openDrawer(),
-                                    icon: const Icon(Icons.menu),
-                                  ),
+                                  builder:
+                                      (context) => IconButton(
+                                        tooltip: 'Open Menu',
+                                        onPressed:
+                                            () =>
+                                                Scaffold.of(
+                                                  context,
+                                                ).openDrawer(),
+                                        icon: const Icon(Icons.menu),
+                                      ),
                                 )
                               else
                                 IconButton(
@@ -368,7 +398,9 @@ class _ReservedProductsPageState extends State<ReservedProductsPage> {
                                         () => _navCollapsed = !_navCollapsed,
                                       ),
                                   icon: Icon(
-                                    _navCollapsed ? Icons.menu : Icons.chevron_left,
+                                    _navCollapsed
+                                        ? Icons.menu
+                                        : Icons.chevron_left,
                                   ),
                                 ),
                               const SizedBox(width: 8),
@@ -420,15 +452,17 @@ class _ReservedProductsPageState extends State<ReservedProductsPage> {
                             child: TextField(
                               controller: _searchController,
                               onChanged:
-                                  (value) => setState(() => _searchQuery = value),
+                                  (value) =>
+                                      setState(() => _searchQuery = value),
                               style: const TextStyle(
                                 color: Colors.black87,
                                 fontSize: 14,
                               ),
                               decoration: InputDecoration(
-                                hintText: isMobile
-                                    ? 'Search'
-                                    : 'Search by product, customer, or notes',
+                                hintText:
+                                    isMobile
+                                        ? 'Search'
+                                        : 'Search by product, customer, or notes',
                                 hintStyle: TextStyle(
                                   fontSize: isMobile ? 14 : null,
                                   color: Colors.grey.shade500,
@@ -477,342 +511,404 @@ class _ReservedProductsPageState extends State<ReservedProductsPage> {
                       ),
                     ),
                     Expanded(
-                      child: isMobile
-                          ? _buildMobileView()
-                          : SingleChildScrollView(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Align(
-                          alignment: Alignment.topCenter,
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 1200),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.08),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              child: Column(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 16,
-                                      horizontal: 16,
+                      child:
+                          isMobile
+                              ? _buildMobileView()
+                              : SingleChildScrollView(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                ),
+                                child: Align(
+                                  alignment: Alignment.topCenter,
+                                  child: ConstrainedBox(
+                                    constraints: const BoxConstraints(
+                                      maxWidth: 1200,
                                     ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey.shade100,
-                                      borderRadius: const BorderRadius.only(
-                                        topLeft: Radius.circular(12),
-                                        topRight: Radius.circular(12),
-                                      ),
-                                      border: Border(
-                                        bottom: BorderSide(
-                                          color: Colors.grey.shade300,
-                                          width: 2,
-                                        ),
-                                      ),
-                                    ),
-                                    child: Row(
-                                      children: const [
-                                        SizedBox(
-                                          width: 60,
-                                          child: Text(
-                                            'Req ID',
-                                            textAlign: TextAlign.center,
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w700,
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(12),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withValues(
+                                              alpha: 0.08,
                                             ),
-                                          ),
-                                        ),
-                                        Expanded(
-                                          flex: 2,
-                                          child: Text(
-                                            'Product',
-                                            textAlign: TextAlign.center,
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w700,
-                                            ),
-                                          ),
-                                        ),
-                                        Expanded(
-                                          flex: 2,
-                                          child: Text(
-                                            'Customer',
-                                            textAlign: TextAlign.center,
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w700,
-                                            ),
-                                          ),
-                                        ),
-                                        Expanded(
-                                          flex: 2,
-                                          child: Text(
-                                            'Notes',
-                                            textAlign: TextAlign.center,
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w700,
-                                            ),
-                                          ),
-                                        ),
-                                        Expanded(
-                                          flex: 1,
-                                          child: Text(
-                                            'Qty',
-                                            textAlign: TextAlign.center,
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w700,
-                                            ),
-                                          ),
-                                        ),
-                                        Expanded(
-                                          flex: 1,
-                                          child: Text(
-                                            'Status',
-                                            textAlign: TextAlign.center,
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w700,
-                                            ),
-                                          ),
-                                        ),
-                                        Expanded(
-                                          flex: 2,
-                                          child: Text(
-                                            'Actions',
-                                            textAlign: TextAlign.center,
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w700,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  if (_isLoading)
-                                    const Padding(
-                                      padding: EdgeInsets.all(48),
-                                      child: CircularProgressIndicator(),
-                                    )
-                                  else if (_filteredReservations.isEmpty)
-                                    Padding(
-                                      padding: const EdgeInsets.all(48),
-                                      child: Column(
-                                        children: const [
-                                          Icon(
-                                            Icons.inventory_2_outlined,
-                                            size: 60,
-                                          ),
-                                          SizedBox(height: 12),
-                                          Text(
-                                            'No reservations found',
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                          SizedBox(height: 8),
-                                          Text(
-                                            'Incoming requests will be listed here.',
-                                            textAlign: TextAlign.center,
+                                            blurRadius: 10,
+                                            offset: const Offset(0, 4),
                                           ),
                                         ],
                                       ),
-                                    )
-                                  else
-                                    ..._filteredReservations.map((request) {
-                                  final Color statusColor = _statusColor(
-                                    request.status,
-                                  );
-                                  return Column(
-                                    children: [
-                                      SizedBox(
-                                        height: actionHeight,
-                                        child: Row(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.center,
-                                          children: [
-                                            SizedBox(
-                                              width: 60,
-                                              child: Center(
-                                                child: Text(
-                                                  '#${request.id}',
-                                                  textAlign: TextAlign.center,
-                                                  style: const TextStyle(
-                                                    fontWeight: FontWeight.w600,
+                                      child: Column(
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              vertical: 16,
+                                              horizontal: 16,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.grey.shade100,
+                                              borderRadius:
+                                                  const BorderRadius.only(
+                                                    topLeft: Radius.circular(
+                                                      12,
+                                                    ),
+                                                    topRight: Radius.circular(
+                                                      12,
+                                                    ),
                                                   ),
+                                              border: Border(
+                                                bottom: BorderSide(
+                                                  color: Colors.grey.shade300,
+                                                  width: 2,
                                                 ),
                                               ),
                                             ),
-                                            Expanded(
-                                              flex: 2,
-                                              child: Center(
-                                                child: Padding(
-                                                  padding:
-                                                      const EdgeInsets.symmetric(
-                                                        horizontal: 8,
-                                                      ),
+                                            child: Row(
+                                              children: const [
+                                                SizedBox(
+                                                  width: 60,
                                                   child: Text(
-                                                    request.productName,
+                                                    'Req ID',
                                                     textAlign: TextAlign.center,
-                                                    style: const TextStyle(
-                                                      fontSize: 15,
+                                                    style: TextStyle(
+                                                      fontSize: 16,
+                                                      fontWeight:
+                                                          FontWeight.w700,
                                                     ),
                                                   ),
                                                 ),
-                                              ),
-                                            ),
-                                            Expanded(
-                                              flex: 2,
-                                              child: Center(
-                                                child: Padding(
-                                                  padding:
-                                                      const EdgeInsets.symmetric(
-                                                        horizontal: 8,
-                                                      ),
-                                                  child: Column(
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .center,
-                                                    children: [
-                                                      Text(
-                                                        request.customerName,
-                                                        textAlign:
-                                                            TextAlign.center,
-                                                        style: const TextStyle(
-                                                          fontWeight:
-                                                              FontWeight.w600,
-                                                        ),
-                                                      ),
-                                                      const SizedBox(height: 4),
-                                                      Text(
-                                                        'Requested ${_timeAgo(request.requestedAt)}',
-                                                        style: const TextStyle(
-                                                          fontSize: 12,
-                                                          color: Colors.black54,
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                            Expanded(
-                                              flex: 2,
-                                              child: Center(
-                                                child: Padding(
-                                                  padding:
-                                                      const EdgeInsets.symmetric(
-                                                        horizontal: 8,
-                                                      ),
+                                                Expanded(
+                                                  flex: 2,
                                                   child: Text(
-                                                    request.notes,
-                                                    maxLines: 2,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
+                                                    'Product',
                                                     textAlign: TextAlign.center,
-                                                    style: const TextStyle(
-                                                      fontSize: 14,
+                                                    style: TextStyle(
+                                                      fontSize: 16,
+                                                      fontWeight:
+                                                          FontWeight.w700,
                                                     ),
                                                   ),
                                                 ),
-                                              ),
-                                            ),
-                                            Expanded(
-                                              flex: 1,
-                                              child: Center(
-                                                child: Padding(
-                                                  padding:
-                                                      const EdgeInsets.symmetric(
-                                                        horizontal: 8,
-                                                      ),
+                                                Expanded(
+                                                  flex: 2,
                                                   child: Text(
-                                                    'x${request.requestedQty}',
+                                                    'Customer',
                                                     textAlign: TextAlign.center,
-                                                    style: const TextStyle(
-                                                      fontSize: 15,
+                                                    style: TextStyle(
+                                                      fontSize: 16,
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                    ),
+                                                  ),
+                                                ),
+                                                Expanded(
+                                                  flex: 2,
+                                                  child: Text(
+                                                    'Notes',
+                                                    textAlign: TextAlign.center,
+                                                    style: TextStyle(
+                                                      fontSize: 16,
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                    ),
+                                                  ),
+                                                ),
+                                                Expanded(
+                                                  flex: 1,
+                                                  child: Text(
+                                                    'Qty',
+                                                    textAlign: TextAlign.center,
+                                                    style: TextStyle(
+                                                      fontSize: 16,
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                    ),
+                                                  ),
+                                                ),
+                                                Expanded(
+                                                  flex: 1,
+                                                  child: Text(
+                                                    'Status',
+                                                    textAlign: TextAlign.center,
+                                                    style: TextStyle(
+                                                      fontSize: 16,
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                    ),
+                                                  ),
+                                                ),
+                                                Expanded(
+                                                  flex: 2,
+                                                  child: Text(
+                                                    'Actions',
+                                                    textAlign: TextAlign.center,
+                                                    style: TextStyle(
+                                                      fontSize: 16,
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          if (_isLoading)
+                                            const Padding(
+                                              padding: EdgeInsets.all(48),
+                                              child:
+                                                  CircularProgressIndicator(),
+                                            )
+                                          else if (_filteredReservations
+                                              .isEmpty)
+                                            Padding(
+                                              padding: const EdgeInsets.all(48),
+                                              child: Column(
+                                                children: const [
+                                                  Icon(
+                                                    Icons.inventory_2_outlined,
+                                                    size: 60,
+                                                  ),
+                                                  SizedBox(height: 12),
+                                                  Text(
+                                                    'No reservations found',
+                                                    style: TextStyle(
                                                       fontWeight:
                                                           FontWeight.w600,
                                                     ),
                                                   ),
-                                                ),
+                                                  SizedBox(height: 8),
+                                                  Text(
+                                                    'Incoming requests will be listed here.',
+                                                    textAlign: TextAlign.center,
+                                                  ),
+                                                ],
                                               ),
-                                            ),
-                                            Expanded(
-                                              flex: 1,
-                                              child: Center(
-                                                child: Container(
-                                                  padding:
-                                                      const EdgeInsets.symmetric(
-                                                        horizontal: 12,
-                                                        vertical: 6,
-                                                      ),
-                                                  decoration: BoxDecoration(
-                                                    color: statusColor
-                                                        .withValues(alpha: 0.1),
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          12,
+                                            )
+                                          else
+                                            ..._filteredReservations.map((
+                                              request,
+                                            ) {
+                                              final Color statusColor =
+                                                  _statusColor(request.status);
+                                              return Column(
+                                                children: [
+                                                  SizedBox(
+                                                    height: actionHeight,
+                                                    child: Row(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .center,
+                                                      children: [
+                                                        SizedBox(
+                                                          width: 60,
+                                                          child: Center(
+                                                            child: Text(
+                                                              '#${request.id}',
+                                                              textAlign:
+                                                                  TextAlign
+                                                                      .center,
+                                                              style: const TextStyle(
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w600,
+                                                              ),
+                                                            ),
+                                                          ),
                                                         ),
-                                                    border: Border.all(
-                                                      color: statusColor,
+                                                        Expanded(
+                                                          flex: 2,
+                                                          child: Center(
+                                                            child: Padding(
+                                                              padding:
+                                                                  const EdgeInsets.symmetric(
+                                                                    horizontal:
+                                                                        8,
+                                                                  ),
+                                                              child: Text(
+                                                                request
+                                                                    .productName,
+                                                                textAlign:
+                                                                    TextAlign
+                                                                        .center,
+                                                                style:
+                                                                    const TextStyle(
+                                                                      fontSize:
+                                                                          15,
+                                                                    ),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ),
+                                                        Expanded(
+                                                          flex: 2,
+                                                          child: Center(
+                                                            child: Padding(
+                                                              padding:
+                                                                  const EdgeInsets.symmetric(
+                                                                    horizontal:
+                                                                        8,
+                                                                  ),
+                                                              child: Column(
+                                                                mainAxisAlignment:
+                                                                    MainAxisAlignment
+                                                                        .center,
+                                                                children: [
+                                                                  Text(
+                                                                    request
+                                                                        .customerName,
+                                                                    textAlign:
+                                                                        TextAlign
+                                                                            .center,
+                                                                    style: const TextStyle(
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .w600,
+                                                                    ),
+                                                                  ),
+                                                                  const SizedBox(
+                                                                    height: 4,
+                                                                  ),
+                                                                  Text(
+                                                                    'Requested ${_timeAgo(request.requestedAt)}',
+                                                                    style: const TextStyle(
+                                                                      fontSize:
+                                                                          12,
+                                                                      color:
+                                                                          Colors
+                                                                              .black54,
+                                                                    ),
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ),
+                                                        Expanded(
+                                                          flex: 2,
+                                                          child: Center(
+                                                            child: Padding(
+                                                              padding:
+                                                                  const EdgeInsets.symmetric(
+                                                                    horizontal:
+                                                                        8,
+                                                                  ),
+                                                              child: Text(
+                                                                request.notes,
+                                                                maxLines: 2,
+                                                                overflow:
+                                                                    TextOverflow
+                                                                        .ellipsis,
+                                                                textAlign:
+                                                                    TextAlign
+                                                                        .center,
+                                                                style:
+                                                                    const TextStyle(
+                                                                      fontSize:
+                                                                          14,
+                                                                    ),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ),
+                                                        Expanded(
+                                                          flex: 1,
+                                                          child: Center(
+                                                            child: Padding(
+                                                              padding:
+                                                                  const EdgeInsets.symmetric(
+                                                                    horizontal:
+                                                                        8,
+                                                                  ),
+                                                              child: Text(
+                                                                'x${request.requestedQty}',
+                                                                textAlign:
+                                                                    TextAlign
+                                                                        .center,
+                                                                style: const TextStyle(
+                                                                  fontSize: 15,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w600,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ),
+                                                        Expanded(
+                                                          flex: 1,
+                                                          child: Center(
+                                                            child: Container(
+                                                              padding:
+                                                                  const EdgeInsets.symmetric(
+                                                                    horizontal:
+                                                                        12,
+                                                                    vertical: 6,
+                                                                  ),
+                                                              decoration: BoxDecoration(
+                                                                color: statusColor
+                                                                    .withValues(
+                                                                      alpha:
+                                                                          0.1,
+                                                                    ),
+                                                                borderRadius:
+                                                                    BorderRadius.circular(
+                                                                      12,
+                                                                    ),
+                                                                border: Border.all(
+                                                                  color:
+                                                                      statusColor,
+                                                                ),
+                                                              ),
+                                                              child: Text(
+                                                                _statusLabel(
+                                                                  request
+                                                                      .status,
+                                                                ),
+                                                                style: TextStyle(
+                                                                  color:
+                                                                      statusColor
+                                                                          .darken(),
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ),
+                                                        Expanded(
+                                                          flex: 2,
+                                                          child: Center(
+                                                            child: Padding(
+                                                              padding:
+                                                                  const EdgeInsets.symmetric(
+                                                                    horizontal:
+                                                                        6,
+                                                                  ),
+                                                              child: _buildActionButtons(
+                                                                request,
+                                                                isCompactTable,
+                                                                actionHeight,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ],
                                                     ),
                                                   ),
-                                                  child: Text(
-                                                    _statusLabel(
-                                                      request.status,
-                                                    ),
-                                                    style: TextStyle(
-                                                      color:
-                                                          statusColor.darken(),
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                    ),
+                                                  Divider(
+                                                    height: 1,
+                                                    color: Colors.grey.shade200,
                                                   ),
-                                                ),
-                                              ),
-                                            ),
-                                            Expanded(
-                                              flex: 2,
-                                              child: Center(
-                                                child: Padding(
-                                                  padding:
-                                                      const EdgeInsets.symmetric(
-                                                        horizontal: 6,
-                                                      ),
-                                                  child: _buildActionButtons(
-                                                    request,
-                                                    isCompactTable,
-                                                    actionHeight,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
+                                                ],
+                                              );
+                                            }),
+                                        ],
                                       ),
-                                      Divider(
-                                        height: 1,
-                                        color: Colors.grey.shade200,
-                                      ),
-                                    ],
-                                  );
-                                    }),
-                                ],
+                                    ),
+                                  ),
+                                ),
                               ),
-                            ),
-                          ),
-                        ),
-                      ),
                     ),
                   ],
                 ),
@@ -881,9 +977,7 @@ class _ReservedProductsPageState extends State<ReservedProductsPage> {
 
   Widget _buildMobileView() {
     if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (_filteredReservations.isEmpty) {
@@ -891,16 +985,11 @@ class _ReservedProductsPageState extends State<ReservedProductsPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: const [
-            Icon(
-              Icons.inventory_2_outlined,
-              size: 60,
-            ),
+            Icon(Icons.inventory_2_outlined, size: 60),
             SizedBox(height: 12),
             Text(
               'No reservations found',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-              ),
+              style: TextStyle(fontWeight: FontWeight.w600),
             ),
             SizedBox(height: 8),
             Text(
@@ -914,162 +1003,159 @@ class _ReservedProductsPageState extends State<ReservedProductsPage> {
 
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      children: _filteredReservations.map((request) {
-        final Color statusColor = _statusColor(request.status);
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.grey.shade200),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.08),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
+      children:
+          _filteredReservations.map((request) {
+            final Color statusColor = _statusColor(request.status);
+            return Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey.shade200),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
-            ],
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.shade50,
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(
-                          color: Colors.blue.shade200,
-                        ),
-                      ),
-                      child: Text(
-                        '#${request.id}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.blue.shade700,
-                        ),
-                      ),
-                    ),
-                    const Spacer(),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: statusColor.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: statusColor,
-                        ),
-                      ),
-                      child: Text(
-                        _statusLabel(request.status),
-                        style: TextStyle(
-                          color: statusColor.darken(),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  request.productName,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Customer: ${request.customerName}',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey.shade700,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Requested ${_timeAgo(request.requestedAt)}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
-                  ),
-                ),
-                if (request.notes.isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.grey.shade200),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    Row(
                       children: [
-                        Text(
-                          'Notes:',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey.shade700,
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.shade50,
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(color: Colors.blue.shade200),
+                          ),
+                          child: Text(
+                            '#${request.id}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.blue.shade700,
+                            ),
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          request.notes,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey.shade800,
+                        const Spacer(),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: statusColor.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: statusColor),
+                          ),
+                          child: Text(
+                            _statusLabel(request.status),
+                            style: TextStyle(
+                              color: statusColor.darken(),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
                           ),
                         ),
                       ],
                     ),
-                  ),
-                ],
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.shade50,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.blue.shade200),
-                      ),
-                      child: Text(
-                        'Qty: ${request.requestedQty}',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.blue.shade700,
-                        ),
+                    const SizedBox(height: 16),
+                    Text(
+                      request.productName,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
                       ),
                     ),
-                    const Spacer(),
-                    _buildMobileActionButtons(request),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Customer: ${request.customerName}',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Requested ${_timeAgo(request.requestedAt)}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                    if (request.notes.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey.shade200),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Notes:',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey.shade700,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              request.notes,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey.shade800,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.shade50,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.blue.shade200),
+                          ),
+                          child: Text(
+                            'Qty: ${request.requestedQty}',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.blue.shade700,
+                            ),
+                          ),
+                        ),
+                        const Spacer(),
+                        _buildMobileActionButtons(request),
+                      ],
+                    ),
                   ],
                 ),
-              ],
-            ),
-          ),
-        );
-      }).toList(),
+              ),
+            );
+          }).toList(),
     );
   }
 
@@ -1083,22 +1169,18 @@ class _ReservedProductsPageState extends State<ReservedProductsPage> {
           SizedBox(
             width: 80,
             child: ElevatedButton(
-              onPressed: isAccepted
-                  ? null
-                  : () => _handleDecision(
-                    request,
-                    _ReservationStatus.accepted,
-                  ),
+              onPressed:
+                  isAccepted
+                      ? null
+                      : () =>
+                          _handleDecision(request, _ReservationStatus.accepted),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green.shade50,
                 foregroundColor: Colors.green.shade700,
                 elevation: 0,
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
               ),
-              child: const Text(
-                'Accept',
-                style: TextStyle(fontSize: 12),
-              ),
+              child: const Text('Accept', style: TextStyle(fontSize: 12)),
             ),
           ),
         if (!isDeclined && !isAccepted) const SizedBox(width: 8),
@@ -1106,21 +1188,17 @@ class _ReservedProductsPageState extends State<ReservedProductsPage> {
           SizedBox(
             width: 80,
             child: OutlinedButton(
-              onPressed: isDeclined
-                  ? null
-                  : () => _handleDecision(
-                    request,
-                    _ReservationStatus.declined,
-                  ),
+              onPressed:
+                  isDeclined
+                      ? null
+                      : () =>
+                          _handleDecision(request, _ReservationStatus.declined),
               style: OutlinedButton.styleFrom(
                 foregroundColor: Colors.red.shade600,
                 side: BorderSide(color: Colors.red.shade200),
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
               ),
-              child: const Text(
-                'Decline',
-                style: TextStyle(fontSize: 12),
-              ),
+              child: const Text('Decline', style: TextStyle(fontSize: 12)),
             ),
           ),
       ],

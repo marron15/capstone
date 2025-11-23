@@ -149,7 +149,9 @@ class BlackHeader extends StatelessWidget {
                             if (shouldLogout) {
                               try {
                                 // Call logout API
-                                final result = await AuthService.logout();
+                                final result = await AuthService.logout(
+                                  customerId: unifiedAuthState.customerId,
+                                );
 
                                 // Clear auth state
                                 await unifiedAuthState.logout();

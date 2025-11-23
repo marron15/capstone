@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 import 'dart:math' as math;
 // Removed image picker and file picker imports
+import '../../services/unified_auth_state.dart';
 import '../services/api_service.dart';
 import '../../PH phone number valid/phone_validator.dart';
 import '../../PH phone number valid/phone_formatter.dart';
@@ -368,9 +369,22 @@ class CustomerViewEditModal {
           updateData['membership_type'] = membershipType;
         }
 
+        final adminData = unifiedAuthState.adminData;
+        final dynamic adminIdValue = adminData == null ? null : adminData['id'];
+        final int? adminId =
+            adminIdValue is int ? adminIdValue : int.tryParse(adminIdValue?.toString() ?? '');
+        final String adminName = adminData == null
+            ? ''
+            : [
+                (adminData['first_name'] ?? '').toString().trim(),
+                (adminData['last_name'] ?? '').toString().trim(),
+              ].where((segment) => segment.isNotEmpty).join(' ');
+
         final result = await ApiService.updateCustomerByAdmin(
           id: customerId,
           data: updateData,
+          adminId: adminId,
+          adminName: adminName.isNotEmpty ? adminName : null,
         ).timeout(
           const Duration(seconds: 30),
           onTimeout: () {

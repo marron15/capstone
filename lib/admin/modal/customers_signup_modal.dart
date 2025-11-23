@@ -1562,7 +1562,7 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
                                   focusNode: _contactFocus,
                                   style: const TextStyle(color: Colors.white),
                                   decoration: _inputDecoration(
-                                    label: 'Contact Number (Optional)',
+                                    label: 'Contact Number',
                                     icon: Icons.phone_outlined,
                                     focusNode: _contactFocus,
 

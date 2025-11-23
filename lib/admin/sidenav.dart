@@ -232,6 +232,12 @@ class _SideNavState extends State<SideNav> {
                     currentRoute: currentRoute,
                   ),
                   _navItem(
+                    icon: Icons.history,
+                    label: 'Audit Logs',
+                    route: '/admin-audit-logs',
+                    currentRoute: currentRoute,
+                  ),
+                  _navItem(
                     icon: Icons.fitness_center,
                     label: 'Trainers',
                     route: '/admin-trainers',

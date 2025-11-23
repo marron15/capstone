@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'services/admin_service.dart';
 import '../services/unified_auth_state.dart';
 import '../utils/dom_input_utils.dart';
@@ -329,7 +328,9 @@ class _LoginPageState extends State<LoginPage> {
                                         final emailRegex = RegExp(
                                           r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
                                         );
-                                        if (!emailRegex.hasMatch(value.trim())) {
+                                        if (!emailRegex.hasMatch(
+                                          value.trim(),
+                                        )) {
                                           return 'Please enter a valid email address';
                                         }
                                         return null;

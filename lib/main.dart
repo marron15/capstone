@@ -10,6 +10,7 @@ import 'admin/dashboard/customers.dart';
 import 'admin/dashboard/admin_products.dart';
 import 'admin/dashboard/reserved_products.dart';
 import 'admin/dashboard/attendance_log.dart';
+import 'admin/dashboard/audit_logs.dart';
 import 'services/unified_auth_state.dart';
 import 'services/auth_guard.dart';
 import 'User Profile/profile.dart';
@@ -88,6 +89,8 @@ class MyApp extends StatelessWidget {
             (context) => const AdminAuthGuard(child: AdminProductsPage()),
         '/admin-reserved-products':
             (context) => const AdminAuthGuard(child: ReservedProductsPage()),
+        '/admin-audit-logs':
+            (context) => const AdminAuthGuard(child: AuditLogsPage()),
         '/customer-profile':
             (context) => CustomerAuthGuard(child: ProfilePage()),
       },
