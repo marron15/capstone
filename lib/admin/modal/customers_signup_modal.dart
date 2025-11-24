@@ -331,7 +331,23 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
 
   DateTime _calculateMembershipExpiration(DateTime startDate) {
     final type = (_selectedMembershipType ?? 'Monthly').toLowerCase();
-    if (type == 'daily') return startDate.add(const Duration(days: 1));
+    if (type == 'daily') {
+      // Set expiration to 9 PM of the same day (business hours: 11 AM - 9 PM)
+      // If created after 9 PM, expire at 9 PM next day
+      DateTime expirationDate = DateTime(
+        startDate.year,
+        startDate.month,
+        startDate.day,
+        21, // 9 PM
+        0,  // 0 minutes
+        0,  // 0 seconds
+      );
+      // If created after 9 PM, set expiration to 9 PM next day
+      if (startDate.hour >= 21) {
+        expirationDate = expirationDate.add(const Duration(days: 1));
+      }
+      return expirationDate;
+    }
     if (type == 'half month') return startDate.add(const Duration(days: 15));
     return startDate.add(const Duration(days: 30));
   }
@@ -455,8 +471,9 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
         membershipType: _selectedMembershipType,
         membershipStartDate:
             '${membershipStartDate.year}-${membershipStartDate.month.toString().padLeft(2, '0')}-${membershipStartDate.day.toString().padLeft(2, '0')}',
-        expirationDate:
-            '${membershipEndDate.year}-${membershipEndDate.month.toString().padLeft(2, '0')}-${membershipEndDate.day.toString().padLeft(2, '0')}',
+        expirationDate: (_selectedMembershipType?.toLowerCase() == 'daily')
+            ? '${membershipEndDate.year}-${membershipEndDate.month.toString().padLeft(2, '0')}-${membershipEndDate.day.toString().padLeft(2, '0')} ${membershipEndDate.hour.toString().padLeft(2, '0')}:${membershipEndDate.minute.toString().padLeft(2, '0')}:${membershipEndDate.second.toString().padLeft(2, '0')}'
+            : '${membershipEndDate.year}-${membershipEndDate.month.toString().padLeft(2, '0')}-${membershipEndDate.day.toString().padLeft(2, '0')}',
       );
 
       if (result['success'] == true) {

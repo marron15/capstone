@@ -275,27 +275,42 @@ class CustomerViewEditModal {
           customer['membership_type'] = membershipType;
           customer['membershipType'] = membershipType;
           final DateTime newStartDate = DateTime.now();
-          int addDays;
+          DateTime newExpirationDate;
           switch (membershipType) {
             case 'Daily':
-              addDays = 1;
+              // Set expiration to 9 PM of the same day (business hours: 11 AM - 9 PM)
+              // If created after 9 PM, expire at 9 PM next day
+              newExpirationDate = DateTime(
+                newStartDate.year,
+                newStartDate.month,
+                newStartDate.day,
+                21, // 9 PM
+                0,  // 0 minutes
+                0,  // 0 seconds
+              );
+              if (newStartDate.hour >= 21) {
+                newExpirationDate = newExpirationDate.add(const Duration(days: 1));
+              }
               break;
             case 'Half Month':
-              addDays = 15;
+              newExpirationDate = newStartDate.add(const Duration(days: 15));
               break;
             case 'Monthly':
             default:
-              addDays = 30;
+              newExpirationDate = newStartDate.add(const Duration(days: 30));
           }
-          final DateTime newExpirationDate = newStartDate.add(
-            Duration(days: addDays),
-          );
           customer['startDate'] = newStartDate;
           customer['expirationDate'] = newExpirationDate;
           customer['start_date'] =
               '${newStartDate.year.toString().padLeft(4, '0')}-${newStartDate.month.toString().padLeft(2, '0')}-${newStartDate.day.toString().padLeft(2, '0')}';
-          customer['expiration_date'] =
-              '${newExpirationDate.year.toString().padLeft(4, '0')}-${newExpirationDate.month.toString().padLeft(2, '0')}-${newExpirationDate.day.toString().padLeft(2, '0')}';
+          // For Daily memberships, include time component in expiration date
+          if (membershipType == 'Daily') {
+            customer['expiration_date'] =
+                '${newExpirationDate.year.toString().padLeft(4, '0')}-${newExpirationDate.month.toString().padLeft(2, '0')}-${newExpirationDate.day.toString().padLeft(2, '0')} ${newExpirationDate.hour.toString().padLeft(2, '0')}:${newExpirationDate.minute.toString().padLeft(2, '0')}:${newExpirationDate.second.toString().padLeft(2, '0')}';
+          } else {
+            customer['expiration_date'] =
+                '${newExpirationDate.year.toString().padLeft(4, '0')}-${newExpirationDate.month.toString().padLeft(2, '0')}-${newExpirationDate.day.toString().padLeft(2, '0')}';
+          }
         }
 
         if (membershipChanged && !hasProfileChanges) {

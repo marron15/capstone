@@ -110,13 +110,21 @@ class MembershipData {
     return value.toString();
   }
 
-  // Helper method to parse date strings
+  // Helper method to parse date strings (handles both date and datetime formats)
   static DateTime? _parseDate(dynamic value) {
     if (value == null) return null;
     if (value is DateTime) return value;
     if (value is String) {
       try {
-        return DateTime.parse(value);
+        // Try parsing as-is first (handles ISO 8601 format)
+        try {
+          return DateTime.parse(value);
+        } catch (_) {
+          // If that fails, try handling "Y-m-d H:i:s" format (space separator)
+          // Replace space with 'T' to make it ISO 8601 compatible
+          final normalized = value.replaceFirst(' ', 'T');
+          return DateTime.parse(normalized);
+        }
       } catch (e) {
         return null;
       }

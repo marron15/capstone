@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import '../sidenav.dart';
 import '../pdf/pdf_stats_export.dart';
 import '../services/api_service.dart';
@@ -33,6 +34,7 @@ class _StatisticPageState extends State<StatisticPage>
   String _startsView = 'Week';
   String _kpiPeriodFilter = 'Daily'; // Daily | This Week | This Month
   final List<bool> _periodSelected = [true, false, false]; // Daily, Week, Month
+  Timer? _countdownTimer;
 
   void _syncPeriodSelection() {
     _periodSelected[0] = _kpiPeriodFilter == 'Daily';
@@ -124,6 +126,15 @@ class _StatisticPageState extends State<StatisticPage>
 
     // Register with refresh service
     RefreshService().registerRefreshCallback(_refreshData);
+
+    // Start timer for live countdown updates (updates every second)
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted && !_isDisposed) {
+        setState(() {
+          // Trigger rebuild to update countdown displays
+        });
+      }
+    });
 
     _loadOverallReport();
     _loadCustomers();
@@ -745,11 +756,39 @@ class _StatisticPageState extends State<StatisticPage>
     return result;
   }
 
-  String _formatExpirationDate(DateTime expirationDate) {
+  String _formatExpirationDate(DateTime expirationDate, {String? membershipType}) {
     final String dd = expirationDate.day.toString().padLeft(2, '0');
     final String mm = expirationDate.month.toString().padLeft(2, '0');
     final String yyyy = expirationDate.year.toString().padLeft(4, '0');
+    
+    // For Daily memberships, include time
+    if (membershipType == 'Daily') {
+      final String hh = expirationDate.hour.toString().padLeft(2, '0');
+      final String min = expirationDate.minute.toString().padLeft(2, '0');
+      final String ss = expirationDate.second.toString().padLeft(2, '0');
+      return '$mm/$dd/$yyyy $hh:$min:$ss';
+    }
+    
     return '$mm/$dd/$yyyy';
+  }
+
+  String _formatTimeRemaining(DateTime expirationDate) {
+    final now = DateTime.now();
+    final difference = expirationDate.difference(now);
+    
+    if (difference.isNegative) return 'Expired';
+    
+    final hours = difference.inHours;
+    final minutes = difference.inMinutes % 60;
+    final seconds = difference.inSeconds % 60;
+    
+    if (hours > 0) {
+      return '${hours}h ${minutes}m ${seconds}s';
+    } else if (minutes > 0) {
+      return '${minutes}m ${seconds}s';
+    } else {
+      return '${seconds}s';
+    }
   }
 
   Color _getMembershipTypeColor(String membershipType) {
@@ -1431,10 +1470,10 @@ class _StatisticPageState extends State<StatisticPage>
         _getVisibleCustomers().map((customer) {
           final expirationDate = customer['expirationDate'] as DateTime;
           final startDate = customer['startDate'] as DateTime;
-          final formattedExpiry = _formatExpirationDate(expirationDate);
+          final membershipType = customer['membershipType'] as String;
+          final formattedExpiry = _formatExpirationDate(expirationDate, membershipType: membershipType);
           final formattedStart = _formatExpirationDate(startDate);
           final bool isExpired = customer['isExpired'] == true;
-          final membershipType = customer['membershipType'] as String;
           return Column(
             children: [
               Container(
@@ -1554,13 +1593,17 @@ class _StatisticPageState extends State<StatisticPage>
                                   children: [
                                     Flexible(
                                       child: Text(
-                                        formattedExpiry,
+                                        membershipType == 'Daily'
+                                            ? _formatTimeRemaining(expirationDate)
+                                            : formattedExpiry,
                                         textAlign: TextAlign.center,
                                         style: TextStyle(
                                           color:
                                               isExpired
                                                   ? Colors.red
-                                                  : Colors.black87,
+                                                  : membershipType == 'Daily'
+                                                      ? Colors.orange.shade700
+                                                      : Colors.black87,
                                           fontSize: 12,
                                         ),
                                         overflow: TextOverflow.ellipsis,
@@ -1715,13 +1758,17 @@ class _StatisticPageState extends State<StatisticPage>
                                     FittedBox(
                                       fit: BoxFit.scaleDown,
                                       child: Text(
-                                        formattedExpiry,
+                                        membershipType == 'Daily'
+                                            ? _formatTimeRemaining(expirationDate)
+                                            : formattedExpiry,
                                         textAlign: TextAlign.center,
                                         style: TextStyle(
                                           color:
                                               isExpired
                                                   ? Colors.red
-                                                  : Colors.black87,
+                                                  : membershipType == 'Daily'
+                                                      ? Colors.orange.shade700
+                                                      : Colors.black87,
                                           fontSize: 14,
                                         ),
                                       ),
@@ -1797,6 +1844,7 @@ class _StatisticPageState extends State<StatisticPage>
     // Unregister from refresh service
     RefreshService().unregisterRefreshCallback(_refreshData);
 
+    _countdownTimer?.cancel();
     _kpiController.dispose();
     _tableScrollController.dispose();
     super.dispose();

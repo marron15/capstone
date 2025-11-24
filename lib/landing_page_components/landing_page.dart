@@ -1257,21 +1257,22 @@ class _LandingPageState extends State<LandingPage>
 
                                                             _buildDateRow(
                                                               'Expires',
-
-                                                              _formatDate(
-                                                                unifiedAuthState
-                                                                    .membershipData!
-                                                                    .expirationDate,
-                                                              ),
-
+                                                              unifiedAuthState.membershipData!.membershipType == 'Daily'
+                                                                  ? _getTimeRemaining(
+                                                                      unifiedAuthState
+                                                                          .membershipData!
+                                                                          .expirationDate,
+                                                                    )
+                                                                  : _formatDate(
+                                                                      unifiedAuthState
+                                                                          .membershipData!
+                                                                          .expirationDate,
+                                                                    ),
                                                               Icons.event_busy,
-
                                                               const Color(
                                                                 0xFFFFA812,
                                                               ),
-
                                                               isSmallScreen,
-
                                                               screenSize,
                                                             ),
                                                           ],

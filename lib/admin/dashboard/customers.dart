@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import '../sidenav.dart';
 import '../modal/customers_signup_modal.dart';
 import '../modal/customer_view_edit_modal.dart';
@@ -29,11 +30,27 @@ class _CustomersPageState extends State<CustomersPage> {
   static const double _drawerWidth = 280;
   bool _navCollapsed = false;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  Timer? _countdownTimer;
 
   @override
   void initState() {
     super.initState();
     _loadCustomers();
+    // Start timer for live countdown updates (updates every second)
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) {
+        setState(() {
+          // Trigger rebuild to update countdown displays
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _countdownTimer?.cancel();
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
@@ -410,11 +427,39 @@ class _CustomersPageState extends State<CustomersPage> {
     }
   }
 
-  String _formatExpirationDate(DateTime expirationDate) {
+  String _formatExpirationDate(DateTime expirationDate, {String? membershipType}) {
     final String dd = expirationDate.day.toString().padLeft(2, '0');
     final String mm = expirationDate.month.toString().padLeft(2, '0');
     final String yyyy = expirationDate.year.toString().padLeft(4, '0');
+    
+    // For Daily memberships, include time
+    if (membershipType == 'Daily') {
+      final String hh = expirationDate.hour.toString().padLeft(2, '0');
+      final String min = expirationDate.minute.toString().padLeft(2, '0');
+      final String ss = expirationDate.second.toString().padLeft(2, '0');
+      return '$mm/$dd/$yyyy $hh:$min:$ss';
+    }
+    
     return '$mm/$dd/$yyyy';
+  }
+
+  String _formatTimeRemaining(DateTime expirationDate) {
+    final now = DateTime.now();
+    final difference = expirationDate.difference(now);
+    
+    if (difference.isNegative) return 'Expired';
+    
+    final hours = difference.inHours;
+    final minutes = difference.inMinutes % 60;
+    final seconds = difference.inSeconds % 60;
+    
+    if (hours > 0) {
+      return '${hours}h ${minutes}m ${seconds}s';
+    } else if (minutes > 0) {
+      return '${minutes}m ${seconds}s';
+    } else {
+      return '${seconds}s';
+    }
   }
 
   // Header cell with dropdown for membership filter
@@ -1046,8 +1091,10 @@ class _CustomersPageState extends State<CustomersPage> {
                     final expirationDate =
                         customer['expirationDate'] as DateTime;
                     final startDate = customer['startDate'] as DateTime;
+                    final membershipType = customer['membershipType'] as String;
                     final formattedExpiry = _formatExpirationDate(
                       expirationDate,
+                      membershipType: membershipType,
                     );
                     final formattedStart = _formatExpirationDate(startDate);
                     final DateTime _nowM = DateTime.now();
@@ -1059,7 +1106,6 @@ class _CustomersPageState extends State<CustomersPage> {
                     final bool _isExpiredM = expirationDate.isBefore(
                       _todayOnlyM,
                     );
-                    final membershipType = customer['membershipType'] as String;
                     return Container(
                       margin: const EdgeInsets.only(bottom: 12),
                       decoration: BoxDecoration(
@@ -1320,17 +1366,27 @@ class _CustomersPageState extends State<CustomersPage> {
                                           fontWeight: FontWeight.w500,
                                         ),
                                       ),
-                                      Text(
-                                        formattedExpiry,
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color:
-                                              _isExpiredM
-                                                  ? Colors.red
-                                                  : Colors.black87,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
+                                      membershipType == 'Daily'
+                                          ? Text(
+                                              _formatTimeRemaining(expirationDate),
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: _isExpiredM
+                                                    ? Colors.red
+                                                    : Colors.orange.shade700,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            )
+                                          : Text(
+                                              formattedExpiry,
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: _isExpiredM
+                                                    ? Colors.red
+                                                    : Colors.black87,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
                                     ],
                                   ),
                                 ],
@@ -1582,8 +1638,11 @@ class _CustomersPageState extends State<CustomersPage> {
                         final expirationDate =
                             customer['expirationDate'] as DateTime;
                         final startDate = customer['startDate'] as DateTime;
+                        final membershipType =
+                            customer['membershipType'] as String;
                         final formattedExpiry = _formatExpirationDate(
                           expirationDate,
+                          membershipType: membershipType,
                         );
                         final formattedStart = _formatExpirationDate(startDate);
                         final DateTime nowDate = DateTime.now();
@@ -1595,8 +1654,6 @@ class _CustomersPageState extends State<CustomersPage> {
                         final bool isExpired = expirationDate.isBefore(
                           todayOnly,
                         );
-                        final membershipType =
-                            customer['membershipType'] as String;
                         return Column(
                           children: [
                             Container(
@@ -1721,16 +1778,20 @@ class _CustomersPageState extends State<CustomersPage> {
                                             MainAxisAlignment.center,
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          FittedBox(
+                                            FittedBox(
                                             fit: BoxFit.scaleDown,
                                             child: Text(
-                                              formattedExpiry,
+                                              membershipType == 'Daily'
+                                                  ? _formatTimeRemaining(expirationDate)
+                                                  : formattedExpiry,
                                               textAlign: TextAlign.center,
                                               style: TextStyle(
                                                 color:
                                                     isExpired
                                                         ? Colors.red
-                                                        : Colors.black87,
+                                                        : membershipType == 'Daily'
+                                                            ? Colors.orange.shade700
+                                                            : Colors.black87,
                                                 fontSize: 15,
                                                 fontWeight: FontWeight.w600,
                                               ),

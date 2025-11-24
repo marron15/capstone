@@ -1403,22 +1403,36 @@ class ApiService {
   }) async {
     try {
       final DateTime now = DateTime.now();
-      int addDays;
+      DateTime expiration;
       switch (membershipType) {
         case 'Daily':
-          addDays = 1;
+          // Set expiration to 9 PM of the same day (business hours: 11 AM - 9 PM)
+          // If created after 9 PM, expire at 9 PM next day
+          expiration = DateTime(
+            now.year,
+            now.month,
+            now.day,
+            21, // 9 PM
+            0,  // 0 minutes
+            0,  // 0 seconds
+          );
+          if (now.hour >= 21) {
+            expiration = expiration.add(const Duration(days: 1));
+          }
           break;
         case 'Half Month':
-          addDays = 15;
+          expiration = now.add(const Duration(days: 15));
           break;
         case 'Monthly':
         default:
-          addDays = 30;
+          expiration = now.add(const Duration(days: 30));
       }
-      final DateTime expiration = now.add(Duration(days: addDays));
 
       String formatDate(DateTime d) =>
           '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+      
+      String formatDateTime(DateTime d) =>
+          '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')} ${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}:${d.second.toString().padLeft(2, '0')}';
 
       final response = await http.post(
         Uri.parse(upsertMembershipEndpoint),
@@ -1427,7 +1441,7 @@ class ApiService {
           'customerId': customerId.toString(),
           'membershipType': membershipType,
           'startDate': formatDate(now),
-          'expirationDate': formatDate(expiration),
+          'expirationDate': membershipType == 'Daily' ? formatDateTime(expiration) : formatDate(expiration),
           'status': membershipType,
         },
       );
