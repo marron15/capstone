@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'dart:typed_data';
 import 'dart:convert';
 import '../services/api_service.dart';
+import '../../services/unified_auth_state.dart';
 
 class Product {
   final int? id;
@@ -249,6 +250,46 @@ class _AddProductModalState extends State<AddProductModal> {
       );
       if (!mounted) return;
       if (ok) {
+        // Create audit log for product update
+        final Map<String, dynamic>? admin = unifiedAuthState.adminData;
+        String? adminName;
+        int? adminId;
+        if (admin != null) {
+          final String first = (admin['first_name'] ?? '').toString().trim();
+          final String last = (admin['last_name'] ?? '').toString().trim();
+          adminName = [first, last].where((s) => s.isNotEmpty).join(' ');
+          if (adminName.isEmpty) adminName = null;
+
+          final dynamic value = admin['id'];
+          if (value is int) {
+            adminId = value;
+          } else {
+            adminId = int.tryParse(value?.toString() ?? '');
+          }
+        }
+
+        try {
+          await ApiService.createAuditLog(
+            activityCategory: 'admin',
+            activityType: 'product_updated',
+            activityTitle: 'Admin updated product',
+            description:
+                'Admin ${adminName ?? 'Unknown'} updated product: ${_nameController.text} (ID: ${widget.productId}). Quantity: $parsedQuantity',
+            actorType: 'admin',
+            actorName: adminName,
+            adminId: adminId,
+            metadata: {
+              'product_id': widget.productId,
+              'product_name': _nameController.text,
+              'quantity': parsedQuantity,
+              'description': _descriptionController.text,
+            },
+          );
+        } catch (e) {
+          debugPrint('Failed to create audit log for product update: $e');
+          // Don't block the update process if audit log fails
+        }
+
         final Product updatedProduct = Product(
           id: widget.productId,
           name: _nameController.text,
@@ -312,6 +353,45 @@ class _AddProductModalState extends State<AddProductModal> {
 
     if (!mounted) return;
     if (ok) {
+      // Create audit log for product addition
+      final Map<String, dynamic>? admin = unifiedAuthState.adminData;
+      String? adminName;
+      int? adminId;
+      if (admin != null) {
+        final String first = (admin['first_name'] ?? '').toString().trim();
+        final String last = (admin['last_name'] ?? '').toString().trim();
+        adminName = [first, last].where((s) => s.isNotEmpty).join(' ');
+        if (adminName.isEmpty) adminName = null;
+
+        final dynamic value = admin['id'];
+        if (value is int) {
+          adminId = value;
+        } else {
+          adminId = int.tryParse(value?.toString() ?? '');
+        }
+      }
+
+      try {
+        await ApiService.createAuditLog(
+          activityCategory: 'admin',
+          activityType: 'product_created',
+          activityTitle: 'Admin added new product',
+          description:
+              'Admin ${adminName ?? 'Unknown'} added new product: ${newProduct.name}. Quantity: $parsedQuantity, Description: ${newProduct.description}',
+          actorType: 'admin',
+          actorName: adminName,
+          adminId: adminId,
+          metadata: {
+            'product_name': newProduct.name,
+            'quantity': parsedQuantity,
+            'description': newProduct.description,
+          },
+        );
+      } catch (e) {
+        debugPrint('Failed to create audit log for product addition: $e');
+        // Don't block the addition process if audit log fails
+      }
+
       widget.onProductAdded(newProduct);
       _clearForm();
       Navigator.of(context).pop();
