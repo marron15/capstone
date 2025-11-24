@@ -434,6 +434,19 @@ class _LandingPageState extends State<LandingPage>
       return;
     }
 
+    // Check if customer has an active membership
+    final membershipData = unifiedAuthState.membershipData;
+    if (membershipData == null) {
+      _showScanError('No membership found. Please contact the gym to activate your membership.');
+      return;
+    }
+
+    // Check if membership is expired
+    if (!_isMembershipActive(membershipData.expirationDate)) {
+      _showScanError('Your membership has expired. Please renew your membership to use the QR code scanner.');
+      return;
+    }
+
     final String? payload = await showDialog<String>(
       context: context,
       barrierDismissible: true,
@@ -447,6 +460,18 @@ class _LandingPageState extends State<LandingPage>
   Future<void> _recordAttendanceScan(String payload) async {
     final int? customerId = unifiedAuthState.customerId;
     if (customerId == null) return;
+
+    // Double-check membership status before recording scan
+    final membershipData = unifiedAuthState.membershipData;
+    if (membershipData == null) {
+      _showScanError('No membership found. Please contact the gym to activate your membership.');
+      return;
+    }
+
+    if (!_isMembershipActive(membershipData.expirationDate)) {
+      _showScanError('Your membership has expired. Please renew your membership to use the QR code scanner.');
+      return;
+    }
 
     if (!AttendanceService.isValidAdminPayload(payload)) {
       _showScanError(
@@ -1410,6 +1435,11 @@ class _LandingPageState extends State<LandingPage>
                                                               .isCustomerLoggedIn) {
                                                             return const SizedBox.shrink();
                                                           }
+                                                          
+                                                          // Check if membership is active for button state
+                                                          final bool isMembershipActive = unifiedAuthState.membershipData != null &&
+                                                              _isMembershipActive(unifiedAuthState.membershipData!.expirationDate);
+                                                          
                                                           return Column(
                                                             crossAxisAlignment:
                                                                 CrossAxisAlignment
@@ -1417,7 +1447,7 @@ class _LandingPageState extends State<LandingPage>
                                                             children: [
                                                               OutlinedButton(
                                                                 onPressed:
-                                                                    _isSubmittingScan
+                                                                    (_isSubmittingScan || !isMembershipActive)
                                                                         ? null
                                                                         : _startScanFlow,
                                                                 style: OutlinedButton.styleFrom(
@@ -1466,7 +1496,9 @@ class _LandingPageState extends State<LandingPage>
                                                                     Text(
                                                                       _isSubmittingScan
                                                                           ? 'Processing...'
-                                                                          : 'Scan Admin QR',
+                                                                          : (!isMembershipActive
+                                                                              ? 'Membership Expired'
+                                                                              : 'Scan Admin QR'),
                                                                       style: TextStyle(
                                                                         fontSize:
                                                                             isSmallScreen

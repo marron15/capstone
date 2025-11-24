@@ -544,7 +544,7 @@ class _AuditLogCard extends StatelessWidget {
       return Colors.green;
     }
     if (categoryTitle == 'Time Out') {
-      return Colors.orange;
+      return Colors.red;
     }
     // Fallback: map category titles to their base categories
     final lower = categoryTitle.toLowerCase();
