@@ -410,7 +410,7 @@ class _AuditLogCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color badgeColor = _categoryColor(entry.activityCategory);
+    final Color badgeColor = _categoryTitleColor(entry.activityCategoryTitle);
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
@@ -538,19 +538,25 @@ class _AuditLogCard extends StatelessWidget {
     }
   }
 
-  static Color _categoryColor(String category) {
-    switch (category) {
-      case 'profile':
-        return Colors.blue;
-      case 'reservation':
-        return Colors.deepPurple;
-      case 'attendance':
-        return Colors.teal;
-      case 'auth':
-        return Colors.orange;
-      default:
-        return Colors.grey;
+  // Get color based on activity category title (for differentiated Time In/Out)
+  static Color _categoryTitleColor(String categoryTitle) {
+    if (categoryTitle == 'Time In') {
+      return Colors.green;
     }
+    if (categoryTitle == 'Time Out') {
+      return Colors.orange;
+    }
+    // Fallback: map category titles to their base categories
+    final lower = categoryTitle.toLowerCase();
+    if (lower.contains('profile')) return Colors.blue;
+    if (lower.contains('reservation')) return Colors.deepPurple;
+    if (lower.contains('log in') || lower.contains('login'))
+      return Colors.orange;
+    if (lower.contains('log out') || lower.contains('logout'))
+      return Colors.orange;
+    if (lower.contains('time')) return Colors.teal;
+    // Default fallback
+    return Colors.grey;
   }
 }
 
@@ -723,8 +729,8 @@ class _TableRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color badgeColor = _AuditLogCard._categoryColor(
-      entry.activityCategory,
+    final Color badgeColor = _AuditLogCard._categoryTitleColor(
+      entry.activityCategoryTitle,
     );
     return Column(
       children: [
@@ -1061,6 +1067,27 @@ class AuditLogEntry {
       final normalized = activityType.toLowerCase();
       if (normalized.contains('logout')) return 'Log out';
       if (normalized.contains('login')) return 'Log in';
+    }
+    if (activityCategory == 'attendance') {
+      final normalized = activityType.toLowerCase();
+      if (normalized.contains('attendance_out') ||
+          normalized.contains('time_out') ||
+          normalized.contains('timed_out')) {
+        return 'Time Out';
+      }
+      if (normalized.contains('attendance_in') ||
+          normalized.contains('time_in') ||
+          normalized.contains('timed_in')) {
+        return 'Time In';
+      }
+      // Fallback to check activity title
+      final titleLower = activityTitle.toLowerCase();
+      if (titleLower.contains('timed out') || titleLower.contains('time out')) {
+        return 'Time Out';
+      }
+      if (titleLower.contains('timed in') || titleLower.contains('time in')) {
+        return 'Time In';
+      }
     }
     return _categoryTitles[activityCategory] ?? activityCategory;
   }
