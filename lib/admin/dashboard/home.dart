@@ -6,6 +6,7 @@ import '../services/api_service.dart';
 import '../services/admin_service.dart';
 import '../services/refresh_service.dart';
 import '../../services/attendance_service.dart';
+import '../../services/unified_auth_state.dart';
 import '../statistics/new_week_members.dart';
 import '../statistics/new_members_month.dart';
 import '../statistics/total_memberships.dart';
@@ -1246,6 +1247,7 @@ class _StatisticPageState extends State<StatisticPage>
       }
     }
 
+    // Export PDF (function handles errors internally)
     await exportStatsToPDF(
       context,
       title: 'Statistics Report ($period)',
@@ -1259,6 +1261,48 @@ class _StatisticPageState extends State<StatisticPage>
       membershipTotals: membershipTotals,
       expiredMemberships: customersExpired,
     );
+
+    // Create audit log entry for PDF export (after successful export)
+    final Map<String, dynamic>? admin = unifiedAuthState.adminData;
+    String? adminName;
+    int? adminId;
+    if (admin != null) {
+      final String first = (admin['first_name'] ?? '').toString().trim();
+      final String last = (admin['last_name'] ?? '').toString().trim();
+      adminName = [first, last].where((s) => s.isNotEmpty).join(' ');
+      if (adminName.isEmpty) adminName = null;
+
+      final dynamic value = admin['id'];
+      if (value is int) {
+        adminId = value;
+      } else {
+        adminId = int.tryParse(value?.toString() ?? '');
+      }
+    }
+
+    // Create audit log for PDF export
+    try {
+      await ApiService.createAuditLog(
+        activityCategory: 'admin',
+        activityType: 'pdf_export',
+        activityTitle: 'Admin exported PDF report',
+        description:
+            'Admin ${adminName ?? 'Unknown'} exported Statistics Report PDF for period: $period. Report includes: ${rows.length - 1} statistics entries, ${customerTableRows.length - 1} customers, ${reservationTableRows.length > 1 ? reservationTableRows.length - 1 : 0} reservations.',
+        actorType: 'admin',
+        actorName: adminName,
+        adminId: adminId,
+        metadata: {
+          'export_period': period,
+          'statistics_count': rows.length - 1,
+          'customers_count': customerTableRows.length - 1,
+          'reservations_count': reservationTableRows.length > 1 ? reservationTableRows.length - 1 : 0,
+          'report_type': 'statistics_report',
+        },
+      );
+    } catch (e) {
+      debugPrint('Failed to create audit log for PDF export: $e');
+      // Don't block the export process if audit log fails
+    }
   }
 
   Future<void> _promptExportPeriod(BuildContext context) async {
