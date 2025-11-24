@@ -142,11 +142,56 @@ class _TrainersPageState extends State<TrainersPage> {
     }
   }
 
-  void _editTrainer(int index, Map<String, String> updatedTrainer) {
-    setState(() {
-      _trainers[index] = updatedTrainer;
-      _filterTrainers(searchController.text);
-    });
+  Future<void> _editTrainer(
+    int index,
+    Map<String, String> updatedTrainer,
+  ) async {
+    final String idStr =
+        updatedTrainer['id'] ?? _trainers[index]['id'] ?? '';
+    final int id = int.tryParse(idStr) ?? 0;
+    final String firstName = updatedTrainer['firstName'] ?? '';
+    final String middleName = updatedTrainer['middleName'] ?? '';
+    final String lastName = updatedTrainer['lastName'] ?? '';
+    final String contactNumber = updatedTrainer['contactNumber'] ?? '';
+    final String cleanedContact = PhoneFormatter.cleanPhoneNumber(
+      contactNumber,
+    );
+    final bool isContactValid = PhoneValidator.isValidPhilippineMobile(
+      cleanedContact,
+    );
+
+    if (id <= 0 || firstName.isEmpty || lastName.isEmpty || !isContactValid) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please provide complete and valid trainer details'),
+          ),
+        );
+      }
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    final bool ok = await ApiService.updateTrainer(
+      id: id,
+      firstName: firstName,
+      middleName: middleName.isEmpty ? null : middleName,
+      lastName: lastName,
+      contactNumber: cleanedContact,
+    );
+
+    if (!mounted) return;
+    if (ok) {
+      await _loadTrainers();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Trainer updated successfully')),
+      );
+    } else {
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to update trainer')),
+      );
+    }
   }
 
   void _filterTrainers(String query) {

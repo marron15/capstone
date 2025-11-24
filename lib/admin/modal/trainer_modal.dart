@@ -492,6 +492,7 @@ class TrainerModal {
                                     onPressed: () {
                                       if (formKey.currentState!.validate()) {
                                         onEdit({
+                                          'id': trainer['id'] ?? '',
                                           'firstName': firstNameController.text,
                                           'middleName':
                                               middleNameController.text,

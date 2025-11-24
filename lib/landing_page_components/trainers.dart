@@ -50,6 +50,10 @@ class _TrainersSectionState extends State<TrainersSection> {
   Widget build(BuildContext context) {
     final bool isSmallScreen = widget.isSmallScreen;
     final double screenWidth = widget.screenWidth;
+    final double headingFontSize = (isSmallScreen
+            ? screenWidth * 0.07
+            : screenWidth * 0.045)
+        .clamp(22.0, 48.0);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -60,15 +64,48 @@ class _TrainersSectionState extends State<TrainersSection> {
             horizontal: isSmallScreen ? 20.0 : screenWidth * 0.1,
           ),
           child: Center(
-            child: Text(
-              'Trainers',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize:
-                    isSmallScreen ? screenWidth * 0.06 : screenWidth * 0.04,
-                fontWeight: FontWeight.bold,
-              ),
-              textAlign: TextAlign.center,
+            child: Column(
+              children: [
+                Text(
+                  'Trainers',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: headingFontSize,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.1,
+                    shadows: [
+                      Shadow(
+                        color: Colors.black.withValues(alpha: 0.8),
+                        blurRadius: 18,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 6),
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isSmallScreen ? 16 : 28,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.55),
+                    borderRadius: BorderRadius.circular(28),
+                    border: Border.all(color: Colors.white24, width: 1),
+                  ),
+                  child: Text(
+                    'For Inquiries, contact with our Trainers below.',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: headingFontSize * 0.65,
+                      letterSpacing: 0.4,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
             ),
           ),
         ),

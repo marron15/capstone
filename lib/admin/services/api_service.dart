@@ -40,6 +40,8 @@ class ApiService {
       '$baseUrl/gymTrainers/archiveTrainerByID.php';
   static const String restoreTrainerEndpoint =
       '$baseUrl/gymTrainers/restoreTrainerByID.php';
+  static const String updateTrainerEndpoint =
+      '$baseUrl/gymTrainers/updatedTrainers.php';
   // Membership endpoints
   static const String getAllMembershipsEndpoint =
       '$baseUrl/membership/getAllMembership.php';
@@ -1035,6 +1037,73 @@ class ApiService {
       return false;
     } catch (e) {
       debugPrint('restoreTrainer error: $e');
+      return false;
+    }
+  }
+
+  static Future<bool> updateTrainer({
+    required int id,
+    required String firstName,
+    String? middleName,
+    required String lastName,
+    required String contactNumber,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse(updateTrainerEndpoint),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode({
+          'id': id,
+          'firstName': firstName,
+          'middleName': middleName ?? '',
+          'lastName': lastName,
+          'contactNumber': contactNumber,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        try {
+          final parsed = jsonDecode(response.body);
+          if (parsed is Map<String, dynamic> && parsed['success'] != null) {
+            return parsed['success'] == true;
+          }
+          if (parsed is bool) return parsed;
+        } catch (_) {
+          final body = response.body.toLowerCase();
+          return body.contains('true') || body.contains('success');
+        }
+      }
+
+      // fallback for php expecting form data
+      final formResponse = await http.post(
+        Uri.parse(updateTrainerEndpoint),
+        headers: {'Accept': 'application/json'},
+        body: {
+          'id': id.toString(),
+          'firstName': firstName,
+          'middleName': middleName ?? '',
+          'lastName': lastName,
+          'contactNumber': contactNumber,
+        },
+      );
+      if (formResponse.statusCode == 200) {
+        try {
+          final parsed = jsonDecode(formResponse.body);
+          if (parsed is Map<String, dynamic> && parsed['success'] != null) {
+            return parsed['success'] == true;
+          }
+          if (parsed is bool) return parsed;
+        } catch (_) {
+          final body = formResponse.body.toLowerCase();
+          return body.contains('true') || body.contains('success');
+        }
+      }
+      return false;
+    } catch (e) {
+      debugPrint('updateTrainer error: $e');
       return false;
     }
   }

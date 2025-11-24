@@ -47,7 +47,7 @@ class ServicesSection extends StatelessWidget {
                 imagePath: 'assets/images/services&products/Lockers.jpg',
                 title: 'Locker Rental',
                 description:
-                    'Secure your belongings with our lockers you can bring your own lock. Rental fee: 50 pesos/month.',
+                    'Secure your belongings with our lockers you can bring your own lock.',
               ),
               SizedBox(width: 16),
               _FlexibleServiceCard(
