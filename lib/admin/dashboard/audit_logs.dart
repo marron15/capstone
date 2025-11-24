@@ -603,7 +603,7 @@ class _TableHeader extends StatelessWidget {
               ]
             : const [
                 _HeaderCell(text: 'Activity', flex: 3),
-                _HeaderCell(text: 'Customer', flex: 2),
+                _HeaderCell(text: 'Admin/Customer', flex: 2),
                 _HeaderCell(text: 'Category', flex: 2),
                 _HeaderCell(text: 'Date & Time (PH)', flex: 2),
                 _HeaderIdCell(text: 'Log ID'),
@@ -774,7 +774,9 @@ class _TableRow extends StatelessWidget {
                     Expanded(
                       flex: 2,
                       child: Text(
-                        entry.customerName ?? 'Unknown',
+                        entry.actorType == 'admin'
+                            ? (entry.actorName ?? 'Unknown')
+                            : (entry.customerName ?? 'Unknown'),
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                           fontWeight: FontWeight.w600,
@@ -795,11 +797,16 @@ class _TableRow extends StatelessWidget {
                             borderRadius: BorderRadius.circular(999),
                           ),
                           child: Text(
-                            entry.activityCategoryTitle,
+                            entry.actorType == 'admin'
+                                ? entry.activityTitle
+                                : entry.activityCategoryTitle,
                             style: TextStyle(
                               color: badgeColor,
                               fontWeight: FontWeight.w700,
                             ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
                           ),
                         ),
                       ),
