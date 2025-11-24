@@ -48,22 +48,30 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
 
     // Apply client-side filtering based on actor type
     // Note: Backend already filters by actor_type, but we keep this as a safety check
-    List<AuditLogEntry> filteredLogs = logs.map(AuditLogEntry.fromJson).toList();
-    
+    List<AuditLogEntry> filteredLogs =
+        logs.map(AuditLogEntry.fromJson).toList();
+
     if (_selectedActorType == 'admin') {
       // Admin activities: filter by actor_type == 'admin'
-      filteredLogs = filteredLogs.where((entry) {
-        final actorType = entry.actorType.toLowerCase();
-        return actorType == 'admin' || actorType == 'staff' || actorType == 'administrator';
-      }).toList();
+      filteredLogs =
+          filteredLogs.where((entry) {
+            final actorType = entry.actorType.toLowerCase();
+            return actorType == 'admin' ||
+                actorType == 'staff' ||
+                actorType == 'administrator';
+          }).toList();
     } else if (_selectedActorType == 'customer') {
       // Customer activities: filter by actor_type == 'customer' or entries with customer_id and system actor
-      filteredLogs = filteredLogs.where((entry) {
-        final actorType = entry.actorType.toLowerCase();
-        final isCustomerType = actorType == 'customer' || actorType == 'system' || actorType.isEmpty;
-        // Include customer activities (has customer_id and is customer/system type)
-        return entry.customerId != null && isCustomerType;
-      }).toList();
+      filteredLogs =
+          filteredLogs.where((entry) {
+            final actorType = entry.actorType.toLowerCase();
+            final isCustomerType =
+                actorType == 'customer' ||
+                actorType == 'system' ||
+                actorType.isEmpty;
+            // Include customer activities (has customer_id and is customer/system type)
+            return entry.customerId != null && isCustomerType;
+          }).toList();
     }
     // If _selectedActorType is null, show all (no filtering)
 
@@ -202,20 +210,24 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
                 FilledButton.icon(
                   onPressed: () => _handleActorTypeChange(null),
                   icon: Icon(
-                    _selectedActorType == null ? Icons.check_circle : Icons.circle_outlined,
+                    _selectedActorType == null
+                        ? Icons.check_circle
+                        : Icons.circle_outlined,
                     size: 18,
                   ),
                   label: const Text('All Actions'),
                   style: ButtonStyle(
                     backgroundColor: WidgetStateProperty.resolveWith(
-                      (states) => _selectedActorType == null
-                          ? Colors.blue.shade700
-                          : Colors.grey.shade300,
+                      (states) =>
+                          _selectedActorType == null
+                              ? Colors.blue.shade700
+                              : Colors.grey.shade300,
                     ),
                     foregroundColor: WidgetStateProperty.resolveWith(
-                      (states) => _selectedActorType == null
-                          ? Colors.white
-                          : Colors.grey.shade700,
+                      (states) =>
+                          _selectedActorType == null
+                              ? Colors.white
+                              : Colors.grey.shade700,
                     ),
                   ),
                 ),
@@ -225,14 +237,16 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
                   label: const Text('Customer Activity'),
                   style: ButtonStyle(
                     backgroundColor: WidgetStateProperty.resolveWith(
-                      (states) => _selectedActorType == 'customer'
-                          ? Colors.blue.shade700
-                          : Colors.grey.shade300,
+                      (states) =>
+                          _selectedActorType == 'customer'
+                              ? Colors.blue.shade700
+                              : Colors.grey.shade300,
                     ),
                     foregroundColor: WidgetStateProperty.resolveWith(
-                      (states) => _selectedActorType == 'customer'
-                          ? Colors.white
-                          : Colors.grey.shade700,
+                      (states) =>
+                          _selectedActorType == 'customer'
+                              ? Colors.white
+                              : Colors.grey.shade700,
                     ),
                   ),
                 ),
@@ -242,14 +256,16 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
                   label: const Text('Admin Activity'),
                   style: ButtonStyle(
                     backgroundColor: WidgetStateProperty.resolveWith(
-                      (states) => _selectedActorType == 'admin'
-                          ? Colors.blue.shade700
-                          : Colors.grey.shade300,
+                      (states) =>
+                          _selectedActorType == 'admin'
+                              ? Colors.blue.shade700
+                              : Colors.grey.shade300,
                     ),
                     foregroundColor: WidgetStateProperty.resolveWith(
-                      (states) => _selectedActorType == 'admin'
-                          ? Colors.white
-                          : Colors.grey.shade700,
+                      (states) =>
+                          _selectedActorType == 'admin'
+                              ? Colors.white
+                              : Colors.grey.shade700,
                     ),
                   ),
                 ),
@@ -286,20 +302,24 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
                 FilledButton.icon(
                   onPressed: () => _handleActorTypeChange(null),
                   icon: Icon(
-                    _selectedActorType == null ? Icons.check_circle : Icons.circle_outlined,
+                    _selectedActorType == null
+                        ? Icons.check_circle
+                        : Icons.circle_outlined,
                     size: 18,
                   ),
                   label: const Text('All Actions'),
                   style: ButtonStyle(
                     backgroundColor: WidgetStateProperty.resolveWith(
-                      (states) => _selectedActorType == null
-                          ? Colors.blue.shade700
-                          : Colors.grey.shade300,
+                      (states) =>
+                          _selectedActorType == null
+                              ? Colors.blue.shade700
+                              : Colors.grey.shade300,
                     ),
                     foregroundColor: WidgetStateProperty.resolveWith(
-                      (states) => _selectedActorType == null
-                          ? Colors.white
-                          : Colors.grey.shade700,
+                      (states) =>
+                          _selectedActorType == null
+                              ? Colors.white
+                              : Colors.grey.shade700,
                     ),
                   ),
                 ),
@@ -310,14 +330,16 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
                   label: const Text('Customer Activity'),
                   style: ButtonStyle(
                     backgroundColor: WidgetStateProperty.resolveWith(
-                      (states) => _selectedActorType == 'customer'
-                          ? Colors.blue.shade700
-                          : Colors.grey.shade300,
+                      (states) =>
+                          _selectedActorType == 'customer'
+                              ? Colors.blue.shade700
+                              : Colors.grey.shade300,
                     ),
                     foregroundColor: WidgetStateProperty.resolveWith(
-                      (states) => _selectedActorType == 'customer'
-                          ? Colors.white
-                          : Colors.grey.shade700,
+                      (states) =>
+                          _selectedActorType == 'customer'
+                              ? Colors.white
+                              : Colors.grey.shade700,
                     ),
                   ),
                 ),
@@ -328,14 +350,16 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
                   label: const Text('Admin Activity'),
                   style: ButtonStyle(
                     backgroundColor: WidgetStateProperty.resolveWith(
-                      (states) => _selectedActorType == 'admin'
-                          ? Colors.blue.shade700
-                          : Colors.grey.shade300,
+                      (states) =>
+                          _selectedActorType == 'admin'
+                              ? Colors.blue.shade700
+                              : Colors.grey.shade300,
                     ),
                     foregroundColor: WidgetStateProperty.resolveWith(
-                      (states) => _selectedActorType == 'admin'
-                          ? Colors.white
-                          : Colors.grey.shade700,
+                      (states) =>
+                          _selectedActorType == 'admin'
+                              ? Colors.white
+                              : Colors.grey.shade700,
                     ),
                   ),
                 ),
@@ -374,6 +398,7 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
     return _AuditLogTable(
       entries: _logs,
       isAdminActivity: _selectedActorType == 'admin',
+      selectedActorType: _selectedActorType,
     );
   }
 }
@@ -532,10 +557,12 @@ class _AuditLogCard extends StatelessWidget {
 class _AuditLogTable extends StatelessWidget {
   final List<AuditLogEntry> entries;
   final bool isAdminActivity;
+  final String? selectedActorType;
 
   const _AuditLogTable({
     required this.entries,
     this.isAdminActivity = false,
+    this.selectedActorType,
   });
 
   @override
@@ -560,11 +587,17 @@ class _AuditLogTable extends StatelessWidget {
             ),
             child: Column(
               children: [
-                _TableHeader(isAdminActivity: isAdminActivity),
+                _TableHeader(
+                  isAdminActivity: isAdminActivity,
+                  selectedActorType: selectedActorType,
+                ),
                 if (entries.isEmpty)
                   const SizedBox.shrink()
                 else
-                  ...entries.map((entry) => _TableRow(entry, isAdminActivity: isAdminActivity)),
+                  ...entries.map(
+                    (entry) =>
+                        _TableRow(entry, isAdminActivity: isAdminActivity),
+                  ),
               ],
             ),
           ),
@@ -576,8 +609,20 @@ class _AuditLogTable extends StatelessWidget {
 
 class _TableHeader extends StatelessWidget {
   final bool isAdminActivity;
+  final String? selectedActorType;
 
-  const _TableHeader({this.isAdminActivity = false});
+  const _TableHeader({this.isAdminActivity = false, this.selectedActorType});
+
+  String get _actorColumnHeader {
+    if (isAdminActivity) {
+      return 'Admin';
+    } else if (selectedActorType == 'customer') {
+      return 'Customer';
+    } else {
+      // All Actions selected
+      return 'Admin/Customer';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -594,20 +639,21 @@ class _TableHeader extends StatelessWidget {
         ),
       ),
       child: Row(
-        children: isAdminActivity
-            ? const [
-                _HeaderCell(text: 'Activity', flex: 2),
-                _HeaderCell(text: 'Admin', flex: 2),
-                _HeaderCell(text: 'Details', flex: 3),
-                _HeaderCell(text: 'Date & Time (PH)', flex: 2),
-              ]
-            : const [
-                _HeaderCell(text: 'Activity', flex: 3),
-                _HeaderCell(text: 'Admin/Customer', flex: 2),
-                _HeaderCell(text: 'Category', flex: 2),
-                _HeaderCell(text: 'Date & Time (PH)', flex: 2),
-                _HeaderIdCell(text: 'Log ID'),
-              ],
+        children:
+            isAdminActivity
+                ? const [
+                  _HeaderCell(text: 'Activity', flex: 2),
+                  _HeaderCell(text: 'Admin', flex: 2),
+                  _HeaderCell(text: 'Details', flex: 3),
+                  _HeaderCell(text: 'Date & Time (PH)', flex: 2),
+                ]
+                : [
+                  const _HeaderCell(text: 'Activity', flex: 3),
+                  _HeaderCell(text: _actorColumnHeader, flex: 2),
+                  const _HeaderCell(text: 'Category', flex: 2),
+                  const _HeaderCell(text: 'Date & Time (PH)', flex: 2),
+                  const _HeaderIdCell(text: 'Log ID'),
+                ],
       ),
     );
   }
@@ -665,10 +711,7 @@ class _TableRow extends StatelessWidget {
   final AuditLogEntry entry;
   final bool isAdminActivity;
 
-  const _TableRow(
-    this.entry, {
-    this.isAdminActivity = false,
-  });
+  const _TableRow(this.entry, {this.isAdminActivity = false});
 
   String get _detailsText {
     if (entry.description != null && entry.description!.isNotEmpty) {
@@ -688,152 +731,153 @@ class _TableRow extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
           child: Row(
-            children: isAdminActivity
-                ? [
-                    Expanded(
-                      flex: 2,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        child: Text(
-                          entry.activityTitle,
-                          textAlign: TextAlign.left,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
+            children:
+                isAdminActivity
+                    ? [
+                      Expanded(
+                        flex: 2,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          child: Text(
+                            entry.activityTitle,
+                            textAlign: TextAlign.left,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    Expanded(
-                      flex: 2,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                      Expanded(
+                        flex: 2,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          child: Text(
+                            entry.actorName ?? 'Unknown',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        flex: 3,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          child: Text(
+                            _detailsText,
+                            textAlign: TextAlign.left,
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: Colors.grey.shade700,
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        flex: 2,
                         child: Text(
-                          entry.actorName ?? 'Unknown',
+                          entry.formattedTimestamp,
                           textAlign: TextAlign.center,
                           style: const TextStyle(
-                            fontSize: 15,
                             fontWeight: FontWeight.w600,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      flex: 3,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        child: Text(
-                          _detailsText,
-                          textAlign: TextAlign.left,
-                          style: TextStyle(
                             fontSize: 15,
-                            color: Colors.grey.shade700,
-                            height: 1.4,
                           ),
                         ),
                       ),
-                    ),
-                    Expanded(
-                      flex: 2,
-                      child: Text(
-                        entry.formattedTimestamp,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 15,
-                        ),
-                      ),
-                    ),
-                  ]
-                : [
-                    Expanded(
-                      flex: 3,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              entry.activityTitle,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.black87,
+                    ]
+                    : [
+                      Expanded(
+                        flex: 3,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                entry.activityTitle,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black87,
+                                ),
                               ),
+                              const SizedBox(height: 4),
+                              const SizedBox.shrink(),
+                            ],
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        flex: 2,
+                        child: Text(
+                          entry.actorType == 'admin'
+                              ? (entry.actorName ?? 'Unknown')
+                              : (entry.customerName ?? 'Unknown'),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        flex: 2,
+                        child: Center(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
                             ),
-                            const SizedBox(height: 4),
-                            const SizedBox.shrink(),
-                          ],
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      flex: 2,
-                      child: Text(
-                        entry.actorType == 'admin'
-                            ? (entry.actorName ?? 'Unknown')
-                            : (entry.customerName ?? 'Unknown'),
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 15,
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      flex: 2,
-                      child: Center(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: badgeColor.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: Text(
-                            entry.actorType == 'admin'
-                                ? entry.activityTitle
-                                : entry.activityCategoryTitle,
-                            style: TextStyle(
-                              color: badgeColor,
-                              fontWeight: FontWeight.w700,
+                            decoration: BoxDecoration(
+                              color: badgeColor.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(999),
                             ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.center,
+                            child: Text(
+                              entry.actorType == 'admin'
+                                  ? entry.activityTitle
+                                  : entry.activityCategoryTitle,
+                              style: TextStyle(
+                                color: badgeColor,
+                                fontWeight: FontWeight.w700,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    Expanded(
-                      flex: 2,
-                      child: Text(
-                        entry.formattedTimestamp,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 15,
+                      Expanded(
+                        flex: 2,
+                        child: Text(
+                          entry.formattedTimestamp,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
+                          ),
                         ),
                       ),
-                    ),
-                    SizedBox(
-                      width: 90,
-                      child: Text(
-                        '#${entry.id}',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.grey.shade600,
-                          fontWeight: FontWeight.w600,
+                      SizedBox(
+                        width: 90,
+                        child: Text(
+                          '#${entry.id}',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.grey.shade600,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
           ),
         ),
         Divider(height: 1, color: Colors.grey.shade200),
