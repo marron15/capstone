@@ -17,18 +17,11 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
   final double _drawerWidth = 280;
   bool _navCollapsed = false;
   final TextEditingController _searchController = TextEditingController();
-  final Map<String, String> _categories = const {
-    'all': 'All',
-    'profile': 'Profile Updates',
-    'reservation': 'Reservations',
-    'attendance': 'Time In/Out',
-    'auth': 'Login/Logout',
-  };
 
   final List<AuditLogEntry> _logs = [];
   bool _isLoading = true;
   String _searchQuery = '';
-  String _selectedCategory = 'all';
+  String? _selectedActorType;
   Timer? _searchDebounce;
 
   @override
@@ -48,15 +41,36 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
     setState(() => _isLoading = true);
     final logs = await ApiService.getAuditLogs(
       search: _searchQuery.trim().isEmpty ? null : _searchQuery.trim(),
-      activityCategory: _selectedCategory == 'all' ? null : _selectedCategory,
+      actorType: _selectedActorType,
       limit: 250,
     );
     if (!mounted) return;
 
+    // Apply client-side filtering based on actor type
+    // Note: Backend already filters by actor_type, but we keep this as a safety check
+    List<AuditLogEntry> filteredLogs = logs.map(AuditLogEntry.fromJson).toList();
+    
+    if (_selectedActorType == 'admin') {
+      // Admin activities: filter by actor_type == 'admin'
+      filteredLogs = filteredLogs.where((entry) {
+        final actorType = entry.actorType.toLowerCase();
+        return actorType == 'admin' || actorType == 'staff' || actorType == 'administrator';
+      }).toList();
+    } else if (_selectedActorType == 'customer') {
+      // Customer activities: filter by actor_type == 'customer' or entries with customer_id and system actor
+      filteredLogs = filteredLogs.where((entry) {
+        final actorType = entry.actorType.toLowerCase();
+        final isCustomerType = actorType == 'customer' || actorType == 'system' || actorType.isEmpty;
+        // Include customer activities (has customer_id and is customer/system type)
+        return entry.customerId != null && isCustomerType;
+      }).toList();
+    }
+    // If _selectedActorType is null, show all (no filtering)
+
     setState(() {
       _logs
         ..clear()
-        ..addAll(logs.map(AuditLogEntry.fromJson));
+        ..addAll(filteredLogs);
       _isLoading = false;
     });
   }
@@ -67,9 +81,9 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
     _searchDebounce = Timer(const Duration(milliseconds: 400), _fetchLogs);
   }
 
-  void _handleCategoryChange(String category) {
-    if (_selectedCategory == category) return;
-    setState(() => _selectedCategory = category);
+  void _handleActorTypeChange(String? actorType) {
+    if (_selectedActorType == actorType) return;
+    setState(() => _selectedActorType = actorType);
     _fetchLogs();
   }
 
@@ -106,7 +120,7 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
             Expanded(
               child: Column(
                 children: [
-                  _buildHeader(context),
+                  _buildHeader(context, isMobile),
                   Expanded(
                     child: RefreshIndicator(
                       onRefresh: _fetchLogs,
@@ -122,9 +136,12 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(BuildContext context, bool isMobile) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      padding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 16 : 24,
+        vertical: 16,
+      ),
       decoration: const BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -137,75 +154,194 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'Audit Logs',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: isMobile ? 24 : 28,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               FilledButton.icon(
                 onPressed: _fetchLogs,
                 icon: const Icon(Icons.refresh),
-                label: const Text('Refresh'),
+                label: Text(isMobile ? '' : 'Refresh'),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _searchController,
-                  onChanged: _handleSearchChanged,
-                  decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.search),
-                    hintText: 'Search by customer, action, ID...',
-                    filled: true,
-                    fillColor: Colors.grey.shade100,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide.none,
-                    ),
-                    suffixIcon:
-                        _searchQuery.isNotEmpty
-                            ? IconButton(
-                              icon: const Icon(Icons.clear),
-                              onPressed: () {
-                                _searchController.clear();
-                                _handleSearchChanged('');
-                              },
-                            )
-                            : null,
-                  ),
+          if (isMobile) ...[
+            TextField(
+              controller: _searchController,
+              onChanged: _handleSearchChanged,
+              decoration: InputDecoration(
+                prefixIcon: const Icon(Icons.search),
+                hintText: 'Search by customer, action, ID...',
+                filled: true,
+                fillColor: Colors.grey.shade100,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide.none,
                 ),
-              ),
-              const SizedBox(width: 16),
-              SegmentedButton<String>(
-                segments:
-                    _categories.entries
-                        .map(
-                          (entry) => ButtonSegment<String>(
-                            value: entry.key,
-                            label: Text(entry.value),
-                          ),
+                suffixIcon:
+                    _searchQuery.isNotEmpty
+                        ? IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            _searchController.clear();
+                            _handleSearchChanged('');
+                          },
                         )
-                        .toList(),
-                selected: <String>{_selectedCategory},
-                onSelectionChanged: (selection) {
-                  if (selection.isNotEmpty) {
-                    _handleCategoryChange(selection.first);
-                  }
-                },
-                showSelectedIcon: false,
-                style: ButtonStyle(
-                  backgroundColor: WidgetStateProperty.resolveWith(
-                    (states) =>
-                        states.contains(WidgetState.selected)
-                            ? Colors.blue.shade50
-                            : Colors.white,
+                        : null,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                FilledButton.icon(
+                  onPressed: () => _handleActorTypeChange(null),
+                  icon: Icon(
+                    _selectedActorType == null ? Icons.check_circle : Icons.circle_outlined,
+                    size: 18,
+                  ),
+                  label: const Text('All Actions'),
+                  style: ButtonStyle(
+                    backgroundColor: WidgetStateProperty.resolveWith(
+                      (states) => _selectedActorType == null
+                          ? Colors.blue.shade700
+                          : Colors.grey.shade300,
+                    ),
+                    foregroundColor: WidgetStateProperty.resolveWith(
+                      (states) => _selectedActorType == null
+                          ? Colors.white
+                          : Colors.grey.shade700,
+                    ),
                   ),
                 ),
+                FilledButton.icon(
+                  onPressed: () => _handleActorTypeChange('customer'),
+                  icon: const Icon(Icons.person_outline, size: 18),
+                  label: const Text('Customer Activity'),
+                  style: ButtonStyle(
+                    backgroundColor: WidgetStateProperty.resolveWith(
+                      (states) => _selectedActorType == 'customer'
+                          ? Colors.blue.shade700
+                          : Colors.grey.shade300,
+                    ),
+                    foregroundColor: WidgetStateProperty.resolveWith(
+                      (states) => _selectedActorType == 'customer'
+                          ? Colors.white
+                          : Colors.grey.shade700,
+                    ),
+                  ),
+                ),
+                FilledButton.icon(
+                  onPressed: () => _handleActorTypeChange('admin'),
+                  icon: const Icon(Icons.admin_panel_settings, size: 18),
+                  label: const Text('Admin Activity'),
+                  style: ButtonStyle(
+                    backgroundColor: WidgetStateProperty.resolveWith(
+                      (states) => _selectedActorType == 'admin'
+                          ? Colors.blue.shade700
+                          : Colors.grey.shade300,
+                    ),
+                    foregroundColor: WidgetStateProperty.resolveWith(
+                      (states) => _selectedActorType == 'admin'
+                          ? Colors.white
+                          : Colors.grey.shade700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ] else ...[
+            TextField(
+              controller: _searchController,
+              onChanged: _handleSearchChanged,
+              decoration: InputDecoration(
+                prefixIcon: const Icon(Icons.search),
+                hintText: 'Search by customer, action, ID...',
+                filled: true,
+                fillColor: Colors.grey.shade100,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide.none,
+                ),
+                suffixIcon:
+                    _searchQuery.isNotEmpty
+                        ? IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            _searchController.clear();
+                            _handleSearchChanged('');
+                          },
+                        )
+                        : null,
               ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                FilledButton.icon(
+                  onPressed: () => _handleActorTypeChange(null),
+                  icon: Icon(
+                    _selectedActorType == null ? Icons.check_circle : Icons.circle_outlined,
+                    size: 18,
+                  ),
+                  label: const Text('All Actions'),
+                  style: ButtonStyle(
+                    backgroundColor: WidgetStateProperty.resolveWith(
+                      (states) => _selectedActorType == null
+                          ? Colors.blue.shade700
+                          : Colors.grey.shade300,
+                    ),
+                    foregroundColor: WidgetStateProperty.resolveWith(
+                      (states) => _selectedActorType == null
+                          ? Colors.white
+                          : Colors.grey.shade700,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                FilledButton.icon(
+                  onPressed: () => _handleActorTypeChange('customer'),
+                  icon: const Icon(Icons.person_outline, size: 18),
+                  label: const Text('Customer Activity'),
+                  style: ButtonStyle(
+                    backgroundColor: WidgetStateProperty.resolveWith(
+                      (states) => _selectedActorType == 'customer'
+                          ? Colors.blue.shade700
+                          : Colors.grey.shade300,
+                    ),
+                    foregroundColor: WidgetStateProperty.resolveWith(
+                      (states) => _selectedActorType == 'customer'
+                          ? Colors.white
+                          : Colors.grey.shade700,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                FilledButton.icon(
+                  onPressed: () => _handleActorTypeChange('admin'),
+                  icon: const Icon(Icons.admin_panel_settings, size: 18),
+                  label: const Text('Admin Activity'),
+                  style: ButtonStyle(
+                    backgroundColor: WidgetStateProperty.resolveWith(
+                      (states) => _selectedActorType == 'admin'
+                          ? Colors.blue.shade700
+                          : Colors.grey.shade300,
+                    ),
+                    foregroundColor: WidgetStateProperty.resolveWith(
+                      (states) => _selectedActorType == 'admin'
+                          ? Colors.white
+                          : Colors.grey.shade700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -235,7 +371,10 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
       );
     }
 
-    return _AuditLogTable(entries: _logs);
+    return _AuditLogTable(
+      entries: _logs,
+      isAdminActivity: _selectedActorType == 'admin',
+    );
   }
 }
 
@@ -392,8 +531,12 @@ class _AuditLogCard extends StatelessWidget {
 
 class _AuditLogTable extends StatelessWidget {
   final List<AuditLogEntry> entries;
+  final bool isAdminActivity;
 
-  const _AuditLogTable({required this.entries});
+  const _AuditLogTable({
+    required this.entries,
+    this.isAdminActivity = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -417,11 +560,11 @@ class _AuditLogTable extends StatelessWidget {
             ),
             child: Column(
               children: [
-                _TableHeader(),
+                _TableHeader(isAdminActivity: isAdminActivity),
                 if (entries.isEmpty)
                   const SizedBox.shrink()
                 else
-                  ...entries.map(_TableRow.new),
+                  ...entries.map((entry) => _TableRow(entry, isAdminActivity: isAdminActivity)),
               ],
             ),
           ),
@@ -432,6 +575,10 @@ class _AuditLogTable extends StatelessWidget {
 }
 
 class _TableHeader extends StatelessWidget {
+  final bool isAdminActivity;
+
+  const _TableHeader({this.isAdminActivity = false});
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -447,13 +594,20 @@ class _TableHeader extends StatelessWidget {
         ),
       ),
       child: Row(
-        children: const [
-          _HeaderCell(text: 'Activity', flex: 3),
-          _HeaderCell(text: 'Customer', flex: 2),
-          _HeaderCell(text: 'Category', flex: 2),
-          _HeaderCell(text: 'Date & Time (PH)', flex: 2),
-          _HeaderIdCell(text: 'Log ID'),
-        ],
+        children: isAdminActivity
+            ? const [
+                _HeaderCell(text: 'Activity', flex: 2),
+                _HeaderCell(text: 'Admin', flex: 2),
+                _HeaderCell(text: 'Details', flex: 3),
+                _HeaderCell(text: 'Date & Time (PH)', flex: 2),
+              ]
+            : const [
+                _HeaderCell(text: 'Activity', flex: 3),
+                _HeaderCell(text: 'Customer', flex: 2),
+                _HeaderCell(text: 'Category', flex: 2),
+                _HeaderCell(text: 'Date & Time (PH)', flex: 2),
+                _HeaderIdCell(text: 'Log ID'),
+              ],
       ),
     );
   }
@@ -509,8 +663,20 @@ class _HeaderIdCell extends StatelessWidget {
 
 class _TableRow extends StatelessWidget {
   final AuditLogEntry entry;
+  final bool isAdminActivity;
 
-  const _TableRow(this.entry);
+  const _TableRow(
+    this.entry, {
+    this.isAdminActivity = false,
+  });
+
+  String get _detailsText {
+    if (entry.description != null && entry.description!.isNotEmpty) {
+      return entry.description!;
+    }
+    // Fallback to activity title if no description
+    return entry.activityTitle;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -522,86 +688,145 @@ class _TableRow extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
           child: Row(
-            children: [
-              Expanded(
-                flex: 3,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        entry.activityTitle,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black87,
+            children: isAdminActivity
+                ? [
+                    Expanded(
+                      flex: 2,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: Text(
+                          entry.activityTitle,
+                          textAlign: TextAlign.left,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      const SizedBox.shrink(),
-                    ],
-                  ),
-                ),
-              ),
-              Expanded(
-                flex: 2,
-                child: Text(
-                  entry.customerName ?? 'Unknown',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 15,
-                  ),
-                ),
-              ),
-              Expanded(
-                flex: 2,
-                child: Center(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
                     ),
-                    decoration: BoxDecoration(
-                      color: badgeColor.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(
-                      entry.activityCategoryTitle,
-                      style: TextStyle(
-                        color: badgeColor,
-                        fontWeight: FontWeight.w700,
+                    Expanded(
+                      flex: 2,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: Text(
+                          entry.actorName ?? 'Unknown',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ),
-              ),
-              Expanded(
-                flex: 2,
-                child: Text(
-                  entry.formattedTimestamp,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 15,
-                  ),
-                ),
-              ),
-              SizedBox(
-                width: 90,
-                child: Text(
-                  '#${entry.id}',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.grey.shade600,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
+                    Expanded(
+                      flex: 3,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: Text(
+                          _detailsText,
+                          textAlign: TextAlign.left,
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: Colors.grey.shade700,
+                            height: 1.4,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: Text(
+                        entry.formattedTimestamp,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                        ),
+                      ),
+                    ),
+                  ]
+                : [
+                    Expanded(
+                      flex: 3,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              entry.activityTitle,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            const SizedBox.shrink(),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: Text(
+                        entry.customerName ?? 'Unknown',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: Center(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: badgeColor.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            entry.activityCategoryTitle,
+                            style: TextStyle(
+                              color: badgeColor,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: Text(
+                        entry.formattedTimestamp,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                        ),
+                      ),
+                    ),
+                    SizedBox(
+                      width: 90,
+                      child: Text(
+                        '#${entry.id}',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
           ),
         ),
         Divider(height: 1, color: Colors.grey.shade200),

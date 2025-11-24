@@ -75,6 +75,7 @@ class ApiService {
   static const String updateReservationStatusEndpoint =
       '$baseUrl/products/updateReservationStatus.php';
   static const String getAuditLogsEndpoint = '$baseUrl/audit/getAuditLogs.php';
+  static const String createAuditLogEndpoint = '$baseUrl/audit/createAuditLog.php';
 
   static Future<Map<String, dynamic>> signupCustomer({
     required String firstName,
@@ -865,6 +866,7 @@ class ApiService {
     String? search,
     String? activityCategory,
     String? activityType,
+    String? actorType,
     int limit = 200,
   }) async {
     try {
@@ -877,6 +879,9 @@ class ApiService {
       }
       if (activityType != null && activityType.isNotEmpty) {
         query['activity_type'] = activityType;
+      }
+      if (actorType != null && actorType.isNotEmpty) {
+        query['actor_type'] = actorType;
       }
       if (limit > 0) {
         query['limit'] = limit.toString();
@@ -903,6 +908,54 @@ class ApiService {
     } catch (e) {
       debugPrint('getAuditLogs error: $e');
       return [];
+    }
+  }
+
+  // Create audit log entry
+  static Future<Map<String, dynamic>> createAuditLog({
+    required String activityCategory,
+    required String activityType,
+    required String activityTitle,
+    String? description,
+    String? actorType,
+    String? actorName,
+    int? adminId,
+    int? customerId,
+    String? customerName,
+    Map<String, dynamic>? metadata,
+  }) async {
+    try {
+      final Map<String, dynamic> body = {
+        'activity_category': activityCategory,
+        'activity_type': activityType,
+        'activity_title': activityTitle,
+        if (description != null) 'description': description,
+        if (actorType != null) 'actor_type': actorType,
+        if (actorName != null) 'actor_name': actorName,
+        if (adminId != null) 'admin_id': adminId,
+        if (customerId != null) 'customer_id': customerId,
+        if (customerName != null) 'customer_name': customerName,
+        if (metadata != null) 'metadata': jsonEncode(metadata),
+      };
+
+      final response = await http.post(
+        Uri.parse(createAuditLogEndpoint),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode == 200 && response.body.isNotEmpty) {
+        final Map<String, dynamic> parsed =
+            jsonDecode(response.body) as Map<String, dynamic>;
+        return parsed;
+      }
+      return {'success': false, 'message': 'Failed to create audit log'};
+    } catch (e) {
+      debugPrint('createAuditLog error: $e');
+      return {'success': false, 'message': 'Error creating audit log: $e'};
     }
   }
 
