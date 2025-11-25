@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../modals_customer/terms_and_conditions.dart';
 
 class Footer extends StatelessWidget {
   final bool isSmallScreen;
@@ -69,6 +70,26 @@ class Footer extends StatelessWidget {
                     textAlign: TextAlign.center,
                     style: TextStyle(color: Colors.white70, fontSize: 13),
                   ),
+                  const SizedBox(height: 8),
+                  // Terms & Conditions link
+                  InkWell(
+                    onTap: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => const TermsAndConditionsModal(),
+                      );
+                    },
+                    child: const Text(
+                      'Terms & Conditions',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 13,
+                        decoration: TextDecoration.underline,
+                        decorationColor: Colors.white70,
+                      ),
+                    ),
+                  ),
                 ],
               )
               : Row(
@@ -98,8 +119,8 @@ class Footer extends StatelessWidget {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     mainAxisSize: MainAxisSize.min,
-                    children: const [
-                      Text(
+                    children: [
+                      const Text(
                         '875 RIZAL AVENUE WEST TAPINAC , OLONGAPO CITY',
                         style: TextStyle(
                           color: Colors.white,
@@ -107,8 +128,8 @@ class Footer extends StatelessWidget {
                           letterSpacing: 1.1,
                         ),
                       ),
-                      SizedBox(height: 5),
-                      Text(
+                      const SizedBox(height: 5),
+                      const Text(
                         'Business Hours: 11:00AM - 9:00PM',
                         style: TextStyle(
                           color: Colors.white70,
@@ -116,12 +137,31 @@ class Footer extends StatelessWidget {
                           fontWeight: FontWeight.w400,
                         ),
                       ),
-                      Text(
+                      const Text(
                         'Monday to Saturday',
                         style: TextStyle(
                           color: Colors.white70,
                           fontSize: 15,
                           fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      // Terms & Conditions link
+                      InkWell(
+                        onTap: () {
+                          showDialog(
+                            context: context,
+                            builder: (context) => const TermsAndConditionsModal(),
+                          );
+                        },
+                        child: const Text(
+                          'Terms & Conditions',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 14,
+                            decoration: TextDecoration.underline,
+                            decorationColor: Colors.white70,
+                          ),
                         ),
                       ),
                     ],
