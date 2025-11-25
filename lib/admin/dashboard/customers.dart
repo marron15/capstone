@@ -177,19 +177,35 @@ class _CustomersPageState extends State<CustomersPage> {
     List<Map<String, dynamic>> result = filtered;
     if (_showExpiredOnly) {
       final DateTime now = DateTime.now();
-      final DateTime todayOnly = DateTime(now.year, now.month, now.day);
       result =
           filtered.where((c) {
             final DateTime exp = c['expirationDate'] as DateTime;
-            return exp.isBefore(todayOnly);
+            final String membershipType = (c['membershipType'] ?? '').toString();
+            // For Daily memberships, compare with current time including hours/minutes
+            // Expires at or after 9 PM (inclusive)
+            // For other memberships, compare with start of day
+            if (membershipType == 'Daily') {
+              return !exp.isAfter(now);
+            } else {
+              final DateTime todayOnly = DateTime(now.year, now.month, now.day);
+              return exp.isBefore(todayOnly);
+            }
           }).toList();
     } else if (_showNotExpiredOnly) {
       final DateTime now = DateTime.now();
-      final DateTime todayOnly = DateTime(now.year, now.month, now.day);
       result =
           filtered.where((c) {
             final DateTime exp = c['expirationDate'] as DateTime;
-            return !exp.isBefore(todayOnly);
+            final String membershipType = (c['membershipType'] ?? '').toString();
+            // For Daily memberships, compare with current time including hours/minutes
+            // Not expired means expiration is after current time
+            // For other memberships, compare with start of day
+            if (membershipType == 'Daily') {
+              return exp.isAfter(now);
+            } else {
+              final DateTime todayOnly = DateTime(now.year, now.month, now.day);
+              return !exp.isBefore(todayOnly);
+            }
           }).toList();
     }
 
@@ -427,32 +443,36 @@ class _CustomersPageState extends State<CustomersPage> {
     }
   }
 
-  String _formatExpirationDate(DateTime expirationDate, {String? membershipType}) {
-    final String dd = expirationDate.day.toString().padLeft(2, '0');
-    final String mm = expirationDate.month.toString().padLeft(2, '0');
-    final String yyyy = expirationDate.year.toString().padLeft(4, '0');
-    
-    // For Daily memberships, include time
+  String _formatExpirationDate(
+    DateTime date, {
+    String? membershipType,
+    bool isStartDate = false,
+  }) {
+    final String dd = date.day.toString().padLeft(2, '0');
+    final String mm = date.month.toString().padLeft(2, '0');
+    final String yyyy = date.year.toString().padLeft(4, '0');
+
+    // For Daily memberships, include time for both start and expiration dates
     if (membershipType == 'Daily') {
-      final String hh = expirationDate.hour.toString().padLeft(2, '0');
-      final String min = expirationDate.minute.toString().padLeft(2, '0');
-      final String ss = expirationDate.second.toString().padLeft(2, '0');
+      final String hh = date.hour.toString().padLeft(2, '0');
+      final String min = date.minute.toString().padLeft(2, '0');
+      final String ss = date.second.toString().padLeft(2, '0');
       return '$mm/$dd/$yyyy $hh:$min:$ss';
     }
-    
+
     return '$mm/$dd/$yyyy';
   }
 
   String _formatTimeRemaining(DateTime expirationDate) {
     final now = DateTime.now();
     final difference = expirationDate.difference(now);
-    
+
     if (difference.isNegative) return 'Expired';
-    
+
     final hours = difference.inHours;
     final minutes = difference.inMinutes % 60;
     final seconds = difference.inSeconds % 60;
-    
+
     if (hours > 0) {
       return '${hours}h ${minutes}m ${seconds}s';
     } else if (minutes > 0) {
@@ -550,7 +570,7 @@ class _CustomersPageState extends State<CustomersPage> {
                         Icon(
                           Icons.warning_amber_rounded,
                           size: 18,
-                          color: Colors.orange,
+                          color: Colors.red,
                         ),
                         SizedBox(width: 8),
                         Text('Expired Only'),
@@ -1096,16 +1116,24 @@ class _CustomersPageState extends State<CustomersPage> {
                       expirationDate,
                       membershipType: membershipType,
                     );
-                    final formattedStart = _formatExpirationDate(startDate);
+                    final formattedStart = _formatExpirationDate(
+                      startDate,
+                      membershipType: membershipType,
+                      isStartDate: true,
+                    );
                     final DateTime _nowM = DateTime.now();
-                    final DateTime _todayOnlyM = DateTime(
-                      _nowM.year,
-                      _nowM.month,
-                      _nowM.day,
-                    );
-                    final bool _isExpiredM = expirationDate.isBefore(
-                      _todayOnlyM,
-                    );
+                    // For Daily memberships, compare with current time including hours/minutes
+                    // Expires at or after 9 PM (inclusive)
+                    // For other memberships, compare with start of day
+                    final bool _isExpiredM = membershipType == 'Daily'
+                        ? !expirationDate.isAfter(_nowM)
+                        : expirationDate.isBefore(
+                            DateTime(
+                              _nowM.year,
+                              _nowM.month,
+                              _nowM.day,
+                            ),
+                          );
                     return Container(
                       margin: const EdgeInsets.only(bottom: 12),
                       decoration: BoxDecoration(
@@ -1368,25 +1396,29 @@ class _CustomersPageState extends State<CustomersPage> {
                                       ),
                                       membershipType == 'Daily'
                                           ? Text(
-                                              _formatTimeRemaining(expirationDate),
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: _isExpiredM
-                                                    ? Colors.red
-                                                    : Colors.orange.shade700,
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                            )
-                                          : Text(
-                                              formattedExpiry,
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: _isExpiredM
-                                                    ? Colors.red
-                                                    : Colors.black87,
-                                                fontWeight: FontWeight.w600,
-                                              ),
+                                            _formatTimeRemaining(
+                                              expirationDate,
                                             ),
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color:
+                                                  _isExpiredM
+                                                      ? Colors.red
+                                                      : Colors.orange.shade700,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          )
+                                          : Text(
+                                            formattedExpiry,
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color:
+                                                  _isExpiredM
+                                                      ? Colors.red
+                                                      : Colors.black87,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
                                     ],
                                   ),
                                 ],
@@ -1644,16 +1676,24 @@ class _CustomersPageState extends State<CustomersPage> {
                           expirationDate,
                           membershipType: membershipType,
                         );
-                        final formattedStart = _formatExpirationDate(startDate);
+                        final formattedStart = _formatExpirationDate(
+                          startDate,
+                          membershipType: membershipType,
+                          isStartDate: true,
+                        );
                         final DateTime nowDate = DateTime.now();
-                        final DateTime todayOnly = DateTime(
-                          nowDate.year,
-                          nowDate.month,
-                          nowDate.day,
-                        );
-                        final bool isExpired = expirationDate.isBefore(
-                          todayOnly,
-                        );
+                        // For Daily memberships, compare with current time including hours/minutes
+                        // Expires at or after 9 PM (inclusive)
+                        // For other memberships, compare with start of day
+                        final bool isExpired = membershipType == 'Daily'
+                            ? !expirationDate.isAfter(nowDate)
+                            : expirationDate.isBefore(
+                                DateTime(
+                                  nowDate.year,
+                                  nowDate.month,
+                                  nowDate.day,
+                                ),
+                              );
                         return Column(
                           children: [
                             Container(
@@ -1778,23 +1818,37 @@ class _CustomersPageState extends State<CustomersPage> {
                                             MainAxisAlignment.center,
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                            FittedBox(
+                                          FittedBox(
                                             fit: BoxFit.scaleDown,
-                                            child: Text(
-                                              membershipType == 'Daily'
-                                                  ? _formatTimeRemaining(expirationDate)
-                                                  : formattedExpiry,
-                                              textAlign: TextAlign.center,
-                                              style: TextStyle(
-                                                color:
-                                                    isExpired
-                                                        ? Colors.red
-                                                        : membershipType == 'Daily'
-                                                            ? Colors.orange.shade700
+                                            child: Builder(
+                                              builder: (context) {
+                                                final expiryText =
+                                                    membershipType == 'Daily'
+                                                        ? _formatTimeRemaining(
+                                                          expirationDate,
+                                                        )
+                                                        : formattedExpiry;
+                                                final bool isExpiredText =
+                                                    expiryText == 'Expired' ||
+                                                    isExpired;
+                                                return Text(
+                                                  expiryText,
+                                                  textAlign: TextAlign.center,
+                                                  style: TextStyle(
+                                                    color:
+                                                        isExpiredText
+                                                            ? Colors.red
+                                                            : membershipType ==
+                                                                'Daily'
+                                                            ? Colors
+                                                                .orange
+                                                                .shade700
                                                             : Colors.black87,
-                                                fontSize: 15,
-                                                fontWeight: FontWeight.w600,
-                                              ),
+                                                    fontSize: 15,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                );
+                                              },
                                             ),
                                           ),
                                           if (isExpired) ...[

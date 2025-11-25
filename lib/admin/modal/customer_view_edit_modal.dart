@@ -301,13 +301,15 @@ class CustomerViewEditModal {
           }
           customer['startDate'] = newStartDate;
           customer['expirationDate'] = newExpirationDate;
-          customer['start_date'] =
-              '${newStartDate.year.toString().padLeft(4, '0')}-${newStartDate.month.toString().padLeft(2, '0')}-${newStartDate.day.toString().padLeft(2, '0')}';
-          // For Daily memberships, include time component in expiration date
+          // For Daily memberships, include time component in both start and expiration dates
           if (membershipType == 'Daily') {
+            customer['start_date'] =
+                '${newStartDate.year.toString().padLeft(4, '0')}-${newStartDate.month.toString().padLeft(2, '0')}-${newStartDate.day.toString().padLeft(2, '0')} ${newStartDate.hour.toString().padLeft(2, '0')}:${newStartDate.minute.toString().padLeft(2, '0')}:${newStartDate.second.toString().padLeft(2, '0')}';
             customer['expiration_date'] =
                 '${newExpirationDate.year.toString().padLeft(4, '0')}-${newExpirationDate.month.toString().padLeft(2, '0')}-${newExpirationDate.day.toString().padLeft(2, '0')} ${newExpirationDate.hour.toString().padLeft(2, '0')}:${newExpirationDate.minute.toString().padLeft(2, '0')}:${newExpirationDate.second.toString().padLeft(2, '0')}';
           } else {
+            customer['start_date'] =
+                '${newStartDate.year.toString().padLeft(4, '0')}-${newStartDate.month.toString().padLeft(2, '0')}-${newStartDate.day.toString().padLeft(2, '0')}';
             customer['expiration_date'] =
                 '${newExpirationDate.year.toString().padLeft(4, '0')}-${newExpirationDate.month.toString().padLeft(2, '0')}-${newExpirationDate.day.toString().padLeft(2, '0')}';
           }

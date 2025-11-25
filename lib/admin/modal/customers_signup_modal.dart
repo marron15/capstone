@@ -7,7 +7,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import '../services/api_service.dart';
 import '../../PH phone number valid/phone_formatter.dart';
-import '../../services/unified_auth_state.dart';
 
 bool _isValidEmailAddress(String email) {
   final int atIndex = email.indexOf('@');
@@ -335,19 +334,18 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
     if (type == 'daily') {
       // Set expiration to 9 PM of the same day (business hours: 11 AM - 9 PM)
       // If created after 9 PM, expire at 9 PM next day
-      DateTime expirationDate = DateTime(
+      DateTime expiration = DateTime(
         startDate.year,
         startDate.month,
         startDate.day,
         21, // 9 PM
-        0,  // 0 minutes
-        0,  // 0 seconds
+        0, // 0 minutes
+        0, // 0 seconds
       );
-      // If created after 9 PM, set expiration to 9 PM next day
       if (startDate.hour >= 21) {
-        expirationDate = expirationDate.add(const Duration(days: 1));
+        expiration = expiration.add(const Duration(days: 1));
       }
-      return expirationDate;
+      return expiration;
     }
     if (type == 'half month') return startDate.add(const Duration(days: 15));
     return startDate.add(const Duration(days: 30));
@@ -471,10 +469,13 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
                 : null,
         membershipType: _selectedMembershipType,
         membershipStartDate:
-            '${membershipStartDate.year}-${membershipStartDate.month.toString().padLeft(2, '0')}-${membershipStartDate.day.toString().padLeft(2, '0')}',
-        expirationDate: (_selectedMembershipType?.toLowerCase() == 'daily')
-            ? '${membershipEndDate.year}-${membershipEndDate.month.toString().padLeft(2, '0')}-${membershipEndDate.day.toString().padLeft(2, '0')} ${membershipEndDate.hour.toString().padLeft(2, '0')}:${membershipEndDate.minute.toString().padLeft(2, '0')}:${membershipEndDate.second.toString().padLeft(2, '0')}'
-            : '${membershipEndDate.year}-${membershipEndDate.month.toString().padLeft(2, '0')}-${membershipEndDate.day.toString().padLeft(2, '0')}',
+            _selectedMembershipType == 'Daily'
+                ? '${membershipStartDate.year}-${membershipStartDate.month.toString().padLeft(2, '0')}-${membershipStartDate.day.toString().padLeft(2, '0')} ${membershipStartDate.hour.toString().padLeft(2, '0')}:${membershipStartDate.minute.toString().padLeft(2, '0')}:${membershipStartDate.second.toString().padLeft(2, '0')}'
+                : '${membershipStartDate.year}-${membershipStartDate.month.toString().padLeft(2, '0')}-${membershipStartDate.day.toString().padLeft(2, '0')}',
+        expirationDate:
+            _selectedMembershipType == 'Daily'
+                ? '${membershipEndDate.year}-${membershipEndDate.month.toString().padLeft(2, '0')}-${membershipEndDate.day.toString().padLeft(2, '0')} ${membershipEndDate.hour.toString().padLeft(2, '0')}:${membershipEndDate.minute.toString().padLeft(2, '0')}:${membershipEndDate.second.toString().padLeft(2, '0')}'
+                : '${membershipEndDate.year}-${membershipEndDate.month.toString().padLeft(2, '0')}-${membershipEndDate.day.toString().padLeft(2, '0')}',
       );
 
       if (result['success'] == true) {
@@ -575,55 +576,6 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
 
         _clearVerificationStateFields();
 
-        // Get admin info for audit log
-        final Map<String, dynamic>? admin = unifiedAuthState.adminData;
-        String? adminName;
-        int? adminId;
-        if (admin != null) {
-          final String first = (admin['first_name'] ?? '').toString().trim();
-          final String last = (admin['last_name'] ?? '').toString().trim();
-          adminName = [first, last].where((s) => s.isNotEmpty).join(' ');
-          if (adminName.isEmpty) adminName = null;
-          
-          // Get admin ID
-          final dynamic adminIdValue = admin['id'];
-          adminId = adminIdValue is int
-              ? adminIdValue
-              : int.tryParse(adminIdValue?.toString() ?? '');
-        }
-
-        final dynamic customerIdData = result['data']?['customer_id'];
-        final int? customerId = customerIdData is int
-            ? customerIdData
-            : int.tryParse(customerIdData?.toString() ?? '');
-
-        final String fullName =
-            '$firstName ${middleName.isNotEmpty ? '$middleName ' : ''}$lastName';
-
-        // Create audit log for admin adding customer
-        try {
-          await ApiService.createAuditLog(
-            activityCategory: 'admin',
-            activityType: 'customer_created',
-            activityTitle: 'Admin added new customer',
-            description:
-                'Admin ${adminName ?? 'Unknown'} added customer: $fullName (ID: ${customerId ?? 'N/A'}). Membership Type: ${_selectedMembershipType ?? 'N/A'}, Email: $email',
-            actorType: 'admin',
-            actorName: adminName,
-            adminId: adminId,
-            customerId: customerId,
-            customerName: fullName,
-            metadata: {
-              'membership_type': _selectedMembershipType ?? 'N/A',
-              'email': email,
-              'contact_number': contact.isNotEmpty ? contact : null,
-            },
-          );
-        } catch (e) {
-          debugPrint('Failed to create audit log: $e');
-          // Don't block the signup process if audit log fails
-        }
-
         Navigator.of(context).pop({
           'success': true,
           'customerData': {
@@ -633,12 +585,13 @@ class _AdminSignUpModalState extends State<AdminSignUpModal>
             'expirationDate': expirationDate,
             'startDate': startDate,
             'email': email,
-            'fullName': fullName,
+            'fullName':
+                '$firstName ${middleName.isNotEmpty ? '$middleName ' : ''}$lastName',
             'birthdate': birthdate,
             'address': fullAddress,
             'emergencyContactName': _emergencyNameController.text.trim(),
             'emergencyContactPhone': _emergencyPhoneController.text.trim(),
-            'customerId': customerId,
+            'customerId': result['data']?['customer_id'],
           },
         });
       } else {
