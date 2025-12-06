@@ -17,8 +17,6 @@ import '../services/unified_auth_state.dart';
 
 import 'footer.dart';
 
-import '../modals_customer/membership_alert.dart';
-
 class LandingPage extends StatefulWidget {
   const LandingPage({Key? key}) : super(key: key);
 
@@ -47,7 +45,6 @@ class _LandingPageState extends State<LandingPage>
   late Animation<double> _heroAnimation;
 
   Timer? _countdownTimer;
-  bool _hasShownMembershipAlert = false;
   bool _isSubmittingScan = false;
   String? _scanErrorMessage;
 
@@ -99,27 +96,8 @@ class _LandingPageState extends State<LandingPage>
     // Restart timer when auth state changes (user logs in/out)
     if (unifiedAuthState.isCustomerLoggedIn) {
       _startCountdownTimer();
-
-      // Show membership alert if not already shown and user has membership data
-      if (!_hasShownMembershipAlert &&
-          unifiedAuthState.membershipData != null &&
-          mounted) {
-        _hasShownMembershipAlert = true;
-
-        // Show alert after a short delay to ensure UI is ready
-        Future.delayed(const Duration(milliseconds: 500), () {
-          if (mounted) {
-            showDialog(
-              context: context,
-              barrierDismissible: true,
-              builder: (context) => const MembershipAlertModal(),
-            );
-          }
-        });
-      }
     } else {
       _countdownTimer?.cancel();
-      _hasShownMembershipAlert = false; // Reset flag when user logs out
     }
   }
 
@@ -437,13 +415,17 @@ class _LandingPageState extends State<LandingPage>
     // Check if customer has an active membership
     final membershipData = unifiedAuthState.membershipData;
     if (membershipData == null) {
-      _showScanError('No membership found. Please contact the gym to activate your membership.');
+      _showScanError(
+        'No membership found. Please contact the gym to activate your membership.',
+      );
       return;
     }
 
     // Check if membership is expired
     if (!_isMembershipActive(membershipData.expirationDate)) {
-      _showScanError('Your membership has expired. Please renew your membership to use the QR code scanner.');
+      _showScanError(
+        'Your membership has expired. Please renew your membership to use the QR code scanner.',
+      );
       return;
     }
 
@@ -464,12 +446,16 @@ class _LandingPageState extends State<LandingPage>
     // Double-check membership status before recording scan
     final membershipData = unifiedAuthState.membershipData;
     if (membershipData == null) {
-      _showScanError('No membership found. Please contact the gym to activate your membership.');
+      _showScanError(
+        'No membership found. Please contact the gym to activate your membership.',
+      );
       return;
     }
 
     if (!_isMembershipActive(membershipData.expirationDate)) {
-      _showScanError('Your membership has expired. Please renew your membership to use the QR code scanner.');
+      _showScanError(
+        'Your membership has expired. Please renew your membership to use the QR code scanner.',
+      );
       return;
     }
 
@@ -1282,17 +1268,20 @@ class _LandingPageState extends State<LandingPage>
 
                                                             _buildDateRow(
                                                               'Expires',
-                                                              unifiedAuthState.membershipData!.membershipType == 'Daily'
+                                                              unifiedAuthState
+                                                                          .membershipData!
+                                                                          .membershipType ==
+                                                                      'Daily'
                                                                   ? _getTimeRemaining(
-                                                                      unifiedAuthState
-                                                                          .membershipData!
-                                                                          .expirationDate,
-                                                                    )
+                                                                    unifiedAuthState
+                                                                        .membershipData!
+                                                                        .expirationDate,
+                                                                  )
                                                                   : _formatDate(
-                                                                      unifiedAuthState
-                                                                          .membershipData!
-                                                                          .expirationDate,
-                                                                    ),
+                                                                    unifiedAuthState
+                                                                        .membershipData!
+                                                                        .expirationDate,
+                                                                  ),
                                                               Icons.event_busy,
                                                               const Color(
                                                                 0xFFFFA812,
@@ -1435,11 +1424,19 @@ class _LandingPageState extends State<LandingPage>
                                                               .isCustomerLoggedIn) {
                                                             return const SizedBox.shrink();
                                                           }
-                                                          
+
                                                           // Check if membership is active for button state
-                                                          final bool isMembershipActive = unifiedAuthState.membershipData != null &&
-                                                              _isMembershipActive(unifiedAuthState.membershipData!.expirationDate);
-                                                          
+                                                          final bool
+                                                          isMembershipActive =
+                                                              unifiedAuthState
+                                                                      .membershipData !=
+                                                                  null &&
+                                                              _isMembershipActive(
+                                                                unifiedAuthState
+                                                                    .membershipData!
+                                                                    .expirationDate,
+                                                              );
+
                                                           return Column(
                                                             crossAxisAlignment:
                                                                 CrossAxisAlignment
@@ -1447,7 +1444,8 @@ class _LandingPageState extends State<LandingPage>
                                                             children: [
                                                               OutlinedButton(
                                                                 onPressed:
-                                                                    (_isSubmittingScan || !isMembershipActive)
+                                                                    (_isSubmittingScan ||
+                                                                            !isMembershipActive)
                                                                         ? null
                                                                         : _startScanFlow,
                                                                 style: OutlinedButton.styleFrom(
@@ -1555,85 +1553,6 @@ class _LandingPageState extends State<LandingPage>
                                                               ],
                                                               const SizedBox(
                                                                 height: 12,
-                                                              ),
-                                                              SizedBox(
-                                                                width:
-                                                                    double
-                                                                        .infinity,
-                                                                child: ElevatedButton(
-                                                                  onPressed: () {
-                                                                    showDialog(
-                                                                      context:
-                                                                          context,
-                                                                      barrierDismissible:
-                                                                          true,
-                                                                      builder:
-                                                                          (
-                                                                            context,
-                                                                          ) =>
-                                                                              const MembershipAlertModal(),
-                                                                    );
-                                                                  },
-                                                                  style: ElevatedButton.styleFrom(
-                                                                    backgroundColor:
-                                                                        const Color(
-                                                                          0xFFFFA812,
-                                                                        ),
-                                                                    foregroundColor:
-                                                                        Colors
-                                                                            .black,
-                                                                    padding: EdgeInsets.symmetric(
-                                                                      horizontal:
-                                                                          isSmallScreen
-                                                                              ? 20
-                                                                              : 24,
-                                                                      vertical:
-                                                                          isSmallScreen
-                                                                              ? 14
-                                                                              : 16,
-                                                                    ),
-                                                                    shape: RoundedRectangleBorder(
-                                                                      borderRadius:
-                                                                          BorderRadius.circular(
-                                                                            12,
-                                                                          ),
-                                                                    ),
-                                                                    elevation:
-                                                                        4,
-                                                                  ),
-                                                                  child: Row(
-                                                                    mainAxisAlignment:
-                                                                        MainAxisAlignment
-                                                                            .center,
-                                                                    children: [
-                                                                      Icon(
-                                                                        Icons
-                                                                            .inventory_2_outlined,
-                                                                        size:
-                                                                            isSmallScreen
-                                                                                ? 20
-                                                                                : 22,
-                                                                      ),
-                                                                      const SizedBox(
-                                                                        width:
-                                                                            8,
-                                                                      ),
-                                                                      Text(
-                                                                        'Reserve Request',
-                                                                        style: TextStyle(
-                                                                          fontSize:
-                                                                              isSmallScreen
-                                                                                  ? 14
-                                                                                  : 16,
-                                                                          fontWeight:
-                                                                              FontWeight.bold,
-                                                                          letterSpacing:
-                                                                              0.5,
-                                                                        ),
-                                                                      ),
-                                                                    ],
-                                                                  ),
-                                                                ),
                                                               ),
                                                             ],
                                                           );

@@ -22,7 +22,7 @@ class Product {
     required this.name,
     required this.price,
     required this.description,
-    required this.quantity,
+    this.quantity = 0,
     this.imageBytes,
     this.imageFileName,
     this.imageUrl,
@@ -51,7 +51,6 @@ class _AddProductModalState extends State<AddProductModal> {
   final _nameController = TextEditingController();
   final _priceController = TextEditingController();
   final _descriptionController = TextEditingController();
-  final _quantityController = TextEditingController();
 
   Uint8List? _imageBytes;
   String? _imageFileName;
@@ -60,14 +59,12 @@ class _AddProductModalState extends State<AddProductModal> {
   @override
   void initState() {
     super.initState();
-    _quantityController.text = '0';
     if (widget.initialProduct != null) {
       _nameController.text = widget.initialProduct!.name;
       _priceController.text = widget.initialProduct!.price.toString();
       _descriptionController.text = widget.initialProduct!.description;
       _imageBytes = widget.initialProduct!.imageBytes;
       _imageFileName = widget.initialProduct!.imageFileName;
-      _quantityController.text = widget.initialProduct!.quantity.toString();
       _existingImagePath = widget.initialProduct!.imagePath;
     }
   }
@@ -77,7 +74,6 @@ class _AddProductModalState extends State<AddProductModal> {
     _nameController.dispose();
     _priceController.dispose();
     _descriptionController.dispose();
-    _quantityController.dispose();
     super.dispose();
   }
 
@@ -184,7 +180,6 @@ class _AddProductModalState extends State<AddProductModal> {
     _nameController.clear();
     _priceController.clear();
     _descriptionController.clear();
-    _quantityController.text = '0';
     setState(() {
       _imageBytes = null;
       _imageFileName = null;
@@ -214,16 +209,6 @@ class _AddProductModalState extends State<AddProductModal> {
   Future<void> _handleSubmit() async {
     if (!_formKey.currentState!.validate()) return;
     final messenger = ScaffoldMessenger.of(context);
-    final int? parsedQuantity = int.tryParse(_quantityController.text.trim());
-    if (parsedQuantity == null || parsedQuantity < 0) {
-      messenger.showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a valid quantity (0 or above)'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
 
     final bool isEditing =
         widget.initialProduct != null && widget.productId != null;
@@ -244,7 +229,6 @@ class _AddProductModalState extends State<AddProductModal> {
         data: {
           'name': _nameController.text,
           'description': _descriptionController.text,
-          'quantity': parsedQuantity,
           'img': imagePayload,
         },
       );
@@ -274,14 +258,13 @@ class _AddProductModalState extends State<AddProductModal> {
             activityType: 'product_updated',
             activityTitle: 'Admin updated product',
             description:
-                'Admin ${adminName ?? 'Unknown'} updated product: ${_nameController.text} (ID: ${widget.productId}). Quantity: $parsedQuantity',
+                'Admin ${adminName ?? 'Unknown'} updated product: ${_nameController.text} (ID: ${widget.productId}).',
             actorType: 'admin',
             actorName: adminName,
             adminId: adminId,
             metadata: {
               'product_id': widget.productId,
               'product_name': _nameController.text,
-              'quantity': parsedQuantity,
               'description': _descriptionController.text,
             },
           );
@@ -295,7 +278,6 @@ class _AddProductModalState extends State<AddProductModal> {
           name: _nameController.text,
           price: 0.0,
           description: _descriptionController.text,
-          quantity: parsedQuantity,
           imageBytes: _imageBytes ?? widget.initialProduct?.imageBytes,
           imageFileName: _imageFileName ?? widget.initialProduct?.imageFileName,
           imageUrl:
@@ -338,7 +320,6 @@ class _AddProductModalState extends State<AddProductModal> {
       name: _nameController.text,
       price: 0.0,
       description: _descriptionController.text,
-      quantity: parsedQuantity,
       imageBytes: _imageBytes,
       imageFileName: _imageFileName,
     );
@@ -348,7 +329,6 @@ class _AddProductModalState extends State<AddProductModal> {
       description: newProduct.description,
       imageBytes: newProduct.imageBytes!,
       imageFileName: newProduct.imageFileName ?? 'image.png',
-      quantity: parsedQuantity,
     );
 
     if (!mounted) return;
@@ -377,13 +357,12 @@ class _AddProductModalState extends State<AddProductModal> {
           activityType: 'product_created',
           activityTitle: 'Admin added new product',
           description:
-              'Admin ${adminName ?? 'Unknown'} added new product: ${newProduct.name}. Quantity: $parsedQuantity, Description: ${newProduct.description}',
+              'Admin ${adminName ?? 'Unknown'} added new product: ${newProduct.name}. Description: ${newProduct.description}',
           actorType: 'admin',
           actorName: adminName,
           adminId: adminId,
           metadata: {
             'product_name': newProduct.name,
-            'quantity': parsedQuantity,
             'description': newProduct.description,
           },
         );
@@ -526,23 +505,6 @@ class _AddProductModalState extends State<AddProductModal> {
                             validator: (value) {
                               if (value == null || value.isEmpty) {
                                 return 'Please enter product name';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 16),
-                          TextFormField(
-                            controller: _quantityController,
-                            style: const TextStyle(color: Colors.white),
-                            keyboardType: TextInputType.number,
-                            decoration: _inputDecoration('Quantity'),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter quantity';
-                              }
-                              final int? parsed = int.tryParse(value);
-                              if (parsed == null || parsed < 0) {
-                                return 'Quantity must be 0 or greater';
                               }
                               return null;
                             },

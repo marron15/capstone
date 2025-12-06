@@ -75,7 +75,8 @@ class ApiService {
   static const String updateReservationStatusEndpoint =
       '$baseUrl/products/updateReservationStatus.php';
   static const String getAuditLogsEndpoint = '$baseUrl/audit/getAuditLogs.php';
-  static const String createAuditLogEndpoint = '$baseUrl/audit/createAuditLog.php';
+  static const String createAuditLogEndpoint =
+      '$baseUrl/audit/createAuditLog.php';
 
   static Future<Map<String, dynamic>> signupCustomer({
     required String firstName,
@@ -532,7 +533,7 @@ class ApiService {
     required String description,
     required Uint8List imageBytes,
     required String imageFileName,
-    required int quantity,
+    int quantity = 0,
   }) async {
     try {
       final String mime = _detectMimeFromFilename(imageFileName);
@@ -715,33 +716,12 @@ class ApiService {
     required int quantity,
     String? notes,
   }) async {
-    try {
-      final res = await http.post(
-        Uri.parse(createReservationEndpoint),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: jsonEncode({
-          'customer_id': customerId,
-          'product_id': productId,
-          'quantity': quantity,
-          'notes': notes ?? '',
-        }),
-      );
-      final Map<String, dynamic> parsed =
-          jsonDecode(res.body) as Map<String, dynamic>;
-      if (res.statusCode == 200) {
-        return parsed;
-      }
-      return {
-        'success': false,
-        'message': parsed['message'] ?? 'Failed to reserve product',
-      };
-    } catch (e) {
-      debugPrint('createProductReservation error: $e');
-      return {'success': false, 'message': 'Network error: $e'};
-    }
+    // Feature disabled: short-circuit with a clear response.
+    return {
+      'success': false,
+      'message':
+          'Product reservations are disabled. Please purchase directly at the gym.',
+    };
   }
 
   static const String getCustomerReservationsEndpoint =
@@ -750,52 +730,8 @@ class ApiService {
   static Future<List<Map<String, dynamic>>> getCustomerReservations({
     required int customerId,
   }) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$getCustomerReservationsEndpoint?customer_id=$customerId'),
-        headers: {'Accept': 'application/json'},
-      );
-
-      if (response.statusCode == 200 && response.body.isNotEmpty) {
-        final dynamic parsed = jsonDecode(response.body);
-
-        // Handle case where API returns a List directly
-        if (parsed is List) {
-          return parsed
-              .map((item) {
-                if (item is Map<String, dynamic>) {
-                  return item;
-                } else if (item is Map) {
-                  return Map<String, dynamic>.from(item);
-                }
-                return <String, dynamic>{};
-              })
-              .where((item) => item.isNotEmpty)
-              .toList();
-        }
-
-        // Handle case where API returns a Map with 'data' field
-        if (parsed is Map<String, dynamic>) {
-          if (parsed['success'] == true && parsed['data'] is List) {
-            return (parsed['data'] as List)
-                .map((item) {
-                  if (item is Map<String, dynamic>) {
-                    return item;
-                  } else if (item is Map) {
-                    return Map<String, dynamic>.from(item);
-                  }
-                  return <String, dynamic>{};
-                })
-                .where((item) => item.isNotEmpty)
-                .toList();
-          }
-        }
-      }
-      return [];
-    } catch (e) {
-      debugPrint('getCustomerReservations error: $e');
-      return [];
-    }
+    // Feature disabled: return no reservations to avoid backend calls.
+    return [];
   }
 
   static Future<List<Map<String, dynamic>>> getReservedProducts({
@@ -1466,8 +1402,8 @@ class ApiService {
             now.month,
             now.day,
             21, // 9 PM
-            0,  // 0 minutes
-            0,  // 0 seconds
+            0, // 0 minutes
+            0, // 0 seconds
           );
           if (now.hour >= 21) {
             expiration = expiration.add(const Duration(days: 1));
@@ -1483,7 +1419,7 @@ class ApiService {
 
       String formatDate(DateTime d) =>
           '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
-      
+
       String formatDateTime(DateTime d) =>
           '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')} ${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}:${d.second.toString().padLeft(2, '0')}';
 
@@ -1494,7 +1430,10 @@ class ApiService {
           'customerId': customerId.toString(),
           'membershipType': membershipType,
           'startDate': formatDate(now),
-          'expirationDate': membershipType == 'Daily' ? formatDateTime(expiration) : formatDate(expiration),
+          'expirationDate':
+              membershipType == 'Daily'
+                  ? formatDateTime(expiration)
+                  : formatDate(expiration),
           'status': membershipType,
         },
       );

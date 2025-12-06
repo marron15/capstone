@@ -94,8 +94,6 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
             final String name = (row['name'] ?? '').toString();
             final String description = (row['description'] ?? '').toString();
             final String img = (row['img'] ?? '').toString();
-            final int quantity =
-                int.tryParse((row['quantity'] ?? '0').toString()) ?? 0;
             final dynamic rawId =
                 row['id'] ?? row['product_id'] ?? row['productId'];
             final int parsedId = int.tryParse((rawId ?? '0').toString()) ?? 0;
@@ -120,7 +118,6 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
               name: name,
               price: double.tryParse((row['price'] ?? '0').toString()) ?? 0.0,
               description: description,
-              quantity: quantity,
               imageBytes: bytes,
               imageFileName: 'image',
               imageUrl: url,
@@ -151,7 +148,6 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
   }
 
   Widget _buildMobileProductCard(Product product, int index) {
-    final bool soldOut = product.quantity <= 0;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -260,51 +256,7 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color:
-                                  soldOut
-                                      ? Colors.red.shade50
-                                      : Colors.green.shade50,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color:
-                                    soldOut
-                                        ? Colors.red.shade200
-                                        : Colors.green.shade200,
-                              ),
-                            ),
-                            child: Text(
-                              'Qty: ${product.quantity}',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color:
-                                    soldOut
-                                        ? Colors.red.shade700
-                                        : Colors.green.shade700,
-                              ),
-                            ),
-                          ),
-                          if (soldOut) ...[
-                            const SizedBox(width: 8),
-                            Text(
-                              'Sold Out',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.red.shade600,
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
+                      const SizedBox.shrink(),
                     ],
                   ),
                 ),
@@ -496,7 +448,10 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                                 children: [
                                   IconButton(
                                     tooltip: 'Open Menu',
-                                    onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+                                    onPressed:
+                                        () =>
+                                            _scaffoldKey.currentState
+                                                ?.openDrawer(),
                                     icon: const Icon(Icons.menu),
                                   ),
                                   const SizedBox(width: 8),
@@ -515,7 +470,9 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                             ),
                             // Search bar for mobile
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
                               child: SizedBox(
                                 height: 36,
                                 child: TextField(
@@ -541,10 +498,15 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                                     suffixIcon:
                                         _searchQuery.isNotEmpty
                                             ? IconButton(
-                                              icon: const Icon(Icons.clear, size: 18),
+                                              icon: const Icon(
+                                                Icons.clear,
+                                                size: 18,
+                                              ),
                                               onPressed: () {
                                                 _searchController.clear();
-                                                setState(() => _searchQuery = '');
+                                                setState(
+                                                  () => _searchQuery = '',
+                                                );
                                               },
                                             )
                                             : null,
@@ -552,11 +514,15 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                                     fillColor: Colors.white,
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(20),
-                                      borderSide: BorderSide(color: Colors.grey.shade300),
+                                      borderSide: BorderSide(
+                                        color: Colors.grey.shade300,
+                                      ),
                                     ),
                                     enabledBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(20),
-                                      borderSide: BorderSide(color: Colors.grey.shade300),
+                                      borderSide: BorderSide(
+                                        color: Colors.grey.shade300,
+                                      ),
                                     ),
                                     focusedBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(20),
@@ -577,7 +543,9 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                             const SizedBox(height: 16),
                             // Action buttons for mobile
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
                               color: Colors.transparent,
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -968,18 +936,6 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                                             Expanded(
                                               flex: 1,
                                               child: Text(
-                                                'Quantity',
-                                                textAlign: TextAlign.center,
-                                                style: TextStyle(
-                                                  fontSize: 18,
-                                                  fontWeight: FontWeight.w700,
-                                                  letterSpacing: 0.5,
-                                                ),
-                                              ),
-                                            ),
-                                            Expanded(
-                                              flex: 1,
-                                              child: Text(
                                                 'Actions',
                                                 textAlign: TextAlign.center,
                                                 style: TextStyle(
@@ -1013,8 +969,6 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                                         ) {
                                           final index = entry.key;
                                           final product = entry.value;
-                                          final bool soldOut =
-                                              product.quantity <= 0;
                                           return Column(
                                             children: [
                                               Row(
@@ -1163,82 +1117,6 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                                                           fontSize: 16,
                                                         ),
                                                       ),
-                                                    ),
-                                                  ),
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: Column(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .center,
-                                                      children: [
-                                                        Container(
-                                                          padding:
-                                                              const EdgeInsets.symmetric(
-                                                                horizontal: 12,
-                                                                vertical: 6,
-                                                              ),
-                                                          decoration: BoxDecoration(
-                                                            color:
-                                                                soldOut
-                                                                    ? Colors
-                                                                        .red
-                                                                        .shade50
-                                                                    : Colors
-                                                                        .green
-                                                                        .shade50,
-                                                            borderRadius:
-                                                                BorderRadius.circular(
-                                                                  12,
-                                                                ),
-                                                            border: Border.all(
-                                                              color:
-                                                                  soldOut
-                                                                      ? Colors
-                                                                          .red
-                                                                          .shade200
-                                                                      : Colors
-                                                                          .green
-                                                                          .shade200,
-                                                            ),
-                                                          ),
-                                                          child: Text(
-                                                            'Qty: ${product.quantity}',
-                                                            style: TextStyle(
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w700,
-                                                              color:
-                                                                  soldOut
-                                                                      ? Colors
-                                                                          .red
-                                                                          .shade700
-                                                                      : Colors
-                                                                          .green
-                                                                          .shade700,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                        if (soldOut)
-                                                          Padding(
-                                                            padding:
-                                                                const EdgeInsets.only(
-                                                                  top: 4,
-                                                                ),
-                                                            child: Text(
-                                                              'Sold Out',
-                                                              style: TextStyle(
-                                                                color:
-                                                                    Colors
-                                                                        .red
-                                                                        .shade600,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold,
-                                                              ),
-                                                            ),
-                                                          ),
-                                                      ],
                                                     ),
                                                   ),
                                                   Expanded(

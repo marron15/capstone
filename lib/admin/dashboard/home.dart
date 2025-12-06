@@ -189,7 +189,6 @@ class _StatisticPageState extends State<StatisticPage>
         ApiService.getCustomersByStatus(status: 'inactive'),
         ApiService.getAllTrainers(),
         ApiService.getMembershipTotals(),
-        ApiService.getReservedProducts(),
         AttendanceService.fetchRecords(), // Fetch all attendance records
       ]);
 
@@ -217,14 +216,10 @@ class _StatisticPageState extends State<StatisticPage>
       final Map<String, int> memTotals = Map<String, int>.from(
         futures[6] as Map<String, int>,
       );
-      final List<Map<String, dynamic>> reservations =
-          (futures[7] as List<dynamic>? ?? const [])
-              .whereType<Map<String, dynamic>>()
-              .map((entry) => Map<String, dynamic>.from(entry))
-              .toList();
-      
+      final List<Map<String, dynamic>> reservations = const [];
       // Fetch attendance records
-      final List<AttendanceRecord> attendanceRecords = futures[8] as List<AttendanceRecord>;
+      final List<AttendanceRecord> attendanceRecords =
+          futures[7] as List<AttendanceRecord>;
 
       // Compute counts
       productsActive = prodActive.length;
@@ -432,12 +427,16 @@ class _StatisticPageState extends State<StatisticPage>
       reservationsDeclinedMonth = reservationMonthCounts['declined'] ?? 0;
 
       // Count Time In and Time Out by period
-      int _countTimeIn(Iterable<AttendanceRecord> records, DateTime now, String period) {
+      int _countTimeIn(
+        Iterable<AttendanceRecord> records,
+        DateTime now,
+        String period,
+      ) {
         int count = 0;
         for (final record in records) {
           final DateTime? timeIn = record.timeIn;
           if (timeIn == null) continue;
-          
+
           if (period == 'Day' && _isSameDay(timeIn, now)) {
             count++;
           } else if (period == 'Week' && _isThisWeek(timeIn, now)) {
@@ -448,13 +447,17 @@ class _StatisticPageState extends State<StatisticPage>
         }
         return count;
       }
-      
-      int _countTimeOut(Iterable<AttendanceRecord> records, DateTime now, String period) {
+
+      int _countTimeOut(
+        Iterable<AttendanceRecord> records,
+        DateTime now,
+        String period,
+      ) {
         int count = 0;
         for (final record in records) {
           final DateTime? timeOut = record.timeOut;
           if (timeOut == null) continue;
-          
+
           if (period == 'Day' && _isSameDay(timeOut, now)) {
             count++;
           } else if (period == 'Week' && _isThisWeek(timeOut, now)) {
@@ -465,11 +468,11 @@ class _StatisticPageState extends State<StatisticPage>
         }
         return count;
       }
-      
+
       timeInDay = _countTimeIn(attendanceRecords, nowTs, 'Day');
       timeInWeek = _countTimeIn(attendanceRecords, nowTs, 'Week');
       timeInMonth = _countTimeIn(attendanceRecords, nowTs, 'Month');
-      
+
       timeOutDay = _countTimeOut(attendanceRecords, nowTs, 'Day');
       timeOutWeek = _countTimeOut(attendanceRecords, nowTs, 'Week');
       timeOutMonth = _countTimeOut(attendanceRecords, nowTs, 'Month');
@@ -757,11 +760,14 @@ class _StatisticPageState extends State<StatisticPage>
     return result;
   }
 
-  String _formatExpirationDate(DateTime expirationDate, {String? membershipType}) {
+  String _formatExpirationDate(
+    DateTime expirationDate, {
+    String? membershipType,
+  }) {
     final String dd = expirationDate.day.toString().padLeft(2, '0');
     final String mm = expirationDate.month.toString().padLeft(2, '0');
     final String yyyy = expirationDate.year.toString().padLeft(4, '0');
-    
+
     // For Daily memberships, include time
     if (membershipType == 'Daily') {
       final String hh = expirationDate.hour.toString().padLeft(2, '0');
@@ -769,20 +775,20 @@ class _StatisticPageState extends State<StatisticPage>
       final String ss = expirationDate.second.toString().padLeft(2, '0');
       return '$mm/$dd/$yyyy $hh:$min:$ss';
     }
-    
+
     return '$mm/$dd/$yyyy';
   }
 
   String _formatTimeRemaining(DateTime expirationDate) {
     final now = DateTime.now();
     final difference = expirationDate.difference(now);
-    
+
     if (difference.isNegative) return 'Expired';
-    
+
     final hours = difference.inHours;
     final minutes = difference.inMinutes % 60;
     final seconds = difference.inSeconds % 60;
-    
+
     if (hours > 0) {
       return '${hours}h ${minutes}m ${seconds}s';
     } else if (minutes > 0) {
@@ -1295,7 +1301,10 @@ class _StatisticPageState extends State<StatisticPage>
           'export_period': period,
           'statistics_count': rows.length - 1,
           'customers_count': customerTableRows.length - 1,
-          'reservations_count': reservationTableRows.length > 1 ? reservationTableRows.length - 1 : 0,
+          'reservations_count':
+              reservationTableRows.length > 1
+                  ? reservationTableRows.length - 1
+                  : 0,
           'report_type': 'statistics_report',
         },
       );
@@ -1515,7 +1524,10 @@ class _StatisticPageState extends State<StatisticPage>
           final expirationDate = customer['expirationDate'] as DateTime;
           final startDate = customer['startDate'] as DateTime;
           final membershipType = customer['membershipType'] as String;
-          final formattedExpiry = _formatExpirationDate(expirationDate, membershipType: membershipType);
+          final formattedExpiry = _formatExpirationDate(
+            expirationDate,
+            membershipType: membershipType,
+          );
           final formattedStart = _formatExpirationDate(startDate);
           final bool isExpired = customer['isExpired'] == true;
           return Column(
@@ -1638,7 +1650,9 @@ class _StatisticPageState extends State<StatisticPage>
                                     Flexible(
                                       child: Text(
                                         membershipType == 'Daily'
-                                            ? _formatTimeRemaining(expirationDate)
+                                            ? _formatTimeRemaining(
+                                              expirationDate,
+                                            )
                                             : formattedExpiry,
                                         textAlign: TextAlign.center,
                                         style: TextStyle(
@@ -1646,8 +1660,8 @@ class _StatisticPageState extends State<StatisticPage>
                                               isExpired
                                                   ? Colors.red
                                                   : membershipType == 'Daily'
-                                                      ? Colors.orange.shade700
-                                                      : Colors.black87,
+                                                  ? Colors.orange.shade700
+                                                  : Colors.black87,
                                           fontSize: 12,
                                         ),
                                         overflow: TextOverflow.ellipsis,
@@ -1803,7 +1817,9 @@ class _StatisticPageState extends State<StatisticPage>
                                       fit: BoxFit.scaleDown,
                                       child: Text(
                                         membershipType == 'Daily'
-                                            ? _formatTimeRemaining(expirationDate)
+                                            ? _formatTimeRemaining(
+                                              expirationDate,
+                                            )
                                             : formattedExpiry,
                                         textAlign: TextAlign.center,
                                         style: TextStyle(
@@ -1811,8 +1827,8 @@ class _StatisticPageState extends State<StatisticPage>
                                               isExpired
                                                   ? Colors.red
                                                   : membershipType == 'Daily'
-                                                      ? Colors.orange.shade700
-                                                      : Colors.black87,
+                                                  ? Colors.orange.shade700
+                                                  : Colors.black87,
                                           fontSize: 14,
                                         ),
                                       ),
@@ -2002,7 +2018,9 @@ class _StatisticPageState extends State<StatisticPage>
                                   SizedBox(
                                     width: double.infinity,
                                     child: Center(
-                                      child: _buildPeriodToggleButtons(isMobile),
+                                      child: _buildPeriodToggleButtons(
+                                        isMobile,
+                                      ),
                                     ),
                                   )
                                 else
@@ -2205,68 +2223,6 @@ class _StatisticPageState extends State<StatisticPage>
                                               label: 'Total Active Customers',
                                               value: customersActive,
                                               color: const Color(0xFF6A1B9A),
-                                            ),
-                                          ],
-                                        ),
-                                        _KpiGroup(
-                                          title: 'Reserved Products',
-                                          tiles: [
-                                            // Pending reservations
-                                            _KpiTile(
-                                              label:
-                                                  'Pending Reservations Today',
-                                              value: reservationsPendingDay,
-                                              color: const Color(0xFFF57C00),
-                                            ),
-                                            _KpiTile(
-                                              label:
-                                                  'Pending Reservations This Week',
-                                              value: reservationsPendingWeek,
-                                              color: const Color(0xFFF57C00),
-                                            ),
-                                            _KpiTile(
-                                              label:
-                                                  'Pending Reservations This Month',
-                                              value: reservationsPendingMonth,
-                                              color: const Color(0xFFF57C00),
-                                            ),
-                                            // Accepted reservations
-                                            _KpiTile(
-                                              label:
-                                                  'Accepted Reservations Today',
-                                              value: reservationsAcceptedDay,
-                                              color: const Color(0xFF2E7D32),
-                                            ),
-                                            _KpiTile(
-                                              label:
-                                                  'Accepted Reservations This Week',
-                                              value: reservationsAcceptedWeek,
-                                              color: const Color(0xFF2E7D32),
-                                            ),
-                                            _KpiTile(
-                                              label:
-                                                  'Accepted Reservations This Month',
-                                              value: reservationsAcceptedMonth,
-                                              color: const Color(0xFF2E7D32),
-                                            ),
-                                            // Declined reservations
-                                            _KpiTile(
-                                              label:
-                                                  'Declined Reservations Today',
-                                              value: reservationsDeclinedDay,
-                                              color: const Color(0xFFD32F2F),
-                                            ),
-                                            _KpiTile(
-                                              label:
-                                                  'Declined Reservations This Week',
-                                              value: reservationsDeclinedWeek,
-                                              color: const Color(0xFFD32F2F),
-                                            ),
-                                            _KpiTile(
-                                              label:
-                                                  'Declined Reservations This Month',
-                                              value: reservationsDeclinedMonth,
-                                              color: const Color(0xFFD32F2F),
                                             ),
                                           ],
                                         ),
@@ -2547,13 +2503,8 @@ class _KpiRibbonGroups extends StatelessWidget {
       );
     }
 
-    // Separate main groups from Reserved Products
-    final List<_KpiGroup> mainGroups =
-        groups.where((g) => g.title != 'Reserved Products').toList();
-    final _KpiGroup? reservedProductsGroup = groups.firstWhere(
-      (g) => g.title == 'Reserved Products',
-      orElse: () => _KpiGroup(title: 'Reserved Products', tiles: []),
-    );
+    // Use all KPI groups (reservations removed)
+    final List<_KpiGroup> mainGroups = List<_KpiGroup>.from(groups);
 
     // Helper to get selected tile for a group based on period
     Widget buildGroupTile(_KpiGroup g) {
@@ -2571,7 +2522,8 @@ class _KpiRibbonGroups extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            height: isMobile ? 20 : 20, // Fixed height for title + bottom padding
+            height:
+                isMobile ? 20 : 20, // Fixed height for title + bottom padding
             child: Padding(
               padding: EdgeInsets.only(
                 left: isMobile ? 0 : 4,
@@ -2595,189 +2547,136 @@ class _KpiRibbonGroups extends StatelessWidget {
       );
     }
 
-    // Build Reserved Products section with all 3 status tiles
-    Widget? buildReservedProductsSection() {
-      if (reservedProductsGroup == null || reservedProductsGroup.tiles.isEmpty)
-        return null;
-
-      int periodIndex = 0; // Daily
-      if (periodFilter == 'This Week')
-        periodIndex = 1;
-      else if (periodFilter == 'This Month')
-        periodIndex = 2;
-
-      // Tiles are arranged as: Pending(0,1,2), Accepted(3,4,5), Declined(6,7,8)
-      final int pendingIndex = periodIndex;
-      final int acceptedIndex = periodIndex + 3;
-      final int declinedIndex = periodIndex + 6;
-
-      return Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            height: isMobile ? 20 : 20, // Fixed height for title + bottom padding
-            child: Padding(
-              padding: EdgeInsets.only(
-                left: isMobile ? 0 : 4,
-                bottom: isMobile ? 6 : 6,
-              ),
-              child: Align(
-                alignment: Alignment.bottomLeft,
-                child: Text(
-                  reservedProductsGroup.title,
-                  style: TextStyle(
-                    fontSize: isMobile ? 11 : 11,
-                    color: Colors.black54,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: isMobile ? CrossAxisAlignment.stretch : CrossAxisAlignment.start,
-            children: [
-              if (pendingIndex < reservedProductsGroup.tiles.length)
-                tile(reservedProductsGroup.tiles[pendingIndex]),
-              SizedBox(height: isMobile ? 10 : 12),
-              if (acceptedIndex < reservedProductsGroup.tiles.length)
-                tile(reservedProductsGroup.tiles[acceptedIndex]),
-              SizedBox(height: isMobile ? 10 : 12),
-              if (declinedIndex < reservedProductsGroup.tiles.length)
-                tile(reservedProductsGroup.tiles[declinedIndex]),
-            ],
-          ),
-        ],
-      );
-    }
+    Widget? buildReservedProductsSection() => null;
 
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       elevation: 2,
       child: Padding(
         padding: EdgeInsets.all(isMobile ? 12.0 : 16.0),
-        child: isMobile
-            ? Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Main groups in grid - organized from most to least tiles
-                  if (mainGroups.isNotEmpty)
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        // Column 1: Customers column (4 tiles - most)
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              buildGroupTile(mainGroups[2]), // Customers
-                              if (mainGroups.length >= 5) ...[
-                                SizedBox(height: 12),
-                                buildGroupTile(mainGroups[4]), // Time In
+        child:
+            isMobile
+                ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Main groups in grid - organized from most to least tiles
+                    if (mainGroups.isNotEmpty)
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          // Column 1: Customers column (4 tiles - most)
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: [
+                                buildGroupTile(mainGroups[2]), // Customers
+                                if (mainGroups.length >= 5) ...[
+                                  SizedBox(height: 12),
+                                  buildGroupTile(mainGroups[4]), // Time In
+                                ],
+                                if (mainGroups.length >= 6) ...[
+                                  SizedBox(height: 12),
+                                  buildGroupTile(mainGroups[5]), // Time Out
+                                ],
+                                if (mainGroups.length >= 7) ...[
+                                  SizedBox(height: 12),
+                                  buildGroupTile(
+                                    mainGroups[6],
+                                  ), // Total Customers
+                                ],
                               ],
-                              if (mainGroups.length >= 6) ...[
-                                SizedBox(height: 12),
-                                buildGroupTile(mainGroups[5]), // Time Out
-                              ],
-                              if (mainGroups.length >= 7) ...[
-                                SizedBox(height: 12),
-                                buildGroupTile(mainGroups[6]), // Total Customers
-                              ],
-                            ],
+                            ),
                           ),
-                        ),
-                        SizedBox(width: 12),
-                        // Column 2: Products and Reserved Products (1 + 3 tiles)
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              buildGroupTile(mainGroups[3]), // Products
-                              if (buildReservedProductsSection() != null) ...[
-                                SizedBox(height: 12),
-                                buildReservedProductsSection()!,
+                          SizedBox(width: 12),
+                          // Column 2: Products and Reserved Products (1 + 3 tiles)
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: [
+                                buildGroupTile(mainGroups[3]), // Products
+                                if (buildReservedProductsSection() != null) ...[
+                                  SizedBox(height: 12),
+                                  buildReservedProductsSection()!,
+                                ],
                               ],
-                            ],
+                            ),
                           ),
-                        ),
-                        SizedBox(width: 12),
-                        // Column 3: Trainers and Admins (2 tiles)
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              buildGroupTile(mainGroups[1]), // Trainers
-                              SizedBox(height: 12),
-                              buildGroupTile(mainGroups[0]), // Admins
-                            ],
+                          SizedBox(width: 12),
+                          // Column 3: Trainers and Admins (2 tiles)
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: [
+                                buildGroupTile(mainGroups[1]), // Trainers
+                                SizedBox(height: 12),
+                                buildGroupTile(mainGroups[0]), // Admins
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                ],
-              )
-            : Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  // Column 1: Customers column (4 tiles - most)
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        buildGroupTile(mainGroups[2]), // Customers
-                        if (mainGroups.length >= 5) ...[
-                          SizedBox(height: 16),
-                          buildGroupTile(mainGroups[4]), // Time In
                         ],
-                        if (mainGroups.length >= 6) ...[
-                          SizedBox(height: 16),
-                          buildGroupTile(mainGroups[5]), // Time Out
+                      ),
+                  ],
+                )
+                : Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    // Column 1: Customers column (4 tiles - most)
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          buildGroupTile(mainGroups[2]), // Customers
+                          if (mainGroups.length >= 5) ...[
+                            SizedBox(height: 16),
+                            buildGroupTile(mainGroups[4]), // Time In
+                          ],
+                          if (mainGroups.length >= 6) ...[
+                            SizedBox(height: 16),
+                            buildGroupTile(mainGroups[5]), // Time Out
+                          ],
+                          if (mainGroups.length >= 7) ...[
+                            SizedBox(height: 16),
+                            buildGroupTile(mainGroups[6]), // Total Customers
+                          ],
                         ],
-                        if (mainGroups.length >= 7) ...[
-                          SizedBox(height: 16),
-                          buildGroupTile(mainGroups[6]), // Total Customers
+                      ),
+                    ),
+                    SizedBox(width: 16),
+                    // Column 2: Products and Reserved Products (1 + 3 tiles)
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          buildGroupTile(mainGroups[3]), // Products
+                          if (buildReservedProductsSection() != null) ...[
+                            SizedBox(height: 16),
+                            buildReservedProductsSection()!,
+                          ],
                         ],
-                      ],
+                      ),
                     ),
-                  ),
-                  SizedBox(width: 16),
-                  // Column 2: Products and Reserved Products (1 + 3 tiles)
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        buildGroupTile(mainGroups[3]), // Products
-                        if (buildReservedProductsSection() != null) ...[
+                    SizedBox(width: 16),
+                    // Column 3: Trainers and Admins (2 tiles)
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          buildGroupTile(mainGroups[1]), // Trainers
                           SizedBox(height: 16),
-                          buildReservedProductsSection()!,
+                          buildGroupTile(mainGroups[0]), // Admins
                         ],
-                      ],
+                      ),
                     ),
-                  ),
-                  SizedBox(width: 16),
-                  // Column 3: Trainers and Admins (2 tiles)
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        buildGroupTile(mainGroups[1]), // Trainers
-                        SizedBox(height: 16),
-                        buildGroupTile(mainGroups[0]), // Admins
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
       ),
     );
   }

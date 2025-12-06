@@ -14,7 +14,6 @@ class SideNav extends StatefulWidget {
 class _SideNavState extends State<SideNav> {
   bool _isNavigating = false;
   bool _customersExpanded = true;
-  bool _productsExpanded = true;
 
   void _navigate(String? currentRoute, String route) {
     if (currentRoute == route) return;
@@ -92,13 +91,14 @@ class _SideNavState extends State<SideNav> {
       ),
       child: ListTile(
         dense: true,
-        leading: icon != null
-            ? Icon(
-                icon,
-                color: isSelected ? Colors.blue : Colors.black87,
-                size: 20,
-              )
-            : null,
+        leading:
+            icon != null
+                ? Icon(
+                  icon,
+                  color: isSelected ? Colors.blue : Colors.black87,
+                  size: 20,
+                )
+                : null,
         title: Text(
           label,
           style: TextStyle(
@@ -154,7 +154,8 @@ class _SideNavState extends State<SideNav> {
               title,
               style: TextStyle(
                 fontSize: 14,
-                fontWeight: hasSelectedChild ? FontWeight.w600 : FontWeight.w500,
+                fontWeight:
+                    hasSelectedChild ? FontWeight.w600 : FontWeight.w500,
                 color: hasSelectedChild ? Colors.blue : Colors.black87,
               ),
             ),
@@ -198,19 +199,6 @@ class _SideNavState extends State<SideNav> {
         });
       }
     }
-
-    if (currentRoute == '/admin-products' ||
-        currentRoute == '/admin-reserved-products') {
-      if (!_productsExpanded) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            setState(() {
-              _productsExpanded = true;
-            });
-          }
-        });
-      }
-    }
   }
 
   @override
@@ -237,7 +225,10 @@ class _SideNavState extends State<SideNav> {
                 children: [
                   Container(
                     height: 70,
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
                     alignment: Alignment.centerLeft,
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -315,33 +306,11 @@ class _SideNavState extends State<SideNav> {
                       ),
                     ],
                   ),
-                  _buildDropdownSection(
-                    title: 'Products',
+                  _navItem(
                     icon: Icons.inventory,
-                    isExpanded: _productsExpanded,
-                    onExpansionChanged: () {
-                      setState(() {
-                        _productsExpanded = !_productsExpanded;
-                      });
-                    },
+                    label: 'Products',
+                    route: '/admin-products',
                     currentRoute: currentRoute,
-                    routes: ['/admin-products', '/admin-reserved-products'],
-                    children: [
-                      _navItem(
-                        icon: Icons.inventory,
-                        label: 'Product List',
-                        route: '/admin-products',
-                        currentRoute: currentRoute,
-                        isNested: true,
-                      ),
-                      _navItem(
-                        icon: Icons.shopping_cart,
-                        label: 'Reserved Products',
-                        route: '/admin-reserved-products',
-                        currentRoute: currentRoute,
-                        isNested: true,
-                      ),
-                    ],
                   ),
                   Padding(
                     padding: const EdgeInsets.symmetric(

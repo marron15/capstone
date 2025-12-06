@@ -527,8 +527,6 @@ class _AuditLogCard extends StatelessWidget {
     switch (category) {
       case 'profile':
         return Icons.manage_accounts_outlined;
-      case 'reservation':
-        return Icons.shopping_cart_checkout_outlined;
       case 'attendance':
         return Icons.access_time;
       case 'auth':
@@ -549,7 +547,6 @@ class _AuditLogCard extends StatelessWidget {
     // Fallback: map category titles to their base categories
     final lower = categoryTitle.toLowerCase();
     if (lower.contains('profile')) return Colors.blue;
-    if (lower.contains('reservation')) return Colors.deepPurple;
     if (lower.contains('log in') || lower.contains('login'))
       return Colors.orange;
     if (lower.contains('log out') || lower.contains('logout'))
@@ -1123,7 +1120,6 @@ class AuditLogEntry {
 
   static const Map<String, String> _categoryTitles = {
     'profile': 'Profile Updates',
-    'reservation': 'Reservations',
     'attendance': 'Time In/Out',
     'auth': 'Login/Logout',
   };
