@@ -2,7 +2,24 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:file_saver/file_saver.dart';
+
+Future<pw.ThemeData> _loadBundledFontsTheme() async {
+  try {
+    // On web, rootBundle expects paths relative to the asset bundle root.
+    final pw.Font base = pw.Font.ttf(
+      (await rootBundle.load('fonts/NotoSans-Regular.ttf')).buffer.asByteData(),
+    );
+    final pw.Font bold = pw.Font.ttf(
+      (await rootBundle.load('fonts/NotoSans-Bold.ttf')).buffer.asByteData(),
+    );
+    return pw.ThemeData.withFont(base: base, bold: bold);
+  } catch (_) {
+    // Fallback to built-in fonts if asset loading fails.
+    return pw.ThemeData.base();
+  }
+}
 
 Future<void> exportStatsToPDF(
   BuildContext context, {
@@ -17,6 +34,7 @@ Future<void> exportStatsToPDF(
   int? expiredMemberships,
 }) async {
   try {
+    final pw.ThemeData theme = await _loadBundledFontsTheme();
     if (rows.isEmpty) {
       ScaffoldMessenger.of(
         context,
@@ -24,7 +42,7 @@ Future<void> exportStatsToPDF(
       return;
     }
 
-    final pdf = pw.Document();
+    final pdf = pw.Document(theme: theme);
 
     // Split rows into main stats and memberships/reservations
     final List<List<dynamic>> mainStatsRows = [
@@ -118,7 +136,10 @@ Future<void> exportStatsToPDF(
                     pw.SizedBox(height: 8),
                     pw.Text(
                       'Generated on: ${DateTime.now().toString().split(' ')[0]}',
-                      style: pw.TextStyle(fontSize: 12, color: PdfColors.grey600),
+                      style: pw.TextStyle(
+                        fontSize: 12,
+                        color: PdfColors.grey600,
+                      ),
                     ),
                   ],
                 ),
@@ -598,6 +619,21 @@ pw.Widget _buildDataTable(List<List<dynamic>> rows) {
   const double headerPadV = 8;
   const double rowPadV = 5;
 
+  int _toInt(dynamic v) {
+    if (v is int) return v;
+    if (v is num) return v.toInt();
+    return int.tryParse(v?.toString() ?? '') ?? 0;
+  }
+
+  bool _shouldIncludeInTotal(List<dynamic> row) {
+    if (row.length < 3) return false;
+    final label = row[1].toString().toLowerCase();
+    // Avoid double-counting summary rows or subset rows
+    if (label.startsWith('total')) return false;
+    if (label.contains('expired')) return false;
+    return true;
+  }
+
   // Group rows by section for better organization
   final Map<String, List<List<dynamic>>> groupedRows = {};
   final List<List<dynamic>> dataRows = rows.skip(1).toList();
@@ -783,7 +819,7 @@ pw.Widget _buildDataTable(List<List<dynamic>> rows) {
                     vertical: rowPadV,
                   ),
                   child: pw.Text(
-                    'Total ${sectionRows.fold<int>(0, (sum, row) => sum + (row[2] as int))}',
+                    'Total ${sectionRows.fold<int>(0, (sum, row) => sum + (_shouldIncludeInTotal(row) ? _toInt(row[2]) : 0))}',
                     style: pw.TextStyle(
                       fontWeight: pw.FontWeight.bold,
                       fontSize: 10,

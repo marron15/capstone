@@ -85,6 +85,8 @@ flutter:
     - assets/images/gym_view/back_view.jpg
     - assets/images/gym_view/back_view2.jpg
     - assets/images/gym_view/front_view.jpg
+    - assets/fonts/NotoSans-Regular.ttf
+    - assets/fonts/NotoSans-Bold.ttf
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

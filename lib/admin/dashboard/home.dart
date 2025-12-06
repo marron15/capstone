@@ -33,48 +33,157 @@ class _StatisticPageState extends State<StatisticPage>
   // Simple filter UI state removed per request
   final ScrollController _kpiController = ScrollController();
   final ScrollController _tableScrollController = ScrollController();
-  String _startsView = 'Week';
-  String _kpiPeriodFilter = 'Daily'; // Daily | This Week | This Month
-  final List<bool> _periodSelected = [true, false, false]; // Daily, Week, Month
-  Timer? _countdownTimer;
+  DateTimeRange? _dateRange;
 
-  void _syncPeriodSelection() {
-    _periodSelected[0] = _kpiPeriodFilter == 'Daily';
-    _periodSelected[1] = _kpiPeriodFilter == 'This Week';
-    _periodSelected[2] = _kpiPeriodFilter == 'This Month';
+  DateTimeRange _currentMonthRange() {
+    final now = DateTime.now();
+    final start = DateTime(now.year, now.month, 1);
+    final end = DateTime(
+      now.year,
+      now.month + 1,
+      1,
+    ).subtract(const Duration(seconds: 1));
+    return DateTimeRange(start: start, end: end);
   }
 
-  void _setGlobalPeriod(String period) {
+  Timer? _countdownTimer;
+
+  String _formatRangeLabel() {
+    final DateTimeRange effective = _dateRange ?? _currentMonthRange();
+    final start = effective.start;
+    final end = effective.end;
+    String fmt(DateTime d) =>
+        '${d.month.toString().padLeft(2, '0')}/${d.day.toString().padLeft(2, '0')}/${d.year}';
+    return '${fmt(start)} - ${fmt(end)}';
+  }
+
+  Future<void> _pickDateRange() async {
     if (!mounted || _isDisposed) return;
-    if (mounted && !_isDisposed) {
-      setState(() {
-        _kpiPeriodFilter = period;
-        _syncPeriodSelection();
-        if (period == 'Daily') _startsView = 'Day';
-        if (period == 'This Week') _startsView = 'Week';
-        if (period == 'This Month') _startsView = 'Month';
-      });
-    }
+    final now = DateTime.now();
+    final DateTimeRange seed = _dateRange ?? _currentMonthRange();
+    final DateTime? startInitial = seed.start;
+    final DateTime? endInitial = seed.end;
+
+    final DateTimeRange? pickedRange = await showDialog<DateTimeRange?>(
+      context: context,
+      builder: (ctx) {
+        DateTime? localStart = startInitial;
+        DateTime? localEnd = endInitial;
+
+        Future<void> pickStart(StateSetter setModalState) async {
+          final res = await showDatePicker(
+            context: ctx,
+            initialDate: localStart ?? now,
+            firstDate: DateTime(now.year - 5),
+            lastDate: DateTime(now.year + 5),
+            helpText: 'Select start date',
+          );
+          if (res != null) {
+            final normalized = DateTime(res.year, res.month, res.day);
+            if (localEnd != null && localEnd!.isBefore(normalized)) {
+              localEnd = normalized;
+            }
+            setModalState(() => localStart = normalized);
+          }
+        }
+
+        Future<void> pickEnd(StateSetter setModalState) async {
+          final res = await showDatePicker(
+            context: ctx,
+            initialDate: localEnd ?? localStart ?? now,
+            firstDate: DateTime(now.year - 5),
+            lastDate: DateTime(now.year + 5),
+            helpText: 'Select end date',
+          );
+          if (res != null) {
+            final normalized = DateTime(
+              res.year,
+              res.month,
+              res.day,
+              23,
+              59,
+              59,
+            );
+            if (localStart != null && normalized.isBefore(localStart!)) {
+              return;
+            }
+            setModalState(() => localEnd = normalized);
+          }
+        }
+
+        return StatefulBuilder(
+          builder: (ctx, setState) {
+            return AlertDialog(
+              title: const Text('Select date range'),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.event),
+                    title: Text(
+                      localStart == null
+                          ? 'Select start date'
+                          : '${localStart!.month.toString().padLeft(2, '0')}/${localStart!.day.toString().padLeft(2, '0')}/${localStart!.year}',
+                    ),
+                    onTap: () => pickStart(setState),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.event_available),
+                    title: Text(
+                      localEnd == null
+                          ? 'Select end date'
+                          : '${localEnd!.month.toString().padLeft(2, '0')}/${localEnd!.day.toString().padLeft(2, '0')}/${localEnd!.year}',
+                    ),
+                    onTap: () => pickEnd(setState),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(_currentMonthRange()),
+                  child: const Text('Clear (This Month)'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed:
+                      localStart == null || localEnd == null
+                          ? null
+                          : () => Navigator.of(ctx).pop(
+                            DateTimeRange(start: localStart!, end: localEnd!),
+                          ),
+                  child: const Text('Apply'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (!mounted || _isDisposed) return;
+
+    setState(() {
+      _dateRange = pickedRange ?? _currentMonthRange();
+    });
+  }
+
+  String _currentKpiPeriod() {
+    if (_dateRange == null) return 'This Month';
+    final days = _dateRange!.duration.inDays + 1;
+    if (days <= 1) return 'Daily';
+    if (days <= 7) return 'This Week';
+    return 'This Month';
   }
 
   // Date helpers for filtering
   bool _isSameDay(DateTime a, DateTime b) {
     return a.year == b.year && a.month == b.month && a.day == b.day;
-  }
-
-  bool _isThisWeek(DateTime d, DateTime now) {
-    final int weekday = now.weekday; // 1..7 Mon..Sun
-    final DateTime startOfWeek = DateTime(
-      now.year,
-      now.month,
-      now.day,
-    ).subtract(Duration(days: weekday - 1));
-    final DateTime endOfWeek = startOfWeek.add(const Duration(days: 7));
-    return !d.isBefore(startOfWeek) && d.isBefore(endOfWeek);
-  }
-
-  bool _isThisMonth(DateTime d, DateTime now) {
-    return d.year == now.year && d.month == now.month;
   }
 
   // Overall counts
@@ -110,6 +219,7 @@ class _StatisticPageState extends State<StatisticPage>
   int timeOutDay = 0, timeOutWeek = 0, timeOutMonth = 0;
   Map<String, int> membershipTotals = const {};
   List<Map<String, dynamic>> _reservations = [];
+  List<AttendanceRecord> _attendanceRecords = [];
 
   // Customer table data
   List<Map<String, dynamic>> _customers = [];
@@ -123,6 +233,7 @@ class _StatisticPageState extends State<StatisticPage>
   @override
   void initState() {
     super.initState();
+    _dateRange ??= _currentMonthRange();
     _isDisposed = false;
     WidgetsBinding.instance.addObserver(this);
 
@@ -490,6 +601,7 @@ class _StatisticPageState extends State<StatisticPage>
                 );
                 return {...reservation, 'createdAt': createdAt};
               }).toList();
+          _attendanceRecords = attendanceRecords;
           _isLoading = false;
         });
       }
@@ -629,14 +741,11 @@ class _StatisticPageState extends State<StatisticPage>
     return null;
   }
 
-  List<Map<String, dynamic>> _filterReservationsByPeriod(String period) {
-    final DateTime now = DateTime.now();
+  List<Map<String, dynamic>> _filterReservationsByRange() {
     return _reservations.where((reservation) {
       final DateTime? createdAt = _extractReservationDate(reservation);
       if (createdAt == null) return false;
-      if (period == 'Daily') return _isSameDay(createdAt, now);
-      if (period == 'This Week') return _isThisWeek(createdAt, now);
-      return _isThisMonth(createdAt, now);
+      return _isWithinRange(createdAt);
     }).toList();
   }
 
@@ -677,6 +786,37 @@ class _StatisticPageState extends State<StatisticPage>
     return '$mm/$dd/$yyyy $hh:$min';
   }
 
+  bool _isWithinRange(DateTime date) {
+    final range = _dateRange ?? _currentMonthRange();
+    return !date.isBefore(range.start) && !date.isAfter(range.end);
+  }
+
+  Map<String, int> _membershipTotalsForRange() {
+    int daily = 0, halfMonth = 0, monthly = 0, expired = 0;
+    for (final c in _customers) {
+      if ((c['status'] ?? 'active').toString().toLowerCase() != 'active') {
+        continue;
+      }
+      final DateTime start = c['startDate'] as DateTime;
+      if (!_isWithinRange(start)) continue;
+      final String type = (c['membershipType'] ?? '').toString();
+      if (type == 'Daily') {
+        daily++;
+      } else if (type == 'Half Month') {
+        halfMonth++;
+      } else {
+        monthly++;
+      }
+      if (c['isExpired'] == true) expired++;
+    }
+    return {
+      'Daily': daily,
+      'Half Month': halfMonth,
+      'Monthly': monthly,
+      'Expired': expired,
+    };
+  }
+
   // Returns the list currently visible, filtered by search
   List<Map<String, dynamic>> _getVisibleCustomers() {
     final String q = '';
@@ -701,6 +841,8 @@ class _StatisticPageState extends State<StatisticPage>
               contact.contains(q) ||
               customerId.contains(q);
           if (!matchesSearch) return false;
+          final DateTime start = c['startDate'] as DateTime;
+          if (!_isWithinRange(start)) return false;
           if (_membershipFilter == 'All') return true;
           final String type =
               (c['membershipType'] ?? c['membership_type'] ?? '')
@@ -716,27 +858,6 @@ class _StatisticPageState extends State<StatisticPage>
     // Expired-only filter (applied after membership/search filters)
     List<Map<String, dynamic>> result = filtered;
 
-    // Apply global period filter using membership startDate
-    final DateTime now = DateTime.now();
-    if (_kpiPeriodFilter == 'Daily') {
-      result =
-          result.where((c) {
-            final DateTime start = c['startDate'] as DateTime;
-            return _isSameDay(start, now);
-          }).toList();
-    } else if (_kpiPeriodFilter == 'This Week') {
-      result =
-          result.where((c) {
-            final DateTime start = c['startDate'] as DateTime;
-            return _isThisWeek(start, now);
-          }).toList();
-    } else if (_kpiPeriodFilter == 'This Month') {
-      result =
-          result.where((c) {
-            final DateTime start = c['startDate'] as DateTime;
-            return _isThisMonth(start, now);
-          }).toList();
-    }
     if (_showExpiredOnly) {
       result =
           filtered.where((c) {
@@ -1000,7 +1121,7 @@ class _StatisticPageState extends State<StatisticPage>
     return SizedBox(
       height: isMobile ? 36 : 40,
       child: ElevatedButton.icon(
-        onPressed: () => _promptExportPeriod(context),
+        onPressed: () => _exportOverallReportForRange(context),
         icon: Icon(
           Icons.picture_as_pdf,
           color: Colors.red.shade700,
@@ -1026,52 +1147,62 @@ class _StatisticPageState extends State<StatisticPage>
     );
   }
 
-  Widget _buildPeriodToggleButtons(bool isMobile) {
-    return ToggleButtons(
-      isSelected: _periodSelected,
-      onPressed: (index) {
-        if (index == 0) _setGlobalPeriod('Daily');
-        if (index == 1) _setGlobalPeriod('This Week');
-        if (index == 2) _setGlobalPeriod('This Month');
-      },
-      borderRadius: BorderRadius.circular(18),
-      constraints: BoxConstraints(
-        minHeight: isMobile ? 40 : 36,
-        minWidth: isMobile ? 80 : 110,
+  Widget _buildDateRangeButton(bool isMobile) {
+    return OutlinedButton.icon(
+      onPressed: _pickDateRange,
+      icon: const Icon(Icons.event, size: 18),
+      label: Text(_formatRangeLabel(), overflow: TextOverflow.ellipsis),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: Colors.black87,
+        backgroundColor: Colors.white,
+        side: BorderSide(color: Colors.grey.shade300),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        padding: EdgeInsets.symmetric(
+          horizontal: isMobile ? 10 : 14,
+          vertical: isMobile ? 10 : 12,
+        ),
       ),
-      selectedColor: Colors.white,
-      color: Colors.black87,
-      fillColor: Colors.black87,
-      children: [
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: isMobile ? 8 : 8),
-          child: Text('Daily', style: TextStyle(fontSize: isMobile ? 12 : 14)),
-        ),
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: isMobile ? 8 : 8),
-          child: Text(
-            'This Week',
-            style: TextStyle(fontSize: isMobile ? 12 : 14),
-          ),
-        ),
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: isMobile ? 8 : 8),
-          child: Text(
-            'This Month',
-            style: TextStyle(fontSize: isMobile ? 12 : 14),
-          ),
-        ),
-      ],
     );
   }
 
-  // Export report for a specific period without mutating on-screen filters
-  Future<void> _exportOverallReportForPeriod(
-    BuildContext context,
-    String period,
-  ) async {
+  String _rangeChartTitle() {
+    if (_dateRange == null) return 'New Memberships (All Dates)';
+    final int days = _dateRange!.duration.inDays + 1;
+    if (days <= 1) return 'New Memberships (Selected Day)';
+    if (days <= 7) return 'New Memberships (Selected Week)';
+    return 'New Memberships (Selected Range)';
+  }
+
+  bool _useTodayChart() =>
+      _dateRange != null && (_dateRange!.duration.inDays == 0);
+  bool _useWeekChart() =>
+      _dateRange != null && (_dateRange!.duration.inDays + 1) <= 7;
+
+  List<Map<String, dynamic>> _customersInRangeForExport() {
+    return _customers
+        .where(
+          (c) =>
+              (c['status'] ?? 'active').toString().toLowerCase() == 'active' &&
+              _isWithinRange(c['startDate'] as DateTime),
+        )
+        .toList();
+  }
+
+  int _countTimeInRange(Iterable<AttendanceRecord> records, bool isTimeIn) {
+    int count = 0;
+    for (final record in records) {
+      final DateTime? ts = isTimeIn ? record.timeIn : record.timeOut;
+      if (ts == null) continue;
+      if (_isWithinRange(ts)) count++;
+    }
+    return count;
+  }
+
+  // Export report for the selected date range (or all dates when none)
+  Future<void> _exportOverallReportForRange(BuildContext context) async {
+    final String rangeLabel = _formatRangeLabel();
     final List<Map<String, dynamic>> reservationsForExport =
-        _filterReservationsByPeriod(period);
+        _filterReservationsByRange();
     final int pendingReservations =
         reservationsForExport
             .where((r) => _reservationStatus(r) == 'pending')
@@ -1085,22 +1216,13 @@ class _StatisticPageState extends State<StatisticPage>
             .where((r) => _reservationStatus(r) == 'declined')
             .length;
 
-    // Get Time In and Time Out values based on period
-    int timeInValue = 0;
-    int timeOutValue = 0;
-    if (period == 'Daily') {
-      timeInValue = timeInDay;
-      timeOutValue = timeOutDay;
-    } else if (period == 'This Week') {
-      timeInValue = timeInWeek;
-      timeOutValue = timeOutWeek;
-    } else if (period == 'This Month') {
-      timeInValue = timeInMonth;
-      timeOutValue = timeOutMonth;
-    }
+    final int timeInValue = _countTimeInRange(_attendanceRecords, true);
+    final int timeOutValue = _countTimeInRange(_attendanceRecords, false);
+    final Map<String, int> rangeMemberships = _membershipTotalsForRange();
 
     final rows = <List<dynamic>>[
       ['Section', 'Metric', 'Value'],
+      ['Range', 'Selected Range', rangeLabel],
       ['Products', 'Active', productsActive],
       ['Products', 'Archived', productsArchived],
       ['Admins', 'Active', adminsActive],
@@ -1111,44 +1233,18 @@ class _StatisticPageState extends State<StatisticPage>
       ['Customers', 'Total Active Customers', customersActive],
       ['Trainers', 'Active', trainersActive],
       ['Trainers', 'Archived', trainersArchived],
-      ['Attendance', 'Time In ($period)', timeInValue],
-      ['Attendance', 'Time Out ($period)', timeOutValue],
-      ['Memberships', 'Daily', membershipTotals['Daily'] ?? 0],
-      ['Memberships', 'Half Month', membershipTotals['Half Month'] ?? 0],
-      ['Memberships', 'Monthly', membershipTotals['Monthly'] ?? 0],
-      ['Reservations', 'Requests ($period)', reservationsForExport.length],
+      ['Attendance', 'Time In (Range)', timeInValue],
+      ['Attendance', 'Time Out (Range)', timeOutValue],
+      ['Memberships', 'Daily', rangeMemberships['Daily'] ?? 0],
+      ['Memberships', 'Half Month', rangeMemberships['Half Month'] ?? 0],
+      ['Memberships', 'Monthly', rangeMemberships['Monthly'] ?? 0],
+      ['Reservations', 'Requests (Range)', reservationsForExport.length],
       ['Reservations', 'Pending', pendingReservations],
       ['Reservations', 'Accepted', acceptedReservations],
       ['Reservations', 'Declined', declinedReservations],
     ];
 
-    // Prepare customers filtered by selected export period (without changing UI state)
-    List<Map<String, dynamic>> customersForExport =
-        _customers
-            .where(
-              (c) =>
-                  (c['status'] ?? 'active').toString().toLowerCase() ==
-                  'active',
-            )
-            .toList();
-
-    DateTime now = DateTime.now();
-    if (period == 'Daily') {
-      customersForExport =
-          customersForExport
-              .where((c) => _isSameDay(c['startDate'] as DateTime, now))
-              .toList();
-    } else if (period == 'This Week') {
-      customersForExport =
-          customersForExport
-              .where((c) => _isThisWeek(c['startDate'] as DateTime, now))
-              .toList();
-    } else if (period == 'This Month') {
-      customersForExport =
-          customersForExport
-              .where((c) => _isThisMonth(c['startDate'] as DateTime, now))
-              .toList();
-    }
+    final customersForExport = _customersInRangeForExport();
 
     // Build customer table rows matching on-screen columns
     final customerTableRows = <List<dynamic>>[
@@ -1203,70 +1299,16 @@ class _StatisticPageState extends State<StatisticPage>
       }),
     ];
 
-    // Prepare Today memberships data for Daily
-    Map<String, int>? todayMemberships;
-    if (period == 'Daily') {
-      final DateTime now = DateTime.now();
-      int daily = 0, halfMonth = 0, monthly = 0, expired = 0;
-      for (final c in customersForExport) {
-        final DateTime start = c['startDate'] as DateTime;
-        if (_isSameDay(start, now)) {
-          final String type = (c['membershipType'] ?? '').toString();
-          if (type == 'Daily')
-            daily++;
-          else if (type == 'Half Month')
-            halfMonth++;
-          else
-            monthly++;
-          if (c['isExpired'] == true) expired++;
-        }
-      }
-      todayMemberships = {
-        'Daily': daily,
-        'Half Month': halfMonth,
-        'Monthly': monthly,
-        'Expired': expired,
-      };
-    }
-
-    // Decide which charts to include based on selected period
-    Map<String, int>? weeklyMemberships;
-    Map<String, int>? monthlyMemberships;
-    if (period == 'This Week') {
-      try {
-        weeklyMemberships = await ApiService.getNewMembersThisWeek();
-      } catch (e) {
-        weeklyMemberships = {
-          'Monday': 0,
-          'Tuesday': 0,
-          'Wednesday': 0,
-          'Thursday': 0,
-          'Friday': 0,
-          'Saturday': 0,
-          'Sunday': 0,
-        };
-      }
-    } else if (period == 'This Month') {
-      try {
-        monthlyMemberships = await ApiService.getNewMembersThisMonth();
-      } catch (e) {
-        monthlyMemberships = {'1': 0, '2': 0, '3': 0, '4': 0};
-      }
-    }
-
     // Export PDF (function handles errors internally)
     await exportStatsToPDF(
       context,
-      title: 'Statistics Report ($period)',
+      title: 'Statistics Report ($rangeLabel)',
       rows: rows,
       customerTableRows: customerTableRows,
       reservationTableRows:
           reservationTableRows.length > 1 ? reservationTableRows : null,
-      todayMemberships: todayMemberships,
-      weeklyMemberships: weeklyMemberships,
-      monthlyMemberships: monthlyMemberships,
-      membershipTotals: membershipTotals,
-      expiredMemberships: customersExpired,
+      membershipTotals: rangeMemberships,
+      expiredMemberships: rangeMemberships['Expired'] ?? 0,
     );
 
     // Create audit log entry for PDF export (after successful export)
@@ -1294,12 +1336,12 @@ class _StatisticPageState extends State<StatisticPage>
         activityType: 'pdf_export',
         activityTitle: 'Admin exported PDF report',
         description:
-            'Admin ${adminName ?? 'Unknown'} exported Statistics Report PDF for period: $period. Report includes: ${rows.length - 1} statistics entries, ${customerTableRows.length - 1} customers, ${reservationTableRows.length > 1 ? reservationTableRows.length - 1 : 0} reservations.',
+            'Admin ${adminName ?? 'Unknown'} exported Statistics Report PDF for range: $rangeLabel. Report includes: ${rows.length - 1} statistics entries, ${customerTableRows.length - 1} customers, ${reservationTableRows.length > 1 ? reservationTableRows.length - 1 : 0} reservations.',
         actorType: 'admin',
         actorName: adminName,
         adminId: adminId,
         metadata: {
-          'export_period': period,
+          'export_range': rangeLabel,
           'statistics_count': rows.length - 1,
           'customers_count': customerTableRows.length - 1,
           'reservations_count':
@@ -1313,81 +1355,6 @@ class _StatisticPageState extends State<StatisticPage>
       debugPrint('Failed to create audit log for PDF export: $e');
       // Don't block the export process if audit log fails
     }
-  }
-
-  Future<void> _promptExportPeriod(BuildContext context) async {
-    final String initial = _kpiPeriodFilter; // remember current UI selection
-    String selected = initial;
-
-    final String? confirmed = await showDialog<String>(
-      context: context,
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setLocalState) {
-            return AlertDialog(
-              title: const Text('Select export period'),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              content: RadioGroup<String>(
-                groupValue: selected,
-                onChanged: (value) {
-                  if (value == null) return;
-                  setLocalState(() => selected = value);
-                },
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: const [
-                      RadioListTile<String>(
-                        value: 'Daily',
-                        title: Text('Daily'),
-                        secondary: Icon(Icons.today_rounded),
-                        dense: true,
-                      ),
-                      RadioListTile<String>(
-                        value: 'This Week',
-                        title: Text('This Week'),
-                        secondary: Icon(Icons.calendar_view_week_rounded),
-                        dense: true,
-                      ),
-                      RadioListTile<String>(
-                        value: 'This Month',
-                        title: Text('This Month'),
-                        secondary: Icon(Icons.calendar_month_rounded),
-                        dense: true,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(ctx).pop(null),
-                  child: const Text('Cancel'),
-                ),
-                ElevatedButton.icon(
-                  onPressed: () => Navigator.of(ctx).pop(selected),
-                  icon: const Icon(Icons.picture_as_pdf, size: 18),
-                  label: const Text('Export'),
-                  style: ElevatedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    backgroundColor: Colors.black87,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-
-    if (confirmed == null) return; // cancelled
-    await _exportOverallReportForPeriod(context, confirmed);
   }
 
   Widget _buildCustomerTable(bool isMobile) {
@@ -2019,9 +1986,7 @@ class _StatisticPageState extends State<StatisticPage>
                                   SizedBox(
                                     width: double.infinity,
                                     child: Center(
-                                      child: _buildPeriodToggleButtons(
-                                        isMobile,
-                                      ),
+                                      child: _buildDateRangeButton(isMobile),
                                     ),
                                   )
                                 else
@@ -2029,7 +1994,7 @@ class _StatisticPageState extends State<StatisticPage>
                                     children: [
                                       _buildExportButton(isMobile),
                                       const Spacer(),
-                                      _buildPeriodToggleButtons(isMobile),
+                                      _buildDateRangeButton(isMobile),
                                     ],
                                   ),
                               ],
@@ -2081,7 +2046,7 @@ class _StatisticPageState extends State<StatisticPage>
                                     // KPI ribbon
                                     _KpiRibbonGroups(
                                       controller: _kpiController,
-                                      periodFilter: _kpiPeriodFilter,
+                                      periodFilter: _currentKpiPeriod(),
                                       groups: [
                                         _KpiGroup(
                                           title: 'Admins',
@@ -2265,13 +2230,7 @@ class _StatisticPageState extends State<StatisticPage>
                                                         children: [
                                                           Flexible(
                                                             child: Text(
-                                                              _kpiPeriodFilter ==
-                                                                      'Daily'
-                                                                  ? 'New Memberships Today'
-                                                                  : (_startsView ==
-                                                                          'Week'
-                                                                      ? 'New Memberships this Week'
-                                                                      : 'New Memberships this Month'),
+                                                              _rangeChartTitle(),
                                                               style: TextStyle(
                                                                 fontSize:
                                                                     isMobile
@@ -2300,17 +2259,31 @@ class _StatisticPageState extends State<StatisticPage>
                                                                 ? 200
                                                                 : 260,
                                                         child: () {
-                                                          if (_kpiPeriodFilter ==
-                                                              'Daily') {
-                                                            // Compute today's counts by membership type from loaded customers
+                                                          final List<
+                                                            Map<String, dynamic>
+                                                          >
+                                                          filteredCustomers =
+                                                              _customers
+                                                                  .where(
+                                                                    (
+                                                                      c,
+                                                                    ) => _isWithinRange(
+                                                                      c['startDate']
+                                                                          as DateTime,
+                                                                    ),
+                                                                  )
+                                                                  .toList();
+                                                          if (_useTodayChart()) {
                                                             final DateTime now =
+                                                                _dateRange
+                                                                    ?.start ??
                                                                 DateTime.now();
                                                             int d = 0,
                                                                 h = 0,
                                                                 m = 0,
                                                                 e = 0;
                                                             for (final c
-                                                                in _customers) {
+                                                                in filteredCustomers) {
                                                               final DateTime
                                                               start =
                                                                   c['startDate']
@@ -2344,15 +2317,14 @@ class _StatisticPageState extends State<StatisticPage>
                                                               expired: e,
                                                             );
                                                           }
-                                                          return _startsView ==
-                                                                  'Week'
+                                                          return _useWeekChart()
                                                               ? NewMembersBarGraph(
                                                                 customers:
-                                                                    _customers,
+                                                                    filteredCustomers,
                                                               )
                                                               : NewMembersMonthBarGraph(
                                                                 customers:
-                                                                    _customers,
+                                                                    filteredCustomers,
                                                               );
                                                         }(),
                                                       ),
@@ -2366,15 +2338,17 @@ class _StatisticPageState extends State<StatisticPage>
                                               title: 'Membership Totals',
                                               child: MembershipsTotalBarGraph(
                                                 daily:
-                                                    membershipTotals['Daily'] ??
+                                                    _membershipTotalsForRange()['Daily'] ??
                                                     0,
                                                 halfMonth:
-                                                    membershipTotals['Half Month'] ??
+                                                    _membershipTotalsForRange()['Half Month'] ??
                                                     0,
                                                 monthly:
-                                                    membershipTotals['Monthly'] ??
+                                                    _membershipTotalsForRange()['Monthly'] ??
                                                     0,
-                                                expired: customersExpired,
+                                                expired:
+                                                    _membershipTotalsForRange()['Expired'] ??
+                                                    0,
                                               ),
                                               width: constraints.maxWidth,
                                             ),
