@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'dart:math' as math;
 import '../sidenav.dart';
 import '../pdf/pdf_stats_export.dart';
 import '../services/api_service.dart';
@@ -2437,78 +2438,64 @@ class _KpiRibbonGroups extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool isMobile = MediaQuery.of(context).size.width < 768;
+    final List<_KpiGroup> mainGroups = List<_KpiGroup>.from(groups);
+    final double horizontalGap = isMobile ? 8 : 12;
+    final double verticalGap = isMobile ? 10 : 14;
+
     Widget tile(_KpiTile t) {
       return Container(
-        width: isMobile ? double.infinity : 220,
-        constraints: isMobile ? BoxConstraints(minHeight: 80) : null,
-        margin: EdgeInsets.only(
-          right: isMobile ? 0 : 0,
-          bottom: isMobile ? 10 : 12,
-        ),
         padding: EdgeInsets.symmetric(
           horizontal: isMobile ? 12 : 14,
-          vertical: isMobile ? 10 : 10,
+          vertical: isMobile ? 10 : 12,
         ),
         decoration: BoxDecoration(
           color: t.color.withAlpha(26),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: t.color.withAlpha(64)),
         ),
-        child: Column(
+        child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
           children: [
-            Row(
-              children: [
-                Container(
-                  width: isMobile ? 8 : 10,
-                  height: isMobile ? 8 : 10,
-                  decoration: BoxDecoration(
-                    color: t.color,
-                    shape: BoxShape.circle,
+            Container(
+              width: isMobile ? 8 : 10,
+              height: isMobile ? 8 : 10,
+              margin: EdgeInsets.only(top: isMobile ? 4 : 6, right: 8),
+              decoration: BoxDecoration(color: t.color, shape: BoxShape.circle),
+            ),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    t.value.toString(),
+                    style: TextStyle(
+                      fontSize: isMobile ? 18 : 22,
+                      fontWeight: FontWeight.w800,
+                      height: 1.1,
+                    ),
                   ),
-                ),
-                SizedBox(width: isMobile ? 6 : 8),
-                Flexible(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        t.value.toString(),
-                        style: TextStyle(
-                          fontSize: isMobile ? 18 : 22,
-                          fontWeight: FontWeight.w800,
-                          height: 1.1,
-                        ),
-                      ),
-                      SizedBox(height: isMobile ? 2 : 3),
-                      Text(
-                        t.label,
-                        style: TextStyle(
-                          fontSize: isMobile ? 10 : 11,
-                          color: Colors.black54,
-                          height: 1.2,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
+                  SizedBox(height: isMobile ? 2 : 4),
+                  Text(
+                    t.label,
+                    style: TextStyle(
+                      fontSize: isMobile ? 10 : 12,
+                      color: Colors.black54,
+                      height: 1.2,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
         ),
       );
     }
 
-    // Use all KPI groups (reservations removed)
-    final List<_KpiGroup> mainGroups = List<_KpiGroup>.from(groups);
-
-    // Helper to get selected tile for a group based on period
     Widget buildGroupTile(_KpiGroup g) {
-      int index = 0; // Daily
+      int index = 0;
       if (periodFilter == 'This Week')
         index = 1;
       else if (periodFilter == 'This Month')
@@ -2521,24 +2508,14 @@ class _KpiRibbonGroups extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            height:
-                isMobile ? 20 : 20, // Fixed height for title + bottom padding
-            child: Padding(
-              padding: EdgeInsets.only(
-                left: isMobile ? 0 : 4,
-                bottom: isMobile ? 6 : 6,
-              ),
-              child: Align(
-                alignment: Alignment.bottomLeft,
-                child: Text(
-                  g.title,
-                  style: TextStyle(
-                    fontSize: isMobile ? 11 : 11,
-                    color: Colors.black54,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+          Padding(
+            padding: EdgeInsets.only(bottom: isMobile ? 6 : 8),
+            child: Text(
+              g.title,
+              style: TextStyle(
+                fontSize: isMobile ? 11 : 12,
+                color: Colors.black54,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ),
@@ -2547,137 +2524,46 @@ class _KpiRibbonGroups extends StatelessWidget {
       );
     }
 
-    Widget? buildReservedProductsSection() => null;
-
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      elevation: 2,
-      child: Padding(
-        padding: EdgeInsets.all(isMobile ? 12.0 : 16.0),
-        child:
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double maxWidth = constraints.maxWidth;
+        final double targetWidth =
             isMobile
-                ? Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Main groups in grid - organized from most to least tiles
-                    if (mainGroups.isNotEmpty)
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          // Column 1: Customers column (4 tiles - most)
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              children: [
-                                buildGroupTile(mainGroups[2]), // Customers
-                                if (mainGroups.length >= 5) ...[
-                                  SizedBox(height: 12),
-                                  buildGroupTile(mainGroups[4]), // Time In
-                                ],
-                                if (mainGroups.length >= 6) ...[
-                                  SizedBox(height: 12),
-                                  buildGroupTile(mainGroups[5]), // Time Out
-                                ],
-                                if (mainGroups.length >= 7) ...[
-                                  SizedBox(height: 12),
-                                  buildGroupTile(
-                                    mainGroups[6],
-                                  ), // Total Customers
-                                ],
-                              ],
+                ? maxWidth
+                : math.max(
+                  220,
+                  math.min(280, (maxWidth - (horizontalGap * 2)) / 3),
+                );
+
+        return Card(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          elevation: 2,
+          child: Padding(
+            padding: EdgeInsets.all(isMobile ? 12.0 : 16.0),
+            child: Align(
+              alignment: Alignment.topLeft,
+              child: Wrap(
+                spacing: horizontalGap,
+                runSpacing: verticalGap,
+                children:
+                    mainGroups
+                        .map(
+                          (g) => ConstrainedBox(
+                            constraints: BoxConstraints(
+                              minWidth: isMobile ? maxWidth : 200,
+                              maxWidth: targetWidth,
                             ),
+                            child: buildGroupTile(g),
                           ),
-                          SizedBox(width: 12),
-                          // Column 2: Products and Reserved Products (1 + 3 tiles)
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              children: [
-                                buildGroupTile(mainGroups[3]), // Products
-                                if (buildReservedProductsSection() != null) ...[
-                                  SizedBox(height: 12),
-                                  buildReservedProductsSection()!,
-                                ],
-                              ],
-                            ),
-                          ),
-                          SizedBox(width: 12),
-                          // Column 3: Trainers and Admins (2 tiles)
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              children: [
-                                buildGroupTile(mainGroups[1]), // Trainers
-                                SizedBox(height: 12),
-                                buildGroupTile(mainGroups[0]), // Admins
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                  ],
-                )
-                : Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    // Column 1: Customers column (4 tiles - most)
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          buildGroupTile(mainGroups[2]), // Customers
-                          if (mainGroups.length >= 5) ...[
-                            SizedBox(height: 16),
-                            buildGroupTile(mainGroups[4]), // Time In
-                          ],
-                          if (mainGroups.length >= 6) ...[
-                            SizedBox(height: 16),
-                            buildGroupTile(mainGroups[5]), // Time Out
-                          ],
-                          if (mainGroups.length >= 7) ...[
-                            SizedBox(height: 16),
-                            buildGroupTile(mainGroups[6]), // Total Customers
-                          ],
-                        ],
-                      ),
-                    ),
-                    SizedBox(width: 16),
-                    // Column 2: Products and Reserved Products (1 + 3 tiles)
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          buildGroupTile(mainGroups[3]), // Products
-                          if (buildReservedProductsSection() != null) ...[
-                            SizedBox(height: 16),
-                            buildReservedProductsSection()!,
-                          ],
-                        ],
-                      ),
-                    ),
-                    SizedBox(width: 16),
-                    // Column 3: Trainers and Admins (2 tiles)
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          buildGroupTile(mainGroups[1]), // Trainers
-                          SizedBox(height: 16),
-                          buildGroupTile(mainGroups[0]), // Admins
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-      ),
+                        )
+                        .toList(),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
