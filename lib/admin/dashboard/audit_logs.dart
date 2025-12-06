@@ -20,31 +20,51 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
 
   final List<AuditLogEntry> _logs = [];
   bool _isLoading = true;
+  bool _isFetching = false;
   String _searchQuery = '';
   String? _selectedActorType;
   Timer? _searchDebounce;
+  Timer? _autoRefreshTimer;
 
   @override
   void initState() {
     super.initState();
     _fetchLogs();
+    _startAutoRefresh();
   }
 
   @override
   void dispose() {
     _searchDebounce?.cancel();
+    _autoRefreshTimer?.cancel();
     _searchController.dispose();
     super.dispose();
   }
 
-  Future<void> _fetchLogs() async {
-    setState(() => _isLoading = true);
+  void _startAutoRefresh() {
+    _autoRefreshTimer?.cancel();
+    _autoRefreshTimer = Timer.periodic(
+      const Duration(seconds: 2),
+      (_) {
+        if (!mounted || _isFetching) return;
+        _fetchLogs(showSpinner: false);
+      },
+    );
+  }
+
+  Future<void> _fetchLogs({bool showSpinner = true}) async {
+    if (_isFetching) return;
+    _isFetching = true;
+    if (showSpinner) setState(() => _isLoading = true);
     final logs = await ApiService.getAuditLogs(
       search: _searchQuery.trim().isEmpty ? null : _searchQuery.trim(),
       actorType: _selectedActorType,
       limit: 250,
     );
-    if (!mounted) return;
+    if (!mounted) {
+      _isFetching = false;
+      return;
+    }
 
     // Apply client-side filtering based on actor type
     // Note: Backend already filters by actor_type, but we keep this as a safety check
@@ -82,6 +102,7 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
         ..clear()
         ..addAll(filteredLogs);
       _isLoading = false;
+      _isFetching = false;
     });
   }
 
