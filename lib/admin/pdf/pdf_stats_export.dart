@@ -26,12 +26,13 @@ Future<void> exportStatsToPDF(
   required String title,
   required List<List<dynamic>> rows,
   List<List<dynamic>>? customerTableRows,
-  List<List<dynamic>>? reservationTableRows,
   Map<String, int>? todayMemberships,
   Map<String, int>? weeklyMemberships,
   Map<String, int>? monthlyMemberships,
   Map<String, int>? membershipTotals,
   int? expiredMemberships,
+  List<Map<String, dynamic>>? rangeMembershipBuckets,
+  String? rangeLabel,
 }) async {
   try {
     final pw.ThemeData theme = await _loadBundledFontsTheme();
@@ -105,7 +106,7 @@ Future<void> exportStatsToPDF(
       ),
     );
 
-    // Page 2: Memberships and Reservations together
+    // Page 2: Memberships table (no reservations)
     if (membershipsReservationsRows.length > 1) {
       pdf.addPage(
         pw.MultiPage(
@@ -146,7 +147,7 @@ Future<void> exportStatsToPDF(
               ),
               pw.SizedBox(height: 16),
 
-              // Memberships and Reservations table
+              // Memberships table
               _buildDataTable(membershipsReservationsRows),
             ];
           },
@@ -154,7 +155,7 @@ Future<void> exportStatsToPDF(
       );
     }
 
-    // Optional: Page 2 containing Customer Table if provided
+    // Optional: Page containing Customer Table if provided
     if (customerTableRows != null && customerTableRows.isNotEmpty) {
       pdf.addPage(
         pw.MultiPage(
@@ -200,16 +201,19 @@ Future<void> exportStatsToPDF(
       );
     }
 
-    if (reservationTableRows != null && reservationTableRows.isNotEmpty) {
+    // Reservations export removed (feature deprecated)
+
+    // Selected Range Memberships Chart (bar)
+    if (rangeMembershipBuckets != null && rangeMembershipBuckets.isNotEmpty) {
       pdf.addPage(
         pw.MultiPage(
-          pageFormat: PdfPageFormat.a4.landscape,
-          margin: const pw.EdgeInsets.all(24),
+          pageFormat: PdfPageFormat.a4,
+          margin: const pw.EdgeInsets.all(32),
           build: (pw.Context context) {
             return [
               pw.Container(
                 width: double.infinity,
-                padding: const pw.EdgeInsets.only(bottom: 16),
+                padding: const pw.EdgeInsets.only(bottom: 20),
                 decoration: const pw.BoxDecoration(
                   border: pw.Border(
                     bottom: pw.BorderSide(color: PdfColors.grey300, width: 1),
@@ -219,13 +223,22 @@ Future<void> exportStatsToPDF(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
                     pw.Text(
-                      'Product Reservations',
+                      'New Memberships (Selected Range)',
                       style: pw.TextStyle(
-                        fontSize: 22,
+                        fontSize: 24,
                         fontWeight: pw.FontWeight.bold,
                         color: PdfColors.blue800,
                       ),
                     ),
+                    pw.SizedBox(height: 8),
+                    if (rangeLabel != null)
+                      pw.Text(
+                        rangeLabel,
+                        style: pw.TextStyle(
+                          fontSize: 12,
+                          color: PdfColors.grey600,
+                        ),
+                      ),
                     pw.SizedBox(height: 6),
                     pw.Text(
                       'Generated on: ${DateTime.now().toString().split(' ')[0]}',
@@ -237,8 +250,8 @@ Future<void> exportStatsToPDF(
                   ],
                 ),
               ),
-              pw.SizedBox(height: 16),
-              _buildReservationTable(reservationTableRows),
+              pw.SizedBox(height: 20),
+              _buildRangeMembershipsChart(rangeMembershipBuckets),
             ];
           },
         ),
@@ -546,70 +559,148 @@ pw.Widget _buildCustomerTable(List<List<dynamic>> rows) {
   );
 }
 
-pw.Widget _buildReservationTable(List<List<dynamic>> rows) {
-  final headers = rows.first.map((c) => c.toString()).toList();
-  final dataRows = rows.skip(1).toList();
+pw.Widget _buildRangeMembershipsChart(List<Map<String, dynamic>> buckets) {
+  if (buckets.isEmpty) {
+    return pw.Text('No membership data for selected range.');
+  }
+
+  int _roundUpToNearestTen(int v) {
+    if (v <= 0) return 10;
+    final int rem = v % 10;
+    return rem == 0 ? v : v + (10 - rem);
+  }
+
+  final List<String> labels =
+      buckets.map((b) => b['label']?.toString() ?? '').toList();
+  final List<int> values =
+      buckets.map((b) => (b['count'] as int?) ?? 0).toList();
+  final int total = values.fold(0, (s, v) => s + v);
+  final int maxValue = _roundUpToNearestTen(
+    values.fold(0, (m, v) => v > m ? v : m),
+  );
+  const double chartHeight = 260;
+  const double barWidth = 36;
+  const double yAxisWidth = 30;
+  const double yAxisGap = 8;
 
   return pw.Container(
     width: double.infinity,
-    child: pw.Table(
-      border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
-      columnWidths: const {
-        0: pw.FlexColumnWidth(1.4),
-        1: pw.FlexColumnWidth(2.2),
-        2: pw.FlexColumnWidth(2.4),
-        3: pw.FlexColumnWidth(1.2),
-        4: pw.FlexColumnWidth(2.2),
-        5: pw.FlexColumnWidth(1.4),
-      },
+    padding: const pw.EdgeInsets.all(16),
+    margin: const pw.EdgeInsets.only(bottom: 20),
+    decoration: pw.BoxDecoration(
+      border: pw.Border.all(color: PdfColors.grey300, width: 0.5),
+      borderRadius: pw.BorderRadius.circular(8),
+    ),
+    child: pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        pw.TableRow(
-          decoration: const pw.BoxDecoration(color: PdfColors.grey200),
-          children:
-              headers
-                  .map(
-                    (h) => pw.Padding(
-                      padding: const pw.EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 8,
-                      ),
-                      child: pw.Text(
-                        h,
-                        style: pw.TextStyle(
-                          fontWeight: pw.FontWeight.bold,
-                          fontSize: 11,
-                          color: PdfColors.blue800,
+        pw.Text(
+          'New Memberships (Range)',
+          style: pw.TextStyle(
+            fontSize: 18,
+            fontWeight: pw.FontWeight.bold,
+            color: PdfColors.black,
+          ),
+        ),
+        pw.SizedBox(height: 12),
+        pw.Container(
+          height: chartHeight,
+          child: pw.Row(
+            crossAxisAlignment: pw.CrossAxisAlignment.end,
+            children: [
+              pw.Container(
+                width: yAxisWidth,
+                child: pw.Column(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: pw.CrossAxisAlignment.end,
+                  children: List.generate(6, (index) {
+                    final double step = maxValue / 5;
+                    final int value = ((5 - index) * step).round();
+                    return pw.Text(
+                      value.toString(),
+                      style: const pw.TextStyle(fontSize: 10),
+                    );
+                  }),
+                ),
+              ),
+              pw.SizedBox(width: yAxisGap),
+              pw.Expanded(
+                child: pw.Stack(
+                  children: [
+                    ...List.generate(6, (i) {
+                      final double bottom = i * (chartHeight / 5);
+                      return pw.Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: bottom,
+                        child: pw.Container(
+                          height: 1,
+                          color: PdfColors.grey300,
                         ),
-                        textAlign: pw.TextAlign.center,
+                      );
+                    }),
+                    pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceEvenly,
+                      crossAxisAlignment: pw.CrossAxisAlignment.end,
+                      children: List.generate(values.length, (i) {
+                        final double height =
+                            maxValue == 0
+                                ? 0
+                                : (values[i] / maxValue) * chartHeight;
+                        return pw.Container(
+                          width: barWidth,
+                          height: height,
+                          decoration: pw.BoxDecoration(
+                            color: PdfColors.purple400,
+                            borderRadius: pw.BorderRadius.circular(2),
+                          ),
+                        );
+                      }),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        pw.SizedBox(height: 8),
+        pw.Padding(
+          padding: pw.EdgeInsets.only(left: yAxisWidth + yAxisGap),
+          child: pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceEvenly,
+            children: List.generate(labels.length, (i) {
+              return pw.SizedBox(
+                width: barWidth + 8,
+                child: pw.Column(
+                  mainAxisSize: pw.MainAxisSize.min,
+                  children: [
+                    pw.Text(
+                      labels[i],
+                      style: const pw.TextStyle(fontSize: 9),
+                      textAlign: pw.TextAlign.center,
+                    ),
+                    pw.Text(
+                      values[i].toString(),
+                      style: pw.TextStyle(
+                        fontSize: 10,
+                        fontWeight: pw.FontWeight.bold,
                       ),
                     ),
-                  )
-                  .toList(),
-        ),
-        ...dataRows.map((row) {
-          final String status = row[5].toString().toLowerCase();
-          return pw.TableRow(
-            children: List.generate(6, (index) {
-              return pw.Padding(
-                padding: const pw.EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 6,
-                ),
-                child: pw.Text(
-                  row[index].toString(),
-                  style: pw.TextStyle(
-                    fontSize: 10,
-                    color:
-                        index == 5 ? _getStatusColor(status) : PdfColors.black,
-                    fontWeight:
-                        index == 0 ? pw.FontWeight.bold : pw.FontWeight.normal,
-                  ),
-                  textAlign: pw.TextAlign.center,
+                  ],
                 ),
               );
             }),
-          );
-        }),
+          ),
+        ),
+        pw.SizedBox(height: 12),
+        pw.Text(
+          'Total: $total',
+          style: pw.TextStyle(
+            fontSize: 11,
+            fontWeight: pw.FontWeight.bold,
+            color: PdfColors.grey700,
+          ),
+        ),
       ],
     ),
   );

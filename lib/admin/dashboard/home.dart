@@ -196,18 +196,6 @@ class _StatisticPageState extends State<StatisticPage>
   int customersExpired = 0;
   int trainersActive = 0;
   int trainersArchived = 0;
-  int reservationsAddedDay = 0,
-      reservationsAddedWeek = 0,
-      reservationsAddedMonth = 0;
-  int reservationsPendingDay = 0,
-      reservationsPendingWeek = 0,
-      reservationsPendingMonth = 0;
-  int reservationsAcceptedDay = 0,
-      reservationsAcceptedWeek = 0,
-      reservationsAcceptedMonth = 0;
-  int reservationsDeclinedDay = 0,
-      reservationsDeclinedWeek = 0,
-      reservationsDeclinedMonth = 0;
 
   // KPI: added this day/week/month
   int adminsAddedDay = 0, adminsAddedWeek = 0, adminsAddedMonth = 0;
@@ -218,7 +206,6 @@ class _StatisticPageState extends State<StatisticPage>
   int timeInDay = 0, timeInWeek = 0, timeInMonth = 0;
   int timeOutDay = 0, timeOutWeek = 0, timeOutMonth = 0;
   Map<String, int> membershipTotals = const {};
-  List<Map<String, dynamic>> _reservations = [];
   List<AttendanceRecord> _attendanceRecords = [];
 
   // Customer table data
@@ -328,7 +315,6 @@ class _StatisticPageState extends State<StatisticPage>
       final Map<String, int> memTotals = Map<String, int>.from(
         futures[6] as Map<String, int>,
       );
-      final List<Map<String, dynamic>> reservations = const [];
       // Fetch attendance records
       final List<AttendanceRecord> attendanceRecords =
           futures[7] as List<AttendanceRecord>;
@@ -481,62 +467,6 @@ class _StatisticPageState extends State<StatisticPage>
         nowTs,
         'Month',
       );
-      Map<String, int> _countReservationsByStatus(String period) {
-        final DateTime now = nowTs;
-        int total = 0, pending = 0, accepted = 0, declined = 0;
-        for (final reservation in reservations) {
-          final DateTime? createdAt = _extractReservationDate(reservation);
-          if (createdAt == null) continue;
-          bool matches = false;
-          if (period == 'Day') {
-            matches = _isSameDay(createdAt, now);
-          } else if (period == 'Week') {
-            matches = _isThisWeek(createdAt, now);
-          } else {
-            matches = _isThisMonth(createdAt, now);
-          }
-          if (!matches) continue;
-          total++;
-          final String status = _reservationStatus(reservation);
-          if (status == 'accepted') {
-            accepted++;
-          } else if (status == 'declined') {
-            declined++;
-          } else {
-            pending++;
-          }
-        }
-        return {
-          'total': total,
-          'pending': pending,
-          'accepted': accepted,
-          'declined': declined,
-        };
-      }
-
-      final Map<String, int> reservationDayCounts = _countReservationsByStatus(
-        'Day',
-      );
-      final Map<String, int> reservationWeekCounts = _countReservationsByStatus(
-        'Week',
-      );
-      final Map<String, int> reservationMonthCounts =
-          _countReservationsByStatus('Month');
-
-      reservationsAddedDay = reservationDayCounts['total'] ?? 0;
-      reservationsPendingDay = reservationDayCounts['pending'] ?? 0;
-      reservationsAcceptedDay = reservationDayCounts['accepted'] ?? 0;
-      reservationsDeclinedDay = reservationDayCounts['declined'] ?? 0;
-
-      reservationsAddedWeek = reservationWeekCounts['total'] ?? 0;
-      reservationsPendingWeek = reservationWeekCounts['pending'] ?? 0;
-      reservationsAcceptedWeek = reservationWeekCounts['accepted'] ?? 0;
-      reservationsDeclinedWeek = reservationWeekCounts['declined'] ?? 0;
-
-      reservationsAddedMonth = reservationMonthCounts['total'] ?? 0;
-      reservationsPendingMonth = reservationMonthCounts['pending'] ?? 0;
-      reservationsAcceptedMonth = reservationMonthCounts['accepted'] ?? 0;
-      reservationsDeclinedMonth = reservationMonthCounts['declined'] ?? 0;
 
       // Count Time In and Time Out by period
       int _countTimeIn(
@@ -594,13 +524,6 @@ class _StatisticPageState extends State<StatisticPage>
 
       if (mounted && !_isDisposed) {
         setState(() {
-          _reservations =
-              reservations.map((reservation) {
-                final DateTime? createdAt = _extractReservationDate(
-                  reservation,
-                );
-                return {...reservation, 'createdAt': createdAt};
-              }).toList();
           _attendanceRecords = attendanceRecords;
           _isLoading = false;
         });
@@ -733,59 +656,6 @@ class _StatisticPageState extends State<StatisticPage>
     };
   }
 
-  DateTime? _extractReservationDate(Map<String, dynamic> reservation) {
-    final dynamic raw = reservation['createdAt'] ?? reservation['created_at'];
-    if (raw is DateTime) return raw;
-    if (raw == null) return null;
-    if (raw is String && raw.isNotEmpty) return DateTime.tryParse(raw);
-    return null;
-  }
-
-  List<Map<String, dynamic>> _filterReservationsByRange() {
-    return _reservations.where((reservation) {
-      final DateTime? createdAt = _extractReservationDate(reservation);
-      if (createdAt == null) return false;
-      return _isWithinRange(createdAt);
-    }).toList();
-  }
-
-  String _reservationStatus(Map<String, dynamic> reservation) {
-    return (reservation['status'] ?? 'pending').toString().toLowerCase();
-  }
-
-  String _formatReservationStatusLabel(String status) {
-    switch (status.toLowerCase()) {
-      case 'accepted':
-        return 'Accepted';
-      case 'declined':
-        return 'Declined';
-      default:
-        return 'Pending';
-    }
-  }
-
-  String _composeReservationCustomerName(Map<String, dynamic> reservation) {
-    final String firstName =
-        (reservation['first_name'] ?? '').toString().trim();
-    final String lastName = (reservation['last_name'] ?? '').toString().trim();
-    final String combined = '$firstName $lastName'.trim();
-    if (combined.isNotEmpty) return combined;
-    final String fallback =
-        (reservation['customer_name'] ?? reservation['customerName'] ?? '')
-            .toString()
-            .trim();
-    return fallback.isNotEmpty ? fallback : 'Member';
-  }
-
-  String _formatReservationTimestamp(DateTime date) {
-    final String mm = date.month.toString().padLeft(2, '0');
-    final String dd = date.day.toString().padLeft(2, '0');
-    final String yyyy = date.year.toString();
-    final String hh = date.hour.toString().padLeft(2, '0');
-    final String min = date.minute.toString().padLeft(2, '0');
-    return '$mm/$dd/$yyyy $hh:$min';
-  }
-
   bool _isWithinRange(DateTime date) {
     final range = _dateRange ?? _currentMonthRange();
     return !date.isBefore(range.start) && !date.isAfter(range.end);
@@ -815,6 +685,67 @@ class _StatisticPageState extends State<StatisticPage>
       'Monthly': monthly,
       'Expired': expired,
     };
+  }
+
+  List<Map<String, dynamic>> _membershipBucketsForRange() {
+    final DateTimeRange range = _dateRange ?? _currentMonthRange();
+    final DateTime start = DateTime(
+      range.start.year,
+      range.start.month,
+      range.start.day,
+    );
+    final DateTime end = DateTime(
+      range.end.year,
+      range.end.month,
+      range.end.day,
+    );
+
+    String fmt(DateTime d) =>
+        '${d.month.toString().padLeft(2, '0')}/${d.day.toString().padLeft(2, '0')}';
+
+    final List<Map<String, dynamic>> buckets = [];
+    DateTime cursor = start;
+    int index = 1;
+    while (!cursor.isAfter(end) && buckets.length < 6) {
+      final DateTime tentativeEnd = cursor.add(const Duration(days: 6));
+      final DateTime bucketEnd = tentativeEnd.isAfter(end) ? end : tentativeEnd;
+      buckets.add({
+        'label': 'Week $index (${fmt(cursor)} - ${fmt(bucketEnd)})',
+        'start': cursor,
+        'end': bucketEnd,
+        'count': 0,
+      });
+      index++;
+      cursor = bucketEnd.add(const Duration(days: 1));
+    }
+
+    for (int i = 0; i < _customers.length; i++) {
+      final c = _customers[i];
+      if ((c['status'] ?? 'active').toString().toLowerCase() != 'active') {
+        continue;
+      }
+      final DateTime? startDate = c['startDate'] as DateTime?;
+      if (startDate == null ||
+          startDate.isBefore(start) ||
+          startDate.isAfter(end)) {
+        continue;
+      }
+      for (int b = 0; b < buckets.length; b++) {
+        final DateTime bucketStart = buckets[b]['start'] as DateTime;
+        final DateTime bucketEnd = buckets[b]['end'] as DateTime;
+        if (!startDate.isBefore(bucketStart) && !startDate.isAfter(bucketEnd)) {
+          buckets[b] = {
+            ...buckets[b],
+            'count': (buckets[b]['count'] as int) + 1,
+          };
+          break;
+        }
+      }
+    }
+
+    return buckets
+        .map((b) => {'label': b['label'], 'count': b['count']})
+        .toList(growable: false);
   }
 
   // Returns the list currently visible, filtered by search
@@ -1201,24 +1132,11 @@ class _StatisticPageState extends State<StatisticPage>
   // Export report for the selected date range (or all dates when none)
   Future<void> _exportOverallReportForRange(BuildContext context) async {
     final String rangeLabel = _formatRangeLabel();
-    final List<Map<String, dynamic>> reservationsForExport =
-        _filterReservationsByRange();
-    final int pendingReservations =
-        reservationsForExport
-            .where((r) => _reservationStatus(r) == 'pending')
-            .length;
-    final int acceptedReservations =
-        reservationsForExport
-            .where((r) => _reservationStatus(r) == 'accepted')
-            .length;
-    final int declinedReservations =
-        reservationsForExport
-            .where((r) => _reservationStatus(r) == 'declined')
-            .length;
-
     final int timeInValue = _countTimeInRange(_attendanceRecords, true);
     final int timeOutValue = _countTimeInRange(_attendanceRecords, false);
     final Map<String, int> rangeMemberships = _membershipTotalsForRange();
+    final List<Map<String, dynamic>> membershipBuckets =
+        _membershipBucketsForRange();
 
     final rows = <List<dynamic>>[
       ['Section', 'Metric', 'Value'],
@@ -1238,10 +1156,6 @@ class _StatisticPageState extends State<StatisticPage>
       ['Memberships', 'Daily', rangeMemberships['Daily'] ?? 0],
       ['Memberships', 'Half Month', rangeMemberships['Half Month'] ?? 0],
       ['Memberships', 'Monthly', rangeMemberships['Monthly'] ?? 0],
-      ['Reservations', 'Requests (Range)', reservationsForExport.length],
-      ['Reservations', 'Pending', pendingReservations],
-      ['Reservations', 'Accepted', acceptedReservations],
-      ['Reservations', 'Declined', declinedReservations],
     ];
 
     final customersForExport = _customersInRangeForExport();
@@ -1270,45 +1184,16 @@ class _StatisticPageState extends State<StatisticPage>
       }),
     ];
 
-    final reservationTableRows = <List<dynamic>>[
-      [
-        'Reservation ID',
-        'Product',
-        'Member',
-        'Quantity',
-        'Requested At',
-        'Status',
-      ],
-      ...reservationsForExport.map((reservation) {
-        final String id = '#${reservation['id'] ?? 'N/A'}';
-        final String product =
-            (reservation['product_name'] ?? reservation['productName'] ?? 'N/A')
-                .toString();
-        final String customer = _composeReservationCustomerName(reservation);
-        final String qty =
-            (reservation['quantity'] ?? reservation['qty'] ?? 0).toString();
-        final DateTime? requestedAt = _extractReservationDate(reservation);
-        final String requestedAtLabel =
-            requestedAt != null
-                ? _formatReservationTimestamp(requestedAt)
-                : 'N/A';
-        final String statusLabel = _formatReservationStatusLabel(
-          _reservationStatus(reservation),
-        );
-        return [id, product, customer, qty, requestedAtLabel, statusLabel];
-      }),
-    ];
-
     // Export PDF (function handles errors internally)
     await exportStatsToPDF(
       context,
       title: 'Statistics Report ($rangeLabel)',
       rows: rows,
       customerTableRows: customerTableRows,
-      reservationTableRows:
-          reservationTableRows.length > 1 ? reservationTableRows : null,
       membershipTotals: rangeMemberships,
       expiredMemberships: rangeMemberships['Expired'] ?? 0,
+      rangeMembershipBuckets: membershipBuckets,
+      rangeLabel: rangeLabel,
     );
 
     // Create audit log entry for PDF export (after successful export)
@@ -1336,7 +1221,7 @@ class _StatisticPageState extends State<StatisticPage>
         activityType: 'pdf_export',
         activityTitle: 'Admin exported PDF report',
         description:
-            'Admin ${adminName ?? 'Unknown'} exported Statistics Report PDF for range: $rangeLabel. Report includes: ${rows.length - 1} statistics entries, ${customerTableRows.length - 1} customers, ${reservationTableRows.length > 1 ? reservationTableRows.length - 1 : 0} reservations.',
+            'Admin ${adminName ?? 'Unknown'} exported Statistics Report PDF for range: $rangeLabel. Report includes: ${rows.length - 1} statistics entries, ${customerTableRows.length - 1} customers.',
         actorType: 'admin',
         actorName: adminName,
         adminId: adminId,
@@ -1344,10 +1229,6 @@ class _StatisticPageState extends State<StatisticPage>
           'export_range': rangeLabel,
           'statistics_count': rows.length - 1,
           'customers_count': customerTableRows.length - 1,
-          'reservations_count':
-              reservationTableRows.length > 1
-                  ? reservationTableRows.length - 1
-                  : 0,
           'report_type': 'statistics_report',
         },
       );
