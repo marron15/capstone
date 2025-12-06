@@ -23,6 +23,8 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
   bool _isFetching = false;
   String _searchQuery = '';
   String? _selectedActorType;
+  String? _selectedCategory;
+  List<String> _categories = [];
   DateTimeRange? _dateRange;
   Timer? _searchDebounce;
   Timer? _autoRefreshTimer;
@@ -236,12 +238,27 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
           return !createdAt.isBefore(effectiveRange.start) &&
               !createdAt.isAfter(effectiveRange.end);
         }).toList();
+
+    if (_selectedCategory != null && _selectedCategory!.isNotEmpty) {
+      final String target = _selectedCategory!.toLowerCase();
+      filteredLogs =
+          filteredLogs.where((entry) {
+            final String category = entry.activityCategoryTitle.toLowerCase();
+            return category == target;
+          }).toList();
+    }
     // If _selectedActorType is null, show all (no filtering)
 
     setState(() {
       _logs
         ..clear()
         ..addAll(filteredLogs);
+      _categories =
+          filteredLogs
+              .map((e) => e.activityCategoryTitle)
+              .toSet()
+              .toList()
+            ..sort();
       _isLoading = false;
       _isFetching = false;
     });
@@ -255,7 +272,10 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
 
   void _handleActorTypeChange(String? actorType) {
     if (_selectedActorType == actorType) return;
-    setState(() => _selectedActorType = actorType);
+    setState(() {
+      _selectedActorType = actorType;
+      _selectedCategory = null;
+    });
     _fetchLogs();
   }
 
@@ -378,7 +398,7 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
               width: double.infinity,
               child: _buildDateRangeButton(isMobile),
             ),
-            const SizedBox(height: 12),
+          const SizedBox(height: 12),
             Wrap(
               spacing: 8,
               runSpacing: 8,
@@ -565,6 +585,53 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
     );
   }
 
+  bool get _shouldShowCategoryFilter =>
+      _selectedActorType == null || _selectedActorType == 'customer';
+
+  Widget _buildCategoryHeaderFilter() {
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'Category',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: Colors.grey.shade800,
+              letterSpacing: 0.3,
+            ),
+          ),
+          const SizedBox(width: 4),
+          PopupMenuButton<String>(
+            tooltip: 'Filter category',
+            icon: const Icon(Icons.arrow_drop_down, size: 18),
+            onSelected: (val) {
+              setState(() => _selectedCategory = val.isEmpty ? null : val);
+              _fetchLogs();
+            },
+            itemBuilder:
+                (context) => [
+                  const PopupMenuItem(
+                    value: '',
+                    child: Text('All Categories'),
+                  ),
+                  ..._categories.map(
+                    (c) => PopupMenuItem(
+                      value: c,
+                      child: Text(c),
+                    ),
+                  ),
+                ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildContent(bool isMobile) {
     if (_isLoading) {
       return ListView(
@@ -593,6 +660,8 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
       entries: _logs,
       isAdminActivity: _selectedActorType == 'admin',
       selectedActorType: _selectedActorType,
+      categoryFilter:
+          _shouldShowCategoryFilter ? _buildCategoryHeaderFilter() : null,
     );
   }
 }
@@ -755,11 +824,13 @@ class _AuditLogTable extends StatelessWidget {
   final List<AuditLogEntry> entries;
   final bool isAdminActivity;
   final String? selectedActorType;
+  final Widget? categoryFilter;
 
   const _AuditLogTable({
     required this.entries,
     this.isAdminActivity = false,
     this.selectedActorType,
+    this.categoryFilter,
   });
 
   @override
@@ -787,6 +858,7 @@ class _AuditLogTable extends StatelessWidget {
                 _TableHeader(
                   isAdminActivity: isAdminActivity,
                   selectedActorType: selectedActorType,
+                  categoryFilter: categoryFilter,
                 ),
                 if (entries.isEmpty)
                   const SizedBox.shrink()
@@ -807,8 +879,13 @@ class _AuditLogTable extends StatelessWidget {
 class _TableHeader extends StatelessWidget {
   final bool isAdminActivity;
   final String? selectedActorType;
+  final Widget? categoryFilter;
 
-  const _TableHeader({this.isAdminActivity = false, this.selectedActorType});
+  const _TableHeader({
+    this.isAdminActivity = false,
+    this.selectedActorType,
+    this.categoryFilter,
+  });
 
   String get _actorColumnHeader {
     if (isAdminActivity) {
@@ -847,7 +924,10 @@ class _TableHeader extends StatelessWidget {
                 : [
                   const _HeaderCell(text: 'Activity', flex: 3),
                   _HeaderCell(text: _actorColumnHeader, flex: 2),
-                  const _HeaderCell(text: 'Category', flex: 2),
+                  _HeaderCategoryCell(
+                    flex: 2,
+                    child: categoryFilter,
+                  ),
                   const _HeaderCell(text: 'Date & Time (PH)', flex: 2),
                   const _HeaderIdCell(text: 'Log ID'),
                 ],
@@ -877,6 +957,34 @@ class _HeaderCell extends StatelessWidget {
             letterSpacing: 0.5,
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _HeaderCategoryCell extends StatelessWidget {
+  final int flex;
+  final Widget? child;
+
+  const _HeaderCategoryCell({required this.flex, this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      flex: flex,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        child: child ??
+            Text(
+              'Category',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: Colors.grey.shade800,
+                letterSpacing: 0.5,
+              ),
+            ),
       ),
     );
   }
