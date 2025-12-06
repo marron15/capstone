@@ -23,12 +23,14 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
   bool _isFetching = false;
   String _searchQuery = '';
   String? _selectedActorType;
+  DateTimeRange? _dateRange;
   Timer? _searchDebounce;
   Timer? _autoRefreshTimer;
 
   @override
   void initState() {
     super.initState();
+    _dateRange = _currentMonthRange();
     _fetchLogs();
     _startAutoRefresh();
   }
@@ -50,6 +52,136 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
         _fetchLogs(showSpinner: false);
       },
     );
+  }
+
+  DateTimeRange _currentMonthRange() {
+    final now = DateTime.now();
+    final start = DateTime(now.year, now.month, 1);
+    final end = DateTime(now.year, now.month + 1, 1)
+        .subtract(const Duration(seconds: 1));
+    return DateTimeRange(start: start, end: end);
+  }
+
+  String _formatRangeLabel() {
+    final range = _dateRange ?? _currentMonthRange();
+    String fmt(DateTime d) =>
+        '${d.month.toString().padLeft(2, '0')}/${d.day.toString().padLeft(2, '0')}/${d.year}';
+    return '${fmt(range.start)} - ${fmt(range.end)}';
+  }
+
+  Future<void> _pickDateRange() async {
+    final DateTime now = DateTime.now();
+    final DateTimeRange seed = _dateRange ?? _currentMonthRange();
+    final DateTime? startInitial = seed.start;
+    final DateTime? endInitial = seed.end;
+
+    final DateTimeRange? pickedRange = await showDialog<DateTimeRange?>(
+      context: context,
+      builder: (ctx) {
+        DateTime? localStart = startInitial;
+        DateTime? localEnd = endInitial;
+
+        Future<void> pickStart(StateSetter setModalState) async {
+          final res = await showDatePicker(
+            context: ctx,
+            initialDate: localStart ?? now,
+            firstDate: DateTime(now.year - 5),
+            lastDate: DateTime(now.year + 5),
+            helpText: 'Select start date',
+          );
+          if (res != null) {
+            final normalized = DateTime(res.year, res.month, res.day);
+            if (localEnd != null && localEnd!.isBefore(normalized)) {
+              localEnd = normalized;
+            }
+            setModalState(() => localStart = normalized);
+          }
+        }
+
+        Future<void> pickEnd(StateSetter setModalState) async {
+          final res = await showDatePicker(
+            context: ctx,
+            initialDate: localEnd ?? localStart ?? now,
+            firstDate: DateTime(now.year - 5),
+            lastDate: DateTime(now.year + 5),
+            helpText: 'Select end date',
+          );
+          if (res != null) {
+            final normalized = DateTime(
+              res.year,
+              res.month,
+              res.day,
+              23,
+              59,
+              59,
+            );
+            if (localStart != null && normalized.isBefore(localStart!)) {
+              return;
+            }
+            setModalState(() => localEnd = normalized);
+          }
+        }
+
+        return StatefulBuilder(
+          builder: (ctx, setState) {
+            return AlertDialog(
+              title: const Text('Select date range'),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.event),
+                    title: Text(
+                      localStart == null
+                          ? 'Select start date'
+                          : '${localStart!.month.toString().padLeft(2, '0')}/${localStart!.day.toString().padLeft(2, '0')}/${localStart!.year}',
+                    ),
+                    onTap: () => pickStart(setState),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.event_available),
+                    title: Text(
+                      localEnd == null
+                          ? 'Select end date'
+                          : '${localEnd!.month.toString().padLeft(2, '0')}/${localEnd!.day.toString().padLeft(2, '0')}/${localEnd!.year}',
+                    ),
+                    onTap: () => pickEnd(setState),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(_currentMonthRange()),
+                  child: const Text('Clear (This Month)'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed:
+                      localStart == null || localEnd == null
+                          ? null
+                          : () => Navigator.of(ctx).pop(
+                            DateTimeRange(start: localStart!, end: localEnd!),
+                          ),
+                  child: const Text('Apply'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (!mounted) return;
+    if (pickedRange == null) return;
+
+    setState(() => _dateRange = pickedRange);
+    _fetchLogs();
   }
 
   Future<void> _fetchLogs({bool showSpinner = true}) async {
@@ -95,6 +227,15 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
             return entry.customerId != null && isCustomerType;
           }).toList();
     }
+
+    final DateTimeRange effectiveRange = _dateRange ?? _currentMonthRange();
+    filteredLogs =
+        filteredLogs.where((entry) {
+          final DateTime? createdAt = entry.createdAt;
+          if (createdAt == null) return true;
+          return !createdAt.isBefore(effectiveRange.start) &&
+              !createdAt.isAfter(effectiveRange.end);
+        }).toList();
     // If _selectedActorType is null, show all (no filtering)
 
     setState(() {
@@ -203,11 +344,7 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              FilledButton.icon(
-                onPressed: _fetchLogs,
-                icon: const Icon(Icons.refresh),
-                label: Text(isMobile ? '' : 'Refresh'),
-              ),
+              if (!isMobile) _buildDateRangeButton(isMobile),
             ],
           ),
           const SizedBox(height: 16),
@@ -235,6 +372,11 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
                         )
                         : null,
               ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: _buildDateRangeButton(isMobile),
             ),
             const SizedBox(height: 12),
             Wrap(
@@ -401,6 +543,24 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
             ),
           ],
         ],
+      ),
+    );
+  }
+
+  Widget _buildDateRangeButton(bool isMobile) {
+    return OutlinedButton.icon(
+      onPressed: _pickDateRange,
+      icon: const Icon(Icons.event, size: 18),
+      label: Text(_formatRangeLabel(), overflow: TextOverflow.ellipsis),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: Colors.black87,
+        backgroundColor: Colors.white,
+        side: BorderSide(color: Colors.grey.shade300),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        padding: EdgeInsets.symmetric(
+          horizontal: isMobile ? 10 : 14,
+          vertical: isMobile ? 10 : 12,
+        ),
       ),
     );
   }
@@ -1064,6 +1224,11 @@ class AuditLogEntry {
   final String? actorName;
   final String createdAtRaw;
   final Map<String, dynamic> metadata;
+
+  DateTime? get createdAt {
+    final String normalized = createdAtRaw.replaceFirst(' ', 'T');
+    return DateTime.tryParse(normalized);
+  }
 
   String get formattedTimestamp {
     final String raw = createdAtRaw;
