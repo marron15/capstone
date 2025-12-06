@@ -3,48 +3,66 @@ import 'package:syncfusion_flutter_charts/charts.dart';
 
 class NewMembersMonthBarGraph extends StatelessWidget {
   final List<Map<String, dynamic>> customers;
-  const NewMembersMonthBarGraph({super.key, required this.customers});
+  final DateTimeRange range;
+  const NewMembersMonthBarGraph({
+    super.key,
+    required this.customers,
+    required this.range,
+  });
 
   @override
   Widget build(BuildContext context) {
-    const months = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
-    ];
-    final DateTime now = DateTime.now();
-    final int daysInMonth = DateTime(now.year, now.month + 1, 0).day;
+    final DateTime start = DateTime(
+      range.start.year,
+      range.start.month,
+      range.start.day,
+    );
+    final DateTime end = DateTime(
+      range.end.year,
+      range.end.month,
+      range.end.day,
+    );
+
+    String _fmt(DateTime d) =>
+        '${d.month.toString().padLeft(2, '0')}/${d.day.toString().padLeft(2, '0')}';
 
     List<_BarData> _buildData() {
-      String range(int start, int end) =>
-          '$start-${end > daysInMonth ? daysInMonth : end}';
+      final List<_Bucket> buckets = [];
+      DateTime cursor = start;
+      int bucketIndex = 1;
 
-      final Map<int, int> buckets = {1: 0, 2: 0, 3: 0, 4: 0};
-      for (final customer in customers) {
-        final DateTime? start = _extractStartDate(customer);
-        if (start == null) continue;
-        if (start.year != now.year || start.month != now.month) continue;
-        final int day = start.day;
-        final int bucket =
-            day <= 7 ? 1 : day <= 14 ? 2 : day <= 21 ? 3 : 4;
-        buckets[bucket] = (buckets[bucket] ?? 0) + 1;
+      while (!cursor.isAfter(end) && buckets.length < 6) {
+        final DateTime bucketEnd = cursor.add(const Duration(days: 6));
+        buckets.add(
+          _Bucket(
+            label: 'Week $bucketIndex (${_fmt(cursor)} - ${_fmt(bucketEnd.isAfter(end) ? end : bucketEnd)})',
+            start: cursor,
+            end: bucketEnd.isAfter(end) ? end : bucketEnd,
+          ),
+        );
+        bucketIndex++;
+        cursor = bucketEnd.add(const Duration(days: 1));
       }
 
-      return [
-        _BarData('Week 1 (${range(1, 7)})', buckets[1] ?? 0),
-        _BarData('Week 2 (${range(8, 14)})', buckets[2] ?? 0),
-        _BarData('Week 3 (${range(15, 21)})', buckets[3] ?? 0),
-        _BarData('Week 4 (${range(22, daysInMonth)})', buckets[4] ?? 0),
-      ];
+      for (final customer in customers) {
+        final DateTime? membershipStart = _extractStartDate(customer);
+        if (membershipStart == null) continue;
+        if (membershipStart.isBefore(start) || membershipStart.isAfter(end)) {
+          continue;
+        }
+        for (int i = 0; i < buckets.length; i++) {
+          final _Bucket bucket = buckets[i];
+          if (!membershipStart.isBefore(bucket.start) &&
+              !membershipStart.isAfter(bucket.end)) {
+            buckets[i] = bucket.copyWith(count: bucket.count + 1);
+            break;
+          }
+        }
+      }
+
+      return buckets
+          .map((b) => _BarData(b.label, b.count))
+          .toList(growable: false);
     }
 
     final List<_BarData> data = _buildData();
@@ -54,7 +72,7 @@ class NewMembersMonthBarGraph extends StatelessWidget {
 
     return SfCartesianChart(
       title: ChartTitle(
-        text: months[now.month - 1],
+        text: 'Selected Range (${_fmt(start)} - ${_fmt(end)})',
         alignment: ChartAlignment.near,
         textStyle: const TextStyle(fontSize: 12, color: Colors.black54),
       ),
@@ -88,6 +106,26 @@ class NewMembersMonthBarGraph extends StatelessWidget {
     }
     return null;
   }
+}
+
+class _Bucket {
+  final String label;
+  final DateTime start;
+  final DateTime end;
+  final int count;
+  const _Bucket({
+    required this.label,
+    required this.start,
+    required this.end,
+    this.count = 0,
+  });
+
+  _Bucket copyWith({int? count}) => _Bucket(
+        label: label,
+        start: start,
+        end: end,
+        count: count ?? this.count,
+      );
 }
 
 class _BarData {

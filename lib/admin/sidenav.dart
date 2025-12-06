@@ -292,7 +292,7 @@ class _SideNavState extends State<SideNav> {
                     children: [
                       _navItem(
                         icon: Icons.people,
-                        label: 'Customers',
+                        label: 'Members',
                         route: '/admin-customers',
                         currentRoute: currentRoute,
                         isNested: true,

@@ -774,7 +774,7 @@ class _StatisticPageState extends State<StatisticPage>
         (reservation['customer_name'] ?? reservation['customerName'] ?? '')
             .toString()
             .trim();
-    return fallback.isNotEmpty ? fallback : 'Customer';
+    return fallback.isNotEmpty ? fallback : 'Member';
   }
 
   String _formatReservationTimestamp(DateTime date) {
@@ -1227,10 +1227,10 @@ class _StatisticPageState extends State<StatisticPage>
       ['Products', 'Archived', productsArchived],
       ['Admins', 'Active', adminsActive],
       ['Admins', 'Archived', adminsArchived],
-      ['Customers', 'Active', customersActive],
-      ['Customers', 'Archived', customersArchived],
-      ['Customers', 'Expired (of Active)', customersExpired],
-      ['Customers', 'Total Active Customers', customersActive],
+      ['Members', 'Active', customersActive],
+      ['Members', 'Archived', customersArchived],
+      ['Members', 'Expired (of Active)', customersExpired],
+      ['Members', 'Total Active Members', customersActive],
       ['Trainers', 'Active', trainersActive],
       ['Trainers', 'Archived', trainersArchived],
       ['Attendance', 'Time In (Range)', timeInValue],
@@ -1249,7 +1249,7 @@ class _StatisticPageState extends State<StatisticPage>
     // Build customer table rows matching on-screen columns
     final customerTableRows = <List<dynamic>>[
       [
-        'Customer ID',
+        'Members ID',
         'Name',
         'Contact Number',
         'Membership Type',
@@ -1274,7 +1274,7 @@ class _StatisticPageState extends State<StatisticPage>
       [
         'Reservation ID',
         'Product',
-        'Customer',
+        'Member',
         'Quantity',
         'Requested At',
         'Status',
@@ -1381,7 +1381,7 @@ class _StatisticPageState extends State<StatisticPage>
                   SizedBox(
                     width: 100,
                     child: const Text(
-                      'Customer ID',
+                      'Members ID',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 14,
@@ -1435,7 +1435,7 @@ class _StatisticPageState extends State<StatisticPage>
                   Expanded(
                     flex: 2,
                     child: const Text(
-                      'Customer ID',
+                      'Members ID',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 18,
@@ -2090,22 +2090,20 @@ class _StatisticPageState extends State<StatisticPage>
                                           ],
                                         ),
                                         _KpiGroup(
-                                          title: 'Customers',
+                                          title: 'Members',
                                           tiles: [
                                             _KpiTile(
-                                              label: 'Customers Added This Day',
+                                              label: 'Members Added This Day',
                                               value: customersAddedDay,
                                               color: const Color(0xFF2E7D32),
                                             ),
                                             _KpiTile(
-                                              label:
-                                                  'Customers Added This Week',
+                                              label: 'Members Added This Week',
                                               value: customersAddedWeek,
                                               color: const Color(0xFF1565C0),
                                             ),
                                             _KpiTile(
-                                              label:
-                                                  'Customers Added This Month',
+                                              label: 'Members Added This Month',
                                               value: customersAddedMonth,
                                               color: const Color(0xFF6A1B9A),
                                             ),
@@ -2173,20 +2171,20 @@ class _StatisticPageState extends State<StatisticPage>
                                           ],
                                         ),
                                         _KpiGroup(
-                                          title: 'Total Customers',
+                                          title: 'Total Members',
                                           tiles: [
                                             _KpiTile(
-                                              label: 'Total Active Customers',
+                                              label: 'Total Active Members',
                                               value: customersActive,
                                               color: const Color(0xFF2E7D32),
                                             ),
                                             _KpiTile(
-                                              label: 'Total Active Customers',
+                                              label: 'Total Active Members',
                                               value: customersActive,
                                               color: const Color(0xFF1565C0),
                                             ),
                                             _KpiTile(
-                                              label: 'Total Active Customers',
+                                              label: 'Total Active Members',
                                               value: customersActive,
                                               color: const Color(0xFF6A1B9A),
                                             ),
@@ -2325,6 +2323,9 @@ class _StatisticPageState extends State<StatisticPage>
                                                               : NewMembersMonthBarGraph(
                                                                 customers:
                                                                     filteredCustomers,
+                                                                range:
+                                                                    _dateRange ??
+                                                                    _currentMonthRange(),
                                                               );
                                                         }(),
                                                       ),

@@ -180,7 +180,8 @@ class _CustomersPageState extends State<CustomersPage> {
       result =
           filtered.where((c) {
             final DateTime exp = c['expirationDate'] as DateTime;
-            final String membershipType = (c['membershipType'] ?? '').toString();
+            final String membershipType =
+                (c['membershipType'] ?? '').toString();
             // For Daily memberships, compare with current time including hours/minutes
             // Expires at or after 9 PM (inclusive)
             // For other memberships, compare with start of day
@@ -196,7 +197,8 @@ class _CustomersPageState extends State<CustomersPage> {
       result =
           filtered.where((c) {
             final DateTime exp = c['expirationDate'] as DateTime;
-            final String membershipType = (c['membershipType'] ?? '').toString();
+            final String membershipType =
+                (c['membershipType'] ?? '').toString();
             // For Daily memberships, compare with current time including hours/minutes
             // Not expired means expiration is after current time
             // For other memberships, compare with start of day
@@ -1125,15 +1127,12 @@ class _CustomersPageState extends State<CustomersPage> {
                     // For Daily memberships, compare with current time including hours/minutes
                     // Expires at or after 9 PM (inclusive)
                     // For other memberships, compare with start of day
-                    final bool _isExpiredM = membershipType == 'Daily'
-                        ? !expirationDate.isAfter(_nowM)
-                        : expirationDate.isBefore(
-                            DateTime(
-                              _nowM.year,
-                              _nowM.month,
-                              _nowM.day,
-                            ),
-                          );
+                    final bool _isExpiredM =
+                        membershipType == 'Daily'
+                            ? !expirationDate.isAfter(_nowM)
+                            : expirationDate.isBefore(
+                              DateTime(_nowM.year, _nowM.month, _nowM.day),
+                            );
                     return Container(
                       margin: const EdgeInsets.only(bottom: 12),
                       decoration: BoxDecoration(
@@ -1645,7 +1644,7 @@ class _CustomersPageState extends State<CustomersPage> {
                           children: [
                             Expanded(
                               flex: 2,
-                              child: _buildHeaderLabel('Customer ID'),
+                              child: _buildHeaderLabel('Members ID'),
                             ),
                             Expanded(flex: 3, child: _buildHeaderLabel('Name')),
                             Expanded(
@@ -1685,15 +1684,16 @@ class _CustomersPageState extends State<CustomersPage> {
                         // For Daily memberships, compare with current time including hours/minutes
                         // Expires at or after 9 PM (inclusive)
                         // For other memberships, compare with start of day
-                        final bool isExpired = membershipType == 'Daily'
-                            ? !expirationDate.isAfter(nowDate)
-                            : expirationDate.isBefore(
-                                DateTime(
-                                  nowDate.year,
-                                  nowDate.month,
-                                  nowDate.day,
-                                ),
-                              );
+                        final bool isExpired =
+                            membershipType == 'Daily'
+                                ? !expirationDate.isAfter(nowDate)
+                                : expirationDate.isBefore(
+                                  DateTime(
+                                    nowDate.year,
+                                    nowDate.month,
+                                    nowDate.day,
+                                  ),
+                                );
                         return Column(
                           children: [
                             Container(

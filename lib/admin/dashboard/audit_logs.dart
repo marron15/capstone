@@ -47,20 +47,20 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
 
   void _startAutoRefresh() {
     _autoRefreshTimer?.cancel();
-    _autoRefreshTimer = Timer.periodic(
-      const Duration(seconds: 2),
-      (_) {
-        if (!mounted || _isFetching) return;
-        _fetchLogs(showSpinner: false);
-      },
-    );
+    _autoRefreshTimer = Timer.periodic(const Duration(seconds: 2), (_) {
+      if (!mounted || _isFetching) return;
+      _fetchLogs(showSpinner: false);
+    });
   }
 
   DateTimeRange _currentMonthRange() {
     final now = DateTime.now();
     final start = DateTime(now.year, now.month, 1);
-    final end = DateTime(now.year, now.month + 1, 1)
-        .subtract(const Duration(seconds: 1));
+    final end = DateTime(
+      now.year,
+      now.month + 1,
+      1,
+    ).subtract(const Duration(seconds: 1));
     return DateTimeRange(start: start, end: end);
   }
 
@@ -254,10 +254,7 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
         ..clear()
         ..addAll(filteredLogs);
       _categories =
-          filteredLogs
-              .map((e) => e.activityCategoryTitle)
-              .toSet()
-              .toList()
+          filteredLogs.map((e) => e.activityCategoryTitle).toSet().toList()
             ..sort();
       _isLoading = false;
       _isFetching = false;
@@ -374,7 +371,7 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
               onChanged: _handleSearchChanged,
               decoration: InputDecoration(
                 prefixIcon: const Icon(Icons.search),
-                hintText: 'Search by customer, action, ID...',
+                hintText: 'Search by members, action, ID...',
                 filled: true,
                 fillColor: Colors.grey.shade100,
                 border: OutlineInputBorder(
@@ -398,7 +395,7 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
               width: double.infinity,
               child: _buildDateRangeButton(isMobile),
             ),
-          const SizedBox(height: 12),
+            const SizedBox(height: 12),
             Wrap(
               spacing: 8,
               runSpacing: 8,
@@ -430,7 +427,7 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
                 FilledButton.icon(
                   onPressed: () => _handleActorTypeChange('customer'),
                   icon: const Icon(Icons.person_outline, size: 18),
-                  label: const Text('Customer Activity'),
+                  label: const Text('Members Activity'),
                   style: ButtonStyle(
                     backgroundColor: WidgetStateProperty.resolveWith(
                       (states) =>
@@ -473,7 +470,7 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
               onChanged: _handleSearchChanged,
               decoration: InputDecoration(
                 prefixIcon: const Icon(Icons.search),
-                hintText: 'Search by customer, action, ID...',
+                hintText: 'Search by members, action, ID...',
                 filled: true,
                 fillColor: Colors.grey.shade100,
                 border: OutlineInputBorder(
@@ -523,7 +520,7 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
                 FilledButton.icon(
                   onPressed: () => _handleActorTypeChange('customer'),
                   icon: const Icon(Icons.person_outline, size: 18),
-                  label: const Text('Customer Activity'),
+                  label: const Text('Members Activity'),
                   style: ButtonStyle(
                     backgroundColor: WidgetStateProperty.resolveWith(
                       (states) =>
@@ -615,15 +612,9 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
             },
             itemBuilder:
                 (context) => [
-                  const PopupMenuItem(
-                    value: '',
-                    child: Text('All Categories'),
-                  ),
+                  const PopupMenuItem(value: '', child: Text('All Categories')),
                   ..._categories.map(
-                    (c) => PopupMenuItem(
-                      value: c,
-                      child: Text(c),
-                    ),
+                    (c) => PopupMenuItem(value: c, child: Text(c)),
                   ),
                 ],
           ),
@@ -733,7 +724,7 @@ class _AuditLogCard extends StatelessWidget {
               runSpacing: 8,
               children: [
                 _InfoPill(
-                  label: 'Customer',
+                  label: 'Member',
                   value: entry.customerName ?? 'Unknown',
                   icon: Icons.person_outline,
                 ),
@@ -891,10 +882,10 @@ class _TableHeader extends StatelessWidget {
     if (isAdminActivity) {
       return 'Admin';
     } else if (selectedActorType == 'customer') {
-      return 'Customer';
+      return 'Member';
     } else {
       // All Actions selected
-      return 'Admin/Customer';
+      return 'Admin/Member';
     }
   }
 
@@ -924,10 +915,7 @@ class _TableHeader extends StatelessWidget {
                 : [
                   const _HeaderCell(text: 'Activity', flex: 3),
                   _HeaderCell(text: _actorColumnHeader, flex: 2),
-                  _HeaderCategoryCell(
-                    flex: 2,
-                    child: categoryFilter,
-                  ),
+                  _HeaderCategoryCell(flex: 2, child: categoryFilter),
                   const _HeaderCell(text: 'Date & Time (PH)', flex: 2),
                   const _HeaderIdCell(text: 'Log ID'),
                 ],
@@ -974,7 +962,8 @@ class _HeaderCategoryCell extends StatelessWidget {
       flex: flex,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: child ??
+        child:
+            child ??
             Text(
               'Category',
               textAlign: TextAlign.center,
@@ -1017,6 +1006,16 @@ class _TableRow extends StatelessWidget {
   final bool isAdminActivity;
 
   const _TableRow(this.entry, {this.isAdminActivity = false});
+
+  String get _displayActivityTitle {
+    if (entry.actorType.toLowerCase() == 'admin') return entry.activityTitle;
+    final lower = entry.activityTitle.toLowerCase();
+    if (lower.contains('customer timed out')) return 'Member timed out';
+    if (lower.contains('customer timed in')) return 'Member timed in';
+    if (lower.contains('customer logged out')) return 'Member logged out';
+    if (lower.contains('customer logged in')) return 'Member logged in';
+    return entry.activityTitle.replaceFirst(RegExp('^Customer'), 'Member');
+  }
 
   String get _detailsText {
     if (entry.description != null && entry.description!.isNotEmpty) {
@@ -1106,7 +1105,7 @@ class _TableRow extends StatelessWidget {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                entry.activityTitle,
+                                _displayActivityTitle,
                                 textAlign: TextAlign.center,
                                 style: const TextStyle(
                                   fontSize: 16,
