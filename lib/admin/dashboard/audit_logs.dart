@@ -50,6 +50,8 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
     // Note: Backend already filters by actor_type, but we keep this as a safety check
     List<AuditLogEntry> filteredLogs =
         logs.map(AuditLogEntry.fromJson).toList();
+    filteredLogs =
+        filteredLogs.where((entry) => !_isReservationEntry(entry)).toList();
 
     if (_selectedActorType == 'admin') {
       // Admin activities: filter by actor_type == 'admin'
@@ -93,6 +95,17 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
     if (_selectedActorType == actorType) return;
     setState(() => _selectedActorType = actorType);
     _fetchLogs();
+  }
+
+  bool _isReservationEntry(AuditLogEntry entry) {
+    final String category = entry.activityCategory.toLowerCase();
+    final String type = entry.activityType.toLowerCase();
+    final String title = entry.activityTitle.toLowerCase();
+    final String description = (entry.description ?? '').toLowerCase();
+    return category.contains('reservation') ||
+        type.contains('reservation') ||
+        title.contains('reservation') ||
+        description.contains('reservation');
   }
 
   @override

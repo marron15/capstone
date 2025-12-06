@@ -807,6 +807,19 @@ class ApiService {
   }) async {
     try {
       final Map<String, String> query = {};
+      final bool Function(Map<String, dynamic>) hasReservationLog =
+          (Map<String, dynamic> entry) {
+        final String category =
+            '${entry['activity_category'] ?? ''}'.toLowerCase();
+        final String type = '${entry['activity_type'] ?? ''}'.toLowerCase();
+        final String title = '${entry['activity_title'] ?? ''}'.toLowerCase();
+        final String description =
+            '${entry['description'] ?? ''}'.toLowerCase();
+        return category.contains('reservation') ||
+            type.contains('reservation') ||
+            title.contains('reservation') ||
+            description.contains('reservation');
+      };
       if (search != null && search.trim().isNotEmpty) {
         query['search'] = search.trim();
       }
@@ -837,7 +850,9 @@ class ApiService {
         final Map<String, dynamic> parsed =
             jsonDecode(response.body) as Map<String, dynamic>;
         if (parsed['success'] == true && parsed['data'] is List) {
-          return List<Map<String, dynamic>>.from(parsed['data'] as List);
+          final List<Map<String, dynamic>> rawLogs =
+              List<Map<String, dynamic>>.from(parsed['data'] as List);
+          return rawLogs.where((log) => !hasReservationLog(log)).toList();
         }
       }
       return [];
