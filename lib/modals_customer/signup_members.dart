@@ -393,12 +393,13 @@ class _SignupMembersModalState extends State<SignupMembersModal>
     String? confirmError;
     String? emergencyPhoneError;
 
-    final cleanedContact = PhoneFormatter.cleanPhoneNumber(
-      _contactController.text.trim(),
-    );
-    if (cleanedContact.length != 11) {
-      contactError = 'Contact number must be 11 digits';
-      hasError = true;
+    final String rawContact = _contactController.text.trim();
+    if (rawContact.isNotEmpty) {
+      final cleanedContact = PhoneFormatter.cleanPhoneNumber(rawContact);
+      if (cleanedContact.length != 11) {
+        contactError = 'Contact number must be 11 digits';
+        hasError = true;
+      }
     }
 
     final email = _emailController.text.trim();
@@ -451,9 +452,11 @@ class _SignupMembersModalState extends State<SignupMembersModal>
     final String middleName = _middleNameController.text.trim();
     final String lastName = _lastNameController.text.trim();
     final String email = _emailController.text.trim().toLowerCase();
-    final String contactNumber = PhoneFormatter.cleanPhoneNumber(
-      _contactController.text.trim(),
-    );
+    final String rawContact = _contactController.text.trim();
+    final String? contactNumber =
+        rawContact.isNotEmpty
+            ? PhoneFormatter.cleanPhoneNumber(rawContact)
+            : null;
     final String emergencyContact = PhoneFormatter.cleanPhoneNumber(
       _emergencyPhoneController.text.trim(),
     );
@@ -996,7 +999,7 @@ class _SignupMembersModalState extends State<SignupMembersModal>
                 controller: _contactController,
                 style: const TextStyle(color: Colors.white),
                 decoration: _inputDecoration(
-                  label: 'Contact Number',
+                  label: 'Contact Number (optional)',
                   icon: Icons.phone_outlined,
                   errorText: _contactError,
                 ),
