@@ -238,6 +238,7 @@ class ApiService {
     String? membershipType,
     String? membershipStartDate,
     String? expirationDate,
+    String createdBy = 'admin_portal',
   }) async {
     try {
       String? address;
@@ -256,7 +257,7 @@ class ApiService {
         'last_name': lastName,
         'email': email,
         'password': password,
-        'created_by': 'admin_portal',
+        'created_by': createdBy,
       };
 
       if (middleName != null && middleName.trim().isNotEmpty) {
@@ -807,8 +808,9 @@ class ApiService {
   }) async {
     try {
       final Map<String, String> query = {};
-      final bool Function(Map<String, dynamic>) hasReservationLog =
-          (Map<String, dynamic> entry) {
+      final bool Function(Map<String, dynamic>) hasReservationLog = (
+        Map<String, dynamic> entry,
+      ) {
         final String category =
             '${entry['activity_category'] ?? ''}'.toLowerCase();
         final String type = '${entry['activity_type'] ?? ''}'.toLowerCase();

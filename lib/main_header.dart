@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'modals_customer/login.dart';
+import 'modals_customer/signup_members.dart';
 import 'services/apk_download_button.dart';
 
 class MainHeader extends StatelessWidget {
@@ -47,6 +48,32 @@ class MainHeader extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
+                ElevatedButton(
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => const SignupMembersModal(),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                    side: const BorderSide(color: Colors.white70, width: 1),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: const Text(
+                    'Sign Up',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                  ),
+                ),
+                const SizedBox(width: 10),
                 ElevatedButton(
                   onPressed: () {
                     showDialog(
