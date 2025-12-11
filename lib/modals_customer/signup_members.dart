@@ -225,6 +225,7 @@ class _SignupMembersModalState extends State<SignupMembersModal>
     );
     _animationController.forward();
     _emailController.addListener(_emailListener);
+    _lastNameController.addListener(_maybeAutoFillPassword);
     _confirmController.addListener(_validatePasswordMatch);
     _countryController.text = 'Philippines';
     _cityController.text = 'Olongapo City';
@@ -234,6 +235,7 @@ class _SignupMembersModalState extends State<SignupMembersModal>
   void dispose() {
     _animationController.dispose();
     _emailController.removeListener(_emailListener);
+    _lastNameController.removeListener(_maybeAutoFillPassword);
     _confirmController.removeListener(_validatePasswordMatch);
 
     _firstNameController.dispose();
@@ -317,6 +319,24 @@ class _SignupMembersModalState extends State<SignupMembersModal>
     _pendingVerificationEmail = null;
     _verificationExpiresInMinutes = null;
     _verificationCodeController.clear();
+  }
+
+  void _maybeAutoFillPassword() {
+    if (_selectedBirthdate == null) return;
+    final String rawLastName = _lastNameController.text.trim();
+    if (rawLastName.isEmpty) return;
+
+    final String sanitizedLastName =
+        rawLastName.replaceAll(RegExp(r'\s+'), '').toLowerCase();
+    final String month = _selectedBirthdate!.month.toString().padLeft(2, '0');
+    final String day = _selectedBirthdate!.day.toString().padLeft(2, '0');
+    final String generated = '$sanitizedLastName$month$day';
+
+    _passwordController.text = generated;
+    _confirmController.text = generated;
+    _passwordError = null;
+    _confirmError = null;
+    setState(() {});
   }
 
   DateTime _calculateMembershipExpiration(DateTime startDate) {
@@ -720,6 +740,7 @@ class _SignupMembersModalState extends State<SignupMembersModal>
                       _selectedBirthdate = picked;
                       _birthdateController.text = _formatDate(picked);
                     });
+                    _maybeAutoFillPassword();
                   }
                 },
               ),
@@ -1046,6 +1067,11 @@ class _SignupMembersModalState extends State<SignupMembersModal>
             ),
           ],
         ),
+        const SizedBox(height: 6),
+        const Text(
+          'Password auto-generated: last name + birth month & day (MMDD).',
+          style: TextStyle(color: Colors.white70, fontSize: 12),
+        ),
         const SizedBox(height: 10),
         if (_verificationRequested) ...[
           TextField(
@@ -1293,7 +1319,7 @@ class _SignupMembersModalState extends State<SignupMembersModal>
                                       SizedBox(width: 10),
                                       Flexible(
                                         child: Text(
-                                          'Add New Customer',
+                                          'Add New Member',
                                           style: TextStyle(
                                             fontWeight: FontWeight.bold,
                                             fontSize: 20,
