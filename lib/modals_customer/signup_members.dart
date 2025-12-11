@@ -949,6 +949,10 @@ class _SignupMembersModalState extends State<SignupMembersModal>
   }
 
   Widget _buildVerificationStep(BoxConstraints constraints) {
+    final bool isWide = constraints.maxWidth > 520;
+    final double halfWidth =
+        isWide ? (constraints.maxWidth - 10) / 2 : constraints.maxWidth;
+
     Widget fields = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -961,68 +965,88 @@ class _SignupMembersModalState extends State<SignupMembersModal>
           ),
         ),
         const SizedBox(height: 10),
-        TextField(
-          controller: _contactController,
-          style: const TextStyle(color: Colors.white),
-          decoration: _inputDecoration(
-            label: 'Contact Number',
-            icon: Icons.phone_outlined,
-            errorText: _contactError,
-          ),
-          keyboardType: TextInputType.phone,
-          inputFormatters: [PhoneFormatter.phoneNumberFormatter],
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: [
+            SizedBox(
+              width: halfWidth,
+              child: TextField(
+                controller: _contactController,
+                style: const TextStyle(color: Colors.white),
+                decoration: _inputDecoration(
+                  label: 'Contact Number',
+                  icon: Icons.phone_outlined,
+                  errorText: _contactError,
+                ),
+                keyboardType: TextInputType.phone,
+                inputFormatters: [PhoneFormatter.phoneNumberFormatter],
+              ),
+            ),
+            SizedBox(
+              width: halfWidth,
+              child: TextField(
+                controller: _emailController,
+                style: const TextStyle(color: Colors.white),
+                decoration: _inputDecoration(
+                  label: 'Email',
+                  icon: Icons.email_outlined,
+                  hintText: 'example@email.com',
+                  errorText: _emailError,
+                ),
+                keyboardType: TextInputType.emailAddress,
+              ),
+            ),
+            SizedBox(
+              width: halfWidth,
+              child: TextField(
+                controller: _passwordController,
+                obscureText: _obscurePassword,
+                style: const TextStyle(color: Colors.white),
+                decoration: _inputDecoration(
+                  label: 'Password',
+                  icon: Icons.lock_outline,
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                      color: Colors.white70,
+                    ),
+                    onPressed:
+                        () => setState(
+                          () => _obscurePassword = !_obscurePassword,
+                        ),
+                  ),
+                  errorText: _passwordError,
+                ),
+              ),
+            ),
+            SizedBox(
+              width: halfWidth,
+              child: TextField(
+                controller: _confirmController,
+                obscureText: _obscureConfirm,
+                style: const TextStyle(color: Colors.white),
+                decoration: _inputDecoration(
+                  label: 'Re-Enter Password',
+                  icon: Icons.lock_outline,
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscureConfirm ? Icons.visibility_off : Icons.visibility,
+                      color: Colors.white70,
+                    ),
+                    onPressed:
+                        () =>
+                            setState(() => _obscureConfirm = !_obscureConfirm),
+                  ),
+                  errorText: _confirmError,
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 10),
-        TextField(
-          controller: _emailController,
-          style: const TextStyle(color: Colors.white),
-          decoration: _inputDecoration(
-            label: 'Email',
-            icon: Icons.email_outlined,
-            hintText: 'example@email.com',
-            errorText: _emailError,
-          ),
-          keyboardType: TextInputType.emailAddress,
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _passwordController,
-          obscureText: _obscurePassword,
-          style: const TextStyle(color: Colors.white),
-          decoration: _inputDecoration(
-            label: 'Password',
-            icon: Icons.lock_outline,
-            suffixIcon: IconButton(
-              icon: Icon(
-                _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                color: Colors.white70,
-              ),
-              onPressed:
-                  () => setState(() => _obscurePassword = !_obscurePassword),
-            ),
-            errorText: _passwordError,
-          ),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _confirmController,
-          obscureText: _obscureConfirm,
-          style: const TextStyle(color: Colors.white),
-          decoration: _inputDecoration(
-            label: 'Re-Enter Password',
-            icon: Icons.lock_outline,
-            suffixIcon: IconButton(
-              icon: Icon(
-                _obscureConfirm ? Icons.visibility_off : Icons.visibility,
-                color: Colors.white70,
-              ),
-              onPressed:
-                  () => setState(() => _obscureConfirm = !_obscureConfirm),
-            ),
-            errorText: _confirmError,
-          ),
-        ),
-        const SizedBox(height: 14),
         if (_verificationRequested) ...[
           TextField(
             controller: _verificationCodeController,
@@ -1093,8 +1117,9 @@ class _SignupMembersModalState extends State<SignupMembersModal>
     );
 
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Expanded(child: SingleChildScrollView(child: fields)),
+        fields,
         const SizedBox(height: 12),
         Row(
           children: [
@@ -1304,7 +1329,8 @@ class _SignupMembersModalState extends State<SignupMembersModal>
                                 indent: 2,
                               ),
                             ),
-                            Expanded(
+                            Flexible(
+                              fit: FlexFit.loose,
                               child: LayoutBuilder(
                                 builder: (context, constraints) {
                                   return _currentStep == 0
