@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../modals_customer/login.dart';
 import '../services/unified_auth_state.dart';
 import '../services/auth_service.dart';
 
@@ -204,24 +203,10 @@ class BlackHeader extends StatelessWidget {
                       ],
                     );
                   } else {
-                    // Show Login button when logged out
+                    // Show help tooltip when logged out (Login moved to MainHeader)
                     return Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const SizedBox(width: 8),
-                        // Login Button
-                        _HoverElevatedButton(
-                          onPressed: () {
-                            showDialog(
-                              context: context,
-                              builder: (context) => const LoginModal(),
-                            );
-                          },
-                          isSmallScreen: isSmallScreen,
-                          text: 'Login',
-                        ),
-                        SizedBox(width: isSmallScreen ? 8 : 12),
-                        // Help icon next to Login
                         Tooltip(
                           message:
                               'Information\n\n• New to gym? you have free 3 days trial! to be his trainer, after that you can pay for Membership\n\n• How to get Membership and Account?\n  Go to 875 RIZAL AVENUE WEST TAPINAC, OLONGAPO CITY (RNR GYM)',

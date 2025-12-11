@@ -13,7 +13,7 @@ import 'admin/dashboard/audit_logs.dart';
 import 'services/unified_auth_state.dart';
 import 'services/auth_guard.dart';
 import 'User Profile/profile.dart';
-import 'services/apk_download_button.dart';
+import 'main_header.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -563,52 +563,7 @@ class _LoginChoicePageState extends State<LoginChoicePage>
             ),
           ),
           // Header bar with left-aligned logo
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: SafeArea(
-              bottom: false,
-              child: Container(
-                height: 56,
-                decoration: BoxDecoration(
-                  color: const Color.fromARGB(
-                    255,
-                    0,
-                    0,
-                    0,
-                  ).withAlpha((0.92 * 255).toInt()),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withAlpha((0.25 * 255).toInt()),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Spacer(),
-                      const Text(
-                        'RNR Fitness Gym',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                      const Spacer(),
-                      const ApkDownloadButton(),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
+          const MainHeader(),
           // Background slideshow replaces side images
         ],
       ),
