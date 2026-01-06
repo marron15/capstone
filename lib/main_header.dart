@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'modals_customer/login.dart';
-import 'modals_customer/signup_members.dart';
+import 'landing_page_modals/login.dart';
+import 'landing_page_modals/signup_members.dart';
 import 'services/apk_download_button.dart';
 
 class MainHeader extends StatelessWidget {

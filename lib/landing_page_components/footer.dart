@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../modals_customer/terms_and_conditions.dart';
+import '../landing_page_modals/terms_and_conditions.dart';
 
 class Footer extends StatelessWidget {
   final bool isSmallScreen;
@@ -151,7 +151,8 @@ class Footer extends StatelessWidget {
                         onTap: () {
                           showDialog(
                             context: context,
-                            builder: (context) => const TermsAndConditionsModal(),
+                            builder:
+                                (context) => const TermsAndConditionsModal(),
                           );
                         },
                         child: const Text(
