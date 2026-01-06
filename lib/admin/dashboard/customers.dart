@@ -796,7 +796,7 @@ class _CustomersPageState extends State<CustomersPage> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      _showArchived ? 'Archived Customers' : 'Customers',
+                      _showArchived ? 'Archived Members' : 'Members',
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w800,
@@ -1393,7 +1393,7 @@ class _CustomersPageState extends State<CustomersPage> {
                       const SizedBox(width: 8),
                       // Title
                       Text(
-                        _showArchived ? 'Archived Customers' : 'Customers',
+                        _showArchived ? 'Archived Members' : 'Members',
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.w800,

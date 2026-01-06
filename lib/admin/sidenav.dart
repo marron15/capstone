@@ -279,7 +279,7 @@ class _SideNavState extends State<SideNav> {
                     currentRoute: currentRoute,
                   ),
                   _buildDropdownSection(
-                    title: 'Customers Management',
+                    title: 'Members Management',
                     icon: Icons.people,
                     isExpanded: _customersExpanded,
                     onExpansionChanged: () {
