@@ -30,6 +30,7 @@ class _CustomersPageState extends State<CustomersPage> {
   bool _navCollapsed = false;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   Timer? _countdownTimer;
+  final Set<int> _selectedCustomerIds = {};
 
   @override
   void initState() {
@@ -132,9 +133,196 @@ class _CustomersPageState extends State<CustomersPage> {
     }
   }
 
+  Future<void> _confirmAndArchiveSelected() async {
+    if (_selectedCustomerIds.isEmpty) return;
+    final selectedCustomers =
+        _customers
+            .where((c) => _selectedCustomerIds.contains(_getCustomerId(c)))
+            .toList();
+    if (selectedCustomers.isEmpty) {
+      setState(() => _selectedCustomerIds.clear());
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Archive selected members?'),
+            content: Text(
+              'This will archive ${selectedCustomers.length} member(s). They can be restored later.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                style: TextButton.styleFrom(foregroundColor: Colors.orange),
+                child: const Text('Archive'),
+              ),
+            ],
+          ),
+    );
+
+    if (confirmed != true) return;
+
+    setState(() => _isLoading = true);
+    int successCount = 0;
+    final List<String> failedNames = [];
+    final Set<int> archivedIds = {};
+
+    for (final customer in selectedCustomers) {
+      final int id = _getCustomerId(customer);
+      if (id <= 0) {
+        failedNames.add(customer['name'] ?? 'Unknown');
+        continue;
+      }
+      final res = await ApiService.archiveCustomer(id: id);
+      if (res['success'] == true) {
+        successCount += 1;
+        archivedIds.add(id);
+      } else {
+        failedNames.add(customer['name'] ?? 'Unknown');
+      }
+    }
+
+    if (mounted) {
+      setState(() {
+        _customers.removeWhere((c) => archivedIds.contains(_getCustomerId(c)));
+        _archivedCustomers.addAll(
+          selectedCustomers.where(
+            (c) => archivedIds.contains(_getCustomerId(c)),
+          ),
+        );
+        _selectedCustomerIds.removeAll(archivedIds);
+        _isLoading = false;
+      });
+    }
+
+    if (!mounted) return;
+    if (successCount > 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Archived $successCount member(s)${failedNames.isNotEmpty ? ' (${failedNames.length} failed)' : ''}.',
+          ),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      RefreshService().triggerRefresh();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            failedNames.isNotEmpty
+                ? 'Failed to archive: ${failedNames.join(', ')}'
+                : 'Failed to archive selected members',
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _confirmAndRestoreSelected() async {
+    if (_selectedCustomerIds.isEmpty) return;
+    final selectedCustomers =
+        _archivedCustomers
+            .where((c) => _selectedCustomerIds.contains(_getCustomerId(c)))
+            .toList();
+    if (selectedCustomers.isEmpty) {
+      setState(() => _selectedCustomerIds.clear());
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Restore selected members?'),
+            content: Text(
+              'This will restore ${selectedCustomers.length} member(s) to active.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                style: TextButton.styleFrom(foregroundColor: Colors.green),
+                child: const Text('Restore'),
+              ),
+            ],
+          ),
+    );
+
+    if (confirmed != true) return;
+
+    setState(() => _isLoading = true);
+    int successCount = 0;
+    final List<String> failedNames = [];
+    final Set<int> restoredIds = {};
+
+    for (final customer in selectedCustomers) {
+      final int id = _getCustomerId(customer);
+      if (id <= 0) {
+        failedNames.add(customer['name'] ?? 'Unknown');
+        continue;
+      }
+      final res = await ApiService.restoreCustomer(id: id);
+      if (res['success'] == true) {
+        successCount += 1;
+        restoredIds.add(id);
+      } else {
+        failedNames.add(customer['name'] ?? 'Unknown');
+      }
+    }
+
+    if (mounted) {
+      setState(() {
+        _archivedCustomers.removeWhere(
+          (c) => restoredIds.contains(_getCustomerId(c)),
+        );
+        _customers.addAll(
+          selectedCustomers.where(
+            (c) => restoredIds.contains(_getCustomerId(c)),
+          ),
+        );
+        _selectedCustomerIds.removeAll(restoredIds);
+        _isLoading = false;
+      });
+    }
+
+    if (!mounted) return;
+    if (successCount > 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Restored $successCount member(s)${failedNames.isNotEmpty ? ' (${failedNames.length} failed)' : ''}.',
+          ),
+          backgroundColor: Colors.green,
+        ),
+      );
+      RefreshService().triggerRefresh();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            failedNames.isNotEmpty
+                ? 'Failed to restore: ${failedNames.join(', ')}'
+                : 'Failed to restore selected members',
+          ),
+        ),
+      );
+    }
+  }
+
   void _showArchivedCustomers() {
     setState(() {
       _showArchived = !_showArchived;
+      _selectedCustomerIds.clear();
     });
   }
 
@@ -314,6 +502,7 @@ class _CustomersPageState extends State<CustomersPage> {
             _customers = loadedCustomers;
             _archivedCustomers = loadedArchivedCustomers;
             _isLoading = false;
+            _selectedCustomerIds.clear();
           });
 
           _sortCustomersByExpiration();
@@ -442,6 +631,56 @@ class _CustomersPageState extends State<CustomersPage> {
         return dateA.compareTo(dateB);
       });
     }
+  }
+
+  int _getCustomerId(Map<String, dynamic> customer) {
+    final dynamic idVal = customer['customerId'];
+    final int id = idVal is int ? idVal : int.tryParse(idVal.toString()) ?? -1;
+    return id;
+  }
+
+  bool _isCustomerSelected(Map<String, dynamic> customer) {
+    final int id = _getCustomerId(customer);
+    if (id <= 0) return false;
+    return _selectedCustomerIds.contains(id);
+  }
+
+  void _toggleCustomerSelection(Map<String, dynamic> customer) {
+    final int id = _getCustomerId(customer);
+    if (id <= 0) return;
+    setState(() {
+      if (_selectedCustomerIds.contains(id)) {
+        _selectedCustomerIds.remove(id);
+      } else {
+        _selectedCustomerIds.add(id);
+      }
+    });
+  }
+
+  bool _isAllVisibleSelected() {
+    final visible = _getVisibleCustomers();
+    final ids = visible.map(_getCustomerId).where((id) => id > 0).toList();
+    if (ids.isEmpty) return false;
+    return ids.every(_selectedCustomerIds.contains);
+  }
+
+  bool _isSomeVisibleSelected() {
+    final visible = _getVisibleCustomers();
+    final ids = visible.map(_getCustomerId).where((id) => id > 0).toList();
+    if (ids.isEmpty) return false;
+    return ids.any(_selectedCustomerIds.contains) && !_isAllVisibleSelected();
+  }
+
+  void _toggleSelectAllVisible(bool? isChecked) {
+    final visible = _getVisibleCustomers();
+    final ids = visible.map(_getCustomerId).where((id) => id > 0).toList();
+    setState(() {
+      if (isChecked == true) {
+        _selectedCustomerIds.addAll(ids);
+      } else {
+        _selectedCustomerIds.removeAll(ids);
+      }
+    });
   }
 
   String _formatExpirationDate(
@@ -1477,6 +1716,51 @@ class _CustomersPageState extends State<CustomersPage> {
                       ),
                       // Membership/Expiration filters have been moved into table headers
                       const SizedBox(width: 12),
+                      OutlinedButton.icon(
+                        onPressed:
+                            _selectedCustomerIds.isEmpty
+                                ? null
+                                : _showArchived
+                                ? _confirmAndRestoreSelected
+                                : _confirmAndArchiveSelected,
+                        icon: Icon(
+                          _showArchived
+                              ? Icons.settings_backup_restore_rounded
+                              : Icons.archive_outlined,
+                          color: _showArchived ? Colors.green : Colors.orange,
+                          size: 20,
+                        ),
+                        label: Text(
+                          _selectedCustomerIds.isEmpty
+                              ? _showArchived
+                                  ? 'Restore Selected'
+                                  : 'Archive Selected'
+                              : _showArchived
+                              ? 'Restore Selected (${_selectedCustomerIds.length})'
+                              : 'Archive Selected (${_selectedCustomerIds.length})',
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.black87,
+                          side: const BorderSide(color: Colors.black26),
+                          backgroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 10,
+                          ),
+                        ).copyWith(
+                          side: WidgetStateProperty.resolveWith(
+                            (states) => BorderSide(
+                              color:
+                                  states.contains(WidgetState.hovered)
+                                      ? const Color(0xFFFFA812)
+                                      : Colors.black26,
+                            ),
+                          ),
+                        ),
+                      ),
                       const Spacer(),
                       // View archives pill button
                       OutlinedButton.icon(
@@ -1550,21 +1834,53 @@ class _CustomersPageState extends State<CustomersPage> {
                         ),
                         child: Row(
                           children: [
-                            Expanded(
-                              flex: 2,
-                              child: _buildHeaderLabel('Members ID'),
+                            SizedBox(
+                              width: 48,
+                              child: Center(
+                                child: Checkbox(
+                                  value:
+                                      _isAllVisibleSelected()
+                                          ? true
+                                          : _isSomeVisibleSelected()
+                                          ? null
+                                          : false,
+                                  tristate: true,
+                                  onChanged: _toggleSelectAllVisible,
+                                ),
+                              ),
                             ),
-                            Expanded(flex: 3, child: _buildHeaderLabel('Name')),
                             Expanded(
-                              flex: 3,
-                              child: _buildHeaderLabel('Contact Number'),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    flex: 2,
+                                    child: _buildHeaderLabel('Members ID'),
+                                  ),
+                                  Expanded(
+                                    flex: 3,
+                                    child: _buildHeaderLabel('Name'),
+                                  ),
+                                  Expanded(
+                                    flex: 3,
+                                    child: _buildHeaderLabel('Contact Number'),
+                                  ),
+                                  Expanded(
+                                    flex: 3,
+                                    child: _buildMembershipHeader(),
+                                  ),
+                                  Expanded(
+                                    flex: 3,
+                                    child: _buildHeaderLabel(
+                                      'Membership Start Date',
+                                    ),
+                                  ),
+                                  Expanded(
+                                    flex: 3,
+                                    child: _buildExpirationHeader(),
+                                  ),
+                                ],
+                              ),
                             ),
-                            Expanded(flex: 3, child: _buildMembershipHeader()),
-                            Expanded(
-                              flex: 3,
-                              child: _buildHeaderLabel('Membership Start Date'),
-                            ),
-                            Expanded(flex: 3, child: _buildExpirationHeader()),
                             SizedBox(
                               width: 160,
                               child: _buildHeaderLabel('Actions'),
@@ -1608,183 +1924,201 @@ class _CustomersPageState extends State<CustomersPage> {
                               color: isExpired ? Colors.red.shade50 : null,
                               child: Row(
                                 children: [
-                                  Expanded(
-                                    flex: 2,
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 14,
-                                        horizontal: 8,
-                                      ),
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 8,
-                                          vertical: 4,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: Colors.blue.shade50,
-                                          borderRadius: BorderRadius.circular(
-                                            6,
-                                          ),
-                                          border: Border.all(
-                                            color: Colors.blue.shade200,
-                                          ),
-                                        ),
-                                        child: Text(
-                                          '#${customer['customerId'] ?? 'N/A'}',
-                                          textAlign: TextAlign.center,
-                                          style: TextStyle(
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.w600,
-                                            color: Colors.blue.shade700,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
+                                  SizedBox(
+                                    width: 48,
+                                    child:
+                                        _selectedCustomerIds.isNotEmpty
+                                            ? Center(
+                                              child: Checkbox(
+                                                value: _isCustomerSelected(
+                                                  customer,
+                                                ),
+                                                onChanged:
+                                                    (_) =>
+                                                        _toggleCustomerSelection(
+                                                          customer,
+                                                        ),
+                                              ),
+                                            )
+                                            : const SizedBox.shrink(),
                                   ),
                                   Expanded(
-                                    flex: 3,
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 14,
-                                        horizontal: 8,
-                                      ),
-                                      child: Text(
-                                        customer['name'] ?? '',
-                                        textAlign: TextAlign.center,
-                                        style: const TextStyle(
-                                          fontSize: 17,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    flex: 3,
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 14,
-                                        horizontal: 8,
-                                      ),
-                                      child: _buildPhoneNumberButton(
-                                        customer['contactNumber'] ?? 'N/A',
-                                      ),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    flex: 3,
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 14,
-                                        horizontal: 8,
-                                      ),
-                                      child: FittedBox(
-                                        fit: BoxFit.scaleDown,
-                                        child: Text(
-                                          membershipType,
-                                          textAlign: TextAlign.center,
-                                          style: TextStyle(
-                                            color: _getMembershipTypeColor(
-                                              membershipType,
-                                            ),
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.w600,
+                                    child: InkWell(
+                                      onTap:
+                                          () => _toggleCustomerSelection(
+                                            customer,
                                           ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    flex: 3,
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 14,
-                                        horizontal: 8,
-                                      ),
-                                      child: FittedBox(
-                                        fit: BoxFit.scaleDown,
-                                        child: Text(
-                                          formattedStart,
-                                          textAlign: TextAlign.center,
-                                          style: const TextStyle(
-                                            color: Colors.black87,
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    flex: 3,
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 14,
-                                        horizontal: 8,
-                                      ),
                                       child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          FittedBox(
-                                            fit: BoxFit.scaleDown,
-                                            child: Builder(
-                                              builder: (context) {
-                                                final expiryText =
-                                                    membershipType == 'Daily'
-                                                        ? _formatTimeRemaining(
-                                                          expirationDate,
-                                                        )
-                                                        : formattedExpiry;
-                                                final bool isExpiredText =
-                                                    expiryText == 'Expired' ||
-                                                    isExpired;
-                                                return Text(
-                                                  expiryText,
-                                                  textAlign: TextAlign.center,
-                                                  style: TextStyle(
-                                                    color:
-                                                        isExpiredText
-                                                            ? Colors.red
-                                                            : membershipType ==
-                                                                'Daily'
-                                                            ? Colors
-                                                                .orange
-                                                                .shade700
-                                                            : Colors.black87,
-                                                    fontSize: 15,
-                                                    fontWeight: FontWeight.w600,
-                                                  ),
-                                                );
-                                              },
-                                            ),
-                                          ),
-                                          if (isExpired) ...[
-                                            const SizedBox(width: 8),
-                                            Container(
+                                          Expanded(
+                                            flex: 2,
+                                            child: Padding(
                                               padding:
                                                   const EdgeInsets.symmetric(
+                                                    vertical: 14,
                                                     horizontal: 8,
-                                                    vertical: 2,
                                                   ),
-                                              decoration: BoxDecoration(
-                                                color: Colors.red.shade100,
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
-                                                border: Border.all(
-                                                  color: Colors.red.shade300,
+                                              child: Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 8,
+                                                      vertical: 4,
+                                                    ),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.blue.shade50,
+                                                  borderRadius:
+                                                      BorderRadius.circular(6),
+                                                  border: Border.all(
+                                                    color: Colors.blue.shade200,
+                                                  ),
+                                                ),
+                                                child: Text(
+                                                  '#${customer['customerId'] ?? 'N/A'}',
+                                                  textAlign: TextAlign.center,
+                                                  style: TextStyle(
+                                                    fontSize: 15,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: Colors.blue.shade700,
+                                                  ),
                                                 ),
                                               ),
-                                              child: const Text(
-                                                'Expired',
-                                                style: TextStyle(
-                                                  color: Colors.red,
-                                                  fontSize: 13,
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 3,
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    vertical: 14,
+                                                    horizontal: 8,
+                                                  ),
+                                              child: Text(
+                                                customer['name'] ?? '',
+                                                textAlign: TextAlign.center,
+                                                style: const TextStyle(
+                                                  fontSize: 17,
                                                   fontWeight: FontWeight.w600,
                                                 ),
                                               ),
                                             ),
-                                          ],
+                                          ),
+                                          Expanded(
+                                            flex: 3,
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    vertical: 14,
+                                                    horizontal: 8,
+                                                  ),
+                                              child: _buildPhoneNumberButton(
+                                                customer['contactNumber'] ??
+                                                    'N/A',
+                                              ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 3,
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    vertical: 14,
+                                                    horizontal: 8,
+                                                  ),
+                                              child: FittedBox(
+                                                fit: BoxFit.scaleDown,
+                                                child: Text(
+                                                  membershipType,
+                                                  textAlign: TextAlign.center,
+                                                  style: TextStyle(
+                                                    color:
+                                                        _getMembershipTypeColor(
+                                                          membershipType,
+                                                        ),
+                                                    fontSize: 15,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 3,
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    vertical: 14,
+                                                    horizontal: 8,
+                                                  ),
+                                              child: FittedBox(
+                                                fit: BoxFit.scaleDown,
+                                                child: Text(
+                                                  formattedStart,
+                                                  textAlign: TextAlign.center,
+                                                  style: const TextStyle(
+                                                    color: Colors.black87,
+                                                    fontSize: 15,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 3,
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    vertical: 14,
+                                                    horizontal: 8,
+                                                  ),
+                                              child: Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  FittedBox(
+                                                    fit: BoxFit.scaleDown,
+                                                    child: Builder(
+                                                      builder: (context) {
+                                                        final expiryText =
+                                                            membershipType ==
+                                                                    'Daily'
+                                                                ? _formatTimeRemaining(
+                                                                  expirationDate,
+                                                                )
+                                                                : formattedExpiry;
+                                                        final bool
+                                                        isExpiredText =
+                                                            expiryText ==
+                                                                'Expired' ||
+                                                            isExpired;
+                                                        return Text(
+                                                          expiryText,
+                                                          textAlign:
+                                                              TextAlign.center,
+                                                          style: TextStyle(
+                                                            color:
+                                                                isExpiredText
+                                                                    ? Colors.red
+                                                                    : membershipType ==
+                                                                        'Daily'
+                                                                    ? Colors
+                                                                        .orange
+                                                                        .shade700
+                                                                    : Colors
+                                                                        .black87,
+                                                            fontSize: 15,
+                                                            fontWeight:
+                                                                FontWeight.w600,
+                                                          ),
+                                                        );
+                                                      },
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
                                         ],
                                       ),
                                     ),
