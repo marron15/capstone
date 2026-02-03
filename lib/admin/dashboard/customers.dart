@@ -692,8 +692,8 @@ class _CustomersPageState extends State<CustomersPage> {
     final String mm = date.month.toString().padLeft(2, '0');
     final String yyyy = date.year.toString().padLeft(4, '0');
 
-    // For Daily memberships, include time for both start and expiration dates
-    if (membershipType == 'Daily') {
+    // For Daily memberships, include time for expiration only
+    if (membershipType == 'Daily' && !isStartDate) {
       final String hh = date.hour.toString().padLeft(2, '0');
       final String min = date.minute.toString().padLeft(2, '0');
       final String ss = date.second.toString().padLeft(2, '0');
