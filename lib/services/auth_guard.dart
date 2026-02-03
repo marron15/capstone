@@ -44,11 +44,12 @@ class AuthGuard extends StatelessWidget {
   }
 
   void _redirectToLogin(BuildContext context) {
-    // Determine the appropriate login route based on required user type
+    // Determine the appropriate login route based on required user type.
+    // Admin redirects to /home (main landing) so logout does not send to admin login.
     String loginRoute;
     switch (requiredUserType) {
       case UserType.admin:
-        loginRoute = '/admin-login';
+        loginRoute = '/home';
         break;
       case UserType.customer:
         loginRoute = '/';

@@ -163,7 +163,7 @@ class _LoginModalState extends State<LoginModal>
             duration: const Duration(seconds: 3),
           ),
         );
-        Navigator.of(context).pushReplacementNamed('/admin-dashboard');
+        Navigator.of(context).pushReplacementNamed('/admin-statistics');
       }
       return true;
     }

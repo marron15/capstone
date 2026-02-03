@@ -343,7 +343,7 @@ class _SideNavState extends State<SideNav> {
                         await unifiedAuthState.logout();
                         if (!context.mounted) return;
                         Navigator.of(context).pushNamedAndRemoveUntil(
-                          '/admin-login',
+                          '/home',
                           (route) => false,
                         );
                       },

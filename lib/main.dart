@@ -64,7 +64,7 @@ class MyApp extends StatelessWidget {
                 if (unifiedAuthState.isCustomerLoggedIn) {
                   return const LandingPage();
                 } else if (unifiedAuthState.isAdminLoggedIn) {
-                  return const AdminProfilePage();
+                  return const AdminAuthGuard(child: StatisticPage());
                 } else {
                   return const LoginChoicePage();
                 }
@@ -470,34 +470,6 @@ class _LoginChoicePageState extends State<LoginChoicePage>
                                                 title: 'Are you Customer?',
                                                 subtitle:
                                                     'Access gym services and membership',
-                                                gradient: const LinearGradient(
-                                                  colors: [
-                                                    Color(0xFF36454F),
-                                                    Color(0xFF111111),
-                                                  ],
-                                                  begin: Alignment.topLeft,
-                                                  end: Alignment.bottomRight,
-                                                ),
-                                                textColor: Colors.white,
-                                                iconColor: Colors.white,
-                                                subtitleColor: Colors.white,
-                                              ),
-                                            ),
-                                            SizedBox(
-                                              width: cardWidth,
-                                              child: _ChoiceContainer(
-                                                onTap: () {
-                                                  Navigator.pushNamed(
-                                                    context,
-                                                    '/admin-login',
-                                                  );
-                                                },
-                                                icon:
-                                                    Icons
-                                                        .admin_panel_settings_outlined,
-                                                title: 'Are you Admin?',
-                                                subtitle:
-                                                    'Manage gym operations and members',
                                                 gradient: const LinearGradient(
                                                   colors: [
                                                     Color(0xFF36454F),

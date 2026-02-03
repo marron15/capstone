@@ -144,9 +144,9 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  // Navigate to admin dashboard
+  // Navigate to admin dashboard home (Statistics page)
   void _navigateToDashboard() {
-    Navigator.of(context).pushReplacementNamed('/admin-dashboard');
+    Navigator.of(context).pushReplacementNamed('/admin-statistics');
   }
 
   @override
