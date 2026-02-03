@@ -496,36 +496,6 @@ class _LoginChoicePageState extends State<LoginChoicePage>
 
                         const SizedBox(height: 50),
 
-                        // Benefits row (wraps on small screens)
-                        Align(
-                          alignment: Alignment.center,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Wrap(
-                              alignment: WrapAlignment.center,
-                              crossAxisAlignment: WrapCrossAlignment.center,
-                              spacing: 18,
-                              runSpacing: 12,
-                              children: const [
-                                _BenefitChip(
-                                  icon: Icons.water_drop,
-                                  label: 'Free Water',
-                                ),
-                                _BenefitChip(
-                                  icon: Icons.fitness_center,
-                                  label: 'Quality Equipment',
-                                ),
-                                _BenefitChip(
-                                  icon: Icons.people,
-                                  label: 'Welcoming Environment',
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 24),
-
                         // Lead capture removed
                       ],
                     ),
