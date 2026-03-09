@@ -95,7 +95,7 @@ class _SideNavState extends State<SideNav> {
             icon != null
                 ? Icon(
                   icon,
-                  color: isSelected ? Colors.blue : Colors.black87,
+                  color: isSelected ? Color(0xFFFF8C00) : Colors.black87,
                   size: 20,
                 )
                 : null,
@@ -104,7 +104,7 @@ class _SideNavState extends State<SideNav> {
           style: TextStyle(
             fontSize: 14,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-            color: isSelected ? Colors.blue : Colors.black87,
+            color: Colors.black87,
           ),
         ),
         selected: isSelected,
@@ -147,7 +147,7 @@ class _SideNavState extends State<SideNav> {
             dense: true,
             leading: Icon(
               icon,
-              color: hasSelectedChild ? Colors.blue : Colors.black87,
+              color: hasSelectedChild ? Color(0xFFFF8C00) : Colors.black87,
               size: 20,
             ),
             title: Text(
@@ -156,7 +156,7 @@ class _SideNavState extends State<SideNav> {
                 fontSize: 14,
                 fontWeight:
                     hasSelectedChild ? FontWeight.w600 : FontWeight.w500,
-                color: hasSelectedChild ? Colors.blue : Colors.black87,
+                color: Colors.black87,
               ),
             ),
             trailing: Icon(
@@ -342,10 +342,9 @@ class _SideNavState extends State<SideNav> {
                       onPressed: () async {
                         await unifiedAuthState.logout();
                         if (!context.mounted) return;
-                        Navigator.of(context).pushNamedAndRemoveUntil(
-                          '/home',
-                          (route) => false,
-                        );
+                        Navigator.of(
+                          context,
+                        ).pushNamedAndRemoveUntil('/home', (route) => false);
                       },
                     ),
                   ),
