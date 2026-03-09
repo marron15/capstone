@@ -27,6 +27,11 @@ class _CustomersPageState extends State<CustomersPage> {
   bool _showExpiredOnly = false;
   bool _showNotExpiredOnly = false;
   static const double _drawerWidth = 280;
+  static const TextStyle _tableHeaderTextStyle = TextStyle(
+    fontSize: 16,
+    fontWeight: FontWeight.w700,
+    letterSpacing: 0,
+  );
   bool _navCollapsed = false;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   Timer? _countdownTimer;
@@ -724,113 +729,111 @@ class _CustomersPageState extends State<CustomersPage> {
 
   // Header cell with dropdown for membership filter
   Widget _buildMembershipHeader() {
-    return FittedBox(
-      fit: BoxFit.scaleDown,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Text(
-            'Membership Type',
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Flexible(
+          child: Text(
+            'Membership',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.3,
-            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: _tableHeaderTextStyle,
           ),
-          const SizedBox(width: 4),
-          PopupMenuButton<String>(
-            tooltip: 'Filter membership type',
-            icon: const Icon(Icons.arrow_drop_down, size: 18),
-            onSelected: (val) => setState(() => _membershipFilter = val),
-            itemBuilder:
-                (context) => const [
-                  PopupMenuItem(value: 'All', child: Text('All')),
-                  PopupMenuItem(value: 'Daily', child: Text('Daily')),
-                  PopupMenuItem(value: 'Half Month', child: Text('Half Month')),
-                  PopupMenuItem(value: 'Monthly', child: Text('Monthly')),
-                ],
-          ),
-        ],
-      ),
+        ),
+        const SizedBox(width: 2),
+        PopupMenuButton<String>(
+          tooltip: 'Filter membership type',
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+          icon: const Icon(Icons.arrow_drop_down, size: 16),
+          onSelected: (val) => setState(() => _membershipFilter = val),
+          itemBuilder:
+              (context) => const [
+                PopupMenuItem(value: 'All', child: Text('All')),
+                PopupMenuItem(value: 'Daily', child: Text('Daily')),
+                PopupMenuItem(value: 'Half Month', child: Text('Half Month')),
+                PopupMenuItem(value: 'Monthly', child: Text('Monthly')),
+              ],
+        ),
+      ],
     );
   }
 
   // Header cell with dropdown for expiration filter
   Widget _buildExpirationHeader() {
-    return FittedBox(
-      fit: BoxFit.scaleDown,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Text(
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Flexible(
+          child: Text(
             'Expiration Date',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.3,
-            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: _tableHeaderTextStyle,
           ),
-          const SizedBox(width: 4),
-          PopupMenuButton<String>(
-            tooltip: 'Filter expiration',
-            icon: const Icon(Icons.arrow_drop_down, size: 18),
-            onSelected:
-                (val) => setState(() {
-                  if (val == 'all') {
-                    _showExpiredOnly = false;
-                    _showNotExpiredOnly = false;
-                  } else if (val == 'expired') {
-                    _showExpiredOnly = true;
-                    _showNotExpiredOnly = false;
-                  } else if (val == 'notExpired') {
-                    _showExpiredOnly = false;
-                    _showNotExpiredOnly = true;
-                  }
-                }),
-            itemBuilder:
-                (context) => [
-                  PopupMenuItem(
-                    value: 'all',
-                    child: Row(
-                      children: const [
-                        Icon(Icons.event_available, size: 18),
-                        SizedBox(width: 8),
-                        Text('All Dates'),
-                      ],
-                    ),
+        ),
+        const SizedBox(width: 2),
+        PopupMenuButton<String>(
+          tooltip: 'Filter expiration',
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+          icon: const Icon(Icons.arrow_drop_down, size: 16),
+          onSelected:
+              (val) => setState(() {
+                if (val == 'all') {
+                  _showExpiredOnly = false;
+                  _showNotExpiredOnly = false;
+                } else if (val == 'expired') {
+                  _showExpiredOnly = true;
+                  _showNotExpiredOnly = false;
+                } else if (val == 'notExpired') {
+                  _showExpiredOnly = false;
+                  _showNotExpiredOnly = true;
+                }
+              }),
+          itemBuilder:
+              (context) => [
+                PopupMenuItem(
+                  value: 'all',
+                  child: Row(
+                    children: const [
+                      Icon(Icons.event_available, size: 18),
+                      SizedBox(width: 8),
+                      Text('All Dates'),
+                    ],
                   ),
-                  PopupMenuItem(
-                    value: 'expired',
-                    child: Row(
-                      children: const [
-                        Icon(
-                          Icons.warning_amber_rounded,
-                          size: 18,
-                          color: Colors.red,
-                        ),
-                        SizedBox(width: 8),
-                        Text('Expired Only'),
-                      ],
-                    ),
+                ),
+                PopupMenuItem(
+                  value: 'expired',
+                  child: Row(
+                    children: const [
+                      Icon(
+                        Icons.warning_amber_rounded,
+                        size: 18,
+                        color: Colors.red,
+                      ),
+                      SizedBox(width: 8),
+                      Text('Expired Only'),
+                    ],
                   ),
-                  PopupMenuItem(
-                    value: 'notExpired',
-                    child: Row(
-                      children: const [
-                        Icon(Icons.check_circle, size: 18, color: Colors.green),
-                        SizedBox(width: 8),
-                        Text('Not Expired Only'),
-                      ],
-                    ),
+                ),
+                PopupMenuItem(
+                  value: 'notExpired',
+                  child: Row(
+                    children: const [
+                      Icon(Icons.check_circle, size: 18, color: Colors.green),
+                      SizedBox(width: 8),
+                      Text('Not Expired Only'),
+                    ],
                   ),
-                ],
-          ),
-        ],
-      ),
+                ),
+              ],
+        ),
+      ],
     );
   }
 
@@ -838,11 +841,16 @@ class _CustomersPageState extends State<CustomersPage> {
     return Text(
       text,
       textAlign: TextAlign.center,
-      style: const TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.w700,
-        letterSpacing: 0.3,
-      ),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: _tableHeaderTextStyle,
+    );
+  }
+
+  Widget _buildHeaderCell(Widget child) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+      child: Center(child: child),
     );
   }
 
@@ -1854,36 +1862,48 @@ class _CustomersPageState extends State<CustomersPage> {
                                 children: [
                                   Expanded(
                                     flex: 2,
-                                    child: _buildHeaderLabel('Members ID'),
-                                  ),
-                                  Expanded(
-                                    flex: 3,
-                                    child: _buildHeaderLabel('Name'),
-                                  ),
-                                  Expanded(
-                                    flex: 3,
-                                    child: _buildHeaderLabel('Contact Number'),
-                                  ),
-                                  Expanded(
-                                    flex: 3,
-                                    child: _buildMembershipHeader(),
-                                  ),
-                                  Expanded(
-                                    flex: 3,
-                                    child: _buildHeaderLabel(
-                                      'Membership Start Date',
+                                    child: _buildHeaderCell(
+                                      _buildHeaderLabel('ID'),
                                     ),
                                   ),
                                   Expanded(
                                     flex: 3,
-                                    child: _buildExpirationHeader(),
+                                    child: _buildHeaderCell(
+                                      _buildHeaderLabel('Name'),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    flex: 3,
+                                    child: _buildHeaderCell(
+                                      _buildHeaderLabel('Contact Number'),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    flex: 3,
+                                    child: _buildHeaderCell(
+                                      _buildMembershipHeader(),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    flex: 3,
+                                    child: _buildHeaderCell(
+                                      _buildHeaderLabel('Start Date'),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    flex: 3,
+                                    child: _buildHeaderCell(
+                                      _buildExpirationHeader(),
+                                    ),
                                   ),
                                 ],
                               ),
                             ),
                             SizedBox(
                               width: 160,
-                              child: _buildHeaderLabel('Actions'),
+                              child: _buildHeaderCell(
+                                _buildHeaderLabel('Actions'),
+                              ),
                             ),
                           ],
                         ),
