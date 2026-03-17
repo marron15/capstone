@@ -4,18 +4,8 @@ import 'package:flutter_zxing/flutter_zxing.dart';
 
 import 'header.dart';
 
-import 'equipment_images.dart';
-
-import 'add_ons.dart';
-
-import 'products.dart';
-
-import 'trainers.dart';
-
 import '../services/attendance_service.dart';
 import '../services/unified_auth_state.dart';
-
-import 'footer.dart';
 
 class LandingPage extends StatefulWidget {
   const LandingPage({Key? key}) : super(key: key);
@@ -1642,56 +1632,6 @@ class _LandingPageState extends State<LandingPage>
 
                               SizedBox(height: screenSize.height * 0.06),
 
-                              EquipmentImagesSection(
-                                key: _equipmentImagesKey,
-
-                                isSmallScreen: isSmallScreen,
-
-                                screenWidth: screenSize.width,
-
-                                screenHeight: screenSize.height,
-                              ),
-
-                              SizedBox(height: screenSize.height * 0.06),
-
-                              ServicesSection(
-                                key: _servicesKey,
-
-                                isSmallScreen: isSmallScreen,
-
-                                screenWidth: screenSize.width,
-
-                                screenHeight: screenSize.height,
-                              ),
-
-                              SizedBox(height: screenSize.height * 0.06),
-
-                              ProductsSection(
-                                key: _productsKey,
-
-                                isSmallScreen: isSmallScreen,
-
-                                screenWidth: screenSize.width,
-
-                                screenHeight: screenSize.height,
-                              ),
-
-                              SizedBox(height: screenSize.height * 0.06),
-
-                              TrainersSection(
-                                key: _trainersKey,
-
-                                isSmallScreen: isSmallScreen,
-
-                                screenWidth: screenSize.width,
-                              ),
-
-                              SizedBox(height: screenSize.height * 0.06),
-
-                              Footer(
-                                isSmallScreen: isSmallScreen,
-                                screenWidth: screenSize.width,
-                              ),
                               // Add bottom padding to ensure proper spacing
                               SizedBox(
                                 height: MediaQuery.of(context).padding.bottom,

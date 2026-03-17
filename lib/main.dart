@@ -16,6 +16,10 @@ import 'User Profile/profile.dart';
 import 'landing_page_modals/login.dart';
 import 'landing_page_modals/signup_members.dart';
 import 'services/apk_download_button.dart';
+import 'landing_page_components/footer.dart';
+import 'landing_page_components/add_ons.dart';
+import 'landing_page_components/products.dart';
+import 'landing_page_components/trainers.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -372,7 +376,7 @@ class _LoginChoicePageState extends State<LoginChoicePage>
           Container(
             color: Colors.transparent,
             child: SafeArea(
-              child: Center(
+              child: SingleChildScrollView(
                 child: FadeTransition(
                   opacity: _fadeAnimation,
                   child: SlideTransition(
@@ -380,7 +384,9 @@ class _LoginChoicePageState extends State<LoginChoicePage>
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const SizedBox(height: 16),
+                        SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.25,
+                        ),
 
                         // Choice containers responsive layout
                         AnimatedBuilder(
@@ -452,9 +458,48 @@ class _LoginChoicePageState extends State<LoginChoicePage>
                           },
                         ),
 
+                        const SizedBox(height: 100),
+
+                        EquipmentImagesSection(
+                          isSmallScreen:
+                              MediaQuery.of(context).size.width < 600,
+                          screenWidth: MediaQuery.of(context).size.width,
+                          screenHeight: MediaQuery.of(context).size.height,
+                        ),
+
                         const SizedBox(height: 50),
 
-                        // Lead capture removed
+                        ServicesSection(
+                          isSmallScreen:
+                              MediaQuery.of(context).size.width < 600,
+                          screenWidth: MediaQuery.of(context).size.width,
+                          screenHeight: MediaQuery.of(context).size.height,
+                        ),
+
+                        const SizedBox(height: 50),
+
+                        ProductsSection(
+                          isSmallScreen:
+                              MediaQuery.of(context).size.width < 600,
+                          screenWidth: MediaQuery.of(context).size.width,
+                          screenHeight: MediaQuery.of(context).size.height,
+                        ),
+
+                        const SizedBox(height: 50),
+
+                        TrainersSection(
+                          isSmallScreen:
+                              MediaQuery.of(context).size.width < 600,
+                          screenWidth: MediaQuery.of(context).size.width,
+                        ),
+
+                        const SizedBox(height: 50),
+
+                        Footer(
+                          isSmallScreen:
+                              MediaQuery.of(context).size.width < 600,
+                          screenWidth: MediaQuery.of(context).size.width,
+                        ),
                       ],
                     ),
                   ),
@@ -501,7 +546,7 @@ class MainHeader extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Spacer(),
+                const SizedBox(width: 16),
                 const Text(
                   'RNR Fitness Gym',
                   style: TextStyle(
@@ -512,6 +557,29 @@ class MainHeader extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
+                if (MediaQuery.of(context).size.width >= 900) ...[
+                  _HeaderNavButton(
+                    icon: Icons.fitness_center,
+                    label: 'Gym Equipment',
+                    onTap: () {},
+                  ),
+                  _HeaderNavButton(
+                    icon: Icons.shopping_cart,
+                    label: 'Products',
+                    onTap: () {},
+                  ),
+                  _HeaderNavButton(
+                    icon: Icons.person,
+                    label: 'Trainers',
+                    onTap: () {},
+                  ),
+                  _HeaderNavButton(
+                    icon: Icons.info_outline,
+                    label: 'About Us',
+                    onTap: () {},
+                  ),
+                  const Spacer(),
+                ],
                 ElevatedButton(
                   onPressed: () {
                     showDialog(
@@ -922,6 +990,218 @@ class _ChoiceContainerState extends State<_ChoiceContainer> {
                 ),
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class EquipmentImagesSection extends StatelessWidget {
+  const EquipmentImagesSection({
+    Key? key,
+    required this.isSmallScreen,
+    required this.screenWidth,
+    required this.screenHeight,
+  }) : super(key: key);
+
+  final bool isSmallScreen;
+  final double screenWidth;
+  final double screenHeight;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+          child: Center(
+            child: Text(
+              'Equipments',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: (isSmallScreen
+                        ? screenWidth * 0.07
+                        : screenWidth * 0.045)
+                    .clamp(22.0, 48.0),
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const SizedBox(width: 20),
+              _FlexibleEquipmentCard(
+                imagePath: 'assets/images/gym_equipments/dumbells.jpg',
+                title: 'Dumbbells',
+                description: 'High quality dumbbells for strength training.',
+              ),
+              const SizedBox(width: 16),
+              _FlexibleEquipmentCard(
+                imagePath: 'assets/images/gym_equipments/bike.jpg',
+                title: 'Exercise Bike',
+                description: 'Cardio equipment for endurance.',
+              ),
+              const SizedBox(width: 16),
+              _FlexibleEquipmentCard(
+                imagePath: 'assets/images/gym_equipments/weights.jpg',
+                title: 'Weights',
+                description: 'Various weights for all levels.',
+              ),
+              const SizedBox(width: 20),
+            ],
+          ),
+        ),
+        const SizedBox(height: 40),
+      ],
+    );
+  }
+}
+
+class _FlexibleEquipmentCard extends StatelessWidget {
+  final String imagePath;
+  final String title;
+  final String description;
+
+  const _FlexibleEquipmentCard({
+    required this.imagePath,
+    required this.title,
+    required this.description,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    double cardWidth = screenWidth < 900 ? screenWidth * 0.7 : 280;
+    cardWidth = cardWidth.clamp(180.0, 320.0);
+    return SizedBox(
+      width: cardWidth,
+      height: 320,
+      child: _EquipmentCard(
+        imagePath: imagePath,
+        title: title,
+        description: description,
+      ),
+    );
+  }
+}
+
+class _EquipmentCard extends StatelessWidget {
+  final String imagePath;
+  final String title;
+  final String description;
+
+  const _EquipmentCard({
+    required this.imagePath,
+    required this.title,
+    required this.description,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: const [
+          BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 4)),
+        ],
+      ),
+      child: Stack(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: Image.asset(
+              imagePath,
+              width: double.infinity,
+              height: 320,
+              fit: BoxFit.cover,
+            ),
+          ),
+          Container(
+            width: double.infinity,
+            height: 320,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              color: Colors.black.withAlpha((0.45 * 255).toInt()),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Spacer(),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 24,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  description,
+                  style: const TextStyle(color: Colors.white, fontSize: 16),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HeaderNavButton extends StatefulWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _HeaderNavButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  State<_HeaderNavButton> createState() => _HeaderNavButtonState();
+}
+
+class _HeaderNavButtonState extends State<_HeaderNavButton> {
+  bool _isHovering = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final Color hoverAccent = const Color(0xFFFFA812);
+    final Color textColor = _isHovering ? hoverAccent : Colors.white;
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovering = true),
+      onExit: (_) => setState(() => _isHovering = false),
+      cursor: SystemMouseCursors.click,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeInOut,
+        child: TextButton.icon(
+          onPressed: widget.onTap,
+          icon: Icon(widget.icon, color: Colors.white, size: 20),
+          label: AnimatedDefaultTextStyle(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeInOut,
+            style: TextStyle(color: textColor, fontSize: 16),
+            child: Text(widget.label),
+          ),
+          style: TextButton.styleFrom(
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
           ),
         ),
       ),
