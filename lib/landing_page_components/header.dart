@@ -1,7 +1,195 @@
 import 'package:flutter/material.dart';
 import '../services/unified_auth_state.dart';
-import '../services/auth_service.dart';
+import '../services/apk_download_button.dart';
 
+// TRANSPARENT HEADER (moved from main.dart)
+class MainHeader extends StatelessWidget {
+  final bool isScrolled;
+  final void Function(String section)? onSectionTap;
+  const MainHeader({super.key, this.isScrolled = false, this.onSectionTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
+      child: SafeArea(
+        bottom: false,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 280),
+          curve: Curves.easeInOut,
+          height: isScrolled ? 80 : 160,
+          decoration: BoxDecoration(
+            color: isScrolled ? const Color(0xFF111111) : Colors.transparent,
+            border:
+                isScrolled
+                    ? const Border(
+                      bottom: BorderSide(color: Color(0xFF2A2A2A), width: 1),
+                    )
+                    : null,
+            boxShadow:
+                isScrolled
+                    ? [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.4),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ]
+                    : null,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text(
+                  'RNR FITNESS GYM',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                const Spacer(),
+                if (MediaQuery.of(context).size.width >= 900) ...[
+                  _HeaderNavTextButton(label: 'Home', onTap: () => onSectionTap?.call('Home')),
+                  _HeaderNavTextButton(label: 'Service', onTap: () => onSectionTap?.call('Service')),
+                  _HeaderNavTextButton(label: 'Products', onTap: () => onSectionTap?.call('Products')),
+                  _HeaderNavTextButton(label: 'Inquiries', onTap: () => onSectionTap?.call('Inquiries')),
+                  _HeaderNavTextButton(label: 'About Us', onTap: () => onSectionTap?.call('About Us')),
+                  const Spacer(),
+                ],
+                AnimatedBuilder(
+                  animation: unifiedAuthState,
+                  builder: (context, child) {
+                    if (unifiedAuthState.isCustomerLoggedIn) {
+                      return Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            onPressed: () {
+                              Navigator.pushNamed(context, '/customer-profile');
+                            },
+                            icon: const Icon(
+                              Icons.account_circle,
+                              color: Colors.white,
+                              size: 28,
+                            ),
+                            tooltip: 'Profile',
+                          ),
+                          const SizedBox(width: 12),
+                          ElevatedButton(
+                            onPressed: () async {
+                              await unifiedAuthState.logout();
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Logged out successfully'),
+                                  ),
+                                );
+                                Navigator.pushReplacementNamed(
+                                  context,
+                                  '/home',
+                                );
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red.withValues(
+                                alpha: 0.8,
+                              ),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 10,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              elevation: 0,
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.logout, size: 16),
+                                SizedBox(width: 6),
+                                Text(
+                                  'Logout',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
+                ),
+                const SizedBox(width: 10),
+                const ApkDownloadButton(),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HeaderNavTextButton extends StatefulWidget {
+  final String label;
+  final VoidCallback onTap;
+
+  const _HeaderNavTextButton({required this.label, required this.onTap});
+
+  @override
+  State<_HeaderNavTextButton> createState() => _HeaderNavTextButtonState();
+}
+
+class _HeaderNavTextButtonState extends State<_HeaderNavTextButton> {
+  bool _isHovering = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final Color hoverAccent = const Color(0xFFFFA812);
+    final Color textColor = _isHovering ? hoverAccent : Colors.white;
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovering = true),
+      onExit: (_) => setState(() => _isHovering = false),
+      cursor: SystemMouseCursors.click,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeInOut,
+        child: TextButton(
+          onPressed: widget.onTap,
+          style: TextButton.styleFrom(
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          ),
+          child: AnimatedDefaultTextStyle(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeInOut,
+            style: TextStyle(
+              color: textColor,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+            child: Text(widget.label),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// BLACK HEADER (used by landing_page.dart)
 class BlackHeader extends StatelessWidget {
   final Function(int) onNavTap;
   final VoidCallback? onProfileTap;
@@ -45,11 +233,10 @@ class BlackHeader extends StatelessWidget {
                 message: 'Home',
                 child: IconButton(
                   onPressed: () {
-                    // Navigate to home and clear all previous routes except root
                     Navigator.pushNamedAndRemoveUntil(
                       context,
                       '/home',
-                      (route) => route.isFirst, // Keep only the first route
+                      (route) => route.isFirst,
                     );
                   },
                   icon: const Icon(Icons.home_outlined, color: Colors.white),
@@ -68,22 +255,22 @@ class BlackHeader extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      _HeaderNavButton(
+                      _BlackHeaderNavButton(
                         icon: Icons.fitness_center,
                         label: 'Gym Equipment',
                         onTap: () => onNavTap(1),
                       ),
-                      _HeaderNavButton(
+                      _BlackHeaderNavButton(
                         icon: Icons.shopping_cart,
                         label: 'Products',
                         onTap: () => onNavTap(2),
                       ),
-                      _HeaderNavButton(
+                      _BlackHeaderNavButton(
                         icon: Icons.person,
                         label: 'Trainers',
                         onTap: () => onNavTap(5),
                       ),
-                      _HeaderNavButton(
+                      _BlackHeaderNavButton(
                         icon: Icons.info_outline,
                         label: 'About Us',
                         onTap: () => onNavTap(5),
@@ -104,7 +291,7 @@ class BlackHeader extends StatelessWidget {
                       children: [
                         // Profile Button
                         if (!isSmallScreen) ...[
-                          _HeaderNavButton(
+                          _BlackHeaderNavButton(
                             icon: Icons.person,
                             label: 'Profile',
                             onTap: onProfileTap ?? () {},
@@ -114,7 +301,6 @@ class BlackHeader extends StatelessWidget {
                         // Logout Button
                         ElevatedButton(
                           onPressed: () async {
-                            // Show confirmation dialog
                             final bool shouldLogout =
                                 await showDialog<bool>(
                                   context: context,
@@ -147,29 +333,19 @@ class BlackHeader extends StatelessWidget {
 
                             if (shouldLogout) {
                               try {
-                                // Call logout API
-                                final result = await AuthService.logout(
-                                  customerId: unifiedAuthState.customerId,
-                                );
-
-                                // Clear auth state
                                 await unifiedAuthState.logout();
 
-                                // Show success message
                                 if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
+                                    const SnackBar(
                                       content: Text(
-                                        result.success
-                                            ? 'Logged out successfully!'
-                                            : 'Successfully Logout',
+                                        'Logged out successfully!',
                                       ),
                                       backgroundColor: Colors.green,
                                     ),
                                   );
                                 }
                               } catch (e) {
-                                // Even if API call fails, clear auth state
                                 await unifiedAuthState.logout();
 
                                 if (context.mounted) {
@@ -203,7 +379,7 @@ class BlackHeader extends StatelessWidget {
                       ],
                     );
                   } else {
-                    // Show help tooltip when logged out (Login moved to MainHeader)
+                    // Show help tooltip when logged out
                     return Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -385,22 +561,22 @@ class BlackHeader extends StatelessWidget {
   }
 }
 
-class _HeaderNavButton extends StatefulWidget {
+class _BlackHeaderNavButton extends StatefulWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
 
-  const _HeaderNavButton({
+  const _BlackHeaderNavButton({
     required this.icon,
     required this.label,
     required this.onTap,
   });
 
   @override
-  State<_HeaderNavButton> createState() => _HeaderNavButtonState();
+  State<_BlackHeaderNavButton> createState() => _BlackHeaderNavButtonState();
 }
 
-class _HeaderNavButtonState extends State<_HeaderNavButton> {
+class _BlackHeaderNavButtonState extends State<_BlackHeaderNavButton> {
   bool _isHovering = false;
 
   @override
@@ -428,61 +604,6 @@ class _HeaderNavButtonState extends State<_HeaderNavButton> {
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 12),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _HoverElevatedButton extends StatefulWidget {
-  final VoidCallback onPressed;
-  final bool isSmallScreen;
-  final String text;
-
-  const _HoverElevatedButton({
-    required this.onPressed,
-    required this.isSmallScreen,
-    required this.text,
-  });
-
-  @override
-  State<_HoverElevatedButton> createState() => _HoverElevatedButtonState();
-}
-
-class _HoverElevatedButtonState extends State<_HoverElevatedButton> {
-  bool _isHovering = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final Color hoverAccent = const Color(0xFFFFA812);
-    final Color textColor = _isHovering ? hoverAccent : Colors.black;
-
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovering = true),
-      onExit: (_) => setState(() => _isHovering = false),
-      cursor: SystemMouseCursors.click,
-      child: ElevatedButton(
-        onPressed: widget.onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.white,
-          foregroundColor: Colors.black,
-          padding: EdgeInsets.symmetric(
-            horizontal: widget.isSmallScreen ? 14 : 18,
-            vertical: widget.isSmallScreen ? 8 : 12,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          elevation: 0,
-        ),
-        child: AnimatedDefaultTextStyle(
-          duration: const Duration(milliseconds: 180),
-          curve: Curves.easeInOut,
-          style: TextStyle(
-            color: textColor,
-            fontSize: widget.isSmallScreen ? 14 : 16,
-          ),
-          child: Text(widget.text),
         ),
       ),
     );
