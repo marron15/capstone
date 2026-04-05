@@ -97,7 +97,7 @@ class LogoutButton extends StatelessWidget {
 
         // Navigate to landing page
         Navigator.of(context).pushNamedAndRemoveUntil(
-          '/customer-landing',
+          '/home',
           (Route<dynamic> route) => false,
         );
       }
@@ -120,7 +120,7 @@ class LogoutButton extends StatelessWidget {
         onLogoutSuccess?.call();
 
         Navigator.of(context).pushNamedAndRemoveUntil(
-          '/customer-landing',
+          '/home',
           (Route<dynamic> route) => false,
         );
       }

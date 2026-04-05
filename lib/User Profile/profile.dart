@@ -328,7 +328,7 @@ class _ProfilePageState extends State<ProfilePage>
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () {
-                  Navigator.pushReplacementNamed(context, '/customer-landing');
+                  Navigator.pushReplacementNamed(context, '/home');
                 },
                 child: const Text('Go to Login'),
               ),
@@ -703,7 +703,7 @@ class _ProfilePageState extends State<ProfilePage>
         leading: IconButton(
           icon: Icon(Icons.home, color: appBarIcon),
           onPressed: () {
-            Navigator.pushReplacementNamed(context, '/customer-landing');
+            Navigator.pushReplacementNamed(context, '/home');
           },
         ),
         title: Text('Profile', style: TextStyle(color: titleColor)),

@@ -1750,7 +1750,628 @@ class _DrawerHeaderSection extends StatelessWidget {
   }
 }
 
+class HeroMembershipContainer extends StatefulWidget {
+  const HeroMembershipContainer({Key? key}) : super(key: key);
+
+  @override
+  State<HeroMembershipContainer> createState() =>
+      _HeroMembershipContainerState();
+}
+
+class _HeroMembershipContainerState extends State<HeroMembershipContainer> {
+  Timer? _countdownTimer;
+  bool _isSubmittingScan = false;
+  String? _scanErrorMessage;
+  static const Duration _minimumSessionDuration = Duration(minutes: 30);
+
+  @override
+  void initState() {
+    super.initState();
+    _startCountdownTimer();
+    unifiedAuthState.addListener(_onAuthStateChanged);
+  }
+
+  @override
+  void dispose() {
+    _countdownTimer?.cancel();
+    unifiedAuthState.removeListener(_onAuthStateChanged);
+    super.dispose();
+  }
+
+  void _onAuthStateChanged() {
+    if (unifiedAuthState.isCustomerLoggedIn) {
+      _startCountdownTimer();
+    } else {
+      _countdownTimer?.cancel();
+    }
+  }
+
+  void _startCountdownTimer() {
+    _countdownTimer?.cancel();
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) {
+        setState(() {});
+      } else {
+        timer.cancel();
+      }
+    });
+  }
+
+  String _formatDate(DateTime date) {
+    final months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    ];
+    return '${months[date.month - 1]} ${date.day}, ${date.year}';
+  }
+
+  String _formatTime(DateTime? dateTime) {
+    if (dateTime == null) return 'N/A';
+    final int hour = dateTime.hour % 12 == 0 ? 12 : dateTime.hour % 12;
+    final String minute = dateTime.minute.toString().padLeft(2, '0');
+    final String period = dateTime.hour >= 12 ? 'PM' : 'AM';
+    return '$hour:$minute $period';
+  }
+
+  bool _isMembershipActive(DateTime expirationDate) {
+    return DateTime.now().isBefore(expirationDate);
+  }
+
+  String _getTimeRemaining(DateTime expirationDate) {
+    final now = DateTime.now();
+    final difference = expirationDate.difference(now);
+    if (difference.isNegative) return 'Expired';
+    final days = difference.inDays;
+    final hours = difference.inHours % 24;
+    final minutes = difference.inMinutes % 60;
+    final seconds = difference.inSeconds % 60;
+    if (days > 0) return '${days}d ${hours}h ${minutes}m ${seconds}s';
+    if (hours > 0) return '${hours}h ${minutes}m ${seconds}s';
+    if (minutes > 0) return '${minutes}m ${seconds}s';
+    return '${seconds}s';
+  }
+
+  double _getMembershipProgress(DateTime startDate, DateTime expirationDate) {
+    final now = DateTime.now();
+    final totalDuration = expirationDate.difference(startDate);
+    final elapsed = now.difference(startDate);
+    if (totalDuration.inMilliseconds == 0) return 0.0;
+    if (elapsed.isNegative) return 0.0;
+    if (elapsed.inMilliseconds > totalDuration.inMilliseconds) return 1.0;
+    return elapsed.inMilliseconds / totalDuration.inMilliseconds;
+  }
+
+  Widget _buildDateRow(
+    String label,
+    String date,
+    IconData icon,
+    Color color,
+    bool isSmallScreen,
+    Size screenSize,
+  ) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.2),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: color, size: 20),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              Text(
+                date,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: (isSmallScreen
+                          ? (screenSize.width * 0.035).clamp(12.0, 18.0)
+                          : (screenSize.width * 0.024).clamp(14.0, 22.0)),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatItem(String label, String value, IconData icon, Color color) {
+    return Column(
+      children: [
+        Icon(icon, color: color, size: 24),
+        const SizedBox(height: 8),
+        Text(value, style: TextStyle(color: color, fontSize: 18, fontWeight: FontWeight.bold)),
+        Text(label, style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w500)),
+      ],
+    );
+  }
+
+  int _getDaysUsed(DateTime startDate) =>
+      DateTime.now().difference(startDate).inDays;
+
+  int _getDaysLeft(DateTime expirationDate) {
+    final difference = expirationDate.difference(DateTime.now());
+    return difference.isNegative ? 0 : difference.inDays;
+  }
+
+  String _formatAttendanceTimestamp(DateTime? timestamp) {
+    if (timestamp == null) return 'No attendance captured yet';
+    return '${_formatDate(timestamp)} at ${_formatTime(timestamp)}';
+  }
+
+  Duration? _timeUntilTimeoutAllowed(AttendanceSnapshot? snapshot) {
+    if (snapshot == null || !snapshot.isClockedIn) return null;
+    final DateTime? lastTimeIn = snapshot.lastTimeIn;
+    if (lastTimeIn == null) return null;
+    final Duration elapsed = DateTime.now().difference(lastTimeIn);
+    if (elapsed >= _minimumSessionDuration) return null;
+    return _minimumSessionDuration - elapsed;
+  }
+
+  String _formatRemainingDuration(Duration duration) {
+    final Duration safeDuration = duration.isNegative ? Duration.zero : duration;
+    final int minutes = safeDuration.inMinutes;
+    final int seconds = safeDuration.inSeconds.remainder(60);
+    if (minutes > 0 && seconds > 0) return '${minutes}m ${seconds}s';
+    if (minutes > 0) return '${minutes}m';
+    return '${seconds}s';
+  }
+
+  Future<void> _startScanFlow() async {
+    if (!unifiedAuthState.isCustomerLoggedIn) {
+      _showScanError('Please login to scan the admin QR code.');
+      return;
+    }
+    final membershipData = unifiedAuthState.membershipData;
+    if (membershipData == null) {
+      _showScanError('No membership found. Please contact the gym to activate your membership.');
+      return;
+    }
+    if (!_isMembershipActive(membershipData.expirationDate)) {
+      _showScanError('Your membership has expired. Please renew your membership to use the QR code scanner.');
+      return;
+    }
+    final String? payload = await showDialog<String>(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => const _QrScannerDialog(),
+    );
+    if (!mounted || payload == null || payload.isEmpty) return;
+    await _recordAttendanceScan(payload);
+  }
+
+  Future<void> _recordAttendanceScan(String payload) async {
+    final int? customerId = unifiedAuthState.customerId;
+    if (customerId == null) return;
+    final membershipData = unifiedAuthState.membershipData;
+    if (membershipData == null) {
+      _showScanError('No membership found. Please contact the gym to activate your membership.');
+      return;
+    }
+    if (!_isMembershipActive(membershipData.expirationDate)) {
+      _showScanError('Your membership has expired. Please renew your membership to use the QR code scanner.');
+      return;
+    }
+    if (!AttendanceService.isValidAdminPayload(payload)) {
+      _showScanError('Only the admin-issued QR code can be used for attendance.');
+      return;
+    }
+    final AttendanceSnapshot? currentSnapshot = unifiedAuthState.attendanceSnapshot;
+    final Duration? remainingDuration = _timeUntilTimeoutAllowed(currentSnapshot);
+    if (remainingDuration != null) {
+      final DateTime? nextAllowed = currentSnapshot?.lastTimeIn?.add(_minimumSessionDuration);
+      final StringBuffer message = StringBuffer(
+        'You need at least 30 minutes between time-in and time-out. '
+        'Please wait ${_formatRemainingDuration(remainingDuration)}',
+      );
+      if (nextAllowed != null) {
+        message.write(' (available at ${_formatAttendanceTimestamp(nextAllowed)})');
+      }
+      message.write('.');
+      _showScanError(message.toString());
+      return;
+    }
+    if (_isSubmittingScan) return;
+    setState(() {
+      _isSubmittingScan = true;
+      _scanErrorMessage = null;
+    });
+    try {
+      final snapshot = await AttendanceService.recordScan(
+        customerId: customerId,
+        adminPayload: payload,
+      );
+      if (!mounted) return;
+      unifiedAuthState.applyAttendanceSnapshot(snapshot);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            snapshot.isClockedIn
+                ? 'Welcome! Your time-in has been captured.'
+                : 'Great work! Time-out recorded.',
+          ),
+        ),
+      );
+    } on AttendanceException catch (e) {
+      if (!mounted) return;
+      _showScanError(e.message);
+    } catch (_) {
+      if (!mounted) return;
+      _showScanError('Unable to record attendance. Please try again.');
+    } finally {
+      if (mounted) setState(() => _isSubmittingScan = false);
+    }
+  }
+
+  void _showScanError(String message) {
+    if (!mounted) return;
+    setState(() => _scanErrorMessage = message);
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Widget _buildAttendanceStatusContent(AttendanceSnapshot? snapshot, bool isSmallScreen) {
+    final bool hasSnapshot = snapshot != null;
+    final bool isClockedIn = snapshot?.isClockedIn ?? false;
+    final Color badgeColor = hasSnapshot
+        ? (isClockedIn ? Colors.greenAccent : const Color(0xFFFFC857))
+        : Colors.grey;
+    final DateTime? timestamp = snapshot?.referenceTimestamp;
+    final String adminName = snapshot?.verifyingAdminName ?? 'Awaiting scan';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: badgeColor.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(color: badgeColor.withValues(alpha: 0.5)),
+              ),
+              child: Row(
+                children: [
+                  Icon(isClockedIn ? Icons.login : Icons.logout, size: 16, color: badgeColor),
+                  const SizedBox(width: 6),
+                  Text(
+                    snapshot?.readableStatus ?? 'Awaiting Scan',
+                    style: TextStyle(color: badgeColor, fontWeight: FontWeight.w600, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+            const Spacer(),
+            Icon(Icons.lock_clock, color: Colors.white.withValues(alpha: 0.7)),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Text(
+          hasSnapshot
+              ? _formatAttendanceTimestamp(timestamp)
+              : 'Scan the admin QR code when you arrive or leave the gym.',
+          style: TextStyle(color: Colors.white, fontSize: isSmallScreen ? 14 : 15, fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            const Icon(Icons.verified_user, size: 16, color: Colors.white70),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text('Verified by: $adminName',
+                  style: const TextStyle(color: Colors.white70, fontSize: 12)),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final Size screenSize = MediaQuery.of(context).size;
+    final bool isSmallScreen = screenSize.width < 600;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          'Welcome back, ${unifiedAuthState.customerName ?? 'Member'}!',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: (isSmallScreen
+                ? (screenSize.width * 0.048).clamp(15.0, 22.0)
+                : (screenSize.width * 0.032).clamp(16.0, 26.0)),
+            fontWeight: FontWeight.w700,
+            height: 1.5,
+          ),
+        ),
+        SizedBox(height: screenSize.height * 0.02),
+        if (unifiedAuthState.membershipData != null) ...[
+          Container(
+            width: double.infinity,
+            constraints: BoxConstraints(maxWidth: isSmallScreen ? 320 : 400),
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.black.withValues(alpha: 0.60),
+                  Colors.black.withValues(alpha: 0.45),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.22), width: 1.5),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.35),
+                  blurRadius: 18,
+                  spreadRadius: 1,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '${unifiedAuthState.membershipData!.membershipType} Membership',
+                        style: TextStyle(
+                          color: const Color(0xFFFFA812),
+                          fontSize: (isSmallScreen
+                              ? (screenSize.width * 0.045).clamp(16.0, 22.0)
+                              : (screenSize.width * 0.03).clamp(18.0, 26.0)),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: _isMembershipActive(unifiedAuthState.membershipData!.expirationDate)
+                            ? Colors.green.withValues(alpha: 0.9)
+                            : Colors.red.withValues(alpha: 0.9),
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: (_isMembershipActive(unifiedAuthState.membershipData!.expirationDate)
+                                    ? Colors.green
+                                    : Colors.red)
+                                .withValues(alpha: 0.4),
+                            blurRadius: 8,
+                            spreadRadius: 1,
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            _isMembershipActive(unifiedAuthState.membershipData!.expirationDate)
+                                ? Icons.check_circle
+                                : Icons.warning,
+                            color: Colors.white,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            _isMembershipActive(unifiedAuthState.membershipData!.expirationDate)
+                                ? 'Active'
+                                : 'Expired',
+                            style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                if (_isMembershipActive(unifiedAuthState.membershipData!.expirationDate)) ...[
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Time Remaining',
+                              style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w500)),
+                          Text(
+                            _getTimeRemaining(unifiedAuthState.membershipData!.expirationDate),
+                            style: const TextStyle(color: Color(0xFFFFA812), fontSize: 12, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      LinearProgressIndicator(
+                        value: _getMembershipProgress(
+                          unifiedAuthState.membershipData!.startDate,
+                          unifiedAuthState.membershipData!.expirationDate,
+                        ),
+                        backgroundColor: Colors.white.withValues(alpha: 0.8),
+                        valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFFFA812)),
+                        minHeight: 6,
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1),
+                  ),
+                  child: Column(
+                    children: [
+                      _buildDateRow(
+                        'Start Date',
+                        _formatDate(unifiedAuthState.membershipData!.startDate),
+                        Icons.calendar_today,
+                        const Color(0xFFFFA812),
+                        isSmallScreen,
+                        screenSize,
+                      ),
+                      const SizedBox(height: 12),
+                      _buildDateRow(
+                        'Expires',
+                        unifiedAuthState.membershipData!.membershipType == 'Daily'
+                            ? _getTimeRemaining(unifiedAuthState.membershipData!.expirationDate)
+                            : _formatDate(unifiedAuthState.membershipData!.expirationDate),
+                        Icons.event_busy,
+                        const Color(0xFFFFA812),
+                        isSmallScreen,
+                        screenSize,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                if (_isMembershipActive(unifiedAuthState.membershipData!.expirationDate)) ...[
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFA812).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFFFA812).withValues(alpha: 0.25), width: 1),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _buildStatItem(
+                            'Days Used',
+                            '${_getDaysUsed(unifiedAuthState.membershipData!.startDate)}',
+                            Icons.timer,
+                            const Color(0xFFFFA812),
+                          ),
+                        ),
+                        Expanded(
+                          child: _buildStatItem(
+                            'Days Left',
+                            '${_getDaysLeft(unifiedAuthState.membershipData!.expirationDate)}',
+                            Icons.schedule,
+                            const Color(0xFFFFA812),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.25),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 1),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildAttendanceStatusContent(unifiedAuthState.attendanceSnapshot, isSmallScreen),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                AnimatedBuilder(
+                  animation: unifiedAuthState,
+                  builder: (context, child) {
+                    if (!unifiedAuthState.isCustomerLoggedIn) return const SizedBox.shrink();
+                    final bool isMembershipActive =
+                        unifiedAuthState.membershipData != null &&
+                        _isMembershipActive(unifiedAuthState.membershipData!.expirationDate);
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        OutlinedButton(
+                          onPressed: (_isSubmittingScan || !isMembershipActive) ? null : _startScanFlow,
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            side: BorderSide(color: const Color(0xFFFFA812).withValues(alpha: 0.9), width: 1.4),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: isSmallScreen ? 16 : 18,
+                              vertical: isSmallScreen ? 12 : 14,
+                            ),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.qr_code_scanner, size: 20),
+                              const SizedBox(width: 8),
+                              Text(
+                                _isSubmittingScan
+                                    ? 'Processing...'
+                                    : (!isMembershipActive ? 'Membership Expired' : 'Scan Admin QR'),
+                                style: TextStyle(fontSize: isSmallScreen ? 14 : 15, fontWeight: FontWeight.w600),
+                              ),
+                              if (_isSubmittingScan) ...[
+                                const SizedBox(width: 12),
+                                const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFFA812)),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                        if (_scanErrorMessage != null) ...[
+                          const SizedBox(height: 6),
+                          Text(
+                            _scanErrorMessage!,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(color: Colors.redAccent, fontSize: 12),
+                          ),
+                        ],
+                        const SizedBox(height: 12),
+                      ],
+                    );
+                  },
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
+        ] else ...[
+          Text(
+            'Loading membership details...',
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: (isSmallScreen
+                  ? (screenSize.width * 0.035).clamp(12.0, 18.0)
+                  : (screenSize.width * 0.024).clamp(14.0, 22.0)),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
 class _QrScannerDialog extends StatefulWidget {
+
   const _QrScannerDialog();
 
   @override
