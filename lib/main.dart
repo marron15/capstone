@@ -542,7 +542,7 @@ class _LoginChoicePageState extends State<LoginChoicePage>
                                                         ),
                                                       ),
                                                       child: const Text(
-                                                        'Sign In',
+                                                        'Login',
                                                         style: TextStyle(
                                                           fontSize: 16,
                                                           color: Colors.white,

@@ -191,6 +191,9 @@ class _SignupMembersModalState extends State<SignupMembersModal>
   final TextEditingController _emergencyPhoneController =
       TextEditingController();
 
+  static final TextInputFormatter _nameCapitalizationFormatter =
+      _NameCapitalizationFormatter();
+
   // Error states
   String? _firstNameError;
   String? _lastNameError;
@@ -653,6 +656,8 @@ class _SignupMembersModalState extends State<SignupMembersModal>
             sized(
               TextField(
                 controller: _firstNameController,
+                textCapitalization: TextCapitalization.words,
+                inputFormatters: [_nameCapitalizationFormatter],
                 style: const TextStyle(color: Colors.white),
                 decoration: _inputDecoration(
                   label: 'First Name',
@@ -664,6 +669,8 @@ class _SignupMembersModalState extends State<SignupMembersModal>
             sized(
               TextField(
                 controller: _middleNameController,
+                textCapitalization: TextCapitalization.words,
+                inputFormatters: [_nameCapitalizationFormatter],
                 style: const TextStyle(color: Colors.white),
                 decoration: _inputDecoration(
                   label: 'Middle Name',
@@ -675,6 +682,8 @@ class _SignupMembersModalState extends State<SignupMembersModal>
             sized(
               TextField(
                 controller: _lastNameController,
+                textCapitalization: TextCapitalization.words,
+                inputFormatters: [_nameCapitalizationFormatter],
                 style: const TextStyle(color: Colors.white),
                 decoration: _inputDecoration(
                   label: 'Last Name',
@@ -1322,7 +1331,7 @@ class _SignupMembersModalState extends State<SignupMembersModal>
                                       SizedBox(width: 10),
                                       Flexible(
                                         child: Text(
-                                          'Add New Member',
+                                          'Register for Membership',
                                           style: TextStyle(
                                             fontWeight: FontWeight.bold,
                                             fontSize: 20,
@@ -1379,6 +1388,33 @@ class _SignupMembersModalState extends State<SignupMembersModal>
           ),
         ),
       ),
+    );
+  }
+}
+
+class _NameCapitalizationFormatter extends TextInputFormatter {
+  const _NameCapitalizationFormatter();
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final String formatted = newValue.text
+        .split(RegExp(r'\s+'))
+        .map((word) {
+          if (word.isEmpty) return word;
+          final String firstLetter = word[0].toUpperCase();
+          final String remainder =
+              word.length > 1 ? word.substring(1).toLowerCase() : '';
+          return '$firstLetter$remainder';
+        })
+        .join(' ');
+
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
+      composing: TextRange.empty,
     );
   }
 }
