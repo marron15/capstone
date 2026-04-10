@@ -36,7 +36,7 @@ class _SignupMembersModalState extends State<SignupMembersModal>
   String? _pendingVerificationEmail;
   int? _verificationExpiresInMinutes;
   DateTime? _selectedBirthdate;
-  String? _selectedMembershipType = 'Monthly';
+  String? _selectedMembershipType;
 
   // Controllers
   final TextEditingController _firstNameController = TextEditingController();
