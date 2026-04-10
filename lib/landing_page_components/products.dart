@@ -135,7 +135,8 @@ class _ProductsSectionState extends State<ProductsSection> {
         if (!_isLoading && _items.isNotEmpty)
           LayoutBuilder(
             builder: (context, constraints) {
-              final int perPage = 4; // Always 4 per page, letting Wrap construct the 2x2 grid or stack
+              final int perPage =
+                  4; // Always 4 per page, letting Wrap construct the 2x2 grid or stack
               final int totalPages = (_items.length / perPage).ceil();
               _pageIndex = _pageIndex.clamp(0, (totalPages - 1).clamp(0, 999));
               final bool canPrev = _pageIndex > 0;
@@ -334,14 +335,18 @@ class _FlexibleProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Medium adaptive width:
-    double cardWidth = screenWidth >= 1100
-        ? (screenWidth * 0.22).clamp(240.0, 320.0) // 4 in a row on very wide
-        : screenWidth >= 700
+    double cardWidth =
+        screenWidth >= 1100
+            ? (screenWidth * 0.22).clamp(
+              240.0,
+              320.0,
+            ) // 4 in a row on very wide
+            : screenWidth >= 700
             ? (screenWidth * 0.42).clamp(250.0, 360.0) // 2x2 on tablet/laptop
             : (screenWidth * 0.85).clamp(240.0, 400.0); // Stacked on mobile
-        
+
     double cardHeight = screenWidth >= 700 ? 320 : 300;
-    
+
     return SizedBox(
       width: cardWidth,
       height: cardHeight,
@@ -369,7 +374,8 @@ class _ProductCardInteractive extends StatefulWidget {
   });
 
   @override
-  State<_ProductCardInteractive> createState() => _ProductCardInteractiveState();
+  State<_ProductCardInteractive> createState() =>
+      _ProductCardInteractiveState();
 }
 
 class _ProductCardInteractiveState extends State<_ProductCardInteractive> {
@@ -382,7 +388,10 @@ class _ProductCardInteractiveState extends State<_ProductCardInteractive> {
   @override
   Widget build(BuildContext context) {
     return MouseRegion(
-      cursor: widget.onTap != null ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      cursor:
+          widget.onTap != null
+              ? SystemMouseCursors.click
+              : SystemMouseCursors.basic,
       onEnter: (_) => _setOnHover(true),
       onExit: (_) => _setOnHover(false),
       child: GestureDetector(
@@ -393,34 +402,38 @@ class _ProductCardInteractiveState extends State<_ProductCardInteractive> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeOutCubic,
-          transform: Matrix4.identity()..scale(_isHovered ? 1.02 : 1.0),
+          transform:
+              Matrix4.identity()..scaleByDouble(
+                _isHovered ? 1.02 : 1.0,
+                _isHovered ? 1.02 : 1.0,
+                1.0,
+                1.0,
+              ),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(10),
-            boxShadow: _isHovered
-                ? [
-                    BoxShadow(
-                      color: Colors.black.withAlpha(80),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
-                    )
-                  ]
-                : [
-                    BoxShadow(
-                      color: Colors.black.withAlpha(40),
-                      blurRadius: 10,
-                      offset: const Offset(0, 5),
-                    )
-                  ],
+            boxShadow:
+                _isHovered
+                    ? [
+                      BoxShadow(
+                        color: Colors.black.withAlpha(80),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
+                      ),
+                    ]
+                    : [
+                      BoxShadow(
+                        color: Colors.black.withAlpha(40),
+                        blurRadius: 10,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(5),
             child: Stack(
               fit: StackFit.expand,
               children: [
-                Image(
-                  image: widget.image,
-                  fit: BoxFit.cover,
-                ),
+                Image(image: widget.image, fit: BoxFit.cover),
                 Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(

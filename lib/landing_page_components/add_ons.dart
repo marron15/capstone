@@ -60,7 +60,8 @@ class ServicesSection extends StatelessWidget {
               _FlexibleAddOnCard(
                 imagePath: 'assets/images/services&products/Lockers.jpg',
                 title: 'Locker Rental',
-                description: 'Secure your belongings with our lockers. Bring your own lock.',
+                description:
+                    'Secure your belongings with our lockers. Bring your own lock.',
               ),
               _FlexibleAddOnCard(
                 imagePath: 'assets/images/services&products/FreeLockers.jpg',
@@ -90,16 +91,17 @@ class _FlexibleAddOnCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    
+
     // Medium adaptive width:
-    double cardWidth = screenWidth >= 1100
-        ? (screenWidth * 0.25).clamp(250.0, 340.0)
-        : screenWidth >= 700
+    double cardWidth =
+        screenWidth >= 1100
+            ? (screenWidth * 0.25).clamp(250.0, 340.0)
+            : screenWidth >= 700
             ? (screenWidth * 0.42).clamp(250.0, 360.0)
             : (screenWidth * 0.85).clamp(240.0, 400.0);
-        
+
     double cardHeight = screenWidth >= 700 ? 320 : 300;
-    
+
     return SizedBox(
       width: cardWidth,
       height: cardHeight,
@@ -142,34 +144,38 @@ class _AddOnCardInteractiveState extends State<_AddOnCardInteractive> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeOutCubic,
-          transform: Matrix4.identity()..scale(_isHovered ? 1.02 : 1.0),
+          transform:
+              Matrix4.identity()..scaleByDouble(
+                _isHovered ? 1.02 : 1.0,
+                _isHovered ? 1.02 : 1.0,
+                1.0,
+                1.0,
+              ),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(10),
-            boxShadow: _isHovered
-                ? [
-                    BoxShadow(
-                      color: Colors.black.withAlpha(80),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
-                    )
-                  ]
-                : [
-                    BoxShadow(
-                      color: Colors.black.withAlpha(40),
-                      blurRadius: 10,
-                      offset: const Offset(0, 5),
-                    )
-                  ],
+            boxShadow:
+                _isHovered
+                    ? [
+                      BoxShadow(
+                        color: Colors.black.withAlpha(80),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
+                      ),
+                    ]
+                    : [
+                      BoxShadow(
+                        color: Colors.black.withAlpha(40),
+                        blurRadius: 10,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(5),
             child: Stack(
               fit: StackFit.expand,
               children: [
-                Image.asset(
-                  widget.imagePath,
-                  fit: BoxFit.cover,
-                ),
+                Image.asset(widget.imagePath, fit: BoxFit.cover),
                 Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(

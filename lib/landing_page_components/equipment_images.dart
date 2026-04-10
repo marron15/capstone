@@ -104,10 +104,11 @@ class _FlexibleServiceCard extends StatelessWidget {
     // Calculate adaptive width:
     // On large screens, cards take up slightly less than half the screen to form a 2x2 grid.
     // On small screens, cards span almost the full width.
-    double cardWidth = screenWidth >= 900
-        ? (screenWidth * 0.45).clamp(300.0, 580.0)
-        : (screenWidth * 0.9).clamp(280.0, 500.0);
-        
+    double cardWidth =
+        screenWidth >= 900
+            ? (screenWidth * 0.45).clamp(300.0, 580.0)
+            : (screenWidth * 0.9).clamp(280.0, 500.0);
+
     // Increase the visual volume of the card with larger height
     double cardHeight = screenWidth >= 900 ? 380 : 340;
 
@@ -154,7 +155,13 @@ class _ServiceCardInteractiveState extends State<_ServiceCardInteractive> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeOutCubic,
-          transform: Matrix4.identity()..scale(_isHovered ? 1.02 : 1.0),
+          transform:
+              Matrix4.identity()..scaleByDouble(
+                _isHovered ? 1.02 : 1.0,
+                _isHovered ? 1.02 : 1.0,
+                1.0,
+                1.0,
+              ),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(10),
             boxShadow:
