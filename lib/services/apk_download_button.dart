@@ -73,7 +73,7 @@ class _ApkDownloadButtonState extends State<ApkDownloadButton> {
                 )
                 : const Icon(Icons.download, color: Colors.white, size: 18),
         label: const Text(
-          'Install App',
+          'Download',
           style: TextStyle(
             color: Colors.white,
             fontSize: 14,

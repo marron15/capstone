@@ -279,7 +279,7 @@ class _SignupMembersModalState extends State<SignupMembersModal>
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: Colors.lightBlueAccent, width: 2),
+        borderSide: const BorderSide(color: Color(0xFFFF8C00), width: 2),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),

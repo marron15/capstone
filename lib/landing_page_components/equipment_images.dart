@@ -21,59 +21,77 @@ class EquipmentImagesSection extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 20.0),
           child: Center(
             child: Text(
-              'Equipments',
+              'Services',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: (isSmallScreen
-                        ? screenWidth * 0.07
-                        : screenWidth * 0.045)
-                    .clamp(22.0, 48.0),
-                fontWeight: FontWeight.bold,
+                        ? screenWidth * 0.08
+                        : screenWidth * 0.04)
+                    .clamp(28.0, 56.0),
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.2,
               ),
               textAlign: TextAlign.center,
             ),
           ),
         ),
-        SizedBox(height: 16),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              SizedBox(width: 20),
-              _FlexibleEquipmentCard(
-                imagePath: 'assets/images/gym_equipments/dumbells.jpg',
-                title: 'Dumbbells',
-                description: 'High quality dumbbells for strength training.',
+        const SizedBox(height: 8),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20.0),
+          child: Text(
+            'Discover our specialized training areas',
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 16,
+              fontWeight: FontWeight.w400,
+              letterSpacing: 0.5,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+        const SizedBox(height: 48),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+          child: Wrap(
+            spacing: 24, // Horizontal spacing between cards
+            runSpacing: 24, // Vertical spacing between rows
+            alignment: WrapAlignment.center,
+            children: const [
+              _FlexibleServiceCard(
+                imagePath: 'assets/images/services&products/chest.jpeg',
+                title: 'Chest',
+                description: 'Build core strength and definition.',
               ),
-              SizedBox(width: 16),
-              _FlexibleEquipmentCard(
-                imagePath: 'assets/images/gym_equipments/bike.jpg',
-                title: 'Exercise Bike',
-                description: 'Cardio equipment for endurance.',
+              _FlexibleServiceCard(
+                imagePath: 'assets/images/services&products/lower_chest.jpeg',
+                title: 'Lower Chest',
+                description: 'Targeted lower pectoral development.',
               ),
-              SizedBox(width: 16),
-              _FlexibleEquipmentCard(
-                imagePath: 'assets/images/gym_equipments/weights.jpg',
-                title: 'Weights',
-                description: 'Various weights for all levels.',
+              _FlexibleServiceCard(
+                imagePath: 'assets/images/services&products/back.jpeg',
+                title: 'Back',
+                description: 'Enhance your posture and back width.',
               ),
-              SizedBox(width: 20),
+              _FlexibleServiceCard(
+                imagePath: 'assets/images/services&products/cable_&_legs.jpeg',
+                title: 'Cables & Legs',
+                description: 'Complete lower body and dynamic movements.',
+              ),
             ],
           ),
         ),
-        SizedBox(height: 40),
+        const SizedBox(height: 60),
       ],
     );
   }
 }
 
-class _FlexibleEquipmentCard extends StatelessWidget {
+class _FlexibleServiceCard extends StatelessWidget {
   final String imagePath;
   final String title;
   final String description;
 
-  const _FlexibleEquipmentCard({
+  const _FlexibleServiceCard({
     required this.imagePath,
     required this.title,
     required this.description,
@@ -82,12 +100,21 @@ class _FlexibleEquipmentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    double cardWidth = screenWidth < 900 ? screenWidth * 0.7 : 280;
-    cardWidth = cardWidth.clamp(180.0, 320.0);
+
+    // Calculate adaptive width:
+    // On large screens, cards take up slightly less than half the screen to form a 2x2 grid.
+    // On small screens, cards span almost the full width.
+    double cardWidth = screenWidth >= 900
+        ? (screenWidth * 0.45).clamp(300.0, 580.0)
+        : (screenWidth * 0.9).clamp(280.0, 500.0);
+        
+    // Increase the visual volume of the card with larger height
+    double cardHeight = screenWidth >= 900 ? 380 : 340;
+
     return SizedBox(
       width: cardWidth,
-      height: 320,
-      child: _EquipmentCard(
+      height: cardHeight,
+      child: _ServiceCardInteractive(
         imagePath: imagePath,
         title: title,
         description: description,
@@ -96,68 +123,112 @@ class _FlexibleEquipmentCard extends StatelessWidget {
   }
 }
 
-class _EquipmentCard extends StatelessWidget {
+class _ServiceCardInteractive extends StatefulWidget {
   final String imagePath;
   final String title;
   final String description;
 
-  const _EquipmentCard({
+  const _ServiceCardInteractive({
     required this.imagePath,
     required this.title,
     required this.description,
   });
 
   @override
+  State<_ServiceCardInteractive> createState() =>
+      _ServiceCardInteractiveState();
+}
+
+class _ServiceCardInteractiveState extends State<_ServiceCardInteractive> {
+  bool _isHovered = false;
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 4)),
-        ],
-      ),
-      child: Stack(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: Image.asset(
-              imagePath,
-              width: double.infinity,
-              height: 320,
-              fit: BoxFit.cover,
-            ),
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => _isHovered = true),
+        onTapUp: (_) => setState(() => _isHovered = false),
+        onTapCancel: () => setState(() => _isHovered = false),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOutCubic,
+          transform: Matrix4.identity()..scale(_isHovered ? 1.02 : 1.0),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            boxShadow:
+                _isHovered
+                    ? [
+                      BoxShadow(
+                        color: Colors.black.withAlpha(80),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
+                      ),
+                    ]
+                    : [
+                      BoxShadow(
+                        color: Colors.black.withAlpha(40),
+                        blurRadius: 10,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
           ),
-          Container(
-            width: double.infinity,
-            height: 320,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              color: Colors.black.withAlpha((0.45 * 255).toInt()),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(5),
+            child: Stack(
+              fit: StackFit.expand,
               children: [
-                Spacer(),
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 24,
+                Image.asset(widget.imagePath, fit: BoxFit.cover),
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        Colors.black.withAlpha(50),
+                        Colors.black.withAlpha(200),
+                      ],
+                      stops: const [0.0, 0.5, 1.0],
+                    ),
                   ),
                 ),
-                SizedBox(height: 8),
-                Text(
-                  description,
-                  style: TextStyle(color: Colors.white, fontSize: 16),
+                Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Text(
+                        widget.title,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 26,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      AnimatedOpacity(
+                        duration: const Duration(milliseconds: 300),
+                        opacity: _isHovered ? 1.0 : 0.8,
+                        child: Text(
+                          widget.description,
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 15,
+                            height: 1.4,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }

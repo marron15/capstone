@@ -422,7 +422,7 @@ class _LoginChoicePageState extends State<LoginChoicePage>
                           // Fixed/sticky background
                           Positioned.fill(
                             child: Image.asset(
-                              'assets/images/gym_view/2.jpg',
+                              'assets/images/gym_view/hero_image.png',
                               fit: BoxFit.cover,
                               alignment: Alignment.center,
                             ),

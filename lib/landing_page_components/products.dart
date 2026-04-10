@@ -95,25 +95,38 @@ class _ProductsSectionState extends State<ProductsSection> {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: isSmallScreen ? 20.0 : screenWidth * 0.1,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 20.0),
           child: Center(
             child: Text(
               'Products',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: (isSmallScreen
-                        ? screenWidth * 0.07
-                        : screenWidth * 0.045)
-                    .clamp(22.0, 48.0),
-                fontWeight: FontWeight.bold,
+                        ? screenWidth * 0.08
+                        : screenWidth * 0.04)
+                    .clamp(28.0, 56.0),
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.2,
               ),
               textAlign: TextAlign.center,
             ),
           ),
         ),
-        SizedBox(height: screenHeight * 0.03),
+        const SizedBox(height: 8),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20.0),
+          child: Text(
+            'Explore our high-quality fitness gear and supplements',
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 16,
+              fontWeight: FontWeight.w400,
+              letterSpacing: 0.5,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+        const SizedBox(height: 48),
         if (_isLoading)
           const SizedBox(
             width: 220,
@@ -122,8 +135,7 @@ class _ProductsSectionState extends State<ProductsSection> {
         if (!_isLoading && _items.isNotEmpty)
           LayoutBuilder(
             builder: (context, constraints) {
-              final bool narrow = constraints.maxWidth < 480;
-              final int perPage = narrow ? 1 : 4;
+              final int perPage = 4; // Always 4 per page, letting Wrap construct the 2x2 grid or stack
               final int totalPages = (_items.length / perPage).ceil();
               _pageIndex = _pageIndex.clamp(0, (totalPages - 1).clamp(0, 999));
               final bool canPrev = _pageIndex > 0;
@@ -173,17 +185,17 @@ class _ProductsSectionState extends State<ProductsSection> {
                           ),
                         );
                       },
-                      child: Row(
+                      child: Padding(
                         key: ValueKey<int>(_pageIndex),
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children:
-                            pageItems
-                                .map(
-                                  (p) => Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                    ),
-                                    child: _FlexibleProductCard(
+                        padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                        child: Wrap(
+                          spacing: 24, // Horizontal spacing
+                          runSpacing: 24, // Vertical spacing
+                          alignment: WrapAlignment.center,
+                          children:
+                              pageItems
+                                  .map(
+                                    (p) => _FlexibleProductCard(
                                       image: p.image,
                                       title: p.title,
                                       description: p.description,
@@ -191,26 +203,26 @@ class _ProductsSectionState extends State<ProductsSection> {
                                       screenWidth: screenWidth,
                                       onTap: null,
                                     ),
-                                  ),
-                                )
-                                .toList(),
+                                  )
+                                  .toList(),
+                        ),
                       ),
                     ),
                   ),
                   if (totalPages > 1) ...[
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 32),
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.55),
+                        color: Colors.black.withAlpha((0.55 * 255).toInt()),
                         borderRadius: BorderRadius.circular(24),
                         border: Border.all(color: Colors.white24),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.35),
+                            color: Colors.black.withAlpha((0.35 * 255).toInt()),
                             blurRadius: 12,
                             offset: const Offset(0, 6),
                           ),
@@ -321,109 +333,145 @@ class _FlexibleProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    double cardWidth = isSmallScreen ? screenWidth * 0.6 : screenWidth * 0.18;
-    cardWidth = cardWidth.clamp(150.0, 260.0);
-    return MouseRegion(
-      cursor:
-          onTap != null ? SystemMouseCursors.click : SystemMouseCursors.basic,
-      child: GestureDetector(
+    // Medium adaptive width:
+    double cardWidth = screenWidth >= 1100
+        ? (screenWidth * 0.22).clamp(240.0, 320.0) // 4 in a row on very wide
+        : screenWidth >= 700
+            ? (screenWidth * 0.42).clamp(250.0, 360.0) // 2x2 on tablet/laptop
+            : (screenWidth * 0.85).clamp(240.0, 400.0); // Stacked on mobile
+        
+    double cardHeight = screenWidth >= 700 ? 320 : 300;
+    
+    return SizedBox(
+      width: cardWidth,
+      height: cardHeight,
+      child: _ProductCardInteractive(
+        image: image,
+        title: title,
+        description: description,
         onTap: onTap,
-        child: SizedBox(
-          width: cardWidth,
-          height: 260,
-          child: _ProductCard(
-            image: image,
-            title: title,
-            description: description,
-            isSmallScreen: isSmallScreen,
-            screenWidth: screenWidth,
-          ),
-        ),
       ),
     );
   }
 }
 
-class _ProductCard extends StatelessWidget {
+class _ProductCardInteractive extends StatefulWidget {
   final ImageProvider image;
   final String title;
   final String description;
-  final bool isSmallScreen;
-  final double screenWidth;
+  final VoidCallback? onTap;
 
-  const _ProductCard({
+  const _ProductCardInteractive({
     required this.image,
     required this.title,
     required this.description,
-    required this.isSmallScreen,
-    required this.screenWidth,
+    this.onTap,
   });
 
   @override
+  State<_ProductCardInteractive> createState() => _ProductCardInteractiveState();
+}
+
+class _ProductCardInteractiveState extends State<_ProductCardInteractive> {
+  bool _isHovered = false;
+
+  void _setOnHover(bool isHovered) {
+    setState(() => _isHovered = isHovered);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black26,
-            blurRadius: 8,
-            offset: const Offset(0, 4),
+    return MouseRegion(
+      cursor: widget.onTap != null ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      onEnter: (_) => _setOnHover(true),
+      onExit: (_) => _setOnHover(false),
+      child: GestureDetector(
+        onTapDown: (_) => _setOnHover(true),
+        onTapUp: (_) => _setOnHover(false),
+        onTapCancel: () => _setOnHover(false),
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOutCubic,
+          transform: Matrix4.identity()..scale(_isHovered ? 1.02 : 1.0),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: _isHovered
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withAlpha(80),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    )
+                  ]
+                : [
+                    BoxShadow(
+                      color: Colors.black.withAlpha(40),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
+                    )
+                  ],
           ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(18),
-            child: Image(
-              image: image,
-              width: double.infinity,
-              height: 260,
-              fit: BoxFit.cover,
-            ),
-          ),
-          Container(
-            width: double.infinity,
-            height: 260,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(18),
-              color: Colors.black.withAlpha((0.35 * 255).toInt()),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(14.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(5),
+            child: Stack(
+              fit: StackFit.expand,
               children: [
-                const Spacer(),
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: (isSmallScreen
-                            ? screenWidth * 0.045
-                            : screenWidth * 0.018)
-                        .clamp(14.0, 22.0),
+                Image(
+                  image: widget.image,
+                  fit: BoxFit.cover,
+                ),
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        Colors.black.withAlpha(50),
+                        Colors.black.withAlpha(200),
+                      ],
+                      stops: const [0.0, 0.5, 1.0],
+                    ),
                   ),
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  description,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: (isSmallScreen
-                            ? screenWidth * 0.03
-                            : screenWidth * 0.012)
-                        .clamp(11.0, 16.0),
+                Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Text(
+                        widget.title,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 26,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      AnimatedOpacity(
+                        duration: const Duration(milliseconds: 300),
+                        opacity: _isHovered ? 1.0 : 0.8,
+                        child: Text(
+                          widget.description,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 15,
+                            height: 1.4,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 6),
               ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
