@@ -29,27 +29,39 @@ class AuthService {
 
       final Map<String, dynamic> responseData = json.decode(response.body);
 
-      // Avoid logging sensitive customer data
+      // Avoid logging sensitive data
 
       if (response.statusCode == 200 && responseData['success'] == true) {
-        // Enrich address if backend doesn't include it in `data.address`
-        CustomerData customer = CustomerData.fromJson(responseData['data']);
-        if (customer.address == null || customer.address!.isEmpty) {
-          final addr = await _fetchAddressForCustomer(customer.customerId);
-          if (addr != null) customer = customer.copyWith(address: addr);
+        final role = responseData['role'] as String?;
+        if (role == 'admin') {
+          return LoginResult(
+            success: true,
+            message: responseData['message'],
+            role: 'admin',
+            adminData: responseData['admin'],
+            accessToken: responseData['access_token'],
+            refreshToken: responseData['refresh_token'],
+          );
+        } else {
+          // Enrich address if backend doesn't include it in `data.address`
+          CustomerData customer = CustomerData.fromJson(responseData['data']);
+          if (customer.address == null || customer.address!.isEmpty) {
+            final addr = await _fetchAddressForCustomer(customer.customerId);
+            if (addr != null) customer = customer.copyWith(address: addr);
+          }
+          return LoginResult(
+            success: true,
+            message: responseData['message'],
+            role: 'customer',
+            customerData: customer,
+            accessToken: responseData['access_token'],
+            refreshToken: responseData['refresh_token'],
+          );
         }
-        return LoginResult(
-          success: true,
-          message: responseData['message'],
-          customerData: customer,
-          accessToken: responseData['access_token'],
-          refreshToken: responseData['refresh_token'],
-        );
       } else {
         return LoginResult(
           success: false,
           message: responseData['message'] ?? 'Login failed',
-          customerData: null,
         );
       }
     } catch (e) {
@@ -57,7 +69,6 @@ class AuthService {
       return LoginResult(
         success: false,
         message: 'Network error: ${e.toString()}',
-        customerData: null,
       );
     }
   }
@@ -391,14 +402,18 @@ class AuthService {
 class LoginResult {
   final bool success;
   final String message;
+  final String? role;
   final CustomerData? customerData;
+  final Map<String, dynamic>? adminData;
   final String? accessToken;
   final String? refreshToken;
 
   LoginResult({
     required this.success,
     required this.message,
+    this.role,
     this.customerData,
+    this.adminData,
     this.accessToken,
     this.refreshToken,
   });

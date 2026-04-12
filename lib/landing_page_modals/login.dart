@@ -5,7 +5,6 @@ import '../services/auth_service.dart';
 import '../services/unified_auth_state.dart';
 import '../User Profile/profile_data.dart';
 import '../utils/dom_input_utils.dart';
-import '../admin/services/admin_service.dart';
 
 class LoginModal extends StatefulWidget {
   const LoginModal({Key? key}) : super(key: key);
@@ -114,12 +113,98 @@ class _LoginModalState extends State<LoginModal>
     });
 
     try {
-      // Try admin first so admins can log in without toggles; fall back to customer.
-      final adminSucceeded = await _attemptAdminLogin(email, password);
-      if (adminSucceeded) return;
+      final result = await AuthService.login(email, password);
 
-      final customerSucceeded = await _attemptCustomerLogin(email, password);
-      if (customerSucceeded) return;
+      if (result.success) {
+        if (result.role == 'admin' &&
+            result.adminData != null &&
+            result.accessToken != null) {
+          await unifiedAuthState.loginAdmin(
+            admin: Map<String, dynamic>.from(result.adminData!),
+            accessToken: result.accessToken!,
+            refreshToken: result.refreshToken,
+          );
+
+          if (mounted) {
+            Navigator.of(context).pop();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Welcome back, ${result.adminData!['first_name'] ?? 'Admin'}!',
+                ),
+                backgroundColor: Colors.green,
+                duration: const Duration(seconds: 3),
+              ),
+            );
+            Navigator.of(context).pushReplacementNamed('/admin-statistics');
+          }
+          return;
+        } else if (result.role == 'customer' && result.customerData != null) {
+          await unifiedAuthState.loginCustomer(
+            customerId: result.customerData!.customerId,
+            email: result.customerData!.email,
+            fullName: result.customerData!.fullName,
+            accessToken: result.accessToken,
+            refreshToken: result.refreshToken,
+          );
+
+          DateTime? birthdateObj;
+          if (result.customerData!.birthdate != null &&
+              result.customerData!.birthdate!.isNotEmpty) {
+            try {
+              birthdateObj = DateTime.parse(result.customerData!.birthdate!);
+            } catch (e) {
+              print('Error parsing birthdate: $e');
+            }
+          }
+
+          String? fullAddress = result.customerData!.address;
+          String? street;
+          String? city;
+          String? stateProvince;
+          String? postalCode;
+          String? country;
+          if (fullAddress != null && fullAddress.trim().isNotEmpty) {
+            final parts = fullAddress.split(',').map((e) => e.trim()).toList();
+            if (parts.isNotEmpty) street = parts[0];
+            if (parts.length > 1) city = parts[1];
+            if (parts.length > 2) stateProvince = parts[2];
+            if (parts.length > 3) postalCode = parts[3];
+            if (parts.length > 4) country = parts[4];
+          }
+
+          profileNotifier.value = ProfileData(
+            firstName: result.customerData!.firstName,
+            middleName: result.customerData!.middleName ?? '',
+            lastName: result.customerData!.lastName,
+            contactNumber: result.customerData!.phoneNumber ?? '',
+            email: result.customerData!.email,
+            birthdate: birthdateObj,
+            emergencyContactName: result.customerData!.emergencyContactName,
+            emergencyContactPhone: result.customerData!.emergencyContactNumber,
+            address: fullAddress ?? '',
+            street: street,
+            city: city,
+            stateProvince: stateProvince,
+            postalCode: postalCode,
+            country: country,
+          );
+
+          if (mounted) {
+            Navigator.of(context).pop();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Welcome back, ${result.customerData!.firstName} ${result.customerData!.lastName}!',
+                ),
+                backgroundColor: Colors.green,
+                duration: const Duration(seconds: 3),
+              ),
+            );
+          }
+          return;
+        }
+      }
 
       setState(() {
         _errorMessage = 'Invalid email or password';
@@ -135,112 +220,6 @@ class _LoginModalState extends State<LoginModal>
         });
       }
     }
-  }
-
-  Future<bool> _attemptAdminLogin(String email, String password) async {
-    final result = await AdminService.loginAdmin(
-      email: email,
-      password: password,
-    );
-
-    if (result['success'] == true &&
-        result['admin'] != null &&
-        result['access_token'] != null) {
-      await unifiedAuthState.loginAdmin(
-        admin: Map<String, dynamic>.from(result['admin']),
-        accessToken: result['access_token'] as String,
-        refreshToken: result['refresh_token'] as String?,
-      );
-
-      if (mounted) {
-        Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Welcome back, ${result['admin']['first_name'] ?? 'Admin'}!',
-            ),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 3),
-          ),
-        );
-        Navigator.of(context).pushReplacementNamed('/admin-statistics');
-      }
-      return true;
-    }
-
-    return false;
-  }
-
-  Future<bool> _attemptCustomerLogin(String email, String password) async {
-    final result = await AuthService.login(email, password);
-
-    if (result.success && result.customerData != null) {
-      await unifiedAuthState.loginCustomer(
-        customerId: result.customerData!.customerId,
-        email: result.customerData!.email,
-        fullName: result.customerData!.fullName,
-        accessToken: result.accessToken,
-        refreshToken: result.refreshToken,
-      );
-
-      DateTime? birthdateObj;
-      if (result.customerData!.birthdate != null &&
-          result.customerData!.birthdate!.isNotEmpty) {
-        try {
-          birthdateObj = DateTime.parse(result.customerData!.birthdate!);
-        } catch (e) {
-          print('Error parsing birthdate: $e');
-        }
-      }
-
-      String? fullAddress = result.customerData!.address;
-      String? street;
-      String? city;
-      String? stateProvince;
-      String? postalCode;
-      String? country;
-      if (fullAddress != null && fullAddress.trim().isNotEmpty) {
-        final parts = fullAddress.split(',').map((e) => e.trim()).toList();
-        if (parts.isNotEmpty) street = parts[0];
-        if (parts.length > 1) city = parts[1];
-        if (parts.length > 2) stateProvince = parts[2];
-        if (parts.length > 3) postalCode = parts[3];
-        if (parts.length > 4) country = parts[4];
-      }
-
-      profileNotifier.value = ProfileData(
-        firstName: result.customerData!.firstName,
-        middleName: result.customerData!.middleName ?? '',
-        lastName: result.customerData!.lastName,
-        contactNumber: result.customerData!.phoneNumber ?? '',
-        email: result.customerData!.email,
-        birthdate: birthdateObj,
-        emergencyContactName: result.customerData!.emergencyContactName,
-        emergencyContactPhone: result.customerData!.emergencyContactNumber,
-        address: fullAddress ?? '',
-        street: street,
-        city: city,
-        stateProvince: stateProvince,
-        postalCode: postalCode,
-        country: country,
-      );
-
-      if (mounted) {
-        Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Welcome back, ${result.customerData!.firstName} ${result.customerData!.lastName}!',
-            ),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
-      return true;
-    }
-
-    return false;
   }
 
   InputDecoration _inputDecoration({
