@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import '../sidenav.dart';
 import '../modal/customer_view_edit_modal.dart';
+import '../modal/member_history_modal.dart';
 import '../services/api_service.dart';
 import '../services/refresh_service.dart';
 import '../excel/excel_import.dart';
@@ -1900,7 +1901,7 @@ class _CustomersPageState extends State<CustomersPage> {
                               ),
                             ),
                             SizedBox(
-                              width: 160,
+                              width: 210,
                               child: _buildHeaderCell(
                                 _buildHeaderLabel('Actions'),
                               ),
@@ -2144,11 +2145,42 @@ class _CustomersPageState extends State<CustomersPage> {
                                     ),
                                   ),
                                   SizedBox(
-                                    width: 160,
+                                    width: 210,
                                     child: Row(
                                       mainAxisAlignment:
                                           MainAxisAlignment.center,
                                       children: [
+                                        // History icon button
+                                        Container(
+                                          decoration: BoxDecoration(
+                                            color: Colors.purple.shade50,
+                                            borderRadius: BorderRadius.circular(
+                                              6,
+                                            ),
+                                            border: Border.all(
+                                              color: Colors.purple.shade200,
+                                            ),
+                                          ),
+                                          child: IconButton(
+                                            onPressed:
+                                                () => showMemberHistoryModal(
+                                                  context,
+                                                  customer,
+                                                ),
+                                            icon: Icon(
+                                              Icons.access_time,
+                                              size: 18,
+                                              color: Colors.purple.shade700,
+                                            ),
+                                            padding: const EdgeInsets.all(8),
+                                            constraints: const BoxConstraints(
+                                              minWidth: 36,
+                                              minHeight: 36,
+                                            ),
+                                            tooltip: 'Time In/Out History',
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
                                         // View/Edit icon button styled like admin table
                                         Container(
                                           decoration: BoxDecoration(

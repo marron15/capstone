@@ -77,7 +77,38 @@ class ApiService {
   static const String getAuditLogsEndpoint = '$baseUrl/audit/getAuditLogs.php';
   static const String createAuditLogEndpoint =
       '$baseUrl/audit/createAuditLog.php';
+  static const String getCustomerLogsEndpoint =
+      '$baseUrl/attendance/getCustomerLogs.php';
   static String? lastProductErrorMessage;
+
+  /// Fetch all Time-In / Time-Out logs for a specific [customerId].
+  static Future<List<Map<String, dynamic>>> getCustomerAttendanceLogs({
+    required int customerId,
+  }) async {
+    try {
+      final res = await http.post(
+        Uri.parse(getCustomerLogsEndpoint),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode({'customer_id': customerId}),
+      );
+      if (res.statusCode == 200 && res.body.isNotEmpty) {
+        final Map<String, dynamic> parsed =
+            jsonDecode(res.body) as Map<String, dynamic>;
+        if (parsed['success'] == true && parsed['data'] is List) {
+          return List<Map<String, dynamic>>.from(
+            (parsed['data'] as List).whereType<Map<String, dynamic>>(),
+          );
+        }
+      }
+      return [];
+    } catch (e) {
+      debugPrint('getCustomerAttendanceLogs error: $e');
+      return [];
+    }
+  }
 
   static Future<Map<String, dynamic>> signupCustomer({
     required String firstName,
