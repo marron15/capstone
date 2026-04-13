@@ -77,6 +77,7 @@ class ApiService {
   static const String getAuditLogsEndpoint = '$baseUrl/audit/getAuditLogs.php';
   static const String createAuditLogEndpoint =
       '$baseUrl/audit/createAuditLog.php';
+  static String? lastProductErrorMessage;
 
   static Future<Map<String, dynamic>> signupCustomer({
     required String firstName,
@@ -537,6 +538,7 @@ class ApiService {
     int quantity = 0,
   }) async {
     try {
+      lastProductErrorMessage = null;
       final String mime = _detectMimeFromFilename(imageFileName);
       final String base64Img = base64Encode(imageBytes);
       final String dataUrl =
@@ -562,14 +564,24 @@ class ApiService {
 
       // Hide insertProduct raw response
 
-      if (res.statusCode == 200) {
+      if (res.body.isNotEmpty) {
         try {
           final Map<String, dynamic> parsed =
               jsonDecode(res.body) as Map<String, dynamic>;
-          return parsed['success'] == true;
+          final bool ok = parsed['success'] == true;
+          if (!ok) {
+            lastProductErrorMessage =
+                (parsed['message'] ?? 'Failed to save product').toString();
+          }
+          return ok;
         } catch (_) {
-          return res.body.toLowerCase().contains('true') ||
+          final bool ok =
+              res.body.toLowerCase().contains('true') ||
               res.body.toLowerCase().contains('success');
+          if (!ok) {
+            lastProductErrorMessage = 'Failed to save product';
+          }
+          return ok;
         }
       }
 
@@ -589,15 +601,27 @@ class ApiService {
         try {
           final Map<String, dynamic> parsed =
               jsonDecode(resForm.body) as Map<String, dynamic>;
-          return parsed['success'] == true;
+          final bool ok = parsed['success'] == true;
+          if (!ok) {
+            lastProductErrorMessage =
+                (parsed['message'] ?? 'Failed to save product').toString();
+          }
+          return ok;
         } catch (_) {
-          return resForm.body.toLowerCase().contains('true') ||
+          final bool ok =
+              resForm.body.toLowerCase().contains('true') ||
               resForm.body.toLowerCase().contains('success');
+          if (!ok) {
+            lastProductErrorMessage = 'Failed to save product';
+          }
+          return ok;
         }
       }
+      lastProductErrorMessage = 'Failed to save product';
       return false;
     } catch (e) {
       debugPrint('insertProduct error: $e');
+      lastProductErrorMessage = 'Network error while saving product';
       return false;
     }
   }

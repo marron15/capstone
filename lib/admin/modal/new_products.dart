@@ -55,6 +55,7 @@ class _AddProductModalState extends State<AddProductModal> {
   Uint8List? _imageBytes;
   String? _imageFileName;
   String? _existingImagePath;
+  String? _nameAlertMessage;
 
   @override
   void initState() {
@@ -77,22 +78,26 @@ class _AddProductModalState extends State<AddProductModal> {
     super.dispose();
   }
 
-  InputDecoration _inputDecoration(String label) {
+  InputDecoration _inputDecoration(String label, {bool isAlert = false}) {
+    final Color borderColor =
+        isAlert
+            ? Colors.redAccent
+            : Colors.white.withAlpha((0.18 * 255).toInt());
+    final Color focusedColor =
+        isAlert ? Colors.redAccent : Colors.lightBlueAccent;
     return InputDecoration(
       labelText: label,
-      labelStyle: const TextStyle(color: Colors.white70),
+      labelStyle: TextStyle(color: isAlert ? Colors.redAccent : Colors.white70),
       filled: true,
       fillColor: Colors.black.withAlpha((0.3 * 255).toInt()),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: Colors.lightBlueAccent, width: 1.2),
+        borderSide: BorderSide(color: focusedColor, width: 1.4),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(
-          color: Colors.white.withAlpha((0.18 * 255).toInt()),
-        ),
+        borderSide: BorderSide(color: borderColor, width: isAlert ? 1.2 : 1.0),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
     );
@@ -184,6 +189,7 @@ class _AddProductModalState extends State<AddProductModal> {
       _imageBytes = null;
       _imageFileName = null;
       _existingImagePath = null;
+      _nameAlertMessage = null;
     });
   }
 
@@ -206,9 +212,126 @@ class _AddProductModalState extends State<AddProductModal> {
     return widget.initialProduct?.imagePath;
   }
 
+  String _normalizeName(String value) {
+    final normalized = value
+        .trim()
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9\s]+'), ' ')
+        .replaceAll(RegExp(r'\s+'), ' ');
+    return normalized.trim();
+  }
+
+  String _removeGenericTerms(String value) {
+    const stopWords = {
+      'in',
+      'with',
+      'and',
+      'the',
+      'for',
+      'of',
+      'tab',
+      'tabs',
+      'sachet',
+      'sachets',
+      'pack',
+      'packs',
+      'powder',
+    };
+    final words = value
+        .split(' ')
+        .where((w) => w.isNotEmpty && !stopWords.contains(w));
+    return words.join(' ').trim();
+  }
+
+  List<String> _extractNumberTokens(String value) {
+    return RegExp(r'\d+')
+        .allMatches(value)
+        .map((m) => m.group(0) ?? '')
+        .where((v) => v.isNotEmpty)
+        .toList();
+  }
+
+  bool _numbersEquivalentOrPrefix(List<String> a, List<String> b) {
+    if (a.length == b.length && a.join('|') == b.join('|')) {
+      return true;
+    }
+    if (a.length == 1 && b.length == 1) {
+      final x = a.first;
+      final y = b.first;
+      if (x.length >= 2 && y.length >= 2) {
+        return x.startsWith(y) || y.startsWith(x);
+      }
+    }
+    return false;
+  }
+
+  bool _hasTokenOverlap(String a, String b) {
+    final aTokens =
+        a
+            .split(' ')
+            .where((t) => t.trim().length >= 3)
+            .map((t) => t.trim())
+            .toSet();
+    final bTokens =
+        b
+            .split(' ')
+            .where((t) => t.trim().length >= 3)
+            .map((t) => t.trim())
+            .toSet();
+    if (aTokens.isEmpty || bTokens.isEmpty) {
+      return false;
+    }
+    return aTokens.intersection(bTokens).isNotEmpty;
+  }
+
+  bool _isLikelyDuplicateName(String incomingName, String existingName) {
+    final incoming = _normalizeName(incomingName);
+    final existing = _normalizeName(existingName);
+    if (incoming.isEmpty || existing.isEmpty) {
+      return false;
+    }
+
+    final incomingCore = _removeGenericTerms(incoming);
+    final existingCore = _removeGenericTerms(existing);
+
+    if (incoming == existing || incomingCore == existingCore) {
+      return true;
+    }
+
+    final bool prefixMatch =
+        existingCore.startsWith(incomingCore) ||
+        incomingCore.startsWith(existingCore);
+    final bool tokenMatch = _hasTokenOverlap(incomingCore, existingCore);
+    if (!prefixMatch && !tokenMatch) {
+      return false;
+    }
+
+    final incomingNums = _extractNumberTokens(incoming);
+    final existingNums = _extractNumberTokens(existing);
+    if (incomingNums.isNotEmpty || existingNums.isNotEmpty) {
+      return _numbersEquivalentOrPrefix(incomingNums, existingNums);
+    }
+
+    return incomingCore.length >= 5 && existingCore.length >= 5;
+  }
+
+  Future<bool> _existsDuplicateOnServer(String candidateName) async {
+    final rows = await ApiService.getAllProducts();
+    for (final row in rows) {
+      final existing = (row['name'] ?? '').toString();
+      if (_isLikelyDuplicateName(candidateName, existing)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   Future<void> _handleSubmit() async {
     if (!_formKey.currentState!.validate()) return;
     final messenger = ScaffoldMessenger.of(context);
+    if (_nameAlertMessage != null) {
+      setState(() => _nameAlertMessage = null);
+    }
 
     final bool isEditing =
         widget.initialProduct != null && widget.productId != null;
@@ -316,6 +439,15 @@ class _AddProductModalState extends State<AddProductModal> {
       return;
     }
 
+    final bool duplicate = await _existsDuplicateOnServer(_nameController.text);
+    if (!mounted) return;
+    if (duplicate) {
+      setState(() {
+        _nameAlertMessage = 'This product already exists.';
+      });
+      return;
+    }
+
     final Product newProduct = Product(
       name: _nameController.text,
       price: 0.0,
@@ -381,12 +513,17 @@ class _AddProductModalState extends State<AddProductModal> {
         ),
       );
     } else {
-      messenger.showSnackBar(
-        const SnackBar(
-          content: Text('Failed to save product'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      final String errorMsg =
+          ApiService.lastProductErrorMessage ?? 'Failed to save product';
+      if (errorMsg.toLowerCase().contains('exist')) {
+        setState(() {
+          _nameAlertMessage = errorMsg;
+        });
+      } else {
+        messenger.showSnackBar(
+          SnackBar(content: Text(errorMsg), backgroundColor: Colors.red),
+        );
+      }
     }
   }
 
@@ -500,8 +637,16 @@ class _AddProductModalState extends State<AddProductModal> {
                           const SizedBox(height: 16),
                           TextFormField(
                             controller: _nameController,
+                            onChanged: (_) {
+                              if (_nameAlertMessage != null) {
+                                setState(() => _nameAlertMessage = null);
+                              }
+                            },
                             style: const TextStyle(color: Colors.white),
-                            decoration: _inputDecoration('Product Name'),
+                            decoration: _inputDecoration(
+                              'Product Name',
+                              isAlert: _nameAlertMessage != null,
+                            ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
                                 return 'Please enter product name';
@@ -509,6 +654,22 @@ class _AddProductModalState extends State<AddProductModal> {
                               return null;
                             },
                           ),
+                          if (_nameAlertMessage != null) ...[
+                            const SizedBox(height: 8),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 2,
+                              ),
+                              child: Text(
+                                _nameAlertMessage!,
+                                style: const TextStyle(
+                                  color: Colors.redAccent,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
+                          ],
                           const SizedBox(height: 16),
                           TextFormField(
                             controller: _descriptionController,
