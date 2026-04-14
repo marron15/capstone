@@ -117,6 +117,7 @@ class AttendanceRecord {
     this.timeIn,
     this.timeOut,
     this.verifyingAdminName,
+    this.platform,
   });
 
   final int? attendanceId;
@@ -127,6 +128,7 @@ class AttendanceRecord {
   final DateTime? timeIn;
   final DateTime? timeOut;
   final String? verifyingAdminName;
+  final String? platform;
 
   Duration? get duration =>
       (timeIn != null && timeOut != null) ? timeOut!.difference(timeIn!) : null;
@@ -213,6 +215,7 @@ class AttendanceRecord {
       timeOut: parseTime(json['time_out'], recordDate),
       verifyingAdminName:
           json['verified_by']?.toString() ?? json['admin_name']?.toString(),
+      platform: json['platform']?.toString(),
     );
   }
 }
@@ -230,6 +233,8 @@ class AttendanceService {
   static Uri get _statusUri => Uri.parse('$_attendanceBase/getStatus.php');
   static Uri get _scanUri => Uri.parse('$_attendanceBase/recordScan.php');
   static Uri get _logUri => Uri.parse('$_attendanceBase/getLogs.php');
+  static Uri get _customerLogUri =>
+      Uri.parse('$_attendanceBase/getCustomerLogs.php');
 
   static Future<AttendanceSnapshot?> fetchSnapshot(int customerId) async {
     try {
@@ -297,6 +302,46 @@ class AttendanceService {
       debugPrint('fetchRecords error: $e');
       rethrow;
     }
+    return [];
+  }
+
+  static Future<List<AttendanceRecord>> fetchCustomerRecords(
+    int customerId,
+  ) async {
+    if (customerId <= 0) return [];
+
+    try {
+      final response = await http
+          .post(
+            _customerLogUri,
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: jsonEncode({'customer_id': customerId}),
+          )
+          .timeout(_httpTimeout);
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        if (response.body.isEmpty) return [];
+        final dynamic decoded = jsonDecode(response.body);
+        final dynamic collection =
+            decoded is Map<String, dynamic> ? decoded['data'] : decoded;
+
+        if (collection is List) {
+          return collection
+              .whereType<Map<String, dynamic>>()
+              .map(AttendanceRecord.fromJson)
+              .toList();
+        }
+      } else {
+        throw AttendanceException('Unable to load attendance history.');
+      }
+    } catch (e) {
+      debugPrint('fetchCustomerRecords error: $e');
+      rethrow;
+    }
+
     return [];
   }
 
