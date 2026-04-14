@@ -234,46 +234,50 @@ class _MemberHistoryDialogState extends State<_MemberHistoryDialog> {
             ),
           ),
           // Export PDF button
-          if (!_isLoading && _error == null && _logs.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child:
-                  _isExporting
-                      ? const SizedBox(
-                        width: 28,
-                        height: 28,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.5,
-                          color: Colors.white,
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child:
+                _isExporting
+                    ? const SizedBox(
+                      width: 28,
+                      height: 28,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        color: Colors.white,
+                      ),
+                    )
+                    : Tooltip(
+                      message: _isLoading ? 'Loading logs...' : 'Export to PDF',
+                      child: ElevatedButton.icon(
+                        onPressed:
+                            _isLoading || _error != null ? null : _exportPdf,
+                        icon: const Icon(
+                          Icons.picture_as_pdf_outlined,
+                          size: 16,
                         ),
-                      )
-                      : Tooltip(
-                        message: 'Export to PDF',
-                        child: ElevatedButton.icon(
-                          onPressed: _exportPdf,
-                          icon: const Icon(
-                            Icons.picture_as_pdf_outlined,
-                            size: 16,
+                        label: const Text(
+                          'Export PDF',
+                          style: TextStyle(fontSize: 13),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: Colors.indigo.shade700,
+                          disabledBackgroundColor: Colors.white.withValues(
+                            alpha: 0.75,
                           ),
-                          label: const Text(
-                            'Export PDF',
-                            style: TextStyle(fontSize: 13),
+                          disabledForegroundColor: Colors.indigo.shade300,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 10,
                           ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: Colors.indigo.shade700,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 10,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
                           ),
+                          elevation: 0,
                         ),
                       ),
-            ),
+                    ),
+          ),
           IconButton(
             onPressed: () => Navigator.of(context).pop(),
             icon: const Icon(Icons.close_rounded, color: Colors.white),
