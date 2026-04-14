@@ -1501,7 +1501,8 @@ class ApiService {
         body: {
           'customerId': customerId.toString(),
           'membershipType': membershipType,
-          'startDate': formatDate(now),
+          'startDate':
+              membershipType == 'Daily' ? formatDateTime(now) : formatDate(now),
           'expirationDate':
               membershipType == 'Daily'
                   ? formatDateTime(expiration)

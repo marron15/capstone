@@ -573,6 +573,25 @@ class _CustomersPageState extends State<CustomersPage> {
           expirationRaw != null && expirationRaw.isNotEmpty
               ? DateTime.parse(expirationRaw)
               : DateTime.now().add(const Duration(days: 30));
+
+      // Backward compatibility: older Daily records may be stored as date-only.
+      // Treat them as 9:00 PM local closing time.
+      if (membershipType == 'Daily' &&
+          expirationRaw != null &&
+          expirationRaw.isNotEmpty) {
+        final bool hasExplicitTime =
+            expirationRaw.contains(':') || expirationRaw.contains('T');
+        if (!hasExplicitTime) {
+          expirationDate = DateTime(
+            expirationDate.year,
+            expirationDate.month,
+            expirationDate.day,
+            21,
+            0,
+            0,
+          );
+        }
+      }
     } catch (e) {
       expirationDate = DateTime.now().add(const Duration(days: 30));
     }
@@ -698,34 +717,16 @@ class _CustomersPageState extends State<CustomersPage> {
     final String mm = date.month.toString().padLeft(2, '0');
     final String yyyy = date.year.toString().padLeft(4, '0');
 
-    // For Daily memberships, include time for expiration only
+    // For Daily memberships, show only time for expiration
     if (membershipType == 'Daily' && !isStartDate) {
-      final String hh = date.hour.toString().padLeft(2, '0');
+      final int hour12 = date.hour % 12 == 0 ? 12 : date.hour % 12;
+      final String hh = hour12.toString().padLeft(2, '0');
       final String min = date.minute.toString().padLeft(2, '0');
-      final String ss = date.second.toString().padLeft(2, '0');
-      return '$mm/$dd/$yyyy $hh:$min:$ss';
+      final String period = date.hour >= 12 ? 'PM' : 'AM';
+      return '$hh:$min $period';
     }
 
     return '$mm/$dd/$yyyy';
-  }
-
-  String _formatTimeRemaining(DateTime expirationDate) {
-    final now = DateTime.now();
-    final difference = expirationDate.difference(now);
-
-    if (difference.isNegative) return 'Expired';
-
-    final hours = difference.inHours;
-    final minutes = difference.inMinutes % 60;
-    final seconds = difference.inSeconds % 60;
-
-    if (hours > 0) {
-      return '${hours}h ${minutes}m ${seconds}s';
-    } else if (minutes > 0) {
-      return '${minutes}m ${seconds}s';
-    } else {
-      return '${seconds}s';
-    }
   }
 
   // Header cell with dropdown for membership filter
@@ -1580,15 +1581,13 @@ class _CustomersPageState extends State<CustomersPage> {
                                       ),
                                       membershipType == 'Daily'
                                           ? Text(
-                                            _formatTimeRemaining(
-                                              expirationDate,
-                                            ),
+                                            formattedExpiry,
                                             style: TextStyle(
                                               fontSize: 12,
                                               color:
                                                   _isExpiredM
                                                       ? Colors.red
-                                                      : Colors.orange.shade700,
+                                                      : Colors.black87,
                                               fontWeight: FontWeight.w600,
                                             ),
                                           )
@@ -2102,16 +2101,9 @@ class _CustomersPageState extends State<CustomersPage> {
                                                     child: Builder(
                                                       builder: (context) {
                                                         final expiryText =
-                                                            membershipType ==
-                                                                    'Daily'
-                                                                ? _formatTimeRemaining(
-                                                                  expirationDate,
-                                                                )
-                                                                : formattedExpiry;
+                                                            formattedExpiry;
                                                         final bool
                                                         isExpiredText =
-                                                            expiryText ==
-                                                                'Expired' ||
                                                             isExpired;
                                                         return Text(
                                                           expiryText,
@@ -2121,11 +2113,6 @@ class _CustomersPageState extends State<CustomersPage> {
                                                             color:
                                                                 isExpiredText
                                                                     ? Colors.red
-                                                                    : membershipType ==
-                                                                        'Daily'
-                                                                    ? Colors
-                                                                        .orange
-                                                                        .shade700
                                                                     : Colors
                                                                         .black87,
                                                             fontSize: 15,
