@@ -133,7 +133,7 @@ class _MemberHistoryDialogState extends State<_MemberHistoryDialog> {
   // ── Formatters ────────────────────────────────────────────
 
   String _fmt(String? raw) {
-    if (raw == null || raw.isEmpty) return '—';
+    if (raw == null || raw.isEmpty) return '-';
     try {
       final dt = DateTime.parse(raw).toLocal();
       final pad = (int n) => n.toString().padLeft(2, '0');
@@ -251,10 +251,7 @@ class _MemberHistoryDialogState extends State<_MemberHistoryDialog> {
                       child: ElevatedButton.icon(
                         onPressed:
                             _isLoading || _error != null ? null : _exportPdf,
-                        icon: const Icon(
-                          Icons.picture_as_pdf_outlined,
-                          size: 16,
-                        ),
+                        icon: const Icon(Icons.picture_as_pdf, size: 16),
                         label: const Text(
                           'Export PDF',
                           style: TextStyle(fontSize: 13),
@@ -584,11 +581,13 @@ Future<void> exportMemberHistoryToPdf({
     try {
       final base = pw.Font.ttf(
         (await rootBundle.load(
-          'fonts/NotoSans-Regular.ttf',
+          'assets/fonts/NotoSans-Regular.ttf',
         )).buffer.asByteData(),
       );
       final bold = pw.Font.ttf(
-        (await rootBundle.load('fonts/NotoSans-Bold.ttf')).buffer.asByteData(),
+        (await rootBundle.load(
+          'assets/fonts/NotoSans-Bold.ttf',
+        )).buffer.asByteData(),
       );
       theme = pw.ThemeData.withFont(base: base, bold: bold);
     } catch (_) {
@@ -599,7 +598,7 @@ Future<void> exportMemberHistoryToPdf({
 
     // Helper: format datetime string
     String fmt(String? raw) {
-      if (raw == null || raw.isEmpty) return '—';
+      if (raw == null || raw.isEmpty) return '-';
       try {
         final dt = DateTime.parse(raw).toLocal();
         final p = (int n) => n.toString().padLeft(2, '0');
@@ -626,10 +625,10 @@ Future<void> exportMemberHistoryToPdf({
                 fmt(l['time_out']?.toString()),
                 (l['status'] ?? '').toString(),
                 (l['verified_by']?.toString().isEmpty ?? true)
-                    ? '—'
+                    ? '-'
                     : l['verified_by'].toString(),
                 (l['platform']?.toString().isEmpty ?? true)
-                    ? '—'
+                    ? '-'
                     : l['platform'].toString(),
               ],
             )
@@ -654,7 +653,7 @@ Future<void> exportMemberHistoryToPdf({
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
                     pw.Text(
-                      'RNR Fitness Gym — Attendance History Report',
+                      'RNR Fitness Gym - Attendance History Report',
                       style: pw.TextStyle(
                         fontSize: 20,
                         fontWeight: pw.FontWeight.bold,
@@ -734,7 +733,7 @@ Future<void> exportMemberHistoryToPdf({
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Exported ${logs.length} record(s) — AttendanceHistory_${safeN}_$timestamp.pdf',
+            'Exported ${logs.length} record(s) - AttendanceHistory_${safeN}_$timestamp.pdf',
           ),
           backgroundColor: Colors.indigo,
         ),

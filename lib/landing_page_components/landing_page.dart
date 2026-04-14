@@ -466,7 +466,7 @@ class _LandingPageState extends State<LandingPage>
         _minimumSessionDuration,
       );
       final StringBuffer message = StringBuffer(
-        'You need at least 30 minutes between time-in and time-out. '
+        'You need at least 3 minutes between time-in and time-out. '
         'Please wait ${_formatRemainingDuration(remainingDuration)}',
       );
       if (nextAllowed != null) {
@@ -1762,7 +1762,7 @@ class _HeroMembershipContainerState extends State<HeroMembershipContainer> {
   Timer? _countdownTimer;
   bool _isSubmittingScan = false;
   String? _scanErrorMessage;
-  static const Duration _minimumSessionDuration = Duration(minutes: 30);
+  static const Duration _minimumSessionDuration = Duration(minutes: 3);
 
   @override
   void initState() {
@@ -1799,8 +1799,18 @@ class _HeroMembershipContainerState extends State<HeroMembershipContainer> {
 
   String _formatDate(DateTime date) {
     final months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }
@@ -1876,7 +1886,8 @@ class _HeroMembershipContainerState extends State<HeroMembershipContainer> {
                 date,
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: (isSmallScreen
+                  fontSize:
+                      (isSmallScreen
                           ? (screenSize.width * 0.035).clamp(12.0, 18.0)
                           : (screenSize.width * 0.024).clamp(14.0, 22.0)),
                   fontWeight: FontWeight.w600,
@@ -1889,13 +1900,32 @@ class _HeroMembershipContainerState extends State<HeroMembershipContainer> {
     );
   }
 
-  Widget _buildStatItem(String label, String value, IconData icon, Color color) {
+  Widget _buildStatItem(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Column(
       children: [
         Icon(icon, color: color, size: 24),
         const SizedBox(height: 8),
-        Text(value, style: TextStyle(color: color, fontSize: 18, fontWeight: FontWeight.bold)),
-        Text(label, style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w500)),
+        Text(
+          value,
+          style: TextStyle(
+            color: color,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white70,
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
       ],
     );
   }
@@ -1923,7 +1953,8 @@ class _HeroMembershipContainerState extends State<HeroMembershipContainer> {
   }
 
   String _formatRemainingDuration(Duration duration) {
-    final Duration safeDuration = duration.isNegative ? Duration.zero : duration;
+    final Duration safeDuration =
+        duration.isNegative ? Duration.zero : duration;
     final int minutes = safeDuration.inMinutes;
     final int seconds = safeDuration.inSeconds.remainder(60);
     if (minutes > 0 && seconds > 0) return '${minutes}m ${seconds}s';
@@ -1938,11 +1969,15 @@ class _HeroMembershipContainerState extends State<HeroMembershipContainer> {
     }
     final membershipData = unifiedAuthState.membershipData;
     if (membershipData == null) {
-      _showScanError('No membership found. Please contact the gym to activate your membership.');
+      _showScanError(
+        'No membership found. Please contact the gym to activate your membership.',
+      );
       return;
     }
     if (!_isMembershipActive(membershipData.expirationDate)) {
-      _showScanError('Your membership has expired. Please renew your membership to use the QR code scanner.');
+      _showScanError(
+        'Your membership has expired. Please renew your membership to use the QR code scanner.',
+      );
       return;
     }
     final String? payload = await showDialog<String>(
@@ -1959,27 +1994,40 @@ class _HeroMembershipContainerState extends State<HeroMembershipContainer> {
     if (customerId == null) return;
     final membershipData = unifiedAuthState.membershipData;
     if (membershipData == null) {
-      _showScanError('No membership found. Please contact the gym to activate your membership.');
+      _showScanError(
+        'No membership found. Please contact the gym to activate your membership.',
+      );
       return;
     }
     if (!_isMembershipActive(membershipData.expirationDate)) {
-      _showScanError('Your membership has expired. Please renew your membership to use the QR code scanner.');
+      _showScanError(
+        'Your membership has expired. Please renew your membership to use the QR code scanner.',
+      );
       return;
     }
     if (!AttendanceService.isValidAdminPayload(payload)) {
-      _showScanError('Only the admin-issued QR code can be used for attendance.');
+      _showScanError(
+        'Only the admin-issued QR code can be used for attendance.',
+      );
       return;
     }
-    final AttendanceSnapshot? currentSnapshot = unifiedAuthState.attendanceSnapshot;
-    final Duration? remainingDuration = _timeUntilTimeoutAllowed(currentSnapshot);
+    final AttendanceSnapshot? currentSnapshot =
+        unifiedAuthState.attendanceSnapshot;
+    final Duration? remainingDuration = _timeUntilTimeoutAllowed(
+      currentSnapshot,
+    );
     if (remainingDuration != null) {
-      final DateTime? nextAllowed = currentSnapshot?.lastTimeIn?.add(_minimumSessionDuration);
+      final DateTime? nextAllowed = currentSnapshot?.lastTimeIn?.add(
+        _minimumSessionDuration,
+      );
       final StringBuffer message = StringBuffer(
         'You need at least 30 minutes between time-in and time-out. '
         'Please wait ${_formatRemainingDuration(remainingDuration)}',
       );
       if (nextAllowed != null) {
-        message.write(' (available at ${_formatAttendanceTimestamp(nextAllowed)})');
+        message.write(
+          ' (available at ${_formatAttendanceTimestamp(nextAllowed)})',
+        );
       }
       message.write('.');
       _showScanError(message.toString());
@@ -2020,15 +2068,21 @@ class _HeroMembershipContainerState extends State<HeroMembershipContainer> {
   void _showScanError(String message) {
     if (!mounted) return;
     setState(() => _scanErrorMessage = message);
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  Widget _buildAttendanceStatusContent(AttendanceSnapshot? snapshot, bool isSmallScreen) {
+  Widget _buildAttendanceStatusContent(
+    AttendanceSnapshot? snapshot,
+    bool isSmallScreen,
+  ) {
     final bool hasSnapshot = snapshot != null;
     final bool isClockedIn = snapshot?.isClockedIn ?? false;
-    final Color badgeColor = hasSnapshot
-        ? (isClockedIn ? Colors.greenAccent : const Color(0xFFFFC857))
-        : Colors.grey;
+    final Color badgeColor =
+        hasSnapshot
+            ? (isClockedIn ? Colors.greenAccent : const Color(0xFFFFC857))
+            : Colors.grey;
     final DateTime? timestamp = snapshot?.referenceTimestamp;
     final String adminName = snapshot?.verifyingAdminName ?? 'Awaiting scan';
     return Column(
@@ -2045,11 +2099,19 @@ class _HeroMembershipContainerState extends State<HeroMembershipContainer> {
               ),
               child: Row(
                 children: [
-                  Icon(isClockedIn ? Icons.login : Icons.logout, size: 16, color: badgeColor),
+                  Icon(
+                    isClockedIn ? Icons.login : Icons.logout,
+                    size: 16,
+                    color: badgeColor,
+                  ),
                   const SizedBox(width: 6),
                   Text(
                     snapshot?.readableStatus ?? 'Awaiting Scan',
-                    style: TextStyle(color: badgeColor, fontWeight: FontWeight.w600, fontSize: 12),
+                    style: TextStyle(
+                      color: badgeColor,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                    ),
                   ),
                 ],
               ),
@@ -2063,7 +2125,11 @@ class _HeroMembershipContainerState extends State<HeroMembershipContainer> {
           hasSnapshot
               ? _formatAttendanceTimestamp(timestamp)
               : 'Scan the admin QR code when you arrive or leave the gym.',
-          style: TextStyle(color: Colors.white, fontSize: isSmallScreen ? 14 : 15, fontWeight: FontWeight.w600),
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: isSmallScreen ? 14 : 15,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         const SizedBox(height: 8),
         Row(
@@ -2071,8 +2137,10 @@ class _HeroMembershipContainerState extends State<HeroMembershipContainer> {
             const Icon(Icons.verified_user, size: 16, color: Colors.white70),
             const SizedBox(width: 8),
             Expanded(
-              child: Text('Verified by: $adminName',
-                  style: const TextStyle(color: Colors.white70, fontSize: 12)),
+              child: Text(
+                'Verified by: $adminName',
+                style: const TextStyle(color: Colors.white70, fontSize: 12),
+              ),
             ),
           ],
         ),
@@ -2092,9 +2160,10 @@ class _HeroMembershipContainerState extends State<HeroMembershipContainer> {
           'Welcome back, ${unifiedAuthState.customerName ?? 'Member'}!',
           style: TextStyle(
             color: Colors.white,
-            fontSize: (isSmallScreen
-                ? (screenSize.width * 0.048).clamp(15.0, 22.0)
-                : (screenSize.width * 0.032).clamp(16.0, 26.0)),
+            fontSize:
+                (isSmallScreen
+                    ? (screenSize.width * 0.048).clamp(15.0, 22.0)
+                    : (screenSize.width * 0.032).clamp(16.0, 26.0)),
             fontWeight: FontWeight.w700,
             height: 1.5,
           ),
@@ -2115,7 +2184,10 @@ class _HeroMembershipContainerState extends State<HeroMembershipContainer> {
                 ],
               ),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.22), width: 1.5),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.22),
+                width: 1.5,
+              ),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.35),
@@ -2135,23 +2207,39 @@ class _HeroMembershipContainerState extends State<HeroMembershipContainer> {
                         '${unifiedAuthState.membershipData!.membershipType} Membership',
                         style: TextStyle(
                           color: const Color(0xFFFFA812),
-                          fontSize: (isSmallScreen
-                              ? (screenSize.width * 0.045).clamp(16.0, 22.0)
-                              : (screenSize.width * 0.03).clamp(18.0, 26.0)),
+                          fontSize:
+                              (isSmallScreen
+                                  ? (screenSize.width * 0.045).clamp(16.0, 22.0)
+                                  : (screenSize.width * 0.03).clamp(
+                                    18.0,
+                                    26.0,
+                                  )),
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
-                        color: _isMembershipActive(unifiedAuthState.membershipData!.expirationDate)
-                            ? Colors.green.withValues(alpha: 0.9)
-                            : Colors.red.withValues(alpha: 0.9),
+                        color:
+                            _isMembershipActive(
+                                  unifiedAuthState
+                                      .membershipData!
+                                      .expirationDate,
+                                )
+                                ? Colors.green.withValues(alpha: 0.9)
+                                : Colors.red.withValues(alpha: 0.9),
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: (_isMembershipActive(unifiedAuthState.membershipData!.expirationDate)
+                            color: (_isMembershipActive(
+                                      unifiedAuthState
+                                          .membershipData!
+                                          .expirationDate,
+                                    )
                                     ? Colors.green
                                     : Colors.red)
                                 .withValues(alpha: 0.4),
@@ -2164,7 +2252,11 @@ class _HeroMembershipContainerState extends State<HeroMembershipContainer> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            _isMembershipActive(unifiedAuthState.membershipData!.expirationDate)
+                            _isMembershipActive(
+                                  unifiedAuthState
+                                      .membershipData!
+                                      .expirationDate,
+                                )
                                 ? Icons.check_circle
                                 : Icons.warning,
                             color: Colors.white,
@@ -2172,10 +2264,18 @@ class _HeroMembershipContainerState extends State<HeroMembershipContainer> {
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            _isMembershipActive(unifiedAuthState.membershipData!.expirationDate)
+                            _isMembershipActive(
+                                  unifiedAuthState
+                                      .membershipData!
+                                      .expirationDate,
+                                )
                                 ? 'Active'
                                 : 'Expired',
-                            style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ],
                       ),
@@ -2183,18 +2283,32 @@ class _HeroMembershipContainerState extends State<HeroMembershipContainer> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                if (_isMembershipActive(unifiedAuthState.membershipData!.expirationDate)) ...[
+                if (_isMembershipActive(
+                  unifiedAuthState.membershipData!.expirationDate,
+                )) ...[
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('Time Remaining',
-                              style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w500)),
+                          const Text(
+                            'Time Remaining',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
                           Text(
-                            _getTimeRemaining(unifiedAuthState.membershipData!.expirationDate),
-                            style: const TextStyle(color: Color(0xFFFFA812), fontSize: 12, fontWeight: FontWeight.bold),
+                            _getTimeRemaining(
+                              unifiedAuthState.membershipData!.expirationDate,
+                            ),
+                            style: const TextStyle(
+                              color: Color(0xFFFFA812),
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ],
                       ),
@@ -2205,7 +2319,9 @@ class _HeroMembershipContainerState extends State<HeroMembershipContainer> {
                           unifiedAuthState.membershipData!.expirationDate,
                         ),
                         backgroundColor: Colors.white.withValues(alpha: 0.8),
-                        valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFFFA812)),
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                          Color(0xFFFFA812),
+                        ),
                         minHeight: 6,
                         borderRadius: BorderRadius.circular(3),
                       ),
@@ -2218,7 +2334,10 @@ class _HeroMembershipContainerState extends State<HeroMembershipContainer> {
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      width: 1,
+                    ),
                   ),
                   child: Column(
                     children: [
@@ -2233,9 +2352,14 @@ class _HeroMembershipContainerState extends State<HeroMembershipContainer> {
                       const SizedBox(height: 12),
                       _buildDateRow(
                         'Expires',
-                        unifiedAuthState.membershipData!.membershipType == 'Daily'
-                            ? _getTimeRemaining(unifiedAuthState.membershipData!.expirationDate)
-                            : _formatDate(unifiedAuthState.membershipData!.expirationDate),
+                        unifiedAuthState.membershipData!.membershipType ==
+                                'Daily'
+                            ? _getTimeRemaining(
+                              unifiedAuthState.membershipData!.expirationDate,
+                            )
+                            : _formatDate(
+                              unifiedAuthState.membershipData!.expirationDate,
+                            ),
                         Icons.event_busy,
                         const Color(0xFFFFA812),
                         isSmallScreen,
@@ -2245,13 +2369,18 @@ class _HeroMembershipContainerState extends State<HeroMembershipContainer> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                if (_isMembershipActive(unifiedAuthState.membershipData!.expirationDate)) ...[
+                if (_isMembershipActive(
+                  unifiedAuthState.membershipData!.expirationDate,
+                )) ...[
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: const Color(0xFFFFA812).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFFFA812).withValues(alpha: 0.25), width: 1),
+                      border: Border.all(
+                        color: const Color(0xFFFFA812).withValues(alpha: 0.25),
+                        width: 1,
+                      ),
                     ),
                     child: Row(
                       children: [
@@ -2281,12 +2410,18 @@ class _HeroMembershipContainerState extends State<HeroMembershipContainer> {
                   decoration: BoxDecoration(
                     color: Colors.black.withValues(alpha: 0.25),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 1),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      width: 1,
+                    ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildAttendanceStatusContent(unifiedAuthState.attendanceSnapshot, isSmallScreen),
+                      _buildAttendanceStatusContent(
+                        unifiedAuthState.attendanceSnapshot,
+                        isSmallScreen,
+                      ),
                     ],
                   ),
                 ),
@@ -2294,23 +2429,36 @@ class _HeroMembershipContainerState extends State<HeroMembershipContainer> {
                 AnimatedBuilder(
                   animation: unifiedAuthState,
                   builder: (context, child) {
-                    if (!unifiedAuthState.isCustomerLoggedIn) return const SizedBox.shrink();
+                    if (!unifiedAuthState.isCustomerLoggedIn)
+                      return const SizedBox.shrink();
                     final bool isMembershipActive =
                         unifiedAuthState.membershipData != null &&
-                        _isMembershipActive(unifiedAuthState.membershipData!.expirationDate);
+                        _isMembershipActive(
+                          unifiedAuthState.membershipData!.expirationDate,
+                        );
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         OutlinedButton(
-                          onPressed: (_isSubmittingScan || !isMembershipActive) ? null : _startScanFlow,
+                          onPressed:
+                              (_isSubmittingScan || !isMembershipActive)
+                                  ? null
+                                  : _startScanFlow,
                           style: OutlinedButton.styleFrom(
                             foregroundColor: Colors.white,
-                            side: BorderSide(color: const Color(0xFFFFA812).withValues(alpha: 0.9), width: 1.4),
+                            side: BorderSide(
+                              color: const Color(
+                                0xFFFFA812,
+                              ).withValues(alpha: 0.9),
+                              width: 1.4,
+                            ),
                             padding: EdgeInsets.symmetric(
                               horizontal: isSmallScreen ? 16 : 18,
                               vertical: isSmallScreen ? 12 : 14,
                             ),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -2320,8 +2468,13 @@ class _HeroMembershipContainerState extends State<HeroMembershipContainer> {
                               Text(
                                 _isSubmittingScan
                                     ? 'Processing...'
-                                    : (!isMembershipActive ? 'Membership Expired' : 'Scan Admin QR'),
-                                style: TextStyle(fontSize: isSmallScreen ? 14 : 15, fontWeight: FontWeight.w600),
+                                    : (!isMembershipActive
+                                        ? 'Membership Expired'
+                                        : 'Scan Admin QR'),
+                                style: TextStyle(
+                                  fontSize: isSmallScreen ? 14 : 15,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                               if (_isSubmittingScan) ...[
                                 const SizedBox(width: 12),
@@ -2330,7 +2483,9 @@ class _HeroMembershipContainerState extends State<HeroMembershipContainer> {
                                   height: 16,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFFA812)),
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Color(0xFFFFA812),
+                                    ),
                                   ),
                                 ),
                               ],
@@ -2342,7 +2497,10 @@ class _HeroMembershipContainerState extends State<HeroMembershipContainer> {
                           Text(
                             _scanErrorMessage!,
                             textAlign: TextAlign.center,
-                            style: const TextStyle(color: Colors.redAccent, fontSize: 12),
+                            style: const TextStyle(
+                              color: Colors.redAccent,
+                              fontSize: 12,
+                            ),
                           ),
                         ],
                         const SizedBox(height: 12),
@@ -2359,9 +2517,10 @@ class _HeroMembershipContainerState extends State<HeroMembershipContainer> {
             'Loading membership details...',
             style: TextStyle(
               color: Colors.white70,
-              fontSize: (isSmallScreen
-                  ? (screenSize.width * 0.035).clamp(12.0, 18.0)
-                  : (screenSize.width * 0.024).clamp(14.0, 22.0)),
+              fontSize:
+                  (isSmallScreen
+                      ? (screenSize.width * 0.035).clamp(12.0, 18.0)
+                      : (screenSize.width * 0.024).clamp(14.0, 22.0)),
             ),
           ),
         ],
@@ -2371,7 +2530,6 @@ class _HeroMembershipContainerState extends State<HeroMembershipContainer> {
 }
 
 class _QrScannerDialog extends StatefulWidget {
-
   const _QrScannerDialog();
 
   @override
