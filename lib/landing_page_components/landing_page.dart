@@ -2787,7 +2787,7 @@ class _AttendanceHistoryDialogState extends State<_AttendanceHistoryDialog> {
 
   Widget _buildStatusChip(String status) {
     final bool isIn = status.toUpperCase() == 'IN';
-    final Color color = isIn ? Colors.green : const Color(0xFFFFA812);
+    final Color color = isIn ? Colors.green : const Color(0xFFC62828);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -2841,7 +2841,6 @@ class _AttendanceHistoryDialogState extends State<_AttendanceHistoryDialog> {
   @override
   Widget build(BuildContext context) {
     final Size size = MediaQuery.of(context).size;
-    final bool isCompact = size.width < 720;
     final int totalVisits = _records.length;
     final int totalIn =
         _records.where((record) => record.status.toUpperCase() == 'IN').length;
@@ -2998,89 +2997,124 @@ class _AttendanceHistoryDialogState extends State<_AttendanceHistoryDialog> {
                       )
                       : Padding(
                         padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: ConstrainedBox(
-                            constraints: BoxConstraints(
-                              minWidth: isCompact ? 640 : 760,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey.shade200),
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            child: DataTable(
-                              sortColumnIndex: _sortColumnIndex,
-                              sortAscending: _sortAscending,
-                              headingRowColor: WidgetStateProperty.all(
-                                const Color(0xFFF8ECD3),
-                              ),
-                              columns: [
-                                DataColumn(
-                                  label: Text('Time In ($totalIn)'),
-                                  onSort: _sort,
-                                ),
-                                DataColumn(
-                                  label: Text('Time Out ($totalOut)'),
-                                  onSort: _sort,
-                                ),
-                                DataColumn(
-                                  label: const Text('Status'),
-                                  onSort: _sort,
-                                ),
-                                DataColumn(
-                                  label: Text(
-                                    'Verified By (Total Visits: $totalVisits)',
-                                  ),
-                                  onSort: _sort,
-                                ),
-                              ],
-                              rows:
-                                  _records.asMap().entries.map((entry) {
-                                    final int idx = entry.key;
-                                    final AttendanceRecord record = entry.value;
-
-                                    return DataRow(
-                                      color: WidgetStateProperty.resolveWith<
-                                        Color?
-                                      >((states) {
-                                        if (idx.isOdd) {
-                                          return const Color(0xFFFAFAFA);
-                                        }
-                                        return null;
-                                      }),
-                                      cells: [
-                                        DataCell(
-                                          Text(
-                                            _formatDateTime(record.timeIn),
-                                            style: const TextStyle(
-                                              fontSize: 13,
-                                            ),
-                                          ),
+                            child: LayoutBuilder(
+                              builder: (context, constraints) {
+                                return SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: ConstrainedBox(
+                                    constraints: BoxConstraints(
+                                      minWidth: constraints.maxWidth,
+                                    ),
+                                    child: DataTable(
+                                      sortColumnIndex: _sortColumnIndex,
+                                      sortAscending: _sortAscending,
+                                      headingRowColor: WidgetStateProperty.all(
+                                        Colors.indigo.shade50,
+                                      ),
+                                      headingTextStyle: TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 13,
+                                        color: Colors.black.withValues(
+                                          alpha: 0.8,
                                         ),
-                                        DataCell(
-                                          Text(
-                                            _formatDateTime(record.timeOut),
-                                            style: const TextStyle(
-                                              fontSize: 13,
-                                            ),
-                                          ),
+                                      ),
+                                      dataRowMinHeight: 42,
+                                      dataRowMaxHeight: 48,
+                                      columnSpacing: 34,
+                                      columns: [
+                                        DataColumn(
+                                          label: Text('Time In ($totalIn)'),
+                                          onSort: _sort,
                                         ),
-                                        DataCell(
-                                          _buildStatusChip(record.status),
+                                        DataColumn(
+                                          label: Text('Time Out ($totalOut)'),
+                                          onSort: _sort,
                                         ),
-                                        DataCell(
-                                          Text(
-                                            (record.verifyingAdminName !=
-                                                        null &&
-                                                    record.verifyingAdminName!
-                                                        .trim()
-                                                        .isNotEmpty)
-                                                ? record.verifyingAdminName!
-                                                : '-',
-                                            style: const TextStyle(
-                                              fontSize: 13,
-                                            ),
+                                        DataColumn(
+                                          label: Text(
+                                            'Status (Total: $totalVisits)',
                                           ),
+                                          onSort: _sort,
+                                        ),
+                                        DataColumn(
+                                          label: const Text('Verified By'),
+                                          onSort: _sort,
                                         ),
                                       ],
-                                    );
-                                  }).toList(),
+                                      rows:
+                                          _records.asMap().entries.map((entry) {
+                                            final int idx = entry.key;
+                                            final AttendanceRecord record =
+                                                entry.value;
+
+                                            return DataRow(
+                                              color:
+                                                  WidgetStateProperty.resolveWith<
+                                                    Color?
+                                                  >((states) {
+                                                    if (idx.isOdd) {
+                                                      return Colors
+                                                          .grey
+                                                          .shade50;
+                                                    }
+                                                    return null;
+                                                  }),
+                                              cells: [
+                                                DataCell(
+                                                  Text(
+                                                    _formatDateTime(
+                                                      record.timeIn,
+                                                    ),
+                                                    style: const TextStyle(
+                                                      fontSize: 13,
+                                                    ),
+                                                  ),
+                                                ),
+                                                DataCell(
+                                                  Text(
+                                                    _formatDateTime(
+                                                      record.timeOut,
+                                                    ),
+                                                    style: const TextStyle(
+                                                      fontSize: 13,
+                                                    ),
+                                                  ),
+                                                ),
+                                                DataCell(
+                                                  _buildStatusChip(
+                                                    record.status,
+                                                  ),
+                                                ),
+                                                DataCell(
+                                                  Text(
+                                                    (record.verifyingAdminName !=
+                                                                null &&
+                                                            record
+                                                                .verifyingAdminName!
+                                                                .trim()
+                                                                .isNotEmpty)
+                                                        ? record
+                                                            .verifyingAdminName!
+                                                        : '-',
+                                                    style: const TextStyle(
+                                                      fontSize: 13,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            );
+                                          }).toList(),
+                                    ),
+                                  ),
+                                );
+                              },
                             ),
                           ),
                         ),
