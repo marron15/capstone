@@ -192,9 +192,8 @@ class _MemberHistoryDialogState extends State<_MemberHistoryDialog> {
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 20, 16, 16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.indigo.shade700, Colors.indigo.shade500],
-        ),
+        color: Colors.white,
+        border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
       ),
       child: Row(
@@ -202,10 +201,14 @@ class _MemberHistoryDialogState extends State<_MemberHistoryDialog> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.15),
+              color: Colors.grey.shade100,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(Icons.access_time, color: Colors.white, size: 22),
+            child: const Icon(
+              Icons.access_time,
+              color: Colors.black87,
+              size: 22,
+            ),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -215,7 +218,7 @@ class _MemberHistoryDialogState extends State<_MemberHistoryDialog> {
                 Text(
                   'Time In / Out History',
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: Colors.black,
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.2,
@@ -225,7 +228,7 @@ class _MemberHistoryDialogState extends State<_MemberHistoryDialog> {
                 Text(
                   _memberName,
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.85),
+                    color: Colors.black.withValues(alpha: 0.7),
                     fontSize: 13,
                     fontWeight: FontWeight.w400,
                   ),
@@ -243,7 +246,7 @@ class _MemberHistoryDialogState extends State<_MemberHistoryDialog> {
                       height: 28,
                       child: CircularProgressIndicator(
                         strokeWidth: 2.5,
-                        color: Colors.white,
+                        color: Colors.black87,
                       ),
                     )
                     : Tooltip(
@@ -256,28 +259,41 @@ class _MemberHistoryDialogState extends State<_MemberHistoryDialog> {
                           'Export PDF',
                           style: TextStyle(fontSize: 13),
                         ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: Colors.indigo.shade700,
-                          disabledBackgroundColor: Colors.white.withValues(
-                            alpha: 0.75,
+                        style: ButtonStyle(
+                          animationDuration: Duration.zero,
+                          backgroundColor: WidgetStateProperty.resolveWith((
+                            states,
+                          ) {
+                            if (states.contains(WidgetState.disabled)) {
+                              return Colors.red.shade200;
+                            }
+                            return Colors.red.shade700;
+                          }),
+                          foregroundColor: const WidgetStatePropertyAll(
+                            Colors.white,
                           ),
-                          disabledForegroundColor: Colors.indigo.shade300,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 10,
+                          overlayColor: const WidgetStatePropertyAll(
+                            Colors.transparent,
                           ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                          elevation: const WidgetStatePropertyAll(0),
+                          shadowColor: const WidgetStatePropertyAll(
+                            Colors.transparent,
                           ),
-                          elevation: 0,
+                          padding: const WidgetStatePropertyAll(
+                            EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          ),
+                          shape: WidgetStatePropertyAll(
+                            RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
                         ),
                       ),
                     ),
           ),
           IconButton(
             onPressed: () => Navigator.of(context).pop(),
-            icon: const Icon(Icons.close_rounded, color: Colors.white),
+            icon: const Icon(Icons.close_rounded, color: Colors.black87),
             tooltip: 'Close',
           ),
         ],
@@ -351,12 +367,10 @@ class _MemberHistoryDialogState extends State<_MemberHistoryDialog> {
 
     return Column(
       children: [
-        // Summary bar
-        _buildSummaryBar(),
         // DataTable
         Expanded(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
             child: _buildDataTable(),
           ),
         ),
@@ -364,75 +378,13 @@ class _MemberHistoryDialogState extends State<_MemberHistoryDialog> {
     );
   }
 
-  Widget _buildSummaryBar() {
+  Widget _buildDataTable() {
+    final int totalVisits = _logs.length;
     final int totalIn =
         _logs.where((l) => (l['status'] ?? '').toString() == 'IN').length;
     final int totalOut =
         _logs.where((l) => (l['status'] ?? '').toString() == 'OUT').length;
 
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.indigo.shade50,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.indigo.shade100),
-      ),
-      child: Row(
-        children: [
-          _summaryChip(
-            Icons.login_rounded,
-            'Total Visits',
-            _logs.length.toString(),
-            Colors.indigo,
-          ),
-          const SizedBox(width: 20),
-          _summaryChip(
-            Icons.arrow_downward_rounded,
-            'Time-In',
-            totalIn.toString(),
-            Colors.green,
-          ),
-          const SizedBox(width: 20),
-          _summaryChip(
-            Icons.arrow_upward_rounded,
-            'Time-Out',
-            totalOut.toString(),
-            Colors.orange,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _summaryChip(
-    IconData icon,
-    String label,
-    String value,
-    MaterialColor color,
-  ) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 16, color: color),
-        const SizedBox(width: 6),
-        Text(
-          '$label: ',
-          style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
-        ),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-            color: color,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDataTable() {
     return ClipRRect(
       borderRadius: BorderRadius.circular(10),
       child: DecoratedBox(
@@ -440,116 +392,127 @@ class _MemberHistoryDialogState extends State<_MemberHistoryDialog> {
           border: Border.all(color: Colors.grey.shade200),
           borderRadius: BorderRadius.circular(10),
         ),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: DataTable(
-            sortColumnIndex: _sortColumnIndex,
-            sortAscending: _sortAscending,
-            headingRowColor: WidgetStateProperty.all(Colors.indigo.shade50),
-            headingTextStyle: TextStyle(
-              fontWeight: FontWeight.w700,
-              fontSize: 13,
-              color: Colors.indigo.shade800,
-            ),
-            dataRowMinHeight: 42,
-            dataRowMaxHeight: 48,
-            columnSpacing: 24,
-            columns: [
-              DataColumn(
-                label: const Text('Time In'),
-                onSort: (i, asc) => _sort(i, asc),
-              ),
-              DataColumn(
-                label: const Text('Time Out'),
-                onSort: (i, asc) => _sort(i, asc),
-              ),
-              DataColumn(
-                label: const Text('Status'),
-                onSort: (i, asc) => _sort(i, asc),
-              ),
-              DataColumn(
-                label: const Text('Verified By'),
-                onSort: (i, asc) => _sort(i, asc),
-              ),
-              DataColumn(label: const Text('Platform')),
-            ],
-            rows:
-                _logs.asMap().entries.map((entry) {
-                  final int idx = entry.key;
-                  final Map<String, dynamic> log = entry.value;
-                  final String status = (log['status'] ?? '').toString();
-                  final bool isIn = status == 'IN';
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                child: DataTable(
+                  sortColumnIndex: _sortColumnIndex,
+                  sortAscending: _sortAscending,
+                  headingRowColor: WidgetStateProperty.all(
+                    Colors.indigo.shade50,
+                  ),
+                  headingTextStyle: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                    color: Colors.black.withValues(alpha: 0.8),
+                  ),
+                  dataRowMinHeight: 42,
+                  dataRowMaxHeight: 48,
+                  columnSpacing: 34,
+                  columns: [
+                    DataColumn(
+                      label: Text('Time In ($totalIn)'),
+                      onSort: (i, asc) => _sort(i, asc),
+                    ),
+                    DataColumn(
+                      label: Text('Time Out ($totalOut)'),
+                      onSort: (i, asc) => _sort(i, asc),
+                    ),
+                    DataColumn(
+                      label: Text('Status (Total: $totalVisits)'),
+                      onSort: (i, asc) => _sort(i, asc),
+                    ),
+                    DataColumn(
+                      label: const Text('Verified By'),
+                      onSort: (i, asc) => _sort(i, asc),
+                    ),
+                    DataColumn(label: const Text('Platform')),
+                  ],
+                  rows:
+                      _logs.asMap().entries.map((entry) {
+                        final int idx = entry.key;
+                        final Map<String, dynamic> log = entry.value;
+                        final String status = (log['status'] ?? '').toString();
+                        final bool isIn = status == 'IN';
 
-                  return DataRow(
-                    color: WidgetStateProperty.resolveWith<Color?>((states) {
-                      if (idx.isOdd) return Colors.grey.shade50;
-                      return null;
-                    }),
-                    cells: [
-                      DataCell(
-                        Text(
-                          _fmt(log['time_in']?.toString()),
-                          style: const TextStyle(fontSize: 13),
-                        ),
-                      ),
-                      DataCell(
-                        Text(
-                          _fmt(log['time_out']?.toString()),
-                          style: const TextStyle(fontSize: 13),
-                        ),
-                      ),
-                      DataCell(
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color:
-                                isIn
-                                    ? Colors.green.shade50
-                                    : Colors.orange.shade50,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color:
-                                  isIn
-                                      ? Colors.green.shade200
-                                      : Colors.orange.shade200,
+                        return DataRow(
+                          color: WidgetStateProperty.resolveWith<Color?>((
+                            states,
+                          ) {
+                            if (idx.isOdd) return Colors.grey.shade50;
+                            return null;
+                          }),
+                          cells: [
+                            DataCell(
+                              Text(
+                                _fmt(log['time_in']?.toString()),
+                                style: const TextStyle(fontSize: 13),
+                              ),
                             ),
-                          ),
-                          child: Text(
-                            status.isEmpty ? '—' : status,
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color:
-                                  isIn
-                                      ? Colors.green.shade700
-                                      : Colors.orange.shade700,
+                            DataCell(
+                              Text(
+                                _fmt(log['time_out']?.toString()),
+                                style: const TextStyle(fontSize: 13),
+                              ),
                             ),
-                          ),
-                        ),
-                      ),
-                      DataCell(
-                        Text(
-                          log['verified_by']?.toString().isEmpty ?? true
-                              ? '—'
-                              : log['verified_by'].toString(),
-                          style: const TextStyle(fontSize: 13),
-                        ),
-                      ),
-                      DataCell(
-                        Text(
-                          log['platform']?.toString().isEmpty ?? true
-                              ? '—'
-                              : log['platform'].toString(),
-                          style: const TextStyle(fontSize: 13),
-                        ),
-                      ),
-                    ],
-                  );
-                }).toList(),
-          ),
+                            DataCell(
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color:
+                                      isIn
+                                          ? Colors.green.shade50
+                                          : Colors.red.shade50,
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color:
+                                        isIn
+                                            ? Colors.green.shade200
+                                            : Colors.red.shade200,
+                                  ),
+                                ),
+                                child: Text(
+                                  status.isEmpty ? '—' : status,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color:
+                                        isIn
+                                            ? Colors.green.shade700
+                                            : Colors.red.shade700,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            DataCell(
+                              Text(
+                                log['verified_by']?.toString().isEmpty ?? true
+                                    ? '—'
+                                    : log['verified_by'].toString(),
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                            ),
+                            DataCell(
+                              Text(
+                                log['platform']?.toString().isEmpty ?? true
+                                    ? '—'
+                                    : log['platform'].toString(),
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                            ),
+                          ],
+                        );
+                      }).toList(),
+                ),
+              ),
+            );
+          },
         ),
       ),
     );
@@ -769,7 +732,7 @@ pw.Widget _pdfSummaryBar(List<Map<String, dynamic>> logs) {
         pw.SizedBox(width: 24),
         _pdfStatPill('Time-In Count', totalIn, PdfColors.green800),
         pw.SizedBox(width: 24),
-        _pdfStatPill('Time-Out Count', totalOut, PdfColors.orange800),
+        _pdfStatPill('Time-Out Count', totalOut, PdfColors.red800),
       ],
     ),
   );
@@ -861,9 +824,7 @@ pw.Widget _pdfAttendanceTable(
                       fontSize: 9,
                       color:
                           isStatusCol
-                              ? (isIn
-                                  ? PdfColors.green700
-                                  : PdfColors.orange700)
+                              ? (isIn ? PdfColors.green700 : PdfColors.red700)
                               : PdfColors.black,
                       fontWeight:
                           isStatusCol

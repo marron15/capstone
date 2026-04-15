@@ -2935,9 +2935,13 @@ class _AttendanceHistoryDialogState extends State<_AttendanceHistoryDialog> {
                                 ),
                                 label: const Text('Export PDF'),
                                 style: OutlinedButton.styleFrom(
+                                  backgroundColor: const Color(0xFFC62828),
                                   foregroundColor: Colors.white,
-                                  side: BorderSide(
-                                    color: Colors.white.withValues(alpha: 0.8),
+                                  side: const BorderSide(
+                                    color: Color(0xFFC62828),
+                                  ),
+                                  disabledBackgroundColor: const Color(
+                                    0xFFBDBDBD,
                                   ),
                                   disabledForegroundColor: Colors.white60,
                                   padding: const EdgeInsets.symmetric(
