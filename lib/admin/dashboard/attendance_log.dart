@@ -245,11 +245,10 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
         .where((segment) => segment.trim().isNotEmpty)
         .join(' ');
 
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        fullscreenDialog: true,
-        builder: (_) => _AdminQrScreen(adminName: adminName, payload: payload),
-      ),
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (_) => _AdminQrModal(adminName: adminName, payload: payload),
     );
   }
 
@@ -465,7 +464,7 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
                   ),
                   const SizedBox(width: 8),
                   const Text(
-                    'Attendance Log',
+                    'Time In/Out Log',
                     style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                   ),
                   const Spacer(),
@@ -1033,39 +1032,76 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
   }
 }
 
-class _AdminQrScreen extends StatefulWidget {
-  const _AdminQrScreen({required this.adminName, required this.payload});
+class _AdminQrModal extends StatelessWidget {
+  const _AdminQrModal({required this.adminName, required this.payload});
 
   final String adminName;
   final String payload;
 
   @override
-  State<_AdminQrScreen> createState() => _AdminQrScreenState();
-}
-
-class _AdminQrScreenState extends State<_AdminQrScreen> {
-  @override
   Widget build(BuildContext context) {
     final bool isMobile = MediaQuery.of(context).size.width < 768;
-    final double qrSize = isMobile ? 320.0 : 400.0;
+    final double qrSize = isMobile ? 260.0 : 360.0;
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Admin QR Code')),
-      body: Center(
+    return Dialog(
+      insetPadding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 16 : 40,
+        vertical: isMobile ? 24 : 40,
+      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: isMobile ? 420 : 620),
         child: SingleChildScrollView(
           padding: EdgeInsets.all(isMobile ? 16 : 24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              Row(
+                children: [
+                  const Spacer(),
+                  const Expanded(
+                    flex: 3,
+                    child: Text(
+                      'Admin QR Code',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: IconButton(
+                        tooltip: 'Close',
+                        onPressed: () => Navigator.of(context).pop(),
+                        icon: const Icon(Icons.close),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              if (adminName.trim().isNotEmpty) ...[
+                Text(
+                  adminName,
+                  style: TextStyle(
+                    fontSize: isMobile ? 13 : 14,
+                    color: Colors.grey.shade700,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                SizedBox(height: isMobile ? 10 : 14),
+              ],
               Card(
-                elevation: 4,
+                elevation: 2,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Container(
-                  padding: EdgeInsets.all(isMobile ? 20 : 32),
+                  padding: EdgeInsets.all(isMobile ? 16 : 24),
                   child: QrImageView(
-                    data: widget.payload,
+                    data: payload,
                     version: QrVersions.auto,
                     size: qrSize,
                     gapless: true,
@@ -1074,13 +1110,13 @@ class _AdminQrScreenState extends State<_AdminQrScreen> {
                   ),
                 ),
               ),
-              SizedBox(height: isMobile ? 20 : 24),
+              SizedBox(height: isMobile ? 16 : 20),
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 32),
+                padding: EdgeInsets.symmetric(horizontal: isMobile ? 8 : 20),
                 child: Text(
                   'Display this QR code so members can record attendance.',
                   style: TextStyle(
-                    fontSize: isMobile ? 14 : 16,
+                    fontSize: isMobile ? 13 : 15,
                     color: Colors.grey.shade700,
                   ),
                   textAlign: TextAlign.center,
