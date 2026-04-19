@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
+import '../pdf/export_attendance_log.dart';
 import '../../services/attendance_service.dart';
 import '../../services/unified_auth_state.dart';
 import '../sidenav.dart';
@@ -14,11 +15,48 @@ class AttendanceLogPage extends StatefulWidget {
   State<AttendanceLogPage> createState() => _AttendanceLogPageState();
 }
 
+class _AttendanceDisplayRow {
+  const _AttendanceDisplayRow({
+    required this.customerId,
+    required this.customerName,
+    required this.status,
+    this.attendanceId,
+    this.date,
+    this.timeIn,
+    this.timeOut,
+    this.sessionDuration,
+    this.verifyingAdminName,
+  });
+
+  final int? attendanceId;
+  final int customerId;
+  final String customerName;
+  final String status;
+  final DateTime? date;
+  final DateTime? timeIn;
+  final DateTime? timeOut;
+  final Duration? sessionDuration;
+  final String? verifyingAdminName;
+
+  Duration? get duration =>
+      sessionDuration ??
+      ((timeIn != null && timeOut != null)
+          ? timeOut!.difference(timeIn!)
+          : null);
+
+  String get statusLabel {
+    if (status.isEmpty) return 'Unknown';
+    return status.toUpperCase() == 'IN' ? 'Timed In' : 'Timed Out';
+  }
+}
+
 class _AttendanceLogPageState extends State<AttendanceLogPage> {
   List<AttendanceRecord> _attendanceRecords = [];
-  List<AttendanceRecord> _filteredRecords = [];
+  List<_AttendanceDisplayRow> _filteredRecords = [];
   bool _isLoading = true;
+  bool _isExporting = false;
   String? _errorMessage;
+  String _statusFilter = 'All';
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   DateTime? _selectedDate;
@@ -83,10 +121,44 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
     }
   }
 
+  Future<void> _exportAttendanceReportPdf() async {
+    if (_filteredRecords.isEmpty || _isExporting) return;
+
+    setState(() => _isExporting = true);
+    try {
+      final List<List<String>> rows =
+          _filteredRecords
+              .map(
+                (record) => [
+                  record.customerName,
+                  record.customerId.toString(),
+                  _formatDate(record.date),
+                  _formatTime(record.timeIn),
+                  _formatTime(record.timeOut),
+                  _formatDuration(record.duration),
+                  record.verifyingAdminName?.trim().isNotEmpty == true
+                      ? record.verifyingAdminName!.trim()
+                      : '-',
+                  record.statusLabel,
+                ],
+              )
+              .toList();
+
+      await exportAttendanceLogPdf(context: context, rows: rows);
+    } finally {
+      if (mounted) {
+        setState(() => _isExporting = false);
+      }
+    }
+  }
+
   void _filterRecords() {
+    final List<_AttendanceDisplayRow> displayRows = _expandRecordsForDisplay(
+      _attendanceRecords,
+    );
     final String q = _searchQuery.trim().toLowerCase();
-    List<AttendanceRecord> filtered =
-        _attendanceRecords.where((record) {
+    List<_AttendanceDisplayRow> filtered =
+        displayRows.where((record) {
           final String customerName = record.customerName.toLowerCase();
           final String customerId = record.customerId.toString();
           final String adminName =
@@ -99,6 +171,13 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
               adminName.contains(q) ||
               status.contains(q);
         }).toList();
+
+    if (_statusFilter != 'All') {
+      filtered =
+          filtered
+              .where((record) => record.status.toUpperCase() == _statusFilter)
+              .toList();
+    }
 
     // Default filter is whole month, with optional exact-day override.
     if (_selectedDate != null) {
@@ -121,12 +200,111 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
     });
   }
 
+  Widget _buildStatusFilterHeader() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          _statusFilter == 'All'
+              ? 'Status'
+              : _statusFilter == 'IN'
+              ? 'Time In'
+              : 'Time Out',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.grey.shade800,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        PopupMenuButton<String>(
+          tooltip: 'Filter status',
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+          icon: const Icon(Icons.arrow_drop_down, size: 18),
+          onSelected: (value) {
+            _statusFilter = value;
+            _filterRecords();
+          },
+          itemBuilder:
+              (context) => const [
+                PopupMenuItem(value: 'All', child: Text('All')),
+                PopupMenuItem(value: 'IN', child: Text('Time In')),
+                PopupMenuItem(value: 'OUT', child: Text('Time Out')),
+              ],
+        ),
+      ],
+    );
+  }
+
+  List<_AttendanceDisplayRow> _expandRecordsForDisplay(
+    List<AttendanceRecord> records,
+  ) {
+    final List<_AttendanceDisplayRow> rows = [];
+
+    for (final AttendanceRecord record in records) {
+      final bool hasTimeIn = record.timeIn != null;
+      final bool hasTimeOut = record.timeOut != null;
+
+      if (hasTimeIn) {
+        rows.add(
+          _AttendanceDisplayRow(
+            attendanceId: record.attendanceId,
+            customerId: record.customerId,
+            customerName: record.customerName,
+            status: 'IN',
+            date: record.timeIn ?? record.date,
+            timeIn: record.timeIn,
+            timeOut: record.timeOut,
+            sessionDuration: record.duration,
+            verifyingAdminName: record.verifyingAdminName,
+          ),
+        );
+      }
+
+      if (hasTimeOut) {
+        rows.add(
+          _AttendanceDisplayRow(
+            attendanceId: record.attendanceId,
+            customerId: record.customerId,
+            customerName: record.customerName,
+            status: 'OUT',
+            date: record.timeOut ?? record.date,
+            timeIn: record.timeIn,
+            timeOut: record.timeOut,
+            sessionDuration: record.duration,
+            verifyingAdminName: record.verifyingAdminName,
+          ),
+        );
+      }
+
+      if (!hasTimeIn && !hasTimeOut) {
+        rows.add(
+          _AttendanceDisplayRow(
+            attendanceId: record.attendanceId,
+            customerId: record.customerId,
+            customerName: record.customerName,
+            status: record.status,
+            date: record.date,
+            timeIn: record.timeIn,
+            timeOut: record.timeOut,
+            sessionDuration: record.duration,
+            verifyingAdminName: record.verifyingAdminName,
+          ),
+        );
+      }
+    }
+
+    return rows;
+  }
+
   Future<void> _selectDate(BuildContext context) async {
+    final DateTime today = DateTime.now();
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate ?? DateTime.now(),
       firstDate: DateTime(2020),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      lastDate: DateTime(today.year, today.month, today.day),
     );
     if (picked != null) {
       setState(() {
@@ -201,10 +379,40 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
     return '${hours}h ${minutes}m';
   }
 
-  Widget _buildStatusChip(AttendanceRecord record) {
+  Widget _buildExportPdfButton({bool compact = false}) {
+    if (_isExporting) {
+      return const SizedBox(
+        width: 20,
+        height: 20,
+        child: CircularProgressIndicator(strokeWidth: 2),
+      );
+    }
+
+    return ElevatedButton.icon(
+      onPressed:
+          _isLoading || _filteredRecords.isEmpty
+              ? null
+              : _exportAttendanceReportPdf,
+      icon: Icon(Icons.picture_as_pdf, size: compact ? 16 : 18),
+      label: Text('Export PDF', style: TextStyle(fontSize: compact ? 12 : 13)),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.red.shade700,
+        foregroundColor: Colors.white,
+        disabledBackgroundColor: Colors.red.shade200,
+        disabledForegroundColor: Colors.white70,
+        elevation: 0,
+        padding: EdgeInsets.symmetric(
+          horizontal: compact ? 10 : 12,
+          vertical: compact ? 8 : 10,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusChip(_AttendanceDisplayRow record) {
     final bool isClockIn = record.statusLabel.toLowerCase().contains('in');
     final Color badgeColor =
-        isClockIn ? Colors.green.shade600 : Colors.orange.shade600;
+        isClockIn ? Colors.green.shade600 : Colors.red.shade600;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
@@ -381,61 +589,72 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
             // Search bar
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: SizedBox(
-                height: 36,
-                child: TextField(
-                  controller: _searchController,
-                  onChanged: (value) {
-                    setState(() => _searchQuery = value);
-                    _filterRecords();
-                  },
-                  style: const TextStyle(color: Colors.black87, fontSize: 14),
-                  decoration: InputDecoration(
-                    hintText: 'Search',
-                    hintStyle: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade500,
-                    ),
-                    prefixIcon: const Icon(
-                      Icons.search,
-                      size: 18,
-                      color: Colors.black54,
-                    ),
-                    suffixIcon:
-                        _searchQuery.isNotEmpty
-                            ? IconButton(
-                              icon: const Icon(Icons.clear, size: 18),
-                              onPressed: () {
-                                _searchController.clear();
-                                setState(() => _searchQuery = '');
-                                _filterRecords();
-                              },
-                            )
-                            : null,
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(20),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(20),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(20),
-                      borderSide: BorderSide(
-                        color: Colors.grey.shade400,
-                        width: 1.5,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: 36,
+                      child: TextField(
+                        controller: _searchController,
+                        onChanged: (value) {
+                          setState(() => _searchQuery = value);
+                          _filterRecords();
+                        },
+                        style: const TextStyle(
+                          color: Colors.black87,
+                          fontSize: 14,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: 'Search',
+                          hintStyle: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey.shade500,
+                          ),
+                          prefixIcon: const Icon(
+                            Icons.search,
+                            size: 18,
+                            color: Colors.black54,
+                          ),
+                          suffixIcon:
+                              _searchQuery.isNotEmpty
+                                  ? IconButton(
+                                    icon: const Icon(Icons.clear, size: 18),
+                                    onPressed: () {
+                                      _searchController.clear();
+                                      setState(() => _searchQuery = '');
+                                      _filterRecords();
+                                    },
+                                  )
+                                  : null,
+                          filled: true,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: BorderSide(color: Colors.grey.shade300),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: BorderSide(color: Colors.grey.shade300),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: BorderSide(
+                              color: Colors.grey.shade400,
+                              width: 1.5,
+                            ),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          isDense: true,
+                        ),
                       ),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    isDense: true,
                   ),
-                ),
+                  const SizedBox(width: 10),
+                  _buildExportPdfButton(compact: true),
+                ],
               ),
             ),
             const SizedBox(height: 16),
@@ -519,33 +738,43 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
             Container(
               padding: const EdgeInsets.all(16),
               color: Colors.white,
-              child: TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  hintText:
-                      'Search by customer name, ID, time in, or time out...',
-                  prefixIcon: const Icon(Icons.search),
-                  suffixIcon:
-                      _searchQuery.isNotEmpty
-                          ? IconButton(
-                            icon: const Icon(Icons.clear),
-                            onPressed: () {
-                              _searchController.clear();
-                              setState(() => _searchQuery = '');
-                              _filterRecords();
-                            },
-                          )
-                          : null,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 560,
+                    height: 42,
+                    child: TextField(
+                      controller: _searchController,
+                      decoration: InputDecoration(
+                        hintText:
+                            'Search by customer name, ID, time in, or time out...',
+                        prefixIcon: const Icon(Icons.search),
+                        suffixIcon:
+                            _searchQuery.isNotEmpty
+                                ? IconButton(
+                                  icon: const Icon(Icons.clear),
+                                  onPressed: () {
+                                    _searchController.clear();
+                                    setState(() => _searchQuery = '');
+                                    _filterRecords();
+                                  },
+                                )
+                                : null,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        filled: true,
+                        fillColor: Colors.grey.shade50,
+                      ),
+                      onChanged: (value) {
+                        setState(() => _searchQuery = value);
+                        _filterRecords();
+                      },
+                    ),
                   ),
-                  filled: true,
-                  fillColor: Colors.grey.shade50,
-                ),
-                onChanged: (value) {
-                  setState(() => _searchQuery = value);
-                  _filterRecords();
-                },
+                  const SizedBox(width: 12),
+                  _buildExportPdfButton(),
+                ],
               ),
             ),
           ],
@@ -857,14 +1086,7 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
                           ),
                         ),
                         Expanded(
-                          child: Text(
-                            'Status',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey.shade800,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
+                          child: Center(child: _buildStatusFilterHeader()),
                         ),
                       ],
                     ),
@@ -878,7 +1100,8 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
                         (context, index) =>
                             Divider(height: 1, color: Colors.grey.shade200),
                     itemBuilder: (context, index) {
-                      final AttendanceRecord record = _filteredRecords[index];
+                      final _AttendanceDisplayRow record =
+                          _filteredRecords[index];
                       final DateTime? timeIn = record.timeIn;
                       final DateTime? timeOut = record.timeOut;
                       final DateTime? date = record.date;

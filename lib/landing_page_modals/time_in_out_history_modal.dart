@@ -3,6 +3,22 @@ import 'package:flutter/material.dart';
 import '../admin/modal/member_history_modal.dart';
 import '../services/attendance_service.dart';
 
+class _HistoryEventRow {
+  const _HistoryEventRow({
+    required this.status,
+    this.timeIn,
+    this.timeOut,
+    this.verifyingAdminName,
+    this.platform,
+  });
+
+  final DateTime? timeIn;
+  final DateTime? timeOut;
+  final String status;
+  final String? verifyingAdminName;
+  final String? platform;
+}
+
 class TimeInOutHistoryModal extends StatefulWidget {
   const TimeInOutHistoryModal({
     super.key,
@@ -21,7 +37,11 @@ class _TimeInOutHistoryModalState extends State<TimeInOutHistoryModal> {
   bool _isLoading = true;
   String? _error;
   List<AttendanceRecord> _records = [];
+  List<_HistoryEventRow> _eventRows = [];
   bool _isExporting = false;
+  String _statusFilter = 'All';
+  DateTime _selectedDate = DateTime.now();
+  DateTime? _selectedDayFilter;
 
   int _sortColumnIndex = 0;
   bool _sortAscending = false;
@@ -45,6 +65,7 @@ class _TimeInOutHistoryModalState extends State<TimeInOutHistoryModal> {
       if (!mounted) return;
       setState(() {
         _records = records;
+        _eventRows = _expandRecords(records);
         _applySort();
         _isLoading = false;
       });
@@ -74,7 +95,7 @@ class _TimeInOutHistoryModalState extends State<TimeInOutHistoryModal> {
       return a.compareTo(b);
     }
 
-    _records.sort((a, b) {
+    _eventRows.sort((a, b) {
       int cmp;
       switch (_sortColumnIndex) {
         case 0:
@@ -94,6 +115,143 @@ class _TimeInOutHistoryModalState extends State<TimeInOutHistoryModal> {
       }
       return _sortAscending ? cmp : -cmp;
     });
+  }
+
+  List<_HistoryEventRow> _expandRecords(List<AttendanceRecord> records) {
+    final List<_HistoryEventRow> rows = [];
+
+    for (final record in records) {
+      final bool hasTimeIn = record.timeIn != null;
+      final bool hasTimeOut = record.timeOut != null;
+      final String status = record.status.trim().toUpperCase();
+
+      if (hasTimeIn) {
+        rows.add(
+          _HistoryEventRow(
+            timeIn: record.timeIn,
+            timeOut: record.timeOut,
+            status: 'IN',
+            verifyingAdminName: record.verifyingAdminName,
+            platform: record.platform,
+          ),
+        );
+      }
+
+      if (hasTimeOut) {
+        rows.add(
+          _HistoryEventRow(
+            timeIn: record.timeIn,
+            timeOut: record.timeOut,
+            status: 'OUT',
+            verifyingAdminName: record.verifyingAdminName,
+            platform: record.platform,
+          ),
+        );
+      }
+
+      if (!hasTimeIn && !hasTimeOut) {
+        rows.add(
+          _HistoryEventRow(
+            timeIn: record.timeIn,
+            timeOut: record.timeOut,
+            status: status == 'OUT' ? 'OUT' : 'IN',
+            verifyingAdminName: record.verifyingAdminName,
+            platform: record.platform,
+          ),
+        );
+      }
+    }
+
+    return rows;
+  }
+
+  List<_HistoryEventRow> _visibleEventRows() {
+    List<_HistoryEventRow> filtered = _eventRows;
+
+    if (_statusFilter != 'All') {
+      filtered =
+          filtered
+              .where((row) => row.status.toUpperCase() == _statusFilter)
+              .toList();
+    }
+
+    filtered =
+        filtered.where((row) {
+          final DateTime? recordDate = (row.timeIn ?? row.timeOut)?.toLocal();
+          if (recordDate == null) return false;
+
+          if (_selectedDayFilter != null) {
+            return recordDate.year == _selectedDayFilter!.year &&
+                recordDate.month == _selectedDayFilter!.month &&
+                recordDate.day == _selectedDayFilter!.day;
+          }
+
+          return recordDate.year == _selectedDate.year &&
+              recordDate.month == _selectedDate.month;
+        }).toList();
+
+    return filtered;
+  }
+
+  String _formatDateLabel(DateTime date) {
+    final String mm = date.month.toString().padLeft(2, '0');
+    final String dd = date.day.toString().padLeft(2, '0');
+    final String yyyy = date.year.toString();
+    return '$mm/$dd/$yyyy';
+  }
+
+  String _formatMonthLabel(DateTime date) {
+    final String mm = date.month.toString().padLeft(2, '0');
+    final String yyyy = date.year.toString();
+    return '$mm/$yyyy';
+  }
+
+  Future<void> _pickDateFilter() async {
+    final DateTime today = DateTime.now();
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDayFilter ?? _selectedDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(today.year, today.month, today.day),
+    );
+    if (picked == null) return;
+
+    setState(() {
+      _selectedDate = picked;
+      _selectedDayFilter = picked;
+    });
+  }
+
+  void _setWholeMonthFilter() {
+    setState(() {
+      _selectedDayFilter = null;
+    });
+  }
+
+  Widget _buildStatusFilterHeader(int totalCount) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text('Status (Total: $totalCount)'),
+        PopupMenuButton<String>(
+          tooltip: 'Filter status',
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+          icon: const Icon(Icons.arrow_drop_down, size: 18),
+          onSelected: (value) {
+            setState(() {
+              _statusFilter = value;
+            });
+          },
+          itemBuilder:
+              (context) => const [
+                PopupMenuItem(value: 'All', child: Text('All')),
+                PopupMenuItem(value: 'IN', child: Text('In')),
+                PopupMenuItem(value: 'OUT', child: Text('Out')),
+              ],
+        ),
+      ],
+    );
   }
 
   String _formatDateTime(DateTime? dateTime) {
@@ -165,11 +323,12 @@ class _TimeInOutHistoryModalState extends State<TimeInOutHistoryModal> {
   @override
   Widget build(BuildContext context) {
     final Size size = MediaQuery.of(context).size;
-    final int totalVisits = _records.length;
+    final List<_HistoryEventRow> visibleRows = _visibleEventRows();
+    final int totalVisits = visibleRows.length;
     final int totalIn =
-        _records.where((record) => record.status.toUpperCase() == 'IN').length;
+        visibleRows.where((row) => row.status.toUpperCase() == 'IN').length;
     final int totalOut =
-        _records.where((record) => record.status.toUpperCase() == 'OUT').length;
+        visibleRows.where((row) => row.status.toUpperCase() == 'OUT').length;
 
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
@@ -228,6 +387,36 @@ class _TimeInOutHistoryModalState extends State<TimeInOutHistoryModal> {
                       ],
                     ),
                   ),
+                  const SizedBox(width: 10),
+                  OutlinedButton.icon(
+                    onPressed: _pickDateFilter,
+                    icon: const Icon(Icons.calendar_today, size: 16),
+                    label: Text(
+                      _selectedDayFilter != null
+                          ? _formatDateLabel(_selectedDayFilter!)
+                          : _formatMonthLabel(_selectedDate),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      side: const BorderSide(color: Colors.white30),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      minimumSize: const Size(0, 40),
+                    ),
+                  ),
+                  if (_selectedDayFilter != null) ...[
+                    const SizedBox(width: 10),
+                    IconButton(
+                      onPressed: _setWholeMonthFilter,
+                      tooltip: 'Whole Month',
+                      icon: const Icon(Icons.filter_alt_off),
+                      color: Colors.white70,
+                    ),
+                    const SizedBox(width: 6),
+                  ],
+                  const SizedBox(width: 10),
                   Padding(
                     padding: const EdgeInsets.only(right: 4),
                     child:
@@ -337,7 +526,10 @@ class _TimeInOutHistoryModalState extends State<TimeInOutHistoryModal> {
                                       minWidth: constraints.maxWidth,
                                     ),
                                     child: DataTable(
-                                      sortColumnIndex: _sortColumnIndex,
+                                      sortColumnIndex:
+                                          _sortColumnIndex == 2
+                                              ? null
+                                              : _sortColumnIndex,
                                       sortAscending: _sortAscending,
                                       headingRowColor: WidgetStateProperty.all(
                                         Colors.indigo.shade50,
@@ -362,10 +554,9 @@ class _TimeInOutHistoryModalState extends State<TimeInOutHistoryModal> {
                                           onSort: _sort,
                                         ),
                                         DataColumn(
-                                          label: Text(
-                                            'Status (Total: $totalVisits)',
+                                          label: _buildStatusFilterHeader(
+                                            totalVisits,
                                           ),
-                                          onSort: _sort,
                                         ),
                                         DataColumn(
                                           label: const Text('Verified By'),
@@ -373,9 +564,11 @@ class _TimeInOutHistoryModalState extends State<TimeInOutHistoryModal> {
                                         ),
                                       ],
                                       rows:
-                                          _records.asMap().entries.map((entry) {
+                                          visibleRows.asMap().entries.map((
+                                            entry,
+                                          ) {
                                             final int idx = entry.key;
-                                            final AttendanceRecord record =
+                                            final _HistoryEventRow record =
                                                 entry.value;
 
                                             return DataRow(

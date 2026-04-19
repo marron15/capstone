@@ -6,6 +6,49 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:file_saver/file_saver.dart';
 import '../services/api_service.dart';
 
+bool _hasLogValue(dynamic value) {
+  final String text = value?.toString().trim() ?? '';
+  return text.isNotEmpty && text.toLowerCase() != 'null';
+}
+
+String _normalizedStatusValue(Map<String, dynamic> log) {
+  final String raw = (log['status'] ?? '').toString().trim().toUpperCase();
+  if (raw == 'IN' || raw == 'OUT') return raw;
+  return _hasLogValue(log['time_out']) ? 'OUT' : 'IN';
+}
+
+List<Map<String, dynamic>> _expandLogsByEvent(List<Map<String, dynamic>> logs) {
+  final List<Map<String, dynamic>> expanded = [];
+
+  for (final original in logs) {
+    final Map<String, dynamic> base = Map<String, dynamic>.from(original);
+    final bool hasTimeIn = _hasLogValue(base['time_in']);
+    final bool hasTimeOut = _hasLogValue(base['time_out']);
+
+    if (hasTimeIn) {
+      final row = Map<String, dynamic>.from(base);
+      row['status'] = 'IN';
+      row['date'] = row['time_in'] ?? row['date'];
+      expanded.add(row);
+    }
+
+    if (hasTimeOut) {
+      final row = Map<String, dynamic>.from(base);
+      row['status'] = 'OUT';
+      row['date'] = row['time_out'] ?? row['date'];
+      expanded.add(row);
+    }
+
+    if (!hasTimeIn && !hasTimeOut) {
+      final row = Map<String, dynamic>.from(base);
+      row['status'] = _normalizedStatusValue(row);
+      expanded.add(row);
+    }
+  }
+
+  return expanded;
+}
+
 // ─────────────────────────────────────────────────────────────
 //  Public entry-point
 // ─────────────────────────────────────────────────────────────
@@ -45,6 +88,8 @@ class _MemberHistoryDialogState extends State<_MemberHistoryDialog> {
   String? _error;
   bool _isExporting = false;
   String _statusFilter = 'All';
+  DateTime _selectedDate = DateTime.now();
+  DateTime? _selectedDayFilter;
 
   // Sorting state
   int _sortColumnIndex = 0;
@@ -132,17 +177,32 @@ class _MemberHistoryDialogState extends State<_MemberHistoryDialog> {
   }
 
   String _normalizeStatus(Map<String, dynamic> log) {
-    final String raw = (log['status'] ?? '').toString().trim().toUpperCase();
-    if (raw == 'IN' || raw == 'OUT') return raw;
-    final bool hasTimeOut = (log['time_out']?.toString().isNotEmpty ?? false);
-    return hasTimeOut ? 'OUT' : 'IN';
+    return _normalizedStatusValue(log);
   }
 
   List<Map<String, dynamic>> _visibleLogs() {
-    final List<Map<String, dynamic>> filtered =
-        _logs.where((log) {
+    final List<Map<String, dynamic>> sourceLogs = _expandLogsByEvent(_logs);
+    List<Map<String, dynamic>> filtered =
+        sourceLogs.where((log) {
           if (_statusFilter == 'All') return true;
           return _normalizeStatus(log) == _statusFilter;
+        }).toList();
+
+    filtered =
+        filtered.where((log) {
+          final DateTime? recordDate = _parseLogDate(
+            log['date'] ?? log['time_in'] ?? log['time_out'],
+          );
+          if (recordDate == null) return false;
+
+          if (_selectedDayFilter != null) {
+            return recordDate.year == _selectedDayFilter!.year &&
+                recordDate.month == _selectedDayFilter!.month &&
+                recordDate.day == _selectedDayFilter!.day;
+          }
+
+          return recordDate.year == _selectedDate.year &&
+              recordDate.month == _selectedDate.month;
         }).toList();
 
     filtered.sort((a, b) {
@@ -172,6 +232,49 @@ class _MemberHistoryDialogState extends State<_MemberHistoryDialog> {
     });
 
     return filtered;
+  }
+
+  DateTime? _parseLogDate(dynamic value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    final String text = value.toString().trim();
+    if (text.isEmpty) return null;
+    return DateTime.tryParse(text)?.toLocal();
+  }
+
+  String _formatDateLabel(DateTime date) {
+    final String mm = date.month.toString().padLeft(2, '0');
+    final String dd = date.day.toString().padLeft(2, '0');
+    final String yyyy = date.year.toString();
+    return '$mm/$dd/$yyyy';
+  }
+
+  String _formatMonthLabel(DateTime date) {
+    final String mm = date.month.toString().padLeft(2, '0');
+    final String yyyy = date.year.toString();
+    return '$mm/$yyyy';
+  }
+
+  Future<void> _pickDateFilter() async {
+    final DateTime today = DateTime.now();
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDayFilter ?? _selectedDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(today.year, today.month, today.day),
+    );
+    if (picked == null) return;
+
+    setState(() {
+      _selectedDate = picked;
+      _selectedDayFilter = picked;
+    });
+  }
+
+  void _setWholeMonthFilter() {
+    setState(() {
+      _selectedDayFilter = null;
+    });
   }
 
   // ── Formatters ────────────────────────────────────────────
@@ -233,7 +336,7 @@ class _MemberHistoryDialogState extends State<_MemberHistoryDialog> {
         context: context,
         memberName: _memberName,
         customerId: _customerId,
-        logs: _logs,
+        logs: _expandLogsByEvent(_logs),
       );
     } finally {
       if (mounted) setState(() => _isExporting = false);
@@ -310,6 +413,30 @@ class _MemberHistoryDialogState extends State<_MemberHistoryDialog> {
               ],
             ),
           ),
+          const SizedBox(width: 10),
+          OutlinedButton.icon(
+            onPressed: _pickDateFilter,
+            icon: const Icon(Icons.calendar_today, size: 16),
+            label: Text(
+              _selectedDayFilter != null
+                  ? _formatDateLabel(_selectedDayFilter!)
+                  : _formatMonthLabel(_selectedDate),
+            ),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              minimumSize: const Size(0, 40),
+            ),
+          ),
+          if (_selectedDayFilter != null) ...[
+            const SizedBox(width: 10),
+            IconButton(
+              onPressed: _setWholeMonthFilter,
+              tooltip: 'Whole Month',
+              icon: const Icon(Icons.filter_alt_off),
+            ),
+            const SizedBox(width: 6),
+          ],
+          const SizedBox(width: 10),
           // Export PDF button
           Padding(
             padding: const EdgeInsets.only(right: 8),
@@ -602,7 +729,9 @@ Future<void> exportMemberHistoryToPdf({
   required int customerId,
   required List<Map<String, dynamic>> logs,
 }) async {
-  if (logs.isEmpty) {
+  final List<Map<String, dynamic>> expandedLogs = _expandLogsByEvent(logs);
+
+  if (expandedLogs.isEmpty) {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('No logs to export')));
@@ -655,7 +784,7 @@ Future<void> exportMemberHistoryToPdf({
     ];
 
     final dataRows =
-        logs
+        expandedLogs
             .map(
               (l) => [
                 fmt(l['time_in']?.toString()),
@@ -748,7 +877,7 @@ Future<void> exportMemberHistoryToPdf({
               pw.SizedBox(height: 16),
 
               // ── Summary row ───────────────────────────────────
-              _pdfSummaryBar(logs),
+              _pdfSummaryBar(expandedLogs),
               pw.SizedBox(height: 14),
 
               // ── Attendance table ──────────────────────────────
@@ -779,7 +908,7 @@ Future<void> exportMemberHistoryToPdf({
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Exported ${logs.length} record(s) - AttendanceHistory_${safeN}_$timestamp.pdf',
+            'Exported ${expandedLogs.length} record(s) - AttendanceHistory_${safeN}_$timestamp.pdf',
           ),
           backgroundColor: Colors.indigo,
         ),
@@ -798,9 +927,9 @@ Future<void> exportMemberHistoryToPdf({
 
 pw.Widget _pdfSummaryBar(List<Map<String, dynamic>> logs) {
   final int totalIn =
-      logs.where((l) => (l['status'] ?? '').toString() == 'IN').length;
+      logs.where((l) => _normalizedStatusValue(l) == 'IN').length;
   final int totalOut =
-      logs.where((l) => (l['status'] ?? '').toString() == 'OUT').length;
+      logs.where((l) => _normalizedStatusValue(l) == 'OUT').length;
 
   return pw.Container(
     padding: const pw.EdgeInsets.symmetric(horizontal: 14, vertical: 10),
