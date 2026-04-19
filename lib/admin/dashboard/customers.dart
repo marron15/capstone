@@ -2208,67 +2208,6 @@ class _CustomersPageState extends State<CustomersPage> {
                                             tooltip: 'View / Edit',
                                           ),
                                         ),
-                                        const SizedBox(width: 8),
-                                        if (!_showArchived) ...[
-                                          // Archive icon button
-                                          Container(
-                                            decoration: BoxDecoration(
-                                              color: Colors.orange.shade50,
-                                              borderRadius:
-                                                  BorderRadius.circular(6),
-                                              border: Border.all(
-                                                color: Colors.orange.shade200,
-                                              ),
-                                            ),
-                                            child: IconButton(
-                                              onPressed:
-                                                  () => _confirmAndArchive(
-                                                    customer,
-                                                  ),
-                                              icon: Icon(
-                                                Icons.archive_outlined,
-                                                size: 18,
-                                                color: Colors.orange.shade700,
-                                              ),
-                                              padding: const EdgeInsets.all(8),
-                                              constraints: const BoxConstraints(
-                                                minWidth: 36,
-                                                minHeight: 36,
-                                              ),
-                                              tooltip: 'Archive',
-                                            ),
-                                          ),
-                                        ] else ...[
-                                          // Restore icon button
-                                          Container(
-                                            decoration: BoxDecoration(
-                                              color: Colors.green.shade50,
-                                              borderRadius:
-                                                  BorderRadius.circular(6),
-                                              border: Border.all(
-                                                color: Colors.green.shade200,
-                                              ),
-                                            ),
-                                            child: IconButton(
-                                              onPressed:
-                                                  () => _restoreCustomer(
-                                                    customer,
-                                                  ),
-                                              icon: Icon(
-                                                Icons
-                                                    .settings_backup_restore_rounded,
-                                                size: 18,
-                                                color: Colors.green.shade700,
-                                              ),
-                                              padding: const EdgeInsets.all(8),
-                                              constraints: const BoxConstraints(
-                                                minWidth: 36,
-                                                minHeight: 36,
-                                              ),
-                                              tooltip: 'Restore',
-                                            ),
-                                          ),
-                                        ],
                                       ],
                                     ),
                                   ),
