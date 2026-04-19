@@ -171,9 +171,12 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
 
   String _formatTime(DateTime? dateTime) {
     if (dateTime == null) return 'N/A';
-    final String hour = dateTime.hour.toString().padLeft(2, '0');
+    final int rawHour = dateTime.hour;
+    final int hour12 = rawHour % 12 == 0 ? 12 : rawHour % 12;
+    final String period = rawHour >= 12 ? 'PM' : 'AM';
+    final String hour = hour12.toString();
     final String minute = dateTime.minute.toString().padLeft(2, '0');
-    return '$hour:$minute';
+    return '$hour:$minute $period';
   }
 
   String _formatDate(DateTime? date) {

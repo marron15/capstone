@@ -181,8 +181,11 @@ class _MemberHistoryDialogState extends State<_MemberHistoryDialog> {
     try {
       final dt = DateTime.parse(raw).toLocal();
       final pad = (int n) => n.toString().padLeft(2, '0');
+      final int rawHour = dt.hour;
+      final int hour12 = rawHour % 12 == 0 ? 12 : rawHour % 12;
+      final String period = rawHour >= 12 ? 'PM' : 'AM';
       return '${pad(dt.month)}/${pad(dt.day)}/${dt.year}  '
-          '${pad(dt.hour)}:${pad(dt.minute)}:${pad(dt.second)}';
+          '$hour12:${pad(dt.minute)} $period';
     } catch (_) {
       return raw;
     }
@@ -633,7 +636,10 @@ Future<void> exportMemberHistoryToPdf({
       try {
         final dt = DateTime.parse(raw).toLocal();
         final p = (int n) => n.toString().padLeft(2, '0');
-        return '${p(dt.month)}/${p(dt.day)}/${dt.year} ${p(dt.hour)}:${p(dt.minute)}';
+        final int rawHour = dt.hour;
+        final int hour12 = rawHour % 12 == 0 ? 12 : rawHour % 12;
+        final String period = rawHour >= 12 ? 'PM' : 'AM';
+        return '${p(dt.month)}/${p(dt.day)}/${dt.year} $hour12:${p(dt.minute)} $period';
       } catch (_) {
         return raw;
       }
@@ -664,6 +670,15 @@ Future<void> exportMemberHistoryToPdf({
               ],
             )
             .toList();
+
+    final DateTime generatedAt = DateTime.now();
+    final int generatedRawHour = generatedAt.hour;
+    final int generatedHour12 =
+        generatedRawHour % 12 == 0 ? 12 : generatedRawHour % 12;
+    final String generatedPeriod = generatedRawHour >= 12 ? 'PM' : 'AM';
+    final String generatedLabel =
+        '${generatedAt.year}-${generatedAt.month.toString().padLeft(2, '0')}-${generatedAt.day.toString().padLeft(2, '0')} '
+        '$generatedHour12:${generatedAt.minute.toString().padLeft(2, '0')} $generatedPeriod';
 
     pdf.addPage(
       pw.MultiPage(
@@ -721,7 +736,7 @@ Future<void> exportMemberHistoryToPdf({
                     ),
                     pw.SizedBox(height: 4),
                     pw.Text(
-                      'Generated: ${DateTime.now().toString().split('.')[0]}',
+                      'Generated: $generatedLabel',
                       style: pw.TextStyle(
                         fontSize: 10,
                         color: PdfColors.grey500,

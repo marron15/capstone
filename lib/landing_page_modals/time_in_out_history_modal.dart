@@ -102,10 +102,11 @@ class _TimeInOutHistoryModalState extends State<TimeInOutHistoryModal> {
     final String mm = local.month.toString().padLeft(2, '0');
     final String dd = local.day.toString().padLeft(2, '0');
     final String yyyy = local.year.toString();
-    final String hh = local.hour.toString().padLeft(2, '0');
+    final int rawHour = local.hour;
+    final int hour12 = rawHour % 12 == 0 ? 12 : rawHour % 12;
+    final String period = rawHour >= 12 ? 'PM' : 'AM';
     final String min = local.minute.toString().padLeft(2, '0');
-    final String ss = local.second.toString().padLeft(2, '0');
-    return '$mm/$dd/$yyyy $hh:$min:$ss';
+    return '$mm/$dd/$yyyy $hour12:$min $period';
   }
 
   Widget _buildStatusChip(String status) {
