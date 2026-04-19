@@ -771,7 +771,7 @@ class _CustomersPageState extends State<CustomersPage> {
       children: [
         const Flexible(
           child: Text(
-            'Expiration Date',
+            'Expiration',
             textAlign: TextAlign.center,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,

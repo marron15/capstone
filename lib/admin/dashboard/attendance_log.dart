@@ -22,6 +22,7 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   DateTime? _selectedDate;
+  DateTime? _selectedDayFilter;
   static const double _drawerWidth = 280;
   bool _navCollapsed = false;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
@@ -56,7 +57,8 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
 
     try {
       final records = await AttendanceService.fetchRecords(
-        date: _selectedDate,
+        // Fetch records broadly; month range is applied locally.
+        date: null,
         searchQuery: _searchQuery.isNotEmpty ? _searchQuery : null,
       );
       if (!mounted) return;
@@ -98,15 +100,19 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
               status.contains(q);
         }).toList();
 
-    // Filter by selected date if provided
+    // Default filter is whole month, with optional exact-day override.
     if (_selectedDate != null) {
       filtered =
           filtered.where((record) {
             final DateTime? recordDate = record.date;
             if (recordDate == null) return false;
+            if (_selectedDayFilter != null) {
+              return recordDate.year == _selectedDayFilter!.year &&
+                  recordDate.month == _selectedDayFilter!.month &&
+                  recordDate.day == _selectedDayFilter!.day;
+            }
             return recordDate.year == _selectedDate!.year &&
-                recordDate.month == _selectedDate!.month &&
-                recordDate.day == _selectedDate!.day;
+                recordDate.month == _selectedDate!.month;
           }).toList();
     }
 
@@ -122,13 +128,22 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
       firstDate: DateTime(2020),
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
-    if (picked != null && picked != _selectedDate) {
+    if (picked != null) {
       setState(() {
         _selectedDate = picked;
+        _selectedDayFilter = picked;
       });
       _loadAttendanceRecords();
       _scheduleMidnightRefresh();
     }
+  }
+
+  void _setWholeMonthFilter() {
+    if (_selectedDate == null) return;
+    setState(() {
+      _selectedDayFilter = null;
+    });
+    _filterRecords();
   }
 
   void _scheduleMidnightRefresh() {
@@ -146,6 +161,7 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
       _searchController.clear();
       setState(() {
         _selectedDate = DateTime.now();
+        _selectedDayFilter = null;
         _searchQuery = '';
       });
       _loadAttendanceRecords();
@@ -166,6 +182,13 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
     final String month = date.month.toString().padLeft(2, '0');
     final String year = date.year.toString();
     return '$month/$day/$year';
+  }
+
+  String _formatMonthYear(DateTime? date) {
+    if (date == null) return 'Month';
+    final String month = date.month.toString().padLeft(2, '0');
+    final String year = date.year.toString();
+    return '$month/$year';
   }
 
   String _formatDuration(Duration? duration) {
@@ -316,9 +339,9 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
                     onPressed: () => _selectDate(context),
                     icon: const Icon(Icons.calendar_today, size: 16),
                     label: Text(
-                      _selectedDate != null
-                          ? _formatDate(_selectedDate)
-                          : 'Date',
+                      _selectedDayFilter != null
+                          ? _formatDate(_selectedDayFilter)
+                          : _formatMonthYear(_selectedDate),
                       style: const TextStyle(fontSize: 12),
                     ),
                     style: OutlinedButton.styleFrom(
@@ -328,6 +351,14 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
                       ),
                     ),
                   ),
+                  if (_selectedDayFilter != null) ...[
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: const Icon(Icons.filter_alt_off, size: 20),
+                      tooltip: 'Use whole month',
+                      onPressed: _setWholeMonthFilter,
+                    ),
+                  ],
                   if (unifiedAuthState.isAdminLoggedIn) ...[
                     const SizedBox(width: 8),
                     IconButton(
@@ -443,9 +474,11 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
                     onPressed: () => _selectDate(context),
                     icon: const Icon(Icons.calendar_today, size: 18),
                     label: Text(
-                      _selectedDate != null
-                          ? _formatDate(_selectedDate)
-                          : 'Select Date',
+                      _selectedDayFilter != null
+                          ? _formatDate(_selectedDayFilter)
+                          : _selectedDate != null
+                          ? _formatMonthYear(_selectedDate)
+                          : 'Select Month',
                     ),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
@@ -454,6 +487,14 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
                       ),
                     ),
                   ),
+                  if (_selectedDayFilter != null) ...[
+                    const SizedBox(width: 8),
+                    OutlinedButton.icon(
+                      onPressed: _setWholeMonthFilter,
+                      icon: const Icon(Icons.filter_alt_off, size: 18),
+                      label: const Text('Whole Month'),
+                    ),
+                  ],
                   const SizedBox(width: 8),
                   if (unifiedAuthState.isAdminLoggedIn)
                     OutlinedButton.icon(
@@ -575,7 +616,9 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
                 const SizedBox(height: 8),
                 Text(
                   _selectedDate != null
-                      ? 'for ${_formatDate(_selectedDate)}'
+                      ? _selectedDayFilter != null
+                          ? 'for ${_formatDate(_selectedDayFilter)}'
+                          : 'for ${_formatMonthYear(_selectedDate)}'
                       : '',
                   style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
                 ),
