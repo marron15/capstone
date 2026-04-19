@@ -44,6 +44,7 @@ class _MemberHistoryDialogState extends State<_MemberHistoryDialog> {
   bool _isLoading = true;
   String? _error;
   bool _isExporting = false;
+  String _statusFilter = 'All';
 
   // Sorting state
   int _sortColumnIndex = 0;
@@ -130,6 +131,49 @@ class _MemberHistoryDialogState extends State<_MemberHistoryDialog> {
     });
   }
 
+  String _normalizeStatus(Map<String, dynamic> log) {
+    final String raw = (log['status'] ?? '').toString().trim().toUpperCase();
+    if (raw == 'IN' || raw == 'OUT') return raw;
+    final bool hasTimeOut = (log['time_out']?.toString().isNotEmpty ?? false);
+    return hasTimeOut ? 'OUT' : 'IN';
+  }
+
+  List<Map<String, dynamic>> _visibleLogs() {
+    final List<Map<String, dynamic>> filtered =
+        _logs.where((log) {
+          if (_statusFilter == 'All') return true;
+          return _normalizeStatus(log) == _statusFilter;
+        }).toList();
+
+    filtered.sort((a, b) {
+      dynamic aVal, bVal;
+      switch (_sortColumnIndex) {
+        case 0:
+          aVal = a['time_in'] ?? a['date'] ?? '';
+          bVal = b['time_in'] ?? b['date'] ?? '';
+          break;
+        case 1:
+          aVal = a['time_out'] ?? '';
+          bVal = b['time_out'] ?? '';
+          break;
+        case 2:
+          aVal = _normalizeStatus(a);
+          bVal = _normalizeStatus(b);
+          break;
+        case 3:
+          aVal = a['verified_by'] ?? '';
+          bVal = b['verified_by'] ?? '';
+          break;
+        default:
+          return 0;
+      }
+      final int cmp = aVal.toString().compareTo(bVal.toString());
+      return _sortAscending ? cmp : -cmp;
+    });
+
+    return filtered;
+  }
+
   // ── Formatters ────────────────────────────────────────────
 
   String _fmt(String? raw) {
@@ -142,6 +186,33 @@ class _MemberHistoryDialogState extends State<_MemberHistoryDialog> {
     } catch (_) {
       return raw;
     }
+  }
+
+  Widget _buildStatusFilterHeader(int totalCount) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text('Status ($totalCount)'),
+        PopupMenuButton<String>(
+          tooltip: 'Filter status',
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+          icon: const Icon(Icons.arrow_drop_down, size: 18),
+          onSelected: (value) {
+            setState(() {
+              _statusFilter = value;
+            });
+          },
+          itemBuilder:
+              (context) => const [
+                PopupMenuItem(value: 'All', child: Text('All')),
+                PopupMenuItem(value: 'IN', child: Text('In')),
+                PopupMenuItem(value: 'OUT', child: Text('Out')),
+              ],
+        ),
+      ],
+    );
   }
 
   // ── PDF Export ────────────────────────────────────────────
@@ -379,11 +450,10 @@ class _MemberHistoryDialogState extends State<_MemberHistoryDialog> {
   }
 
   Widget _buildDataTable() {
-    final int totalVisits = _logs.length;
-    final int totalIn =
-        _logs.where((l) => (l['status'] ?? '').toString() == 'IN').length;
-    final int totalOut =
-        _logs.where((l) => (l['status'] ?? '').toString() == 'OUT').length;
+    final List<Map<String, dynamic>> logs = _visibleLogs();
+    final int totalVisits = logs.length;
+    final int totalIn = logs.where((l) => _normalizeStatus(l) == 'IN').length;
+    final int totalOut = logs.where((l) => _normalizeStatus(l) == 'OUT').length;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(10),
@@ -399,7 +469,8 @@ class _MemberHistoryDialogState extends State<_MemberHistoryDialog> {
               child: ConstrainedBox(
                 constraints: BoxConstraints(minWidth: constraints.maxWidth),
                 child: DataTable(
-                  sortColumnIndex: _sortColumnIndex,
+                  sortColumnIndex:
+                      _sortColumnIndex == 2 ? null : _sortColumnIndex,
                   sortAscending: _sortAscending,
                   headingRowColor: WidgetStateProperty.all(
                     Colors.indigo.shade50,
@@ -421,10 +492,7 @@ class _MemberHistoryDialogState extends State<_MemberHistoryDialog> {
                       label: Text('Time Out ($totalOut)'),
                       onSort: (i, asc) => _sort(i, asc),
                     ),
-                    DataColumn(
-                      label: Text('Status (Total: $totalVisits)'),
-                      onSort: (i, asc) => _sort(i, asc),
-                    ),
+                    DataColumn(label: _buildStatusFilterHeader(totalVisits)),
                     DataColumn(
                       label: const Text('Verified By'),
                       onSort: (i, asc) => _sort(i, asc),
@@ -432,10 +500,10 @@ class _MemberHistoryDialogState extends State<_MemberHistoryDialog> {
                     DataColumn(label: const Text('Platform')),
                   ],
                   rows:
-                      _logs.asMap().entries.map((entry) {
+                      logs.asMap().entries.map((entry) {
                         final int idx = entry.key;
                         final Map<String, dynamic> log = entry.value;
-                        final String status = (log['status'] ?? '').toString();
+                        final String status = _normalizeStatus(log);
                         final bool isIn = status == 'IN';
 
                         return DataRow(
