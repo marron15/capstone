@@ -141,6 +141,47 @@ class CustomerViewEditModal {
       return '';
     }
 
+    DateTime? parseMembershipExpiration(dynamic raw) {
+      if (raw == null) {
+        return null;
+      }
+      if (raw is DateTime) {
+        return raw;
+      }
+
+      final String rawText = raw.toString().trim();
+      if (rawText.isEmpty) {
+        return null;
+      }
+
+      DateTime? parsed = DateTime.tryParse(rawText);
+      parsed ??= DateTime.tryParse(rawText.replaceFirst(' ', 'T'));
+      if (parsed == null) {
+        return null;
+      }
+
+      // Date-only values are treated as valid until the end of that day.
+      final bool hasExplicitTime = rawText.contains(':');
+      if (!hasExplicitTime) {
+        return DateTime(parsed.year, parsed.month, parsed.day, 23, 59, 59);
+      }
+
+      return parsed;
+    }
+
+    const String renewMembershipLabel = 'Renew Membership';
+    bool isUpdatableMembershipType(String value) {
+      return value == 'Daily' || value == 'Half Month' || value == 'Monthly';
+    }
+
+    bool isExpiredStatus(dynamic raw) {
+      if (raw == null) {
+        return false;
+      }
+      final String status = raw.toString().trim().toLowerCase();
+      return status == 'expired' || status == 'inactive' || status == 'renew';
+    }
+
     String membershipType = normalizeMembershipType(
       (customer['membership']?['membership_type'] ??
               customer['membership_type'] ??
@@ -150,6 +191,24 @@ class CustomerViewEditModal {
               customer['membershipType'])
           .toString(),
     );
+    final DateTime? membershipExpiration = parseMembershipExpiration(
+      customer['membership']?['expiration_date'] ??
+          customer['membership']?['expirationDate'] ??
+          customer['expiration_date'] ??
+          customer['expirationDate'],
+    );
+    final bool membershipMarkedExpired =
+        isExpiredStatus(customer['membership']?['status']) ||
+        isExpiredStatus(customer['membership']?['membership_status']) ||
+        isExpiredStatus(customer['membership_status']) ||
+        isExpiredStatus(customer['status']);
+    final bool membershipExpired =
+        membershipMarkedExpired ||
+        (membershipExpiration != null &&
+            !membershipExpiration.isAfter(DateTime.now()));
+    if (membershipExpired) {
+      membershipType = '';
+    }
     final String originalMembershipType = membershipType;
 
     // State variables
@@ -257,7 +316,7 @@ class CustomerViewEditModal {
         final bool hasPasswordChange =
             passwordController.text.trim().isNotEmpty;
         final bool membershipChanged =
-            membershipType.isNotEmpty &&
+            isUpdatableMembershipType(membershipType) &&
             membershipType != originalMembershipType;
 
         final bool hasProfileChanges =
@@ -285,11 +344,13 @@ class CustomerViewEditModal {
                 newStartDate.month,
                 newStartDate.day,
                 21, // 9 PM
-                0,  // 0 minutes
-                0,  // 0 seconds
+                0, // 0 minutes
+                0, // 0 seconds
               );
               if (newStartDate.hour >= 21) {
-                newExpirationDate = newExpirationDate.add(const Duration(days: 1));
+                newExpirationDate = newExpirationDate.add(
+                  const Duration(days: 1),
+                );
               }
               break;
             case 'Half Month':
@@ -382,20 +443,23 @@ class CustomerViewEditModal {
           };
         }
 
-        if (membershipType.isNotEmpty) {
+        if (isUpdatableMembershipType(membershipType)) {
           updateData['membership_type'] = membershipType;
         }
 
         final adminData = unifiedAuthState.adminData;
         final dynamic adminIdValue = adminData == null ? null : adminData['id'];
         final int? adminId =
-            adminIdValue is int ? adminIdValue : int.tryParse(adminIdValue?.toString() ?? '');
-        final String adminName = adminData == null
-            ? ''
-            : [
-                (adminData['first_name'] ?? '').toString().trim(),
-                (adminData['last_name'] ?? '').toString().trim(),
-              ].where((segment) => segment.isNotEmpty).join(' ');
+            adminIdValue is int
+                ? adminIdValue
+                : int.tryParse(adminIdValue?.toString() ?? '');
+        final String adminName =
+            adminData == null
+                ? ''
+                : [
+                  (adminData['first_name'] ?? '').toString().trim(),
+                  (adminData['last_name'] ?? '').toString().trim(),
+                ].where((segment) => segment.isNotEmpty).join(' ');
 
         final result = await ApiService.updateCustomerByAdmin(
           id: customerId,
@@ -440,8 +504,7 @@ class CustomerViewEditModal {
           }
 
           // Update local membership type and dates for UI immediately
-          if (membershipType.isNotEmpty &&
-              membershipType != originalMembershipType) {
+          if (membershipChanged) {
             await applyLocalMembershipUpdates();
           }
 
@@ -880,9 +943,11 @@ class CustomerViewEditModal {
                                                         CrossAxisAlignment
                                                             .start,
                                                     children: [
-                                                      const Text(
-                                                        'Membership Type',
-                                                        style: TextStyle(
+                                                      Text(
+                                                        membershipExpired
+                                                            ? renewMembershipLabel
+                                                            : 'Membership Type',
+                                                        style: const TextStyle(
                                                           fontSize: 16,
                                                           fontWeight:
                                                               FontWeight.w600,
@@ -909,7 +974,7 @@ class CustomerViewEditModal {
                                                                   ? null
                                                                   : membershipType,
                                                           items: const [
-                                                            DropdownMenuItem(
+                                                            const DropdownMenuItem(
                                                               value: 'Daily',
                                                               child: Text(
                                                                 'Daily',
@@ -920,7 +985,7 @@ class CustomerViewEditModal {
                                                                 ),
                                                               ),
                                                             ),
-                                                            DropdownMenuItem(
+                                                            const DropdownMenuItem(
                                                               value:
                                                                   'Half Month',
                                                               child: Text(
@@ -932,7 +997,7 @@ class CustomerViewEditModal {
                                                                 ),
                                                               ),
                                                             ),
-                                                            DropdownMenuItem(
+                                                            const DropdownMenuItem(
                                                               value: 'Monthly',
                                                               child: Text(
                                                                 'Monthly',
@@ -1481,6 +1546,8 @@ class CustomerViewEditModal {
                                                       countryController.text =
                                                           customer['address_details']?['country'] ??
                                                           '';
+                                                      membershipType =
+                                                          originalMembershipType;
                                                       // Transaction reset removed
                                                       // Image state reset removed
                                                       errorMessage = null;
