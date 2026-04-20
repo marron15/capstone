@@ -3,6 +3,7 @@ import 'dart:async';
 import '../sidenav.dart';
 import '../modal/customer_view_edit_modal.dart';
 import '../modal/member_history_modal.dart';
+import '../modal/renew_membership_history_modal.dart';
 import '../services/api_service.dart';
 import '../services/refresh_service.dart';
 import '../excel/excel_import.dart';
@@ -1900,7 +1901,7 @@ class _CustomersPageState extends State<CustomersPage> {
                               ),
                             ),
                             SizedBox(
-                              width: 210,
+                              width: 260,
                               child: _buildHeaderCell(
                                 _buildHeaderLabel('Actions'),
                               ),
@@ -2132,7 +2133,7 @@ class _CustomersPageState extends State<CustomersPage> {
                                     ),
                                   ),
                                   SizedBox(
-                                    width: 210,
+                                    width: 260,
                                     child: Row(
                                       mainAxisAlignment:
                                           MainAxisAlignment.center,
@@ -2165,6 +2166,38 @@ class _CustomersPageState extends State<CustomersPage> {
                                               minHeight: 36,
                                             ),
                                             tooltip: 'Time In/Out History',
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        // Membership history button
+                                        Container(
+                                          decoration: BoxDecoration(
+                                            color: Colors.indigo.shade50,
+                                            borderRadius: BorderRadius.circular(
+                                              6,
+                                            ),
+                                            border: Border.all(
+                                              color: Colors.indigo.shade200,
+                                            ),
+                                          ),
+                                          child: IconButton(
+                                            onPressed:
+                                                () =>
+                                                    showRenewMembershipHistoryModal(
+                                                      context,
+                                                      customer,
+                                                    ),
+                                            icon: Icon(
+                                              Icons.autorenew_rounded,
+                                              size: 18,
+                                              color: Colors.indigo.shade700,
+                                            ),
+                                            padding: const EdgeInsets.all(8),
+                                            constraints: const BoxConstraints(
+                                              minWidth: 36,
+                                              minHeight: 36,
+                                            ),
+                                            tooltip: 'Renew Membership History',
                                           ),
                                         ),
                                         const SizedBox(width: 8),

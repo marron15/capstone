@@ -509,6 +509,62 @@ class ApiService {
     }
   }
 
+  // Membership history for a specific customer (used by admin renew history modal)
+  static Future<List<Map<String, dynamic>>> getCustomerMembershipHistory({
+    required int customerId,
+  }) async {
+    try {
+      final res = await http.get(
+        Uri.parse(getAllMembershipsEndpoint),
+        headers: {'Accept': 'application/json'},
+      );
+
+      if (res.statusCode != 200 || res.body.isEmpty) {
+        return [];
+      }
+
+      final dynamic parsed = jsonDecode(res.body);
+      final List<dynamic> rawList;
+      if (parsed is List) {
+        rawList = parsed;
+      } else if (parsed is Map<String, dynamic> && parsed['data'] is List) {
+        rawList = parsed['data'] as List<dynamic>;
+      } else {
+        return [];
+      }
+
+      final List<Map<String, dynamic>> rows =
+          rawList
+              .whereType<Map<String, dynamic>>()
+              .where((row) {
+                final dynamic idRaw = row['customer_id'] ?? row['customerId'];
+                final int id =
+                    idRaw is int
+                        ? idRaw
+                        : int.tryParse(idRaw?.toString() ?? '') ?? -1;
+                return id == customerId;
+              })
+              .map((row) => Map<String, dynamic>.from(row))
+              .toList();
+
+      DateTime parseSortDate(Map<String, dynamic> row) {
+        final String? updatedAt = row['updated_at']?.toString();
+        final String? createdAt = row['created_at']?.toString();
+        final String? startDate = row['start_date']?.toString();
+        return DateTime.tryParse(updatedAt ?? '') ??
+            DateTime.tryParse(createdAt ?? '') ??
+            DateTime.tryParse(startDate ?? '') ??
+            DateTime.fromMillisecondsSinceEpoch(0);
+      }
+
+      rows.sort((a, b) => parseSortDate(b).compareTo(parseSortDate(a)));
+      return rows;
+    } catch (e) {
+      debugPrint('getCustomerMembershipHistory error: $e');
+      return [];
+    }
+  }
+
   // ============================
   // Products
   // ============================
