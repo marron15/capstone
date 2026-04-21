@@ -29,8 +29,9 @@ class _RenewMembershipHistoryDialogState
   bool _isLoading = true;
   String? _error;
   String _typeFilter = 'All';
-  DateTime _selectedMonth = DateTime.now();
-  int _sortColumnIndex = 4;
+  DateTime _selectedDate = DateTime.now();
+  DateTime? _selectedDayFilter;
+  int _sortColumnIndex = 3;
   bool _sortAscending = false;
 
   int get _customerId {
@@ -69,6 +70,33 @@ class _RenewMembershipHistoryDialogState
     return parsed;
   }
 
+  DateTime? _parsePhilippineDateTime(dynamic value) {
+    if (value == null) return null;
+    final String text = value.toString().trim();
+    if (text.isEmpty) return null;
+
+    DateTime? parsed = DateTime.tryParse(text);
+    parsed ??= DateTime.tryParse(text.replaceFirst(' ', 'T'));
+    if (parsed == null) return null;
+
+    final bool hasTimezone = RegExp(r'(Z|[+-]\d{2}:\d{2})$').hasMatch(text);
+    if (hasTimezone) {
+      return parsed.toUtc().add(const Duration(hours: 8));
+    }
+
+    // MySQL DATETIME usually has no timezone; treat it as UTC then convert to PH.
+    return DateTime.utc(
+      parsed.year,
+      parsed.month,
+      parsed.day,
+      parsed.hour,
+      parsed.minute,
+      parsed.second,
+      parsed.millisecond,
+      parsed.microsecond,
+    ).add(const Duration(hours: 8));
+  }
+
   String _formatDate(dynamic value) {
     final DateTime? dt = _parseDate(value);
     if (dt == null) return '-';
@@ -79,7 +107,7 @@ class _RenewMembershipHistoryDialogState
   }
 
   String _formatDateTime(dynamic value) {
-    final DateTime? dt = _parseDate(value);
+    final DateTime? dt = _parsePhilippineDateTime(value);
     if (dt == null) return '-';
     final String mm = dt.month.toString().padLeft(2, '0');
     final String dd = dt.day.toString().padLeft(2, '0');
@@ -121,22 +149,42 @@ class _RenewMembershipHistoryDialogState
     });
   }
 
-  Future<void> _pickMonth() async {
+  Future<void> _pickDate() async {
     final DateTime now = DateTime.now();
+    final DateTime today = DateTime(now.year, now.month, now.day);
+    final DateTime baseDate = _selectedDayFilter ?? _selectedDate;
+    final DateTime initialDate = baseDate.isAfter(today) ? today : baseDate;
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: _selectedMonth,
+      initialDate: initialDate,
       firstDate: DateTime(2020),
-      lastDate: DateTime(now.year + 2),
-      helpText: 'Select month',
+      lastDate: today,
+      selectableDayPredicate: (day) {
+        final DateTime candidate = DateTime(day.year, day.month, day.day);
+        return !candidate.isAfter(today);
+      },
+      helpText: 'Select date',
     );
     if (picked == null) return;
     setState(() {
-      _selectedMonth = DateTime(picked.year, picked.month, 1);
+      _selectedDate = DateTime(picked.year, picked.month, picked.day);
+      _selectedDayFilter = _selectedDate;
     });
   }
 
-  String _monthLabel(DateTime date) {
+  void _setWholeMonthFilter() {
+    setState(() {
+      _selectedDayFilter = null;
+    });
+  }
+
+  String _formatDateLabel(DateTime date) {
+    final String mm = date.month.toString().padLeft(2, '0');
+    final String dd = date.day.toString().padLeft(2, '0');
+    return '$mm/$dd/${date.year}';
+  }
+
+  String _formatMonthLabel(DateTime date) {
     final String mm = date.month.toString().padLeft(2, '0');
     return '$mm/${date.year}';
   }
@@ -152,13 +200,19 @@ class _RenewMembershipHistoryDialogState
           }
 
           final DateTime? anchor =
-              _parseDate(row['updated_at']) ??
-              _parseDate(row['created_at']) ??
+              _parsePhilippineDateTime(row['updated_at']) ??
+              _parsePhilippineDateTime(row['created_at']) ??
               _parseDate(row['start_date']);
           if (anchor == null) return false;
 
-          return anchor.year == _selectedMonth.year &&
-              anchor.month == _selectedMonth.month;
+          if (_selectedDayFilter != null) {
+            return anchor.year == _selectedDayFilter!.year &&
+                anchor.month == _selectedDayFilter!.month &&
+                anchor.day == _selectedDayFilter!.day;
+          }
+
+          return anchor.year == _selectedDate.year &&
+              anchor.month == _selectedDate.month;
         }).toList();
 
     int compareDate(dynamic a, dynamic b) {
@@ -173,34 +227,64 @@ class _RenewMembershipHistoryDialogState
       int cmp;
       switch (_sortColumnIndex) {
         case 0:
+          cmp = compareDate(a['start_date'], b['start_date']);
+          break;
+        case 1:
+          cmp = compareDate(a['expiration_date'], b['expiration_date']);
+          break;
+        case 2:
           cmp = _normalizeMembershipType(
             a['membership_type'] ?? a['status'],
           ).compareTo(
             _normalizeMembershipType(b['membership_type'] ?? b['status']),
           );
           break;
-        case 1:
-          cmp = compareDate(a['start_date'], b['start_date']);
-          break;
-        case 2:
-          cmp = compareDate(a['expiration_date'], b['expiration_date']);
-          break;
         case 3:
-          cmp = (a['status'] ?? '').toString().compareTo(
-            (b['status'] ?? '').toString(),
-          );
-          break;
-        case 4:
         default:
           cmp = compareDate(
-            a['updated_at'] ?? a['created_at'],
-            b['updated_at'] ?? b['created_at'],
+            _parsePhilippineDateTime(a['updated_at'] ?? a['created_at']),
+            _parsePhilippineDateTime(b['updated_at'] ?? b['created_at']),
           );
       }
       return _sortAscending ? cmp : -cmp;
     });
 
     return filtered;
+  }
+
+  bool _isMembershipExpired(Map<String, dynamic> row) {
+    final dynamic expirationRaw = row['expiration_date'];
+    final DateTime? expirationDate = _parseDate(expirationRaw);
+    if (expirationDate == null) return false;
+
+    final DateTime now = DateTime.now();
+    final String membershipType = _normalizeMembershipType(
+      row['membership_type'] ?? row['status'],
+    );
+
+    if (membershipType == 'Daily') {
+      final String expirationText = (expirationRaw ?? '').toString().trim();
+      final bool hasExplicitTime =
+          expirationText.contains(':') || expirationText.contains('T');
+
+      // Backward compatibility: if Daily expiration is date-only, treat it as 9:00 PM.
+      final DateTime dailyCutoff =
+          hasExplicitTime
+              ? expirationDate
+              : DateTime(
+                expirationDate.year,
+                expirationDate.month,
+                expirationDate.day,
+                21,
+                0,
+                0,
+              );
+
+      return !dailyCutoff.isAfter(now);
+    }
+
+    final DateTime todayOnly = DateTime(now.year, now.month, now.day);
+    return expirationDate.isBefore(todayOnly);
   }
 
   Color _typeColor(String type) {
@@ -240,31 +324,6 @@ class _RenewMembershipHistoryDialogState
               ],
         ),
       ],
-    );
-  }
-
-  Widget _buildStatusChip(String statusText) {
-    final String value = statusText.trim().isEmpty ? '-' : statusText.trim();
-    final bool isExpired = value.toLowerCase().contains('expired');
-    final bool isDaily = value.toLowerCase() == 'daily';
-    final Color chipColor =
-        isExpired ? Colors.red : (isDaily ? Colors.orange : Colors.green);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: chipColor.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: chipColor.withValues(alpha: 0.35)),
-      ),
-      child: Text(
-        value,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: chipColor.withValues(alpha: 0.9),
-        ),
-      ),
     );
   }
 
@@ -338,14 +397,27 @@ class _RenewMembershipHistoryDialogState
           ),
           const SizedBox(width: 10),
           OutlinedButton.icon(
-            onPressed: _pickMonth,
+            onPressed: _pickDate,
             icon: const Icon(Icons.calendar_today, size: 16),
-            label: Text(_monthLabel(_selectedMonth)),
+            label: Text(
+              _selectedDayFilter != null
+                  ? _formatDateLabel(_selectedDayFilter!)
+                  : _formatMonthLabel(_selectedDate),
+            ),
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               minimumSize: const Size(0, 40),
             ),
           ),
+          if (_selectedDayFilter != null) ...[
+            const SizedBox(width: 10),
+            IconButton(
+              onPressed: _setWholeMonthFilter,
+              tooltip: 'Whole Month',
+              icon: const Icon(Icons.filter_alt_off),
+            ),
+            const SizedBox(width: 6),
+          ],
           const SizedBox(width: 10),
           IconButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -465,10 +537,6 @@ class _RenewMembershipHistoryDialogState
                   columnSpacing: 30,
                   columns: [
                     DataColumn(
-                      label: _buildMembershipFilterHeader(rows.length),
-                      onSort: (i, asc) => _sort(i, asc),
-                    ),
-                    DataColumn(
                       label: const Text('Start Date'),
                       onSort: (i, asc) => _sort(i, asc),
                     ),
@@ -477,7 +545,7 @@ class _RenewMembershipHistoryDialogState
                       onSort: (i, asc) => _sort(i, asc),
                     ),
                     DataColumn(
-                      label: const Text('Status'),
+                      label: _buildMembershipFilterHeader(rows.length),
                       onSort: (i, asc) => _sort(i, asc),
                     ),
                     DataColumn(
@@ -489,21 +557,33 @@ class _RenewMembershipHistoryDialogState
                       rows.asMap().entries.map((entry) {
                         final int index = entry.key;
                         final Map<String, dynamic> row = entry.value;
+                        final bool isExpired = _isMembershipExpired(row);
 
                         final String type = _normalizeMembershipType(
                           row['membership_type'] ?? row['status'],
                         );
-                        final String status =
-                            (row['status'] ?? type).toString().trim();
 
                         return DataRow(
                           color: WidgetStateProperty.resolveWith<Color?>((
                             states,
                           ) {
+                            if (isExpired) return Colors.red.shade50;
                             if (index.isOdd) return Colors.grey.shade50;
                             return null;
                           }),
                           cells: [
+                            DataCell(
+                              Text(
+                                _formatDate(row['start_date']),
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                            ),
+                            DataCell(
+                              Text(
+                                _formatDate(row['expiration_date']),
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                            ),
                             DataCell(
                               Container(
                                 padding: const EdgeInsets.symmetric(
@@ -531,19 +611,6 @@ class _RenewMembershipHistoryDialogState
                                 ),
                               ),
                             ),
-                            DataCell(
-                              Text(
-                                _formatDate(row['start_date']),
-                                style: const TextStyle(fontSize: 13),
-                              ),
-                            ),
-                            DataCell(
-                              Text(
-                                _formatDate(row['expiration_date']),
-                                style: const TextStyle(fontSize: 13),
-                              ),
-                            ),
-                            DataCell(_buildStatusChip(status)),
                             DataCell(
                               Text(
                                 _formatDateTime(
