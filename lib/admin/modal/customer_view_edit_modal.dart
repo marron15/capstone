@@ -376,10 +376,45 @@ class CustomerViewEditModal {
           }
         }
 
+        final adminData = unifiedAuthState.adminData;
+        final dynamic adminIdValue = adminData == null ? null : adminData['id'];
+        final int? adminId =
+            adminIdValue is int
+                ? adminIdValue
+                : int.tryParse(adminIdValue?.toString() ?? '');
+
+        String readAdminName(Map<String, dynamic>? data) {
+          if (data == null) return '';
+
+          final String first =
+              (data['first_name'] ?? data['firstName'] ?? '').toString().trim();
+          final String last =
+              (data['last_name'] ?? data['lastName'] ?? '').toString().trim();
+          final String combined = [
+            first,
+            last,
+          ].where((segment) => segment.isNotEmpty).join(' ');
+          if (combined.isNotEmpty) return combined;
+
+          final String directName =
+              (data['name'] ?? data['full_name'] ?? data['fullName'] ?? '')
+                  .toString()
+                  .trim();
+          if (directName.isNotEmpty) return directName;
+
+          return (data['username'] ?? '').toString().trim();
+        }
+
+        final String adminName = readAdminName(
+          adminData == null ? null : adminData,
+        );
+
         if (membershipChanged && !hasProfileChanges) {
           final bool upserted = await ApiService.upsertCustomerMembership(
             customerId: customerId,
             membershipType: membershipType,
+            updatedById: adminId,
+            updatedBy: adminName.isNotEmpty ? adminName : null,
           );
           if (upserted) {
             await applyLocalMembershipUpdates();
@@ -446,20 +481,6 @@ class CustomerViewEditModal {
         if (isUpdatableMembershipType(membershipType)) {
           updateData['membership_type'] = membershipType;
         }
-
-        final adminData = unifiedAuthState.adminData;
-        final dynamic adminIdValue = adminData == null ? null : adminData['id'];
-        final int? adminId =
-            adminIdValue is int
-                ? adminIdValue
-                : int.tryParse(adminIdValue?.toString() ?? '');
-        final String adminName =
-            adminData == null
-                ? ''
-                : [
-                  (adminData['first_name'] ?? '').toString().trim(),
-                  (adminData['last_name'] ?? '').toString().trim(),
-                ].where((segment) => segment.isNotEmpty).join(' ');
 
         final result = await ApiService.updateCustomerByAdmin(
           id: customerId,

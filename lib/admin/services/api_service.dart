@@ -1517,6 +1517,8 @@ class ApiService {
   static Future<bool> upsertCustomerMembership({
     required int customerId,
     required String membershipType,
+    int? updatedById,
+    String? updatedBy,
   }) async {
     try {
       final DateTime now = DateTime.now();
@@ -1564,6 +1566,14 @@ class ApiService {
                   ? formatDateTime(expiration)
                   : formatDate(expiration),
           'status': membershipType,
+          if (updatedById != null && updatedById > 0)
+            'updatedById': updatedById.toString(),
+          if (updatedById != null && updatedById > 0)
+            'createdById': updatedById.toString(),
+          if (updatedBy != null && updatedBy.trim().isNotEmpty)
+            'updatedBy': updatedBy.trim(),
+          if (updatedBy != null && updatedBy.trim().isNotEmpty)
+            'createdBy': updatedBy.trim(),
         },
       );
 

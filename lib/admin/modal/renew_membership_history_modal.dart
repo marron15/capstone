@@ -31,7 +31,7 @@ class _RenewMembershipHistoryDialogState
   String _typeFilter = 'All';
   DateTime _selectedDate = DateTime.now();
   DateTime? _selectedDayFilter;
-  int _sortColumnIndex = 3;
+  int _sortColumnIndex = 4;
   bool _sortAscending = false;
 
   int get _customerId {
@@ -189,6 +189,13 @@ class _RenewMembershipHistoryDialogState
     return '$mm/${date.year}';
   }
 
+  String _verifiedByLabel(Map<String, dynamic> row) {
+    final dynamic raw =
+        row['verified_by'] ?? row['updated_by'] ?? row['updatedBy'];
+    final String text = (raw ?? '').toString().trim();
+    return text.isEmpty ? '—' : text;
+  }
+
   List<Map<String, dynamic>> _visibleRows() {
     final List<Map<String, dynamic>> filtered =
         _rows.where((row) {
@@ -240,6 +247,11 @@ class _RenewMembershipHistoryDialogState
           );
           break;
         case 3:
+          cmp = _verifiedByLabel(
+            a,
+          ).toLowerCase().compareTo(_verifiedByLabel(b).toLowerCase());
+          break;
+        case 4:
         default:
           cmp = compareDate(
             _parsePhilippineDateTime(a['updated_at'] ?? a['created_at']),
@@ -549,6 +561,10 @@ class _RenewMembershipHistoryDialogState
                       onSort: (i, asc) => _sort(i, asc),
                     ),
                     DataColumn(
+                      label: const Text('Verified By'),
+                      onSort: (i, asc) => _sort(i, asc),
+                    ),
+                    DataColumn(
                       label: const Text('Updated At'),
                       onSort: (i, asc) => _sort(i, asc),
                     ),
@@ -609,6 +625,12 @@ class _RenewMembershipHistoryDialogState
                                     color: _typeColor(type),
                                   ),
                                 ),
+                              ),
+                            ),
+                            DataCell(
+                              Text(
+                                _verifiedByLabel(row),
+                                style: const TextStyle(fontSize: 13),
                               ),
                             ),
                             DataCell(
