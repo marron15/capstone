@@ -47,6 +47,54 @@ class MembershipService {
       );
     }
   }
+
+  static Future<List<Map<String, dynamic>>> getMembershipHistory(
+    String accessToken,
+  ) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/getMembershipHistory.php'),
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $accessToken',
+        },
+      );
+
+      final dynamic parsed = json.decode(response.body);
+      if (response.statusCode != 200) {
+        final String message =
+            parsed is Map<String, dynamic>
+                ? (parsed['message'] ?? 'Failed to load membership history')
+                    .toString()
+                : 'Failed to load membership history';
+        throw Exception(message);
+      }
+
+      final List<dynamic> rows;
+      if (parsed is Map<String, dynamic> &&
+          parsed['success'] == true &&
+          parsed['data'] is List) {
+        rows = parsed['data'] as List<dynamic>;
+      } else if (parsed is List) {
+        rows = parsed;
+      } else {
+        final String message =
+            parsed is Map<String, dynamic>
+                ? (parsed['message'] ?? 'Failed to load membership history')
+                    .toString()
+                : 'Failed to load membership history';
+        throw Exception(message);
+      }
+
+      return rows
+          .whereType<Map<String, dynamic>>()
+          .map((row) => Map<String, dynamic>.from(row))
+          .toList();
+    } catch (e) {
+      debugPrint('getMembershipHistory error: $e');
+      return [];
+    }
+  }
 }
 
 class MembershipResult {

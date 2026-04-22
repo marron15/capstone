@@ -45,6 +45,8 @@ class ApiService {
   // Membership endpoints
   static const String getAllMembershipsEndpoint =
       '$baseUrl/membership/getAllMembership.php';
+  static const String getCustomerMembershipHistoryEndpoint =
+      '$baseUrl/membership/getMembershipHistoryByCustomerId.php';
   // Address endpoints (these PHP scripts read from $_POST)
   static const String insertAddressEndpoint =
       '$baseUrl/address/insertAddress.php';
@@ -515,7 +517,9 @@ class ApiService {
   }) async {
     try {
       final res = await http.get(
-        Uri.parse(getAllMembershipsEndpoint),
+        Uri.parse(
+          '$getCustomerMembershipHistoryEndpoint?customerId=$customerId',
+        ),
         headers: {'Accept': 'application/json'},
       );
 
@@ -525,10 +529,12 @@ class ApiService {
 
       final dynamic parsed = jsonDecode(res.body);
       final List<dynamic> rawList;
-      if (parsed is List) {
-        rawList = parsed;
-      } else if (parsed is Map<String, dynamic> && parsed['data'] is List) {
+      if (parsed is Map<String, dynamic> &&
+          parsed['success'] == true &&
+          parsed['data'] is List) {
         rawList = parsed['data'] as List<dynamic>;
+      } else if (parsed is List) {
+        rawList = parsed;
       } else {
         return [];
       }

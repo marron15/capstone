@@ -44,6 +44,7 @@ dependencies:
   syncfusion_flutter_xlsio: ^31.2.12
   syncfusion_officechart: ^31.2.12
   pdf: ^3.10.7
+  printing: ^5.14.3
   qr_flutter: ^4.1.0
   web: ^1.1.1
 

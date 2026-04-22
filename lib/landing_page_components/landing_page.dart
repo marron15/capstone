@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'header.dart';
+import '../landing_page_modals/membership_history_modal.dart';
 import '../landing_page_modals/scan_qr.dart';
 
 import '../services/attendance_service.dart';
@@ -2244,6 +2245,48 @@ class _HeroMembershipContainerState extends State<HeroMembershipContainer>
                                 ),
                               ),
                             ],
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Container(
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.04),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: const Color(
+                                0xFFFFA812,
+                              ).withValues(alpha: 0.18),
+                            ),
+                          ),
+                          child: OutlinedButton(
+                            onPressed:
+                                () => showMembershipHistoryModal(context),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              side: BorderSide.none,
+                              padding: EdgeInsets.symmetric(
+                                horizontal: isSmallScreen ? 16 : 18,
+                                vertical: isSmallScreen ? 10 : 12,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.history_rounded, size: 18),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Membership History',
+                                  style: TextStyle(
+                                    fontSize: isSmallScreen ? 13 : 14,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                         if (scanErrorMessage != null) ...[
