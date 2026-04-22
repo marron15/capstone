@@ -193,7 +193,11 @@ class _RenewMembershipHistoryDialogState
 
   String _verifiedByLabel(Map<String, dynamic> row) {
     final dynamic raw =
-        row['verified_by'] ?? row['updated_by'] ?? row['updatedBy'];
+        row['renewed_by'] ??
+        row['renewed_by_name'] ??
+        row['verified_by'] ??
+        row['updated_by'] ??
+        row['updatedBy'];
     final String text = (raw ?? '').toString().trim();
     return text.isEmpty ? '—' : text;
   }
