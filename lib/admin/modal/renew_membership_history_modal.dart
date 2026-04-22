@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../pdf/renewal_membership.dart';
 import '../services/api_service.dart';
 
 Future<void> showRenewMembershipHistoryModal(
@@ -33,6 +34,7 @@ class _RenewMembershipHistoryDialogState
   DateTime? _selectedDayFilter;
   int _sortColumnIndex = 4;
   bool _sortAscending = false;
+  bool _isExportingPdf = false;
 
   int get _customerId {
     final dynamic raw = widget.customer['customerId'] ?? widget.customer['id'];
@@ -194,6 +196,57 @@ class _RenewMembershipHistoryDialogState
         row['verified_by'] ?? row['updated_by'] ?? row['updatedBy'];
     final String text = (raw ?? '').toString().trim();
     return text.isEmpty ? '—' : text;
+  }
+
+  List<List<String>> _buildPdfRows(List<Map<String, dynamic>> rows) {
+    return rows.map((row) {
+      final String type = _normalizeMembershipType(
+        row['membership_type'] ?? row['status'],
+      );
+      return [
+        _formatDate(row['start_date']),
+        _formatDate(row['expiration_date']),
+        type,
+        _verifiedByLabel(row),
+        _formatDateTime(row['updated_at'] ?? row['created_at']),
+      ];
+    }).toList();
+  }
+
+  Future<void> _exportPdf() async {
+    if (_isLoading || _isExportingPdf) return;
+
+    final List<Map<String, dynamic>> rows = _visibleRows();
+    if (rows.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('No rows to export.')));
+      return;
+    }
+
+    setState(() {
+      _isExportingPdf = true;
+    });
+
+    try {
+      await exportRenewalMembershipHistoryPdf(
+        context: context,
+        memberName: _memberName,
+        customerId: _customerId,
+        rangeLabel:
+            _selectedDayFilter != null
+                ? _formatDateLabel(_selectedDayFilter!)
+                : _formatMonthLabel(_selectedDate),
+        membershipFilter: _typeFilter,
+        rows: _buildPdfRows(rows),
+      );
+    } finally {
+      if (!mounted) return;
+      setState(() {
+        _isExportingPdf = false;
+      });
+    }
   }
 
   List<Map<String, dynamic>> _visibleRows() {
@@ -417,6 +470,34 @@ class _RenewMembershipHistoryDialogState
                   : _formatMonthLabel(_selectedDate),
             ),
             style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              minimumSize: const Size(0, 40),
+            ),
+          ),
+          const SizedBox(width: 10),
+          ElevatedButton.icon(
+            onPressed: (_isLoading || _isExportingPdf) ? null : _exportPdf,
+            icon:
+                _isExportingPdf
+                    ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                    : const Icon(Icons.picture_as_pdf_outlined, size: 18),
+            label: Text(_isExportingPdf ? 'Exporting...' : 'Export PDF'),
+            style: ElevatedButton.styleFrom(
+              elevation: 0,
+              backgroundColor: Colors.red.shade700,
+              foregroundColor: Colors.white,
+              disabledBackgroundColor: Colors.white,
+              disabledForegroundColor: Colors.red.shade700,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               minimumSize: const Size(0, 40),
             ),
