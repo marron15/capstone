@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../admin/modal/member_history_modal.dart';
+import '../member_pdf/time_in_out_history_report.dart';
 import '../services/attendance_service.dart';
 
 class _HistoryEventRow {
@@ -38,7 +38,8 @@ class _TimeInOutHistoryModalState extends State<TimeInOutHistoryModal> {
   String? _error;
   List<AttendanceRecord> _records = [];
   List<_HistoryEventRow> _eventRows = [];
-  bool _isExporting = false;
+  final TimeInOutHistoryExportController _exportController =
+      TimeInOutHistoryExportController();
   String _statusFilter = 'All';
   DateTime _selectedDate = DateTime.now();
   DateTime? _selectedDayFilter;
@@ -50,6 +51,12 @@ class _TimeInOutHistoryModalState extends State<TimeInOutHistoryModal> {
   void initState() {
     super.initState();
     _loadHistory();
+  }
+
+  @override
+  void dispose() {
+    _exportController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadHistory() async {
@@ -289,37 +296,6 @@ class _TimeInOutHistoryModalState extends State<TimeInOutHistoryModal> {
     );
   }
 
-  Future<void> _exportPdf() async {
-    if (_records.isEmpty || _isExporting) return;
-
-    setState(() => _isExporting = true);
-    try {
-      final List<Map<String, dynamic>> logs =
-          _records
-              .map(
-                (record) => {
-                  'time_in': record.timeIn?.toIso8601String(),
-                  'time_out': record.timeOut?.toIso8601String(),
-                  'status': record.status,
-                  'verified_by': record.verifyingAdminName,
-                  'platform': record.platform,
-                },
-              )
-              .toList();
-
-      await exportMemberHistoryToPdf(
-        context: context,
-        memberName: widget.memberName,
-        customerId: widget.customerId,
-        logs: logs,
-      );
-    } finally {
-      if (mounted) {
-        setState(() => _isExporting = false);
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final Size size = MediaQuery.of(context).size;
@@ -419,50 +395,24 @@ class _TimeInOutHistoryModalState extends State<TimeInOutHistoryModal> {
                   const SizedBox(width: 10),
                   Padding(
                     padding: const EdgeInsets.only(right: 4),
-                    child:
-                        _isExporting
-                            ? const SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
+                    child: ValueListenableBuilder<bool>(
+                      valueListenable: _exportController.isExporting,
+                      builder: (context, isExporting, _) {
+                        return TimeInOutHistoryExportButton(
+                          isLoading: _isLoading,
+                          isExporting: isExporting,
+                          hasError: _error != null,
+                          hasRecords: _records.isNotEmpty,
+                          onExport:
+                              () => _exportController.export(
+                                context: context,
+                                memberName: widget.memberName,
+                                customerId: widget.customerId,
+                                records: _records,
                               ),
-                            )
-                            : Tooltip(
-                              message:
-                                  _isLoading
-                                      ? 'Loading logs...'
-                                      : 'Export to PDF',
-                              child: OutlinedButton.icon(
-                                onPressed:
-                                    (_isLoading ||
-                                            _error != null ||
-                                            _records.isEmpty)
-                                        ? null
-                                        : _exportPdf,
-                                icon: const Icon(
-                                  Icons.picture_as_pdf,
-                                  size: 16,
-                                ),
-                                label: const Text('Export PDF'),
-                                style: OutlinedButton.styleFrom(
-                                  backgroundColor: const Color(0xFFC62828),
-                                  foregroundColor: Colors.white,
-                                  side: const BorderSide(
-                                    color: Color(0xFFC62828),
-                                  ),
-                                  disabledBackgroundColor: const Color(
-                                    0xFFBDBDBD,
-                                  ),
-                                  disabledForegroundColor: Colors.white60,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 8,
-                                  ),
-                                ),
-                              ),
-                            ),
+                        );
+                      },
+                    ),
                   ),
                   IconButton(
                     onPressed: () => Navigator.of(context).maybePop(),
