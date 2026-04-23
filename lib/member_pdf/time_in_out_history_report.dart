@@ -16,6 +16,7 @@ class TimeInOutHistoryExportController {
     required String memberName,
     required int customerId,
     required List<AttendanceRecord> records,
+    required String dateRangeStr,
   }) async {
     if (isExporting.value || records.isEmpty) return;
 
@@ -26,6 +27,7 @@ class TimeInOutHistoryExportController {
         memberName: memberName,
         customerId: customerId,
         records: records,
+        dateRangeStr: dateRangeStr,
       );
     } finally {
       isExporting.value = false;
@@ -184,6 +186,7 @@ Future<void> exportTimeInOutHistoryReportPdf({
   required String memberName,
   required int customerId,
   required List<AttendanceRecord> records,
+  required String dateRangeStr,
 }) async {
   final List<Map<String, dynamic>> expandedLogs = _expandLogsByEvent(
     _buildLogsFromRecords(records),
@@ -230,12 +233,13 @@ Future<void> exportTimeInOutHistoryReportPdf({
         build: (pw.Context context) {
           return [
             pw.Text(
-              'Attendance History Report',
+              'Time In/Out History Report',
               style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold),
             ),
             pw.SizedBox(height: 6),
             pw.Text('Member: $memberName'),
             pw.Text('Customer ID: #$customerId'),
+            if (dateRangeStr.isNotEmpty) pw.Text('Date Filter: $dateRangeStr'),
             pw.Text('Generated: $generatedAt'),
             pw.Text('Rows: ${dataRows.length}'),
             pw.SizedBox(height: 14),
@@ -256,7 +260,6 @@ Future<void> exportTimeInOutHistoryReportPdf({
                 1: const pw.FlexColumnWidth(1.8),
                 2: const pw.FlexColumnWidth(0.9),
                 3: const pw.FlexColumnWidth(1.8),
-                4: const pw.FlexColumnWidth(1.3),
               },
             ),
           ];

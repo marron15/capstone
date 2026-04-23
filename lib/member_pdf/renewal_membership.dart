@@ -49,7 +49,7 @@ String _renewedByLabel(Map<String, dynamic> row) {
 
 String _statusLabel(Map<String, dynamic> row) {
   final String raw =
-      (row['status'] ?? row['membership_type'] ?? '').toString().trim();
+      (row['Membership'] ?? row['membership_type'] ?? '').toString().trim();
   if (raw.isEmpty) return '-';
   final String normalized = raw.toLowerCase();
   if (normalized == 'daily') return 'Daily';
@@ -63,6 +63,7 @@ Future<void> exportMembershipHistoryPdf({
   required String memberName,
   required int customerId,
   required List<Map<String, dynamic>> rows,
+  String dateRangeStr = '',
 }) async {
   if (rows.isEmpty) {
     if (context.mounted) {
@@ -105,6 +106,7 @@ Future<void> exportMembershipHistoryPdf({
             pw.SizedBox(height: 6),
             pw.Text('Member: $memberName'),
             pw.Text('Customer ID: $customerId'),
+            if (dateRangeStr.isNotEmpty) pw.Text('Date Filter: $dateRangeStr'),
             pw.Text('Generated At: $generatedAt'),
             pw.Text('Rows: ${tableRows.length}'),
             pw.SizedBox(height: 14),
@@ -113,7 +115,7 @@ Future<void> exportMembershipHistoryPdf({
                 'Membership ID',
                 'Start Date',
                 'End Date',
-                'Status',
+                'Memberbership',
                 'Renewed By',
               ],
               data: tableRows,

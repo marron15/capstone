@@ -254,7 +254,7 @@ class _LandingPageState extends State<LandingPage>
           decoration: BoxDecoration(
             color: color.withValues(alpha: 0.2),
 
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(5),
           ),
 
           child: Icon(icon, color: color, size: 20),
@@ -1871,10 +1871,256 @@ class _HeroMembershipContainerState extends State<HeroMembershipContainer>
     );
   }
 
+  // ── Shared sub-builders ────────────────────────────────────────────────
+
+  Widget _buildMembershipInfoColumn(bool isSmallScreen, Size screenSize) {
+    final data = unifiedAuthState.membershipData!;
+    final bool active = _isMembershipActive(data.expirationDate);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Header row: type + badge
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(
+                '${data.membershipType} Membership',
+                style: TextStyle(
+                  color: const Color(0xFFFFA812),
+                  fontSize:
+                      isSmallScreen
+                          ? (screenSize.width * 0.045).clamp(16.0, 22.0)
+                          : (screenSize.width * 0.022).clamp(16.0, 24.0),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color:
+                    active
+                        ? Colors.green.withValues(alpha: 0.9)
+                        : Colors.red.withValues(alpha: 0.9),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: (active ? Colors.green : Colors.red).withValues(
+                      alpha: 0.4,
+                    ),
+                    blurRadius: 8,
+                    spreadRadius: 1,
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    active ? Icons.check_circle : Icons.warning,
+                    color: Colors.white,
+                    size: 14,
+                  ),
+                  const SizedBox(width: 5),
+                  Text(
+                    active ? 'Active' : 'Expired',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        // Progress bar
+        if (active) ...[
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Time Remaining',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              Text(
+                _getTimeRemaining(data.expirationDate),
+                style: const TextStyle(
+                  color: Color(0xFFFFA812),
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          LinearProgressIndicator(
+            value: _getMembershipProgress(data.startDate, data.expirationDate),
+            backgroundColor: Colors.white.withValues(alpha: 0.25),
+            valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFFFA812)),
+            minHeight: 5,
+            borderRadius: BorderRadius.circular(3),
+          ),
+          const SizedBox(height: 14),
+        ],
+        // Dates box
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.18),
+              width: 1,
+            ),
+          ),
+          child: Column(
+            children: [
+              _buildDateRow(
+                'Start Date',
+                _formatDate(data.startDate),
+                Icons.calendar_today,
+                const Color(0xFFFFA812),
+                isSmallScreen,
+                screenSize,
+              ),
+              const SizedBox(height: 10),
+              _buildDateRow(
+                'Expires',
+                data.membershipType == 'Daily'
+                    ? _getTimeRemaining(data.expirationDate)
+                    : _formatDate(data.expirationDate),
+                Icons.event_busy,
+                const Color(0xFFFFA812),
+                isSmallScreen,
+                screenSize,
+              ),
+            ],
+          ),
+        ),
+        // Stats (days used/left)
+        if (active) ...[
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFA812).withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: const Color(0xFFFFA812).withValues(alpha: 0.22),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _buildStatItem(
+                    'Days Used',
+                    '${_getDaysUsed(data.startDate)}',
+                    Icons.timer,
+                    const Color(0xFFFFA812),
+                  ),
+                ),
+                Expanded(
+                  child: _buildStatItem(
+                    'Days Left',
+                    '${_getDaysLeft(data.expirationDate)}',
+                    Icons.schedule,
+                    const Color(0xFFFFA812),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+        const SizedBox(height: 12),
+        // Attendance status
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.22),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.12),
+              width: 1,
+            ),
+          ),
+          child: _buildAttendanceStatusContent(
+            unifiedAuthState.attendanceSnapshot,
+            isSmallScreen,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionButtons(bool isSmallScreen) {
+    return AnimatedBuilder(
+      animation: unifiedAuthState,
+      builder: (context, _) {
+        if (!unifiedAuthState.isCustomerLoggedIn)
+          return const SizedBox.shrink();
+        final bool active =
+            unifiedAuthState.membershipData != null &&
+            _isMembershipActive(
+              unifiedAuthState.membershipData!.expirationDate,
+            );
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _ActionBtn(
+              icon: Icons.qr_code_scanner,
+              label:
+                  isSubmittingScan
+                      ? 'Processing...'
+                      : (!active ? 'Membership Expired' : 'Scan Admin QR'),
+              color: const Color(0xFFFFA812),
+              onPressed: (isSubmittingScan || !active) ? null : _startScanFlow,
+              isLoading: isSubmittingScan,
+            ),
+            const SizedBox(height: 10),
+            _ActionBtn(
+              icon: Icons.history,
+              label: 'Time In/Out History',
+              color: Colors.white70,
+              onPressed: _openAttendanceHistory,
+            ),
+            const SizedBox(height: 10),
+            _ActionBtn(
+              icon: Icons.history_rounded,
+              label: 'Membership History',
+              color: const Color(0xFFFFA812).withValues(alpha: 0.8),
+              onPressed: () => showMembershipHistoryModal(context),
+            ),
+            if (scanErrorMessage != null) ...[
+              const SizedBox(height: 6),
+              Text(
+                scanErrorMessage!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.redAccent, fontSize: 12),
+              ),
+            ],
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final Size screenSize = MediaQuery.of(context).size;
     final bool isSmallScreen = screenSize.width < 600;
+    final bool isWide = screenSize.width >= 900;
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
@@ -1884,9 +2130,9 @@ class _HeroMembershipContainerState extends State<HeroMembershipContainer>
           style: TextStyle(
             color: Colors.white,
             fontSize:
-                (isSmallScreen
+                isSmallScreen
                     ? (screenSize.width * 0.048).clamp(15.0, 22.0)
-                    : (screenSize.width * 0.032).clamp(16.0, 26.0)),
+                    : (screenSize.width * 0.032).clamp(16.0, 26.0),
             fontWeight: FontWeight.w700,
             height: 1.5,
           ),
@@ -1895,419 +2141,75 @@ class _HeroMembershipContainerState extends State<HeroMembershipContainer>
         if (unifiedAuthState.membershipData != null) ...[
           Container(
             width: double.infinity,
-            constraints: BoxConstraints(maxWidth: isSmallScreen ? 320 : 400),
+            constraints: BoxConstraints(
+              maxWidth: isWide ? 860 : (isSmallScreen ? 340 : 480),
+            ),
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Colors.black.withValues(alpha: 0.60),
-                  Colors.black.withValues(alpha: 0.45),
+                  Colors.black.withValues(alpha: 0.62),
+                  Colors.black.withValues(alpha: 0.46),
                 ],
               ),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(18),
               border: Border.all(
                 color: Colors.white.withValues(alpha: 0.22),
                 width: 1.5,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.35),
-                  blurRadius: 18,
+                  color: Colors.black.withValues(alpha: 0.38),
+                  blurRadius: 20,
                   spreadRadius: 1,
                   offset: const Offset(0, 10),
                 ),
               ],
             ),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        '${unifiedAuthState.membershipData!.membershipType} Membership',
-                        style: TextStyle(
-                          color: const Color(0xFFFFA812),
-                          fontSize:
-                              (isSmallScreen
-                                  ? (screenSize.width * 0.045).clamp(16.0, 22.0)
-                                  : (screenSize.width * 0.03).clamp(
-                                    18.0,
-                                    26.0,
-                                  )),
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color:
-                            _isMembershipActive(
-                                  unifiedAuthState
-                                      .membershipData!
-                                      .expirationDate,
-                                )
-                                ? Colors.green.withValues(alpha: 0.9)
-                                : Colors.red.withValues(alpha: 0.9),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: (_isMembershipActive(
-                                      unifiedAuthState
-                                          .membershipData!
-                                          .expirationDate,
-                                    )
-                                    ? Colors.green
-                                    : Colors.red)
-                                .withValues(alpha: 0.4),
-                            blurRadius: 8,
-                            spreadRadius: 1,
-                          ),
-                        ],
-                      ),
+            child:
+                isWide
+                    ? // ── LANDSCAPE: info left | actions right ──
+                    IntrinsicHeight(
                       child: Row(
-                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(
-                            _isMembershipActive(
-                                  unifiedAuthState
-                                      .membershipData!
-                                      .expirationDate,
-                                )
-                                ? Icons.check_circle
-                                : Icons.warning,
-                            color: Colors.white,
-                            size: 16,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            _isMembershipActive(
-                                  unifiedAuthState
-                                      .membershipData!
-                                      .expirationDate,
-                                )
-                                ? 'Active'
-                                : 'Expired',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
+                          Expanded(
+                            flex: 3,
+                            child: _buildMembershipInfoColumn(
+                              isSmallScreen,
+                              screenSize,
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                if (_isMembershipActive(
-                  unifiedAuthState.membershipData!.expirationDate,
-                )) ...[
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Time Remaining',
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                            ),
+                          const SizedBox(width: 20),
+                          VerticalDivider(
+                            width: 1,
+                            thickness: 1,
+                            color: Colors.white.withValues(alpha: 0.12),
                           ),
-                          Text(
-                            _getTimeRemaining(
-                              unifiedAuthState.membershipData!.expirationDate,
-                            ),
-                            style: const TextStyle(
-                              color: Color(0xFFFFA812),
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      LinearProgressIndicator(
-                        value: _getMembershipProgress(
-                          unifiedAuthState.membershipData!.startDate,
-                          unifiedAuthState.membershipData!.expirationDate,
-                        ),
-                        backgroundColor: Colors.white.withValues(alpha: 0.8),
-                        valueColor: const AlwaysStoppedAnimation<Color>(
-                          Color(0xFFFFA812),
-                        ),
-                        minHeight: 6,
-                        borderRadius: BorderRadius.circular(3),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                ],
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      width: 1,
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      _buildDateRow(
-                        'Start Date',
-                        _formatDate(unifiedAuthState.membershipData!.startDate),
-                        Icons.calendar_today,
-                        const Color(0xFFFFA812),
-                        isSmallScreen,
-                        screenSize,
-                      ),
-                      const SizedBox(height: 12),
-                      _buildDateRow(
-                        'Expires',
-                        unifiedAuthState.membershipData!.membershipType ==
-                                'Daily'
-                            ? _getTimeRemaining(
-                              unifiedAuthState.membershipData!.expirationDate,
-                            )
-                            : _formatDate(
-                              unifiedAuthState.membershipData!.expirationDate,
-                            ),
-                        Icons.event_busy,
-                        const Color(0xFFFFA812),
-                        isSmallScreen,
-                        screenSize,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-                if (_isMembershipActive(
-                  unifiedAuthState.membershipData!.expirationDate,
-                )) ...[
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFA812).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: const Color(0xFFFFA812).withValues(alpha: 0.25),
-                        width: 1,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: _buildStatItem(
-                            'Days Used',
-                            '${_getDaysUsed(unifiedAuthState.membershipData!.startDate)}',
-                            Icons.timer,
-                            const Color(0xFFFFA812),
-                          ),
-                        ),
-                        Expanded(
-                          child: _buildStatItem(
-                            'Days Left',
-                            '${_getDaysLeft(unifiedAuthState.membershipData!.expirationDate)}',
-                            Icons.schedule,
-                            const Color(0xFFFFA812),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.25),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.15),
-                      width: 1,
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildAttendanceStatusContent(
-                        unifiedAuthState.attendanceSnapshot,
-                        isSmallScreen,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-                AnimatedBuilder(
-                  animation: unifiedAuthState,
-                  builder: (context, child) {
-                    if (!unifiedAuthState.isCustomerLoggedIn)
-                      return const SizedBox.shrink();
-                    final bool isMembershipActive =
-                        unifiedAuthState.membershipData != null &&
-                        _isMembershipActive(
-                          unifiedAuthState.membershipData!.expirationDate,
-                        );
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        OutlinedButton(
-                          onPressed:
-                              (isSubmittingScan || !isMembershipActive)
-                                  ? null
-                                  : _startScanFlow,
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.white,
-                            side: BorderSide(
-                              color: const Color(
-                                0xFFFFA812,
-                              ).withValues(alpha: 0.9),
-                              width: 1.4,
-                            ),
-                            padding: EdgeInsets.symmetric(
-                              horizontal: isSmallScreen ? 16 : 18,
-                              vertical: isSmallScreen ? 12 : 14,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Icons.qr_code_scanner, size: 20),
-                              const SizedBox(width: 8),
-                              Text(
-                                isSubmittingScan
-                                    ? 'Processing...'
-                                    : (!isMembershipActive
-                                        ? 'Membership Expired'
-                                        : 'Scan Admin QR'),
-                                style: TextStyle(
-                                  fontSize: isSmallScreen ? 14 : 15,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              if (isSubmittingScan) ...[
-                                const SizedBox(width: 12),
-                                const SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      Color(0xFFFFA812),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        OutlinedButton(
-                          onPressed: _openAttendanceHistory,
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.white,
-                            side: BorderSide(
-                              color: Colors.white.withValues(alpha: 0.65),
-                              width: 1.2,
-                            ),
-                            padding: EdgeInsets.symmetric(
-                              horizontal: isSmallScreen ? 16 : 18,
-                              vertical: isSmallScreen ? 10 : 12,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Icons.history, size: 18),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Time In/Out History',
-                                style: TextStyle(
-                                  fontSize: isSmallScreen ? 13 : 14,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Container(
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.04),
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: const Color(
-                                0xFFFFA812,
-                              ).withValues(alpha: 0.18),
-                            ),
-                          ),
-                          child: OutlinedButton(
-                            onPressed:
-                                () => showMembershipHistoryModal(context),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.white,
-                              side: BorderSide.none,
-                              padding: EdgeInsets.symmetric(
-                                horizontal: isSmallScreen ? 16 : 18,
-                                vertical: isSmallScreen ? 10 : 12,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: Row(
+                          const SizedBox(width: 20),
+                          Expanded(
+                            flex: 2,
+                            child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                const Icon(Icons.history_rounded, size: 18),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Membership History',
-                                  style: TextStyle(
-                                    fontSize: isSmallScreen ? 13 : 14,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
+                                const SizedBox(height: 8),
+                                _buildActionButtons(isSmallScreen),
                               ],
                             ),
                           ),
-                        ),
-                        if (scanErrorMessage != null) ...[
-                          const SizedBox(height: 6),
-                          Text(
-                            scanErrorMessage!,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: Colors.redAccent,
-                              fontSize: 12,
-                            ),
-                          ),
                         ],
-                        const SizedBox(height: 12),
+                      ),
+                    )
+                    : // ── PORTRAIT: stacked ──
+                    Column(
+                      children: [
+                        _buildMembershipInfoColumn(isSmallScreen, screenSize),
+                        const SizedBox(height: 16),
+                        _buildActionButtons(isSmallScreen),
                       ],
-                    );
-                  },
-                ),
-                const SizedBox(height: 16),
-              ],
-            ),
+                    ),
           ),
         ] else ...[
           Text(
@@ -2315,13 +2217,70 @@ class _HeroMembershipContainerState extends State<HeroMembershipContainer>
             style: TextStyle(
               color: Colors.white70,
               fontSize:
-                  (isSmallScreen
+                  isSmallScreen
                       ? (screenSize.width * 0.035).clamp(12.0, 18.0)
-                      : (screenSize.width * 0.024).clamp(14.0, 22.0)),
+                      : (screenSize.width * 0.024).clamp(14.0, 22.0),
             ),
           ),
         ],
       ],
+    );
+  }
+}
+
+// ── Reusable action button ───────────────────────────────────────────────────
+
+class _ActionBtn extends StatelessWidget {
+  const _ActionBtn({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onPressed,
+    this.isLoading = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback? onPressed;
+  final bool isLoading;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton(
+      onPressed: onPressed,
+      style: OutlinedButton.styleFrom(
+        foregroundColor: Colors.white,
+        side: BorderSide(color: color.withValues(alpha: 0.85), width: 1.4),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 18, color: color),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+          ),
+          if (isLoading) ...[
+            const SizedBox(width: 10),
+            SizedBox(
+              width: 14,
+              height: 14,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(color),
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
