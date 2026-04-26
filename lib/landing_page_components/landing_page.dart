@@ -541,8 +541,8 @@ class _HeroMembershipContainerState extends State<HeroMembershipContainer>
             color: Colors.white,
             fontSize:
                 isSmallScreen
-                    ? (screenSize.width * 0.048).clamp(15.0, 22.0)
-                    : (screenSize.width * 0.032).clamp(16.0, 26.0),
+                    ? (screenSize.width * 0.6).clamp(18.0, 28.0)
+                    : (screenSize.width * 0.045).clamp(20.0, 36.0),
             fontWeight: FontWeight.w700,
             height: 1.5,
           ),

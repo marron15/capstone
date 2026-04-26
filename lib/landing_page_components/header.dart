@@ -48,7 +48,7 @@ class MainHeader extends StatelessWidget {
                   'RNR FITNESS GYM',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 24,
+                    fontSize: 30,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 1.2,
                   ),
@@ -91,7 +91,7 @@ class MainHeader extends StatelessWidget {
                             icon: const Icon(
                               Icons.account_circle,
                               color: Colors.white,
-                              size: 28,
+                              size: 40,
                             ),
                             tooltip: 'Profile',
                           ),
@@ -193,7 +193,7 @@ class _HeaderNavTextButtonState extends State<_HeaderNavTextButton> {
             curve: Curves.easeInOut,
             style: TextStyle(
               color: textColor,
-              fontSize: 16,
+              fontSize: 18,
               fontWeight: FontWeight.w600,
             ),
             child: Text(widget.label),
