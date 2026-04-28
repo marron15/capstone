@@ -528,109 +528,155 @@ class _HeroMembershipContainerState extends State<HeroMembershipContainer>
   @override
   Widget build(BuildContext context) {
     final Size screenSize = MediaQuery.of(context).size;
-    final bool isSmallScreen = screenSize.width < 600;
-    final bool isWide = screenSize.width >= 900;
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text(
-          'Welcome back, ${unifiedAuthState.customerName ?? 'Member'}!',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize:
-                isSmallScreen
-                    ? (screenSize.width * 0.6).clamp(18.0, 28.0)
-                    : (screenSize.width * 0.045).clamp(20.0, 36.0),
-            fontWeight: FontWeight.w700,
-            height: 1.5,
-          ),
-        ),
-        SizedBox(height: screenSize.height * 0.02),
-        if (unifiedAuthState.membershipData != null) ...[
-          Container(
-            width: double.infinity,
-            constraints: BoxConstraints(
-              maxWidth: isWide ? 860 : (isSmallScreen ? 340 : 480),
-            ),
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [const Color(0xFF131313), const Color(0xFF1E1E1E)],
-              ),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.22),
-                width: 1.5,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.38),
-                  blurRadius: 20,
-                  spreadRadius: 1,
-                  offset: const Offset(0, 10),
-                ),
-              ],
-            ),
-            child:
-                isWide
-                    ? // ── LANDSCAPE: info left | actions right ──
-                    IntrinsicHeight(
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            flex: 3,
-                            child: _buildMembershipInfoColumn(
-                              isSmallScreen,
-                              screenSize,
-                            ),
-                          ),
-                          const SizedBox(width: 20),
-                          VerticalDivider(
-                            width: 1,
-                            thickness: 1,
-                            color: Colors.white.withValues(alpha: 0.12),
-                          ),
-                          const SizedBox(width: 20),
-                          Expanded(
-                            flex: 2,
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const SizedBox(height: 8),
-                                _buildActionButtons(isSmallScreen),
-                              ],
-                            ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double viewportWidth =
+            constraints.maxWidth.isFinite
+                ? constraints.maxWidth
+                : screenSize.width;
+        final double viewportHeight =
+            constraints.maxHeight.isFinite
+                ? constraints.maxHeight
+                : screenSize.height;
+
+        final bool isSmallScreen = viewportWidth < 600;
+        final bool isWide = viewportWidth >= 900;
+        final bool isCompactHeight = viewportHeight < 820;
+        final double targetWidth = isWide ? 860 : (isSmallScreen ? 340 : 480);
+        final double contentWidth =
+            isSmallScreen ? viewportWidth.clamp(280.0, 380.0) : targetWidth;
+        final Size responsiveSize = Size(viewportWidth, viewportHeight);
+
+        return SizedBox(
+          width: double.infinity,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.topCenter,
+            child: SizedBox(
+              width: contentWidth,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Welcome back, ${unifiedAuthState.customerName ?? 'Member'}!',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize:
+                          isSmallScreen
+                              ? (responsiveSize.width * 0.12).clamp(16.0, 24.0)
+                              : (responsiveSize.width * 0.045).clamp(
+                                20.0,
+                                36.0,
+                              ),
+                      fontWeight: FontWeight.w700,
+                      height: 1.35,
+                    ),
+                  ),
+                  SizedBox(
+                    height: isCompactHeight ? 10 : responsiveSize.height * 0.02,
+                  ),
+                  if (unifiedAuthState.membershipData != null) ...[
+                    Container(
+                      width: double.infinity,
+                      constraints: BoxConstraints(maxWidth: targetWidth),
+                      padding: EdgeInsets.all(isCompactHeight ? 14 : 20),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            const Color(0xFF131313),
+                            const Color(0xFF1E1E1E),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.22),
+                          width: 1.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.38),
+                            blurRadius: 20,
+                            spreadRadius: 1,
+                            offset: const Offset(0, 10),
                           ),
                         ],
                       ),
-                    )
-                    : // ── PORTRAIT: stacked ──
-                    Column(
-                      children: [
-                        _buildMembershipInfoColumn(isSmallScreen, screenSize),
-                        const SizedBox(height: 16),
-                        _buildActionButtons(isSmallScreen),
-                      ],
+                      child:
+                          isWide
+                              ? IntrinsicHeight(
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(
+                                      flex: 3,
+                                      child: _buildMembershipInfoColumn(
+                                        isSmallScreen,
+                                        responsiveSize,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 20),
+                                    VerticalDivider(
+                                      width: 1,
+                                      thickness: 1,
+                                      color: Colors.white.withValues(
+                                        alpha: 0.12,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 20),
+                                    Expanded(
+                                      flex: 2,
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          const SizedBox(height: 8),
+                                          _buildActionButtons(isSmallScreen),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                              : Column(
+                                children: [
+                                  _buildMembershipInfoColumn(
+                                    isSmallScreen,
+                                    responsiveSize,
+                                  ),
+                                  SizedBox(height: isCompactHeight ? 10 : 16),
+                                  _buildActionButtons(isSmallScreen),
+                                ],
+                              ),
                     ),
-          ),
-        ] else ...[
-          Text(
-            'Loading membership details...',
-            style: TextStyle(
-              color: Colors.white70,
-              fontSize:
-                  isSmallScreen
-                      ? (screenSize.width * 0.035).clamp(12.0, 18.0)
-                      : (screenSize.width * 0.024).clamp(14.0, 22.0),
+                  ] else ...[
+                    Text(
+                      'Loading membership details...',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize:
+                            isSmallScreen
+                                ? (responsiveSize.width * 0.035).clamp(
+                                  12.0,
+                                  18.0,
+                                )
+                                : (responsiveSize.width * 0.024).clamp(
+                                  14.0,
+                                  22.0,
+                                ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ),
           ),
-        ],
-      ],
+        );
+      },
     );
   }
 }
@@ -654,7 +700,9 @@ class _ActionBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isSmallScreen = MediaQuery.of(context).size.width < 600;
+    final Size screenSize = MediaQuery.of(context).size;
+    final bool isSmallScreen = screenSize.width < 600;
+    final bool isCompactHeight = screenSize.height < 820;
 
     return OutlinedButton(
       onPressed: onPressed,
@@ -662,22 +710,26 @@ class _ActionBtn extends StatelessWidget {
         foregroundColor: Colors.white,
         backgroundColor: color.withValues(alpha: 0.12),
         side: BorderSide(color: color.withValues(alpha: 0.9), width: 1.8),
-        minimumSize: const Size(double.infinity, 54),
+        minimumSize: Size(double.infinity, isCompactHeight ? 46 : 54),
         padding: EdgeInsets.symmetric(
-          horizontal: isSmallScreen ? 18 : 22,
-          vertical: isSmallScreen ? 14 : 16,
+          horizontal: isSmallScreen ? 16 : 22,
+          vertical: isCompactHeight ? 10 : (isSmallScreen ? 14 : 16),
         ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: isSmallScreen ? 20 : 22, color: color),
+          Icon(
+            icon,
+            size: (isSmallScreen || isCompactHeight) ? 20 : 22,
+            color: color,
+          ),
           const SizedBox(width: 10),
           Text(
             label,
             style: TextStyle(
-              fontSize: isSmallScreen ? 15 : 16,
+              fontSize: isCompactHeight ? 14 : (isSmallScreen ? 15 : 16),
               fontWeight: FontWeight.w700,
               color: Colors.white,
             ),

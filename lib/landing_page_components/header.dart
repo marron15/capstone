@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/unified_auth_state.dart';
 import '../services/apk_download_button.dart';
+import 'sidenav.dart';
 
 // TRANSPARENT HEADER (moved from main.dart)
 class MainHeader extends StatelessWidget {
@@ -10,51 +11,147 @@ class MainHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final Size screenSize = MediaQuery.of(context).size;
+    final double topInset = MediaQuery.of(context).padding.top;
+    final bool isDesktop = MediaQuery.of(context).size.width >= 900;
+    final bool isSmallMobile = screenSize.width < 420;
+    final double expandedHeaderHeight =
+      isDesktop ? 160 : (isSmallMobile ? 96 : 108);
+    final double collapsedHeaderHeight =
+      isDesktop ? 80 : (isSmallMobile ? 68 : 74);
+    final double horizontalPadding =
+      isDesktop
+        ? 40
+        : (screenSize.width < 360 ? 12 : (isSmallMobile ? 16 : 20));
+    final double topContentPadding = isDesktop ? (topInset + 12) : (topInset + 6);
+    final double bottomContentPadding = isDesktop ? 12 : 6;
+
+    Future<void> handleLogout() async {
+      await unifiedAuthState.logout();
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Logged out successfully')),
+        );
+        Navigator.pushReplacementNamed(context, '/home');
+      }
+    }
+
+    void openMobileMenu() {
+      showGeneralDialog(
+        context: context,
+        barrierDismissible: true,
+        barrierLabel: 'Navigation Menu',
+        barrierColor: Colors.black.withValues(alpha: 0.55),
+        transitionDuration: const Duration(milliseconds: 240),
+        pageBuilder: (dialogContext, _, __) {
+          return Align(
+            alignment: Alignment.centerLeft,
+            child: Material(
+              color: Colors.transparent,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 340),
+                child: SizedBox(
+                  width: MediaQuery.of(dialogContext).size.width * 0.82,
+                  child: LandingSideNav(
+                    onSectionTap: onSectionTap,
+                    onProfileTap: () {
+                      Navigator.of(dialogContext).pop();
+                      Navigator.pushNamed(context, '/customer-profile');
+                    },
+                    onLogoutTap: () async {
+                      Navigator.of(dialogContext).pop();
+                      await handleLogout();
+                    },
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+        transitionBuilder: (_, animation, __, child) {
+          final offsetAnimation = Tween<Offset>(
+            begin: const Offset(-1, 0),
+            end: Offset.zero,
+          ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOut));
+          return SlideTransition(position: offsetAnimation, child: child);
+        },
+      );
+    }
+
     return Positioned(
       top: 0,
       left: 0,
       right: 0,
-      child: SafeArea(
-        bottom: false,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 280),
-          curve: Curves.easeInOut,
-          height: isScrolled ? 80 : 160,
-          decoration: BoxDecoration(
-            color: isScrolled ? const Color(0xFF111111) : Colors.transparent,
-            border:
-                isScrolled
-                    ? const Border(
-                      bottom: BorderSide(color: Color(0xFF2A2A2A), width: 1),
-                    )
-                    : null,
-            boxShadow:
-                isScrolled
-                    ? [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.4),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ]
-                    : null,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeInOut,
+        height: (isScrolled ? collapsedHeaderHeight : expandedHeaderHeight) +
+            topInset,
+        decoration: BoxDecoration(
+          color: isScrolled ? const Color(0xFF111111) : Colors.transparent,
+          border:
+              isScrolled
+                  ? const Border(
+                    bottom: BorderSide(color: Color(0xFF2A2A2A), width: 1),
+                  )
+                  : null,
+          boxShadow:
+              isScrolled
+                  ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.4),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                  : null,
+        ),
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            horizontalPadding,
+            topContentPadding,
+            horizontalPadding,
+            bottomContentPadding,
           ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
+          child: Align(
+            alignment: Alignment.topCenter,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text(
-                  'RNR FITNESS GYM',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 30,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.2,
+                if (!isDesktop)
+                  IconButton(
+                    onPressed: openMobileMenu,
+                    icon: const Icon(Icons.menu, color: Colors.white, size: 30),
+                    tooltip: 'Open menu',
                   ),
-                ),
-                const Spacer(),
-                if (MediaQuery.of(context).size.width >= 900) ...[
+                if (!isDesktop) const SizedBox(width: 8),
+                if (isDesktop)
+                  const Text(
+                    'RNR FITNESS GYM',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 30,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.2,
+                    ),
+                  )
+                else
+                  Expanded(
+                    child: Text(
+                      'RNR FITNESS GYM',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: isSmallMobile ? 22 : 26,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                  ),
+                if (isDesktop) const Spacer(),
+                if (!isDesktop) const SizedBox(width: 6),
+                if (isDesktop) ...[
                   _HeaderNavTextButton(
                     label: 'Home',
                     onTap: () => onSectionTap?.call('Home'),
@@ -77,77 +174,67 @@ class MainHeader extends StatelessWidget {
                   ),
                   const Spacer(),
                 ],
-                AnimatedBuilder(
-                  animation: unifiedAuthState,
-                  builder: (context, child) {
-                    if (unifiedAuthState.isCustomerLoggedIn) {
-                      return Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            onPressed: () {
-                              Navigator.pushNamed(context, '/customer-profile');
-                            },
-                            icon: const Icon(
-                              Icons.account_circle,
-                              color: Colors.white,
-                              size: 40,
+                if (isDesktop) ...[
+                  AnimatedBuilder(
+                    animation: unifiedAuthState,
+                    builder: (context, child) {
+                      if (unifiedAuthState.isCustomerLoggedIn) {
+                        return Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              onPressed: () {
+                                Navigator.pushNamed(context, '/customer-profile');
+                              },
+                              icon: const Icon(
+                                Icons.account_circle,
+                                color: Colors.white,
+                                size: 40,
+                              ),
+                              tooltip: 'Profile',
                             ),
-                            tooltip: 'Profile',
-                          ),
-                          const SizedBox(width: 12),
-                          ElevatedButton(
-                            onPressed: () async {
-                              await unifiedAuthState.logout();
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Logged out successfully'),
-                                  ),
-                                );
-                                Navigator.pushReplacementNamed(
-                                  context,
-                                  '/home',
-                                );
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red.withValues(
-                                alpha: 0.8,
-                              ),
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 10,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              elevation: 0,
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.logout, size: 16),
-                                SizedBox(width: 6),
-                                Text(
-                                  'Logout',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                            const SizedBox(width: 12),
+                            ElevatedButton(
+                              onPressed: handleLogout,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red.withValues(
+                                  alpha: 0.8,
                                 ),
-                              ],
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 10,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                elevation: 0,
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.logout, size: 16),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    'Logout',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
-                      );
-                    }
-                    return const SizedBox.shrink();
-                  },
-                ),
-                const SizedBox(width: 10),
-                const ApkDownloadButton(),
+                          ],
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    },
+                  ),
+                  const SizedBox(width: 10),
+                  const ApkDownloadButton(),
+                ],
+                if (!isDesktop) const ApkDownloadButton(compact: true),
               ],
             ),
           ),

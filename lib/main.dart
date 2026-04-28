@@ -464,14 +464,17 @@ class _LoginChoicePageState extends State<LoginChoicePage>
                                               : 80,
                                       top:
                                           unifiedAuthState.isCustomerLoggedIn
-                                              ? 80
+                                              ? (MediaQuery.of(
+                                                        context,
+                                                      ).size.width <
+                                                      600
+                                                  ? 108
+                                                  : 96)
                                               : 0,
                                     ),
                                     child:
                                         unifiedAuthState.isCustomerLoggedIn
-                                            ? const SingleChildScrollView(
-                                              child: HeroMembershipContainer(),
-                                            )
+                                            ? const HeroMembershipContainer()
                                             : Column(
                                               crossAxisAlignment:
                                                   CrossAxisAlignment.start,

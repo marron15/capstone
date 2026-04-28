@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'apk_download_service.dart';
 
 class ApkDownloadButton extends StatefulWidget {
-  const ApkDownloadButton({super.key});
+  final bool compact;
+
+  const ApkDownloadButton({super.key, this.compact = false});
 
   @override
   State<ApkDownloadButton> createState() => _ApkDownloadButtonState();
@@ -53,39 +55,71 @@ class _ApkDownloadButtonState extends State<ApkDownloadButton> {
 
   @override
   Widget build(BuildContext context) {
-    if (!kIsWeb) {
-      return const SizedBox.shrink();
-    }
-
     return Tooltip(
       message: _isBusy ? 'Preparing APK...' : 'Install Rnr Gym App',
-      child: TextButton.icon(
-        onPressed: _isBusy ? null : _handleDownload,
-        icon:
-            _isBusy
-                ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+      child:
+          widget.compact
+              ? IconButton(
+                onPressed: _isBusy ? null : _handleDownload,
+                tooltip: _isBusy ? 'Preparing APK...' : 'Download APK',
+                icon:
+                    _isBusy
+                        ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
+                          ),
+                        )
+                        : const Icon(
+                          Icons.download,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                style: IconButton.styleFrom(
+                  minimumSize: const Size(40, 40),
+                  padding: const EdgeInsets.all(8),
+                ),
+              )
+              : TextButton.icon(
+                onPressed: _isBusy ? null : _handleDownload,
+                icon:
+                    _isBusy
+                        ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
+                          ),
+                        )
+                        : const Icon(
+                          Icons.download,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                label: const Text(
+                  'Download',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
                   ),
-                )
-                : const Icon(Icons.download, color: Colors.white, size: 18),
-        label: const Text(
-          'Download',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        style: TextButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          minimumSize: Size.zero,
-          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        ),
-      ),
+                ),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ),
     );
   }
 }

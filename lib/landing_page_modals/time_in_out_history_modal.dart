@@ -211,8 +211,10 @@ class _TimeInOutHistoryModalState extends State<TimeInOutHistoryModal> {
   }
 
   Future<void> _setWholeMonthFilter() async {
-    final DateTime? picked =
-        await showMonthPickerDialog(context, _selectedDate);
+    final DateTime? picked = await showMonthPickerDialog(
+      context,
+      _selectedDate,
+    );
     if (picked == null) return;
     setState(() {
       _selectedDate = picked;
@@ -235,9 +237,10 @@ class _TimeInOutHistoryModalState extends State<TimeInOutHistoryModal> {
   }
 
   String _buildDateRangeStr() {
-    final String base = _selectedDayFilter != null
-        ? _formatDateLabel(_selectedDayFilter!)
-        : 'Month of ${_formatMonthLabel(_selectedDate)}';
+    final String base =
+        _selectedDayFilter != null
+            ? _formatDateLabel(_selectedDayFilter!)
+            : 'Month of ${_formatMonthLabel(_selectedDate)}';
     return _statusFilter != 'All' ? '$base | Status: $_statusFilter' : base;
   }
 
@@ -300,6 +303,7 @@ class _TimeInOutHistoryModalState extends State<TimeInOutHistoryModal> {
   Widget build(BuildContext context) {
     final Size size = MediaQuery.of(context).size;
     final bool isWide = size.width >= 700;
+    final bool isCompact = size.width < 560;
     final List<_HistoryEventRow> visible = _visibleEventRows();
     final int totalIn =
         visible.where((r) => r.status.toUpperCase() == 'IN').length;
@@ -308,15 +312,15 @@ class _TimeInOutHistoryModalState extends State<TimeInOutHistoryModal> {
 
     return Dialog(
       insetPadding: EdgeInsets.symmetric(
-        horizontal: isWide ? size.width * 0.05 : 16,
-        vertical: isWide ? size.height * 0.06 : 20,
+        horizontal: isWide ? size.width * 0.05 : (isCompact ? 8 : 16),
+        vertical: isWide ? size.height * 0.06 : (isCompact ? 10 : 20),
       ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       clipBehavior: Clip.antiAlias,
       child: ConstrainedBox(
         constraints: BoxConstraints(
           maxWidth: 1100,
-          maxHeight: size.height * 0.9,
+          maxHeight: size.height * (isCompact ? 0.95 : 0.9),
         ),
         child: Column(
           children: [
@@ -331,162 +335,170 @@ class _TimeInOutHistoryModalState extends State<TimeInOutHistoryModal> {
                   colors: [Color(0xFF111111), Color(0xFF1C1C1C)],
                 ),
               ),
-              child: Wrap(
-                alignment: WrapAlignment.spaceBetween,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  // Title + member name
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final bool compactHeader = constraints.maxWidth < 640;
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: const Color(
-                            0xFFFFA812,
-                          ).withValues(alpha: 0.18),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(
-                          Icons.history,
-                          color: Color(0xFFFFA812),
-                          size: 20,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      Row(
                         children: [
-                          const Text(
-                            'Attendance History',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(
+                                0xFFFFA812,
+                              ).withValues(alpha: 0.18),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(
+                              Icons.history,
+                              color: Color(0xFFFFA812),
+                              size: 20,
                             ),
                           ),
-                          const SizedBox(height: 2),
-                          Text(
-                            widget.memberName,
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.7),
-                              fontSize: 12,
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Attendance History',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  widget.memberName,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.7),
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () => Navigator.of(context).maybePop(),
+                            icon: const Icon(
+                              Icons.close,
+                              color: Colors.white54,
+                            ),
+                            tooltip: 'Close',
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(
+                              minWidth: 32,
+                              minHeight: 32,
                             ),
                           ),
                         ],
                       ),
-                    ],
-                  ),
-                  // Controls row
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Stats chips
-                      _HeaderChip(label: 'In: $totalIn', color: Colors.green),
-                      const SizedBox(width: 8),
-                      _HeaderChip(
-                        label: 'Out: $totalOut',
-                        color: const Color(0xFFC62828),
-                      ),
-                      const SizedBox(width: 16),
-                      // Date filter
-                      OutlinedButton.icon(
-                        onPressed: _pickDateFilter,
-                        icon: const Icon(
-                          Icons.calendar_today,
-                          size: 14,
-                          color: Colors.white70,
-                        ),
-                        label: Text(
-                          _selectedDayFilter != null
-                              ? _formatDateLabel(_selectedDayFilter!)
-                              : _formatMonthLabel(_selectedDate),
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 12,
+                      SizedBox(height: compactHeader ? 10 : 8),
+                      Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          _HeaderChip(
+                            label: 'In: $totalIn',
+                            color: Colors.green,
                           ),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(
-                            color: Colors.white24,
-                            width: 1,
+                          _HeaderChip(
+                            label: 'Out: $totalOut',
+                            color: const Color(0xFFC62828),
                           ),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
+                          OutlinedButton.icon(
+                            onPressed: _pickDateFilter,
+                            icon: const Icon(
+                              Icons.calendar_today,
+                              size: 14,
+                              color: Colors.white70,
+                            ),
+                            label: Text(
+                              _selectedDayFilter != null
+                                  ? _formatDateLabel(_selectedDayFilter!)
+                                  : _formatMonthLabel(_selectedDate),
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 12,
+                              ),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(
+                                color: Colors.white24,
+                                width: 1,
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              minimumSize: const Size(0, 34),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
                           ),
-                          minimumSize: const Size(0, 34),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                          if (_selectedDayFilter != null)
+                            IconButton(
+                              onPressed: _setWholeMonthFilter,
+                              tooltip: 'Show whole month',
+                              icon: const Icon(
+                                Icons.filter_alt_off,
+                                size: 18,
+                                color: Colors.white70,
+                              ),
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(
+                                minWidth: 32,
+                                minHeight: 32,
+                              ),
+                            ),
+                          ValueListenableBuilder<bool>(
+                            valueListenable: _exportController.isExporting,
+                            builder:
+                                (_, isExporting, __) =>
+                                    TimeInOutHistoryExportButton(
+                                      isLoading: _isLoading,
+                                      isExporting: isExporting,
+                                      hasError: _error != null,
+                                      hasRecords: _records.isNotEmpty,
+                                      onExport:
+                                          () => _exportController.export(
+                                            context: context,
+                                            memberName: widget.memberName,
+                                            customerId: widget.customerId,
+                                            records: _visibleRecords(),
+                                            dateRangeStr: _buildDateRangeStr(),
+                                          ),
+                                    ),
                           ),
-                        ),
-                      ),
-                      if (_selectedDayFilter != null) ...[
-                        const SizedBox(width: 6),
-                        IconButton(
-                          onPressed: _setWholeMonthFilter,
-                          tooltip: 'Show whole month',
-                          icon: const Icon(
-                            Icons.filter_alt_off,
-                            size: 18,
-                            color: Colors.white70,
-                          ),
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(
-                            minWidth: 32,
-                            minHeight: 32,
-                          ),
-                        ),
-                      ],
-                      const SizedBox(width: 14),
-                      // Export
-                      ValueListenableBuilder<bool>(
-                        valueListenable: _exportController.isExporting,
-                        builder:
-                            (_, isExporting, __) =>
-                                TimeInOutHistoryExportButton(
-                                  isLoading: _isLoading,
-                                  isExporting: isExporting,
-                                  hasError: _error != null,
-                                  hasRecords: _records.isNotEmpty,
-                                  onExport: () => _exportController.export(
-                                    context: context,
-                                    memberName: widget.memberName,
-                                    customerId: widget.customerId,
-                                    records: _visibleRecords(),
-                                    dateRangeStr: _buildDateRangeStr(),
-                                  ),
-                                ),
-                      ),
-                      const SizedBox(width: 8),
-                      // Close
-                      IconButton(
-                        onPressed: () => Navigator.of(context).maybePop(),
-                        icon: const Icon(Icons.close, color: Colors.white54),
-                        tooltip: 'Close',
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(
-                          minWidth: 32,
-                          minHeight: 32,
-                        ),
+                        ],
                       ),
                     ],
-                  ),
-                ],
+                  );
+                },
               ),
             ),
 
             // ── Body ──────────────────────────────────────────────────────
-            Expanded(child: _buildBody(visible, totalIn, totalOut)),
+            Expanded(child: _buildBody(visible, totalIn, totalOut, isCompact)),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildBody(List<_HistoryEventRow> visible, int totalIn, int totalOut) {
+  Widget _buildBody(
+    List<_HistoryEventRow> visible,
+    int totalIn,
+    int totalOut,
+    bool isCompact,
+  ) {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -562,7 +574,12 @@ class _TimeInOutHistoryModalState extends State<TimeInOutHistoryModal> {
     }
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+      padding: EdgeInsets.fromLTRB(
+        isCompact ? 8 : 16,
+        12,
+        isCompact ? 8 : 16,
+        12,
+      ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: DecoratedBox(
@@ -591,7 +608,7 @@ class _TimeInOutHistoryModalState extends State<TimeInOutHistoryModal> {
                         ),
                         dataRowMinHeight: 44,
                         dataRowMaxHeight: 50,
-                        columnSpacing: 30,
+                        columnSpacing: isCompact ? 18 : 30,
                         columns: [
                           DataColumn(
                             label: Text('Time In ($totalIn)'),

@@ -230,147 +230,166 @@ class _MembershipHistoryDialogState extends State<_MembershipHistoryDialog> {
           colors: [Color(0xFF111111), Color(0xFF1C1C1C)],
         ),
       ),
-      child: Wrap(
-        alignment: WrapAlignment.spaceBetween,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        spacing: 10,
-        runSpacing: 8,
-        children: [
-          // Icon + title
-          Row(
-            mainAxisSize: MainAxisSize.min,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final bool compactHeader = constraints.maxWidth < 640;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFA812).withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(
-                  Icons.history_rounded,
-                  color: Color(0xFFFFA812),
-                  size: 22,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              Row(
                 children: [
-                  const Text(
-                    'Membership History',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 17,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.2,
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFA812).withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.history_rounded,
+                      color: Color(0xFFFFA812),
+                      size: 22,
                     ),
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '$_memberName  •  ID #$_customerId',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.6),
-                      fontSize: 12,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Membership History',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 17,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '$_memberName  •  ID #$_customerId',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.6),
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(
+                      Icons.close_rounded,
+                      color: Colors.white54,
+                    ),
+                    tooltip: 'Close',
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                      minWidth: 32,
+                      minHeight: 32,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: compactHeader ? 10 : 8),
+              Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: _pickDateFilter,
+                    icon: const Icon(
+                      Icons.calendar_today,
+                      size: 14,
+                      color: Colors.white70,
+                    ),
+                    label: Text(
+                      _selectedDayFilter != null
+                          ? _formatDateLabel(_selectedDayFilter!)
+                          : _formatMonthLabel(_selectedDate),
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Colors.white24, width: 1),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      minimumSize: const Size(0, 34),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                  if (_selectedDayFilter != null)
+                    IconButton(
+                      onPressed: _setWholeMonthFilter,
+                      tooltip: 'Select month',
+                      icon: const Icon(
+                        Icons.filter_alt_off,
+                        size: 18,
+                        color: Colors.white70,
+                      ),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 32,
+                        minHeight: 32,
+                      ),
+                    ),
+                  ElevatedButton.icon(
+                    onPressed:
+                        (_isLoading ||
+                                _isExportingPdf ||
+                                _visibleRows().isEmpty)
+                            ? null
+                            : _exportPdf,
+                    icon:
+                        _isExportingPdf
+                            ? const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
+                              ),
+                            )
+                            : const Icon(
+                              Icons.picture_as_pdf_outlined,
+                              size: 16,
+                            ),
+                    label: Text(_isExportingPdf ? 'Exporting…' : 'Export PDF'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFC62828),
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor: Colors.white.withValues(
+                        alpha: 0.1,
+                      ),
+                      disabledForegroundColor: Colors.white.withValues(
+                        alpha: 0.35,
+                      ),
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
+                      minimumSize: const Size(0, 36),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                   ),
                 ],
               ),
             ],
-          ),
-          // Actions
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Date filter
-              OutlinedButton.icon(
-                onPressed: _pickDateFilter,
-                icon: const Icon(
-                  Icons.calendar_today,
-                  size: 14,
-                  color: Colors.white70,
-                ),
-                label: Text(
-                  _selectedDayFilter != null
-                      ? _formatDateLabel(_selectedDayFilter!)
-                      : _formatMonthLabel(_selectedDate),
-                  style: const TextStyle(color: Colors.white70, fontSize: 12),
-                ),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Colors.white24, width: 1),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  minimumSize: const Size(0, 34),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
-              if (_selectedDayFilter != null) ...[
-                const SizedBox(width: 6),
-                IconButton(
-                  onPressed: _setWholeMonthFilter,
-                  tooltip: 'Select month',
-                  icon: const Icon(
-                    Icons.filter_alt_off,
-                    size: 18,
-                    color: Colors.white70,
-                  ),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(
-                    minWidth: 32,
-                    minHeight: 32,
-                  ),
-                ),
-              ],
-              const SizedBox(width: 14),
-              ElevatedButton.icon(
-                onPressed:
-                    (_isLoading || _isExportingPdf || _visibleRows().isEmpty)
-                        ? null
-                        : _exportPdf,
-                icon:
-                    _isExportingPdf
-                        ? const SizedBox(
-                          width: 14,
-                          height: 14,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
-                            ),
-                          ),
-                        )
-                        : const Icon(Icons.picture_as_pdf_outlined, size: 16),
-                label: Text(_isExportingPdf ? 'Exporting…' : 'Export PDF'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFC62828), // Red
-                  foregroundColor: Colors.white, // White
-                  disabledBackgroundColor: Colors.white.withValues(alpha: 0.1),
-                  disabledForegroundColor: Colors.white.withValues(alpha: 0.35),
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 10,
-                  ),
-                  minimumSize: const Size(0, 36),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              IconButton(
-                onPressed: () => Navigator.of(context).pop(),
-                icon: const Icon(Icons.close_rounded, color: Colors.white54),
-                tooltip: 'Close',
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-              ),
-            ],
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -674,18 +693,19 @@ class _MembershipHistoryDialogState extends State<_MembershipHistoryDialog> {
   Widget build(BuildContext context) {
     final Size size = MediaQuery.of(context).size;
     final bool isWide = size.width >= 700;
+    final bool isCompact = size.width < 560;
 
     return Dialog(
       insetPadding: EdgeInsets.symmetric(
-        horizontal: isWide ? size.width * 0.05 : 16,
-        vertical: isWide ? size.height * 0.06 : 20,
+        horizontal: isWide ? size.width * 0.05 : (isCompact ? 8 : 16),
+        vertical: isWide ? size.height * 0.06 : (isCompact ? 10 : 20),
       ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       clipBehavior: Clip.antiAlias,
       child: ConstrainedBox(
         constraints: BoxConstraints(
           maxWidth: 1100,
-          maxHeight: size.height * 0.9,
+          maxHeight: size.height * (isCompact ? 0.95 : 0.9),
         ),
         child: Column(
           children: [_buildHeader(), Expanded(child: _buildBody())],
