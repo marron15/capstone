@@ -54,15 +54,14 @@ class _TrainersSectionState extends State<TrainersSection> {
             ? screenWidth * 0.07
             : screenWidth * 0.045)
         .clamp(22.0, 48.0);
+    final double horizontalPadding = isSmallScreen ? 28.0 : screenWidth * 0.1;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         SizedBox(height: 16),
         Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: isSmallScreen ? 20.0 : screenWidth * 0.1,
-          ),
+          padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
           child: Center(
             child: Column(
               children: [
@@ -148,9 +147,7 @@ class _TrainersSectionState extends State<TrainersSection> {
               if (narrow) {
                 // Dedicated swipeable PageView on narrow screens
                 return Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: isSmallScreen ? 20 : screenWidth * 0.08,
-                  ),
+                  padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
                   child: Column(
                     children: [
                       SizedBox(
@@ -166,7 +163,7 @@ class _TrainersSectionState extends State<TrainersSection> {
                             final String contact = t['contactNumber'] ?? '';
                             return Padding(
                               padding: EdgeInsets.symmetric(
-                                horizontal: isSmallScreen ? 8 : 12,
+                                horizontal: isSmallScreen ? 4 : 12,
                                 vertical: 12,
                               ),
                               child: _TrainerCard(
@@ -215,7 +212,7 @@ class _TrainersSectionState extends State<TrainersSection> {
 
               return Padding(
                 padding: EdgeInsets.symmetric(
-                  horizontal: isSmallScreen ? 12 : screenWidth * 0.06,
+                  horizontal: isSmallScreen ? 20 : screenWidth * 0.06,
                 ),
                 child: Column(
                   children: [
@@ -260,7 +257,7 @@ class _TrainersSectionState extends State<TrainersSection> {
                                 final String contact = t['contactNumber'] ?? '';
                                 return Padding(
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
+                                    horizontal: 6,
                                     vertical: 6,
                                   ),
                                   child: _TrainerCard(
@@ -386,8 +383,8 @@ class _TrainerCardState extends State<_TrainerCard> {
 
     if (isMobile) {
       // Mobile-optimized layout based on the first image
-      final double cardWidth = (screenWidth * 0.9).clamp(280.0, 360.0);
-      final double cardHeight = 180;
+      final double cardWidth = (screenWidth * 0.84).clamp(260.0, 340.0);
+      final double cardHeight = 172;
 
       return Center(
         child: Container(
@@ -420,7 +417,7 @@ class _TrainerCardState extends State<_TrainerCard> {
             children: [
               // Trainer name - prominent and centered
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: const EdgeInsets.symmetric(horizontal: 18),
                 child: Text(
                   name,
                   textAlign: TextAlign.center,
@@ -438,7 +435,7 @@ class _TrainerCardState extends State<_TrainerCard> {
               // Contact info - styled like the first image
               if (contact.isNotEmpty)
                 Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 20),
+                  margin: const EdgeInsets.symmetric(horizontal: 18),
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 12,

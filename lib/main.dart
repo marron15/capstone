@@ -482,7 +482,7 @@ class _LoginChoicePageState extends State<LoginChoicePage>
                                                   MainAxisAlignment.center,
                                               children: [
                                                 Text(
-                                                  'Train Smart. Lift Strong. \n Stay Consistent.',
+                                                  'Train Smart. Lift Strong.\n Stay Consistent.',
                                                   style: TextStyle(
                                                     fontSize:
                                                         MediaQuery.of(

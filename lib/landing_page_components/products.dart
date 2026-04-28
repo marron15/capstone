@@ -90,12 +90,14 @@ class _ProductsSectionState extends State<ProductsSection> {
     final bool isSmallScreen = widget.isSmallScreen;
     final double screenWidth = widget.screenWidth;
     final double screenHeight = widget.screenHeight;
+    final double horizontalPadding = isSmallScreen ? 28.0 : 20.0;
+    final double cardSpacing = isSmallScreen ? 52.0 : 24.0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+          padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
           child: Center(
             child: Text(
               'Products',
@@ -113,8 +115,8 @@ class _ProductsSectionState extends State<ProductsSection> {
           ),
         ),
         const SizedBox(height: 8),
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20.0),
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
           child: Text(
             'Explore our high-quality fitness gear and supplements',
             style: TextStyle(
@@ -126,7 +128,7 @@ class _ProductsSectionState extends State<ProductsSection> {
             textAlign: TextAlign.center,
           ),
         ),
-        const SizedBox(height: 48),
+        SizedBox(height: isSmallScreen ? 32 : 48),
         if (_isLoading)
           const SizedBox(
             width: 220,
@@ -188,10 +190,12 @@ class _ProductsSectionState extends State<ProductsSection> {
                       },
                       child: Padding(
                         key: ValueKey<int>(_pageIndex),
-                        padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: horizontalPadding,
+                        ),
                         child: Wrap(
-                          spacing: 24, // Horizontal spacing
-                          runSpacing: 24, // Vertical spacing
+                          spacing: cardSpacing,
+                          runSpacing: cardSpacing,
                           alignment: WrapAlignment.center,
                           children:
                               pageItems
@@ -335,6 +339,7 @@ class _FlexibleProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Medium adaptive width:
+    final bool compact = isSmallScreen || screenWidth < 420;
     double cardWidth =
         screenWidth >= 1100
             ? (screenWidth * 0.22).clamp(
@@ -343,9 +348,12 @@ class _FlexibleProductCard extends StatelessWidget {
             ) // 4 in a row on very wide
             : screenWidth >= 700
             ? (screenWidth * 0.42).clamp(250.0, 360.0) // 2x2 on tablet/laptop
-            : (screenWidth * 0.85).clamp(240.0, 400.0); // Stacked on mobile
+            : (screenWidth * (compact ? 0.84 : 0.85)).clamp(
+              230.0,
+              400.0,
+            ); // Stacked on mobile
 
-    double cardHeight = screenWidth >= 700 ? 320 : 300;
+    double cardHeight = screenWidth >= 700 ? 320 : (compact ? 280 : 300);
 
     return SizedBox(
       width: cardWidth,
@@ -387,6 +395,7 @@ class _ProductCardInteractiveState extends State<_ProductCardInteractive> {
 
   @override
   Widget build(BuildContext context) {
+    final bool compact = MediaQuery.of(context).size.width < 420;
     return MouseRegion(
       cursor:
           widget.onTap != null
@@ -449,7 +458,7 @@ class _ProductCardInteractiveState extends State<_ProductCardInteractive> {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.all(24.0),
+                  padding: EdgeInsets.all(compact ? 18.0 : 24.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.end,

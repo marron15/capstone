@@ -14,11 +14,14 @@ class EquipmentImagesSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final double horizontalPadding = isSmallScreen ? 28.0 : 20.0;
+    final double cardSpacing = isSmallScreen ? 16.0 : 24.0;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+          padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
           child: Center(
             child: Text(
               'Services',
@@ -36,8 +39,8 @@ class EquipmentImagesSection extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20.0),
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
           child: Text(
             'Discover our specialized training areas',
             style: TextStyle(
@@ -49,12 +52,12 @@ class EquipmentImagesSection extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
         ),
-        const SizedBox(height: 48),
+        SizedBox(height: isSmallScreen ? 32 : 48),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+          padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
           child: Wrap(
-            spacing: 24, // Horizontal spacing between cards
-            runSpacing: 24, // Vertical spacing between rows
+            spacing: cardSpacing,
+            runSpacing: cardSpacing,
             alignment: WrapAlignment.center,
             children: const [
               _FlexibleServiceCard(
@@ -100,6 +103,7 @@ class _FlexibleServiceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
+    final bool compact = screenWidth < 420;
 
     // Calculate adaptive width:
     // On large screens, cards take up slightly less than half the screen to form a 2x2 grid.
@@ -107,10 +111,10 @@ class _FlexibleServiceCard extends StatelessWidget {
     double cardWidth =
         screenWidth >= 900
             ? (screenWidth * 0.45).clamp(300.0, 580.0)
-            : (screenWidth * 0.9).clamp(280.0, 500.0);
+            : (screenWidth * (compact ? 0.86 : 0.9)).clamp(260.0, 500.0);
 
     // Increase the visual volume of the card with larger height
-    double cardHeight = screenWidth >= 900 ? 380 : 340;
+    double cardHeight = screenWidth >= 900 ? 380 : (compact ? 300 : 340);
 
     return SizedBox(
       width: cardWidth,
@@ -145,6 +149,7 @@ class _ServiceCardInteractiveState extends State<_ServiceCardInteractive> {
 
   @override
   Widget build(BuildContext context) {
+    final bool compact = MediaQuery.of(context).size.width < 420;
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
@@ -202,7 +207,7 @@ class _ServiceCardInteractiveState extends State<_ServiceCardInteractive> {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.all(24.0),
+                  padding: EdgeInsets.all(compact ? 18.0 : 24.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.end,

@@ -14,11 +14,14 @@ class ServicesSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final double horizontalPadding = isSmallScreen ? 28.0 : 20.0;
+    final double cardSpacing = isSmallScreen ? 32.0 : 24.0;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+          padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
           child: Center(
             child: Text(
               'Add-Ons',
@@ -36,8 +39,8 @@ class ServicesSection extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20.0),
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
           child: Text(
             'Convenient facilities for your comfortable visit',
             style: TextStyle(
@@ -49,12 +52,12 @@ class ServicesSection extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
         ),
-        const SizedBox(height: 48),
+        SizedBox(height: isSmallScreen ? 42 : 58),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+          padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
           child: Wrap(
-            spacing: 24, // Horizontal spacing between cards
-            runSpacing: 24, // Vertical spacing between rows
+            spacing: cardSpacing,
+            runSpacing: cardSpacing,
             alignment: WrapAlignment.center,
             children: const [
               _FlexibleAddOnCard(
@@ -91,6 +94,7 @@ class _FlexibleAddOnCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
+    final bool compact = screenWidth < 420;
 
     // Medium adaptive width:
     double cardWidth =
@@ -98,9 +102,9 @@ class _FlexibleAddOnCard extends StatelessWidget {
             ? (screenWidth * 0.25).clamp(250.0, 340.0)
             : screenWidth >= 700
             ? (screenWidth * 0.42).clamp(250.0, 360.0)
-            : (screenWidth * 0.85).clamp(240.0, 400.0);
+            : (screenWidth * (compact ? 0.84 : 0.85)).clamp(230.0, 400.0);
 
-    double cardHeight = screenWidth >= 700 ? 320 : 300;
+    double cardHeight = screenWidth >= 700 ? 320 : (compact ? 280 : 300);
 
     return SizedBox(
       width: cardWidth,
@@ -134,6 +138,7 @@ class _AddOnCardInteractiveState extends State<_AddOnCardInteractive> {
 
   @override
   Widget build(BuildContext context) {
+    final bool compact = MediaQuery.of(context).size.width < 420;
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
@@ -191,7 +196,7 @@ class _AddOnCardInteractiveState extends State<_AddOnCardInteractive> {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.all(24.0),
+                  padding: EdgeInsets.all(compact ? 18.0 : 24.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.end,

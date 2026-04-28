@@ -16,14 +16,15 @@ class MainHeader extends StatelessWidget {
     final bool isDesktop = MediaQuery.of(context).size.width >= 900;
     final bool isSmallMobile = screenSize.width < 420;
     final double expandedHeaderHeight =
-      isDesktop ? 160 : (isSmallMobile ? 96 : 108);
+        isDesktop ? 160 : (isSmallMobile ? 96 : 108);
     final double collapsedHeaderHeight =
-      isDesktop ? 80 : (isSmallMobile ? 68 : 74);
+        isDesktop ? 80 : (isSmallMobile ? 68 : 74);
     final double horizontalPadding =
-      isDesktop
-        ? 40
-        : (screenSize.width < 360 ? 12 : (isSmallMobile ? 16 : 20));
-    final double topContentPadding = isDesktop ? (topInset + 12) : (topInset + 6);
+        isDesktop
+            ? 40
+            : (screenSize.width < 360 ? 12 : (isSmallMobile ? 16 : 20));
+    final double topContentPadding =
+        isDesktop ? (topInset + 12) : (topInset + 6);
     final double bottomContentPadding = isDesktop ? 12 : 6;
 
     Future<void> handleLogout() async {
@@ -85,7 +86,8 @@ class MainHeader extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 280),
         curve: Curves.easeInOut,
-        height: (isScrolled ? collapsedHeaderHeight : expandedHeaderHeight) +
+        height:
+            (isScrolled ? collapsedHeaderHeight : expandedHeaderHeight) +
             topInset,
         decoration: BoxDecoration(
           color: isScrolled ? const Color(0xFF111111) : Colors.transparent,
@@ -114,7 +116,7 @@ class MainHeader extends StatelessWidget {
             bottomContentPadding,
           ),
           child: Align(
-            alignment: Alignment.topCenter,
+            alignment: Alignment.center,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -184,7 +186,10 @@ class MainHeader extends StatelessWidget {
                           children: [
                             IconButton(
                               onPressed: () {
-                                Navigator.pushNamed(context, '/customer-profile');
+                                Navigator.pushNamed(
+                                  context,
+                                  '/customer-profile',
+                                );
                               },
                               icon: const Icon(
                                 Icons.account_circle,
