@@ -240,6 +240,12 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
               !createdAt.isAfter(effectiveRange.end);
         }).toList();
 
+    // 1. EXTRACT CATEGORIES HERE (Before filtering the logs by category)
+    final List<String> availableCategories =
+        filteredLogs.map((e) => e.activityCategoryTitle).toSet().toList()
+          ..sort();
+
+    // 2. NOW APPLY THE CATEGORY FILTER
     if (_selectedCategory != null && _selectedCategory!.isNotEmpty) {
       final String target = _selectedCategory!.toLowerCase();
       filteredLogs =
@@ -248,15 +254,15 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
             return category == target;
           }).toList();
     }
+
     // If _selectedActorType is null, show all (no filtering)
 
     setState(() {
       _logs
         ..clear()
         ..addAll(filteredLogs);
-      _categories =
-          filteredLogs.map((e) => e.activityCategoryTitle).toSet().toList()
-            ..sort();
+      // 3. USE THE UNFILTERED CATEGORIES LIST WE EXTRACTED EARLIER
+      _categories = availableCategories;
       _isLoading = false;
       _isFetching = false;
     });
