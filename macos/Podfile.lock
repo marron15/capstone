@@ -10,6 +10,8 @@ PODS:
   - FlutterMacOS (1.0.0)
   - objective_c (0.0.1):
     - FlutterMacOS
+  - printing (1.0.0):
+    - FlutterMacOS
   - shared_preferences_foundation (0.0.1):
     - Flutter
     - FlutterMacOS
@@ -21,6 +23,7 @@ DEPENDENCIES:
   - flutter_zxing (from `Flutter/ephemeral/.symlinks/plugins/flutter_zxing/macos`)
   - FlutterMacOS (from `Flutter/ephemeral`)
   - objective_c (from `Flutter/ephemeral/.symlinks/plugins/objective_c/macos`)
+  - printing (from `Flutter/ephemeral/.symlinks/plugins/printing/macos`)
   - shared_preferences_foundation (from `Flutter/ephemeral/.symlinks/plugins/shared_preferences_foundation/darwin`)
 
 EXTERNAL SOURCES:
@@ -36,6 +39,8 @@ EXTERNAL SOURCES:
     :path: Flutter/ephemeral
   objective_c:
     :path: Flutter/ephemeral/.symlinks/plugins/objective_c/macos
+  printing:
+    :path: Flutter/ephemeral/.symlinks/plugins/printing/macos
   shared_preferences_foundation:
     :path: Flutter/ephemeral/.symlinks/plugins/shared_preferences_foundation/darwin
 
@@ -46,6 +51,7 @@ SPEC CHECKSUMS:
   flutter_zxing: 91e9d17c79c60860450e8879cced0ec54f6a2601
   FlutterMacOS: d0db08ddef1a9af05a5ec4b724367152bb0500b1
   objective_c: ec13431e45ba099cb734eb2829a5c1cd37986cba
+  printing: c4cf83c78fd684f9bc318e6aadc18972aa48f617
   shared_preferences_foundation: 7036424c3d8ec98dfe75ff1667cb0cd531ec82bb
 
 PODFILE CHECKSUM: 54d867c82ac51cbd61b565781b9fada492027009

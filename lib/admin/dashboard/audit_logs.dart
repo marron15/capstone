@@ -16,6 +16,7 @@ class AuditLogsPage extends StatefulWidget {
 class _AuditLogsPageState extends State<AuditLogsPage> {
   final double _drawerWidth = 280;
   bool _navCollapsed = false;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final TextEditingController _searchController = TextEditingController();
 
   final List<AuditLogEntry> _logs = [];
@@ -264,7 +265,7 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
   void _handleSearchChanged(String value) {
     _searchQuery = value;
     _searchDebounce?.cancel();
-    _searchDebounce = Timer(const Duration(milliseconds: 400), _fetchLogs);
+    _searchDebounce = Timer(const Duration(milliseconds: 350), _fetchLogs);
   }
 
   void _handleActorTypeChange(String? actorType) {
@@ -293,6 +294,7 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
     final bool isMobile = screenWidth < 900;
 
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: const Color(0xFFF5F5F5),
       drawer:
           isMobile
@@ -304,30 +306,46 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
                 ),
               )
               : null,
-      body: SafeArea(
+      body: Container(
+        decoration: const BoxDecoration(color: Colors.white),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (!isMobile)
               AnimatedContainer(
-                duration: const Duration(milliseconds: 250),
-                width: _navCollapsed ? 72 : _drawerWidth,
-                child: SideNav(
-                  width: _navCollapsed ? 72 : _drawerWidth,
-                  onClose: () => setState(() => _navCollapsed = !_navCollapsed),
+                duration: const Duration(milliseconds: 350),
+                curve: Curves.easeInOutCubic,
+                width: _navCollapsed ? 0 : _drawerWidth,
+                child: ClipRect(
+                  child: OverflowBox(
+                    alignment: Alignment.centerLeft,
+                    maxWidth: _drawerWidth,
+                    minWidth: _drawerWidth,
+                    child: SideNav(
+                      width: _drawerWidth,
+                      onClose: () => setState(() => _navCollapsed = true),
+                    ),
+                  ),
                 ),
               ),
             Expanded(
-              child: Column(
-                children: [
-                  _buildHeader(context, isMobile),
-                  Expanded(
-                    child: RefreshIndicator(
-                      onRefresh: _fetchLogs,
-                      child: _buildContent(isMobile),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 350),
+                curve: Curves.easeOutCubic,
+                decoration: const BoxDecoration(color: Colors.white),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox.shrink(),
+                    _buildHeader(context, isMobile),
+                    Expanded(
+                      child: RefreshIndicator(
+                        onRefresh: _fetchLogs,
+                        child: _buildContent(isMobile),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ],
@@ -338,28 +356,41 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
 
   Widget _buildHeader(BuildContext context, bool isMobile) {
     return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 16 : 24,
-        vertical: 16,
-      ),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 2)),
-        ],
-      ),
+      padding: const EdgeInsets.all(16),
+      color: Colors.transparent,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Audit Logs',
-                style: TextStyle(
-                  fontSize: isMobile ? 24 : 28,
-                  fontWeight: FontWeight.bold,
-                ),
+              Row(
+                children: [
+                  if (isMobile)
+                    IconButton(
+                      tooltip: 'Open Menu',
+                      onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+                      icon: const Icon(Icons.menu),
+                    )
+                  else
+                    IconButton(
+                      tooltip: _navCollapsed ? 'Open Sidebar' : 'Close Sidebar',
+                      onPressed:
+                          () => setState(() => _navCollapsed = !_navCollapsed),
+                      icon: Icon(
+                        _navCollapsed ? Icons.menu : Icons.chevron_left,
+                      ),
+                    ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Audit Logs',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.black,
+                    ),
+                  ),
+                ],
               ),
               if (!isMobile) _buildDateRangeButton(isMobile),
             ],

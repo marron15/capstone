@@ -441,17 +441,24 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
             // Desktop sidebar - hidden on mobile
             if (!isMobile)
               AnimatedContainer(
-                duration: const Duration(milliseconds: 250),
-                curve: Curves.easeOutCubic,
+                duration: const Duration(milliseconds: 350),
+                curve: Curves.easeInOutCubic,
                 width: _navCollapsed ? 0 : _drawerWidth,
-                child: SideNav(
-                  width: _drawerWidth,
-                  onClose: () => setState(() => _navCollapsed = true),
+                child: ClipRect(
+                  child: OverflowBox(
+                    alignment: Alignment.centerLeft,
+                    maxWidth: _drawerWidth,
+                    minWidth: _drawerWidth,
+                    child: SideNav(
+                      width: _drawerWidth,
+                      onClose: () => setState(() => _navCollapsed = true),
+                    ),
+                  ),
                 ),
               ),
             Expanded(
               child: AnimatedContainer(
-                duration: const Duration(milliseconds: 250),
+                duration: const Duration(milliseconds: 350),
                 curve: Curves.easeOutCubic,
                 decoration: const BoxDecoration(color: Colors.white),
                 child: Column(
