@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 
 import '../PH phone number valid/phone_formatter.dart';
 import '../admin/services/api_service.dart';
+import 'terms_and_conditions.dart';
 
 class SignupMembersModal extends StatefulWidget {
   const SignupMembersModal({super.key});
@@ -22,6 +23,8 @@ class _SignupMembersModalState extends State<SignupMembersModal>
   bool _isLoading = false;
   bool _isRequestingVerification = false;
   bool _verificationRequested = false;
+  bool _agreedToTerms = false;
+  bool _showTermsError = false;
   int _currentStep = 0;
 
   // Animations
@@ -321,6 +324,7 @@ class _SignupMembersModalState extends State<SignupMembersModal>
     _verificationError = null;
     _pendingVerificationEmail = null;
     _verificationExpiresInMinutes = null;
+    _showTermsError = false;
     _verificationCodeController.clear();
   }
 
@@ -1084,6 +1088,89 @@ class _SignupMembersModalState extends State<SignupMembersModal>
           'Password auto-generated: last name + birth month & day (MMDD).',
           style: TextStyle(color: Colors.white70, fontSize: 12),
         ),
+        const SizedBox(height: 14),
+        // ── Terms & Conditions checkbox ──────────────────────────────────
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: _showTermsError
+                  ? Colors.red.shade400
+                  : _agreedToTerms
+                      ? const Color(0xFFFF8C00).withValues(alpha: 0.6)
+                      : Colors.white.withValues(alpha: 0.15),
+              width: _showTermsError ? 1.5 : 1.2,
+            ),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Checkbox(
+                value: _agreedToTerms,
+                onChanged: (val) {
+                  setState(() {
+                    _agreedToTerms = val ?? false;
+                    if (_agreedToTerms) _showTermsError = false;
+                  });
+                },
+                activeColor: const Color(0xFFFF8C00),
+                checkColor: Colors.black,
+                side: BorderSide(
+                  color: Colors.white.withValues(alpha: 0.5),
+                  width: 1.5,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              Expanded(
+                child: Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    const Text(
+                      'I have read and agree to the ',
+                      style: TextStyle(color: Colors.white70, fontSize: 13),
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        showDialog(
+                          context: context,
+                          builder: (_) => const TermsAndConditionsModal(),
+                        );
+                      },
+                      child: const Text(
+                        'Terms & Conditions',
+                        style: TextStyle(
+                          color: Color(0xFFFF8C00),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          decoration: TextDecoration.underline,
+                          decorationColor: Color(0xFFFF8C00),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (_showTermsError)
+          Padding(
+            padding: const EdgeInsets.only(top: 6, left: 4),
+            child: Row(
+              children: [
+                Icon(Icons.error_outline, color: Colors.red.shade400, size: 14),
+                const SizedBox(width: 6),
+                Text(
+                  'Please agree to the Terms & Conditions',
+                  style: TextStyle(color: Colors.red.shade400, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
         const SizedBox(height: 10),
         if (_verificationRequested) ...[
           TextField(
@@ -1210,6 +1297,10 @@ class _SignupMembersModalState extends State<SignupMembersModal>
                       (_isLoading || _isRequestingVerification)
                           ? null
                           : () async {
+                            if (!_agreedToTerms) {
+                              setState(() => _showTermsError = true);
+                              return;
+                            }
                             if (_verificationRequested) {
                               await _handleSignup();
                             } else {
@@ -1302,7 +1393,7 @@ class _SignupMembersModalState extends State<SignupMembersModal>
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.blueAccent.withValues(alpha: 0.18),
+                            color: Color(0xFFFF8C00),
                             blurRadius: 32,
                             spreadRadius: 2,
                             offset: const Offset(0, 8),
@@ -1325,7 +1416,7 @@ class _SignupMembersModalState extends State<SignupMembersModal>
                                     children: const [
                                       Icon(
                                         Icons.person_add,
-                                        color: Colors.lightBlueAccent,
+                                        color: Color(0xFFFF8C00),
                                         size: 26,
                                       ),
                                       SizedBox(width: 10),
@@ -1359,9 +1450,7 @@ class _SignupMembersModalState extends State<SignupMembersModal>
                               margin: const EdgeInsets.only(bottom: 10),
                               child: Divider(
                                 thickness: 1.4,
-                                color: Colors.lightBlueAccent.withValues(
-                                  alpha: 0.22,
-                                ),
+                                color: Color(0xFFFF8C00),
                                 height: 16,
                                 endIndent: 12,
                                 indent: 2,
