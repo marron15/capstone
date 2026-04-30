@@ -41,12 +41,14 @@ dependencies:
   http: ^1.1.0
   shared_preferences: ^2.2.2
   file_saver: ^0.3.1
+  path_provider: ^2.1.1
   syncfusion_flutter_xlsio: ^31.2.12
   syncfusion_officechart: ^31.2.12
   pdf: ^3.10.7
   printing: ^5.14.3
   qr_flutter: ^4.1.0
   web: ^1.1.1
+  simple_file_saver: ^2.0.1
 
 
 # The following adds the Cupertino Icons font to your application.
