@@ -1881,7 +1881,7 @@ class _CustomersPageState extends State<CustomersPage> {
                                     ),
                                   ),
                                   Expanded(
-                                    flex: 3,
+                                    flex: 4,
                                     child: _buildHeaderCell(
                                       _buildHeaderLabel('Contact Number'),
                                     ),
@@ -1908,7 +1908,7 @@ class _CustomersPageState extends State<CustomersPage> {
                               ),
                             ),
                             SizedBox(
-                              width: 260,
+                              width: 200,
                               child: _buildHeaderCell(
                                 _buildHeaderLabel('Actions'),
                               ),
@@ -1984,7 +1984,7 @@ class _CustomersPageState extends State<CustomersPage> {
                                               padding:
                                                   const EdgeInsets.symmetric(
                                                     vertical: 14,
-                                                    horizontal: 8,
+                                                    horizontal: 6,
                                                   ),
                                               child: Container(
                                                 padding:
@@ -2018,7 +2018,7 @@ class _CustomersPageState extends State<CustomersPage> {
                                               padding:
                                                   const EdgeInsets.symmetric(
                                                     vertical: 14,
-                                                    horizontal: 8,
+                                                    horizontal: 6,
                                                   ),
                                               child: Text(
                                                 customer['name'] ?? '',
@@ -2031,12 +2031,12 @@ class _CustomersPageState extends State<CustomersPage> {
                                             ),
                                           ),
                                           Expanded(
-                                            flex: 3,
+                                            flex: 4,
                                             child: Padding(
                                               padding:
                                                   const EdgeInsets.symmetric(
                                                     vertical: 14,
-                                                    horizontal: 8,
+                                                    horizontal: 6,
                                                   ),
                                               child: _buildPhoneNumberButton(
                                                 customer['contactNumber'] ??
@@ -2050,7 +2050,7 @@ class _CustomersPageState extends State<CustomersPage> {
                                               padding:
                                                   const EdgeInsets.symmetric(
                                                     vertical: 14,
-                                                    horizontal: 8,
+                                                    horizontal: 6,
                                                   ),
                                               child: FittedBox(
                                                 fit: BoxFit.scaleDown,
@@ -2075,7 +2075,7 @@ class _CustomersPageState extends State<CustomersPage> {
                                               padding:
                                                   const EdgeInsets.symmetric(
                                                     vertical: 14,
-                                                    horizontal: 8,
+                                                    horizontal: 6,
                                                   ),
                                               child: FittedBox(
                                                 fit: BoxFit.scaleDown,
@@ -2097,7 +2097,7 @@ class _CustomersPageState extends State<CustomersPage> {
                                               padding:
                                                   const EdgeInsets.symmetric(
                                                     vertical: 14,
-                                                    horizontal: 8,
+                                                    horizontal: 6,
                                                   ),
                                               child: Row(
                                                 mainAxisAlignment:
@@ -2140,7 +2140,7 @@ class _CustomersPageState extends State<CustomersPage> {
                                     ),
                                   ),
                                   SizedBox(
-                                    width: 260,
+                                    width: 200,
                                     child: Row(
                                       mainAxisAlignment:
                                           MainAxisAlignment.center,
