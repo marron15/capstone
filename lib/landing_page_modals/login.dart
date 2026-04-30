@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
 import '../services/unified_auth_state.dart';
 import '../User Profile/profile_data.dart';
@@ -31,6 +33,13 @@ class _LoginModalState extends State<LoginModal>
   final GlobalKey<FormState> _loginFormKey = GlobalKey<FormState>();
   bool _domAttributesScheduled = false;
 
+  // Login attempt tracking
+  int _failedAttempts = 0;
+  DateTime? _cooldownEndTime;
+  Timer? _cooldownTimer;
+  String? _remainingCooldownTime;
+  late SharedPreferences _prefs;
+
   @override
   void initState() {
     super.initState();
@@ -45,6 +54,77 @@ class _LoginModalState extends State<LoginModal>
     _fadeAnim = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
     _controller.forward();
     _scheduleDomAttributeSync();
+    _initializeCooldownState();
+  }
+
+  Future<void> _initializeCooldownState() async {
+    _prefs = await SharedPreferences.getInstance();
+    _loadCooldownState();
+  }
+
+  void _loadCooldownState() {
+    final storedCooldownEndTime = _prefs.getString('login_cooldown_end_time');
+    final storedFailedAttempts = _prefs.getInt('login_failed_attempts') ?? 0;
+
+    if (storedCooldownEndTime != null && storedCooldownEndTime.isNotEmpty) {
+      _cooldownEndTime = DateTime.parse(storedCooldownEndTime);
+      _failedAttempts = storedFailedAttempts;
+
+      // Check if cooldown has expired
+      if (DateTime.now().isAfter(_cooldownEndTime!)) {
+        _clearCooldownState();
+      } else {
+        // Restart the timer for remaining cooldown
+        _restartCooldownTimer();
+      }
+    } else {
+      _failedAttempts = storedFailedAttempts;
+    }
+  }
+
+  void _saveCooldownState() {
+    if (_cooldownEndTime != null) {
+      _prefs.setString(
+        'login_cooldown_end_time',
+        _cooldownEndTime!.toIso8601String(),
+      );
+      _prefs.setInt('login_failed_attempts', _failedAttempts);
+    }
+  }
+
+  void _clearCooldownState() {
+    _prefs.remove('login_cooldown_end_time');
+    _prefs.remove('login_failed_attempts');
+    _cooldownEndTime = null;
+    _failedAttempts = 0;
+    _remainingCooldownTime = null;
+    _cooldownTimer?.cancel();
+  }
+
+  void _restartCooldownTimer() {
+    _cooldownTimer?.cancel();
+    _cooldownTimer = Timer.periodic(Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+
+      final now = DateTime.now();
+      if (now.isAfter(_cooldownEndTime!)) {
+        setState(() {
+          _clearCooldownState();
+        });
+        timer.cancel();
+      } else {
+        final remaining = _cooldownEndTime!.difference(now);
+        final minutes = remaining.inMinutes;
+        final seconds = remaining.inSeconds % 60;
+        setState(() {
+          _remainingCooldownTime =
+              '$minutes:${seconds.toString().padLeft(2, '0')}';
+        });
+      }
+    });
   }
 
   @override
@@ -66,6 +146,7 @@ class _LoginModalState extends State<LoginModal>
     _passFocus.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _cooldownTimer?.cancel();
     super.dispose();
   }
 
@@ -86,7 +167,28 @@ class _LoginModalState extends State<LoginModal>
     });
   }
 
+  bool _isInCooldown() {
+    if (_cooldownEndTime == null) return false;
+    return DateTime.now().isBefore(_cooldownEndTime!);
+  }
+
+  void _startCooldown() {
+    const cooldownDuration = Duration(minutes: 4); // 4 minutes cooldown
+    _cooldownEndTime = DateTime.now().add(cooldownDuration);
+    _saveCooldownState();
+    _restartCooldownTimer();
+  }
+
   Future<void> _handleLogin() async {
+    // Check if user is in cooldown
+    if (_isInCooldown()) {
+      setState(() {
+        _errorMessage =
+            'Too many failed attempts. Please try again in $_remainingCooldownTime';
+      });
+      return;
+    }
+
     final email = _emailController.text.trim();
     final password = _passwordController.text;
 
@@ -116,6 +218,9 @@ class _LoginModalState extends State<LoginModal>
       final result = await AuthService.login(email, password);
 
       if (result.success) {
+        // Reset failed attempts on successful login
+        _clearCooldownState();
+
         if (result.role == 'admin' &&
             result.adminData != null &&
             result.accessToken != null) {
@@ -206,13 +311,38 @@ class _LoginModalState extends State<LoginModal>
         }
       }
 
-      setState(() {
-        _errorMessage = 'Invalid email or password';
-      });
+      // Increment failed attempts
+      _failedAttempts++;
+      _prefs.setInt('login_failed_attempts', _failedAttempts);
+
+      if (_failedAttempts >= 3) {
+        _startCooldown();
+        setState(() {
+          _errorMessage =
+              'Too many failed attempts. Please try again in $_remainingCooldownTime';
+        });
+      } else {
+        setState(() {
+          _errorMessage =
+              'Invalid email or password (${3 - _failedAttempts} attempt${3 - _failedAttempts != 1 ? 's' : ''} remaining)';
+        });
+      }
     } catch (e) {
-      setState(() {
-        _errorMessage = 'An unexpected error occurred. Please try again.';
-      });
+      // Increment failed attempts on error
+      _failedAttempts++;
+      _prefs.setInt('login_failed_attempts', _failedAttempts);
+
+      if (_failedAttempts >= 3) {
+        _startCooldown();
+        setState(() {
+          _errorMessage =
+              'Too many failed attempts. Please try again in $_remainingCooldownTime';
+        });
+      } else {
+        setState(() {
+          _errorMessage = 'An unexpected error occurred. Please try again.';
+        });
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -406,6 +536,7 @@ class _LoginModalState extends State<LoginModal>
                                       TextFormField(
                                         controller: _emailController,
                                         focusNode: _emailFocus,
+                                        enabled: !_isInCooldown(),
                                         style: const TextStyle(
                                           color: Colors.white,
                                         ),
@@ -431,6 +562,7 @@ class _LoginModalState extends State<LoginModal>
                                       TextFormField(
                                         controller: _passwordController,
                                         focusNode: _passFocus,
+                                        enabled: !_isInCooldown(),
                                         obscureText: _obscurePassword,
                                         style: const TextStyle(
                                           color: Colors.white,
@@ -462,7 +594,7 @@ class _LoginModalState extends State<LoginModal>
                                         validator: (_) => null,
                                         onFieldSubmitted:
                                             (_) =>
-                                                _isLoading
+                                                _isLoading || _isInCooldown()
                                                     ? null
                                                     : _handleLogin(),
                                       ),
@@ -511,7 +643,10 @@ class _LoginModalState extends State<LoginModal>
 
                               const SizedBox(height: 24),
                               _AnimatedGradientButton(
-                                onPressed: _isLoading ? null : _handleLogin,
+                                onPressed:
+                                    (_isLoading || _isInCooldown())
+                                        ? null
+                                        : _handleLogin,
                                 child:
                                     _isLoading
                                         ? const SizedBox(
@@ -523,6 +658,15 @@ class _LoginModalState extends State<LoginModal>
                                                 AlwaysStoppedAnimation<Color>(
                                                   Colors.black,
                                                 ),
+                                          ),
+                                        )
+                                        : _isInCooldown()
+                                        ? Text(
+                                          'Try again in $_remainingCooldownTime',
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 18,
+                                            letterSpacing: 0.5,
                                           ),
                                         )
                                         : const Text(
