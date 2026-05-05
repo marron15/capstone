@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_zxing/flutter_zxing.dart';
 
 import '../services/attendance_service.dart';
 import '../services/unified_auth_state.dart';
 import 'time_in_out_history_modal.dart';
+import 'web_qr_scanner_stub.dart' if (dart.library.html) 'web_qr_scanner.dart';
 
 class QrScannerDialog extends StatefulWidget {
   const QrScannerDialog();
@@ -168,11 +170,14 @@ mixin QrScanningMixin<T extends StatefulWidget> on State<T> {
       return;
     }
 
-    final String? payload = await showDialog<String>(
-      context: context,
-      barrierDismissible: true,
-      builder: (context) => const QrScannerDialog(),
-    );
+    final String? payload =
+        kIsWeb
+            ? await showWebQrScannerDialog(context)
+            : await showDialog<String>(
+              context: context,
+              barrierDismissible: true,
+              builder: (context) => const QrScannerDialog(),
+            );
 
     if (!mounted || payload == null || payload.isEmpty) return;
     await recordAttendanceScan(payload);

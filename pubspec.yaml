@@ -48,6 +48,7 @@ dependencies:
   printing: ^5.14.3
   qr_flutter: ^4.1.0
   web: ^1.1.1
+  js: ^0.7.1
   simple_file_saver: ^2.0.1
 
 

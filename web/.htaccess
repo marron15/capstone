@@ -1,0 +1,7 @@
+<IfModule mod_headers.c>
+  # Allow camera access for QR scanning in modern browsers.
+  Header always set Permissions-Policy "camera=(self)"
+
+  # Backward compatibility for older browsers (deprecated, but harmless).
+  Header always set Feature-Policy "camera 'self'"
+</IfModule>
