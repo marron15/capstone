@@ -1086,7 +1086,7 @@ class _SignupMembersModalState extends State<SignupMembersModal>
         const SizedBox(height: 6),
         const Text(
           'Password auto-generated: last name + birth month & day (MMDD).',
-          style: TextStyle(color: Colors.white70, fontSize: 12),
+          style: TextStyle(color: Colors.red, fontSize: 14),
         ),
         const SizedBox(height: 14),
         // ── Terms & Conditions checkbox ──────────────────────────────────
@@ -1095,9 +1095,10 @@ class _SignupMembersModalState extends State<SignupMembersModal>
             color: Colors.white.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: _showTermsError
-                  ? Colors.red.shade400
-                  : _agreedToTerms
+              color:
+                  _showTermsError
+                      ? Colors.red.shade400
+                      : _agreedToTerms
                       ? const Color(0xFFFF8C00).withValues(alpha: 0.6)
                       : Colors.white.withValues(alpha: 0.15),
               width: _showTermsError ? 1.5 : 1.2,
@@ -1241,118 +1242,125 @@ class _SignupMembersModalState extends State<SignupMembersModal>
       ],
     );
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        fields,
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    backgroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+    final double bottomInset = MediaQuery.of(context).padding.bottom;
+
+    return SingleChildScrollView(
+      padding: EdgeInsets.only(bottom: 12 + bottomInset),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          fields,
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      backgroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                     ),
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      _currentStep = 0;
-                      _clearVerificationStateFields();
-                    });
-                  },
-                  icon: const Icon(
-                    Icons.arrow_back,
-                    size: 18,
-                    color: Colors.black,
-                  ),
-                  label: const Text(
-                    'Back',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15,
+                    onPressed: () {
+                      setState(() {
+                        _currentStep = 0;
+                        _clearVerificationStateFields();
+                      });
+                    },
+                    icon: const Icon(
+                      Icons.arrow_back,
+                      size: 18,
                       color: Colors.black,
                     ),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    backgroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                    label: const Text(
+                      'Back',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                        color: Colors.black,
+                      ),
                     ),
                   ),
-                  onPressed:
-                      (_isLoading || _isRequestingVerification)
-                          ? null
-                          : () async {
-                            if (!_agreedToTerms) {
-                              setState(() => _showTermsError = true);
-                              return;
-                            }
-                            if (_verificationRequested) {
-                              await _handleSignup();
-                            } else {
-                              await _sendVerificationCode();
-                            }
-                          },
-                  child:
-                      _verificationRequested
-                          ? _isLoading
-                              ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    Colors.black,
-                                  ),
-                                ),
-                              )
-                              : const Text(
-                                'Verify & Create Account',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 15,
-                                  color: Colors.black,
-                                ),
-                              )
-                          : _isRequestingVerification
-                          ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.black,
-                              ),
-                            ),
-                          )
-                          : const Text(
-                            'Send Verification Code',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 15,
-                              color: Colors.black,
-                            ),
-                          ),
                 ),
               ),
-            ),
-          ],
-        ),
-      ],
+              const SizedBox(width: 10),
+              Expanded(
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      backgroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    onPressed:
+                        (_isLoading || _isRequestingVerification)
+                            ? null
+                            : () async {
+                              if (!_agreedToTerms) {
+                                setState(() => _showTermsError = true);
+                                return;
+                              }
+                              if (_verificationRequested) {
+                                await _handleSignup();
+                              } else {
+                                await _sendVerificationCode();
+                              }
+                            },
+                    child:
+                        _verificationRequested
+                            ? _isLoading
+                                ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.black,
+                                    ),
+                                  ),
+                                )
+                                : Center(
+                                  child: const Text(
+                                    'Verify & Create Account',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 15,
+                                      color: Colors.black,
+                                    ),
+                                  ),
+                                )
+                            : _isRequestingVerification
+                            ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.black,
+                                ),
+                              ),
+                            )
+                            : const Text(
+                              'Send Verification Code',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 15,
+                                color: Colors.black,
+                              ),
+                            ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 

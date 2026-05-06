@@ -173,7 +173,7 @@ class _LoginModalState extends State<LoginModal>
   }
 
   void _startCooldown() {
-    const cooldownDuration = Duration(minutes: 4); // 4 minutes cooldown
+    const cooldownDuration = Duration(minutes: 3); // 3 minutes cooldown
     _cooldownEndTime = DateTime.now().add(cooldownDuration);
     _saveCooldownState();
     _restartCooldownTimer();
