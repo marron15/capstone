@@ -1,6 +1,59 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <script>
+    // Run first: Safari/WebKit may log WebGL CanvasKit noise before <body> scripts run.
+    (function() {
+      function joinArgs(args) {
+        return Array.prototype.map.call(args, function (a) {
+          try {
+            return String(a);
+          } catch (e) {
+            return '';
+          }
+        }).join(' ');
+      }
+      function suppressBrowserNoise(message) {
+        if (!message) return false;
+        if (message.includes('Noto fonts') || message.includes('missing characters')) return true;
+        if (message.includes('WEBGL_polygon_mode')) return true;
+        if (message.includes('non-portable extension enabled')) return true;
+        if (message.includes('WebGL: non-portable')) return true;
+        if (message.includes('Injecting <script> tag')) return true;
+        return false;
+      }
+      const originalWarn = console.warn;
+      console.warn = function () {
+        const message = joinArgs(arguments);
+        if (suppressBrowserNoise(message)) return;
+        originalWarn.apply(console, arguments);
+      };
+      const originalLog = console.log;
+      console.log = function () {
+        const message = joinArgs(arguments);
+        if (suppressBrowserNoise(message)) return;
+        originalLog.apply(console, arguments);
+      };
+      const originalInfo = console.info;
+      console.info = function () {
+        const message = joinArgs(arguments);
+        if (suppressBrowserNoise(message)) return;
+        originalInfo.apply(console, arguments);
+      };
+      const originalDebug = console.debug;
+      console.debug = function () {
+        const message = joinArgs(arguments);
+        if (suppressBrowserNoise(message)) return;
+        originalDebug.apply(console, arguments);
+      };
+      const originalError = console.error;
+      console.error = function () {
+        const message = joinArgs(arguments);
+        if (suppressBrowserNoise(message)) return;
+        originalError.apply(console, arguments);
+      };
+    })();
+  </script>
   <!--
     If you are serving your web app in a path other than the root, change the
     href value below to reflect the base path you are serving from.
@@ -35,20 +88,6 @@
 </head>
 <body>
   <script>
-    // Suppress Noto font warnings from Flutter
-    (function() {
-      const originalWarn = console.warn;
-      console.warn = function(...args) {
-        const message = args.join(' ');
-        // Suppress Noto font related warnings
-        if (message.includes('Noto fonts') || message.includes('missing characters')) {
-          return; // Suppress this warning
-        }
-        // Call original warn for other messages
-        originalWarn.apply(console, args);
-      };
-    })();
-
     (function () {
       const shouldLogIntlFix =
         ['localhost', '127.0.0.1', ''].includes(window.location.hostname);
@@ -241,7 +280,8 @@
     }, 2000);
   </script>
 
-  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.3.1/dist/jsQR.min.js"></script>
+  <!-- Same-origin jsQR so Safari privacy / tracker blocking does not remove the scanner (CDN scripts are often blocked). -->
+  <script src="jsqr.min.js"></script>
 
   <!-- Service worker is automatically handled by Flutter's flutter_bootstrap.js -->
   <!-- Note: Run patch_bootstrap.ps1 after building to disable service worker -->

@@ -28,5 +28,9 @@
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>NSCameraUsageDescription</key>
+	<string>We need camera access to scan the gym&apos;s attendance QR code.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>We need photo library access so you can scan a QR code from a saved image when the camera is unavailable.</string>
 </dict>
 </plist>
