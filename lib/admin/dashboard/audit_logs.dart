@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -296,8 +297,11 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
+    final media = MediaQuery.of(context);
+    final double screenWidth = media.size.width;
     final bool isMobile = screenWidth < 900;
+    // Tablet / narrow desktop: prefer readable cards over a cramped table.
+    final bool useCardList = isMobile || screenWidth < 1024;
 
     return Scaffold(
       key: _scaffoldKey,
@@ -347,7 +351,7 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
                     Expanded(
                       child: RefreshIndicator(
                         onRefresh: _fetchLogs,
-                        child: _buildContent(isMobile),
+                        child: _buildContent(useCardList: useCardList),
                       ),
                     ),
                   ],
@@ -433,74 +437,7 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
               child: _buildDateRangeButton(isMobile),
             ),
             const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                FilledButton.icon(
-                  onPressed: () => _handleActorTypeChange(null),
-                  icon: Icon(
-                    _selectedActorType == null
-                        ? Icons.check_circle
-                        : Icons.circle_outlined,
-                    size: 18,
-                  ),
-                  label: const Text('All Actions'),
-                  style: ButtonStyle(
-                    backgroundColor: WidgetStateProperty.resolveWith(
-                      (states) =>
-                          _selectedActorType == null
-                              ? Colors.blue.shade700
-                              : Colors.grey.shade300,
-                    ),
-                    foregroundColor: WidgetStateProperty.resolveWith(
-                      (states) =>
-                          _selectedActorType == null
-                              ? Colors.white
-                              : Colors.grey.shade700,
-                    ),
-                  ),
-                ),
-                FilledButton.icon(
-                  onPressed: () => _handleActorTypeChange('customer'),
-                  icon: const Icon(Icons.person_outline, size: 18),
-                  label: const Text('Members Activity'),
-                  style: ButtonStyle(
-                    backgroundColor: WidgetStateProperty.resolveWith(
-                      (states) =>
-                          _selectedActorType == 'customer'
-                              ? Colors.blue.shade700
-                              : Colors.grey.shade300,
-                    ),
-                    foregroundColor: WidgetStateProperty.resolveWith(
-                      (states) =>
-                          _selectedActorType == 'customer'
-                              ? Colors.white
-                              : Colors.grey.shade700,
-                    ),
-                  ),
-                ),
-                FilledButton.icon(
-                  onPressed: () => _handleActorTypeChange('admin'),
-                  icon: const Icon(Icons.admin_panel_settings, size: 18),
-                  label: const Text('Admin Activity'),
-                  style: ButtonStyle(
-                    backgroundColor: WidgetStateProperty.resolveWith(
-                      (states) =>
-                          _selectedActorType == 'admin'
-                              ? Colors.blue.shade700
-                              : Colors.grey.shade300,
-                    ),
-                    foregroundColor: WidgetStateProperty.resolveWith(
-                      (states) =>
-                          _selectedActorType == 'admin'
-                              ? Colors.white
-                              : Colors.grey.shade700,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+            _buildActorFilterChipRow(isMobile: true),
           ] else ...[
             TextField(
               controller: _searchController,
@@ -527,74 +464,7 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
               ),
             ),
             const SizedBox(height: 12),
-            Row(
-              children: [
-                FilledButton.icon(
-                  onPressed: () => _handleActorTypeChange(null),
-                  icon: Icon(
-                    _selectedActorType == null
-                        ? Icons.check_circle
-                        : Icons.circle_outlined,
-                    size: 18,
-                  ),
-                  label: const Text('All Actions'),
-                  style: ButtonStyle(
-                    backgroundColor: WidgetStateProperty.resolveWith(
-                      (states) =>
-                          _selectedActorType == null
-                              ? Colors.blue.shade700
-                              : Colors.grey.shade300,
-                    ),
-                    foregroundColor: WidgetStateProperty.resolveWith(
-                      (states) =>
-                          _selectedActorType == null
-                              ? Colors.white
-                              : Colors.grey.shade700,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                FilledButton.icon(
-                  onPressed: () => _handleActorTypeChange('customer'),
-                  icon: const Icon(Icons.person_outline, size: 18),
-                  label: const Text('Members Activity'),
-                  style: ButtonStyle(
-                    backgroundColor: WidgetStateProperty.resolveWith(
-                      (states) =>
-                          _selectedActorType == 'customer'
-                              ? Colors.blue.shade700
-                              : Colors.grey.shade300,
-                    ),
-                    foregroundColor: WidgetStateProperty.resolveWith(
-                      (states) =>
-                          _selectedActorType == 'customer'
-                              ? Colors.white
-                              : Colors.grey.shade700,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                FilledButton.icon(
-                  onPressed: () => _handleActorTypeChange('admin'),
-                  icon: const Icon(Icons.admin_panel_settings, size: 18),
-                  label: const Text('Admin Activity'),
-                  style: ButtonStyle(
-                    backgroundColor: WidgetStateProperty.resolveWith(
-                      (states) =>
-                          _selectedActorType == 'admin'
-                              ? Colors.blue.shade700
-                              : Colors.grey.shade300,
-                    ),
-                    foregroundColor: WidgetStateProperty.resolveWith(
-                      (states) =>
-                          _selectedActorType == 'admin'
-                              ? Colors.white
-                              : Colors.grey.shade700,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+            _buildActorFilterChipRow(isMobile: false),
           ],
         ],
       ),
@@ -617,6 +487,107 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
         ),
       ),
     );
+  }
+
+  /// Keeps filter chips on one horizontal line on phones; scrolls instead of stacking.
+  Widget _buildActorFilterChipRow({required bool isMobile}) {
+    final List<Widget> chips = [
+      FilledButton.icon(
+        onPressed: () => _handleActorTypeChange(null),
+        icon: Icon(
+          _selectedActorType == null
+              ? Icons.check_circle
+              : Icons.circle_outlined,
+          size: 18,
+        ),
+        label: const Text('All Actions'),
+        style: ButtonStyle(
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          visualDensity: VisualDensity.compact,
+          padding: WidgetStateProperty.all(
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          ),
+          backgroundColor: WidgetStateProperty.resolveWith(
+            (states) =>
+                _selectedActorType == null
+                    ? Colors.blue.shade700
+                    : Colors.grey.shade300,
+          ),
+          foregroundColor: WidgetStateProperty.resolveWith(
+            (states) =>
+                _selectedActorType == null
+                    ? Colors.white
+                    : Colors.grey.shade700,
+          ),
+        ),
+      ),
+      const SizedBox(width: 8),
+      FilledButton.icon(
+        onPressed: () => _handleActorTypeChange('customer'),
+        icon: const Icon(Icons.person_outline, size: 18),
+        label: const Text('Members Activity'),
+        style: ButtonStyle(
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          visualDensity: VisualDensity.compact,
+          padding: WidgetStateProperty.all(
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          ),
+          backgroundColor: WidgetStateProperty.resolveWith(
+            (states) =>
+                _selectedActorType == 'customer'
+                    ? Colors.blue.shade700
+                    : Colors.grey.shade300,
+          ),
+          foregroundColor: WidgetStateProperty.resolveWith(
+            (states) =>
+                _selectedActorType == 'customer'
+                    ? Colors.white
+                    : Colors.grey.shade700,
+          ),
+        ),
+      ),
+      const SizedBox(width: 8),
+      FilledButton.icon(
+        onPressed: () => _handleActorTypeChange('admin'),
+        icon: const Icon(Icons.admin_panel_settings, size: 18),
+        label: const Text('Admin Activity'),
+        style: ButtonStyle(
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          visualDensity: VisualDensity.compact,
+          padding: WidgetStateProperty.all(
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          ),
+          backgroundColor: WidgetStateProperty.resolveWith(
+            (states) =>
+                _selectedActorType == 'admin'
+                    ? Colors.blue.shade700
+                    : Colors.grey.shade300,
+          ),
+          foregroundColor: WidgetStateProperty.resolveWith(
+            (states) =>
+                _selectedActorType == 'admin'
+                    ? Colors.white
+                    : Colors.grey.shade700,
+          ),
+        ),
+      ),
+    ];
+
+    final Widget row = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: chips,
+    );
+
+    final Widget scroll = SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
+      child: row,
+    );
+
+    if (isMobile) {
+      return SizedBox(height: 48, child: scroll);
+    }
+    return scroll;
   }
 
   bool get _shouldShowCategoryFilter =>
@@ -660,7 +631,7 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
     );
   }
 
-  Widget _buildContent(bool isMobile) {
+  Widget _buildContent({required bool useCardList}) {
     if (_isLoading) {
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -675,9 +646,17 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
       return _EmptyState(onRefresh: _fetchLogs, searchQuery: _searchQuery);
     }
 
-    if (isMobile) {
+    final double horizontalPad =
+        MediaQuery.sizeOf(context).width < 360 ? 12.0 : 24.0;
+
+    if (useCardList) {
       return ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        padding: EdgeInsets.fromLTRB(
+          horizontalPad,
+          8,
+          horizontalPad,
+          24,
+        ),
         physics: const AlwaysScrollableScrollPhysics(),
         itemCount: _logs.length,
         itemBuilder: (context, index) => _AuditLogCard(entry: _logs[index]),
@@ -705,58 +684,83 @@ class _AuditLogCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+        padding: const EdgeInsets.all(16),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final bool stackMetaBelowTitle = constraints.maxWidth < 440;
+            final Widget avatar = CircleAvatar(
+              radius: 20,
+              backgroundColor: badgeColor.withValues(alpha: 0.15),
+              child: Icon(
+                _categoryIcon(entry.activityCategory),
+                color: badgeColor,
+              ),
+            );
+            final TextStyle titleStyle = const TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+              height: 1.25,
+            );
+            final Widget titleText = Text(
+              entry.displayActivityTitle,
+              style: titleStyle,
+              softWrap: true,
+            );
+            final Widget metaColumn = Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                CircleAvatar(
-                  radius: 22,
-                  backgroundColor: badgeColor.withValues(alpha: 0.15),
-                  child: Icon(
-                    _categoryIcon(entry.activityCategory),
-                    color: badgeColor,
+                Text(
+                  entry.formattedTimestamp,
+                  textAlign: TextAlign.end,
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
                   ),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
+                if (entry.customerId != null)
+                  Text(
+                    '#${entry.customerId}',
+                    textAlign: TextAlign.end,
+                    style: TextStyle(
+                      color: Colors.grey.shade500,
+                      fontSize: 12,
+                    ),
+                  ),
+              ],
+            );
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (stackMetaBelowTitle) ...[
+                  Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        entry.activityTitle,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      const SizedBox.shrink(),
+                      avatar,
+                      const SizedBox(width: 12),
+                      Expanded(child: titleText),
                     ],
                   ),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      entry.formattedTimestamp,
-                      style: TextStyle(
-                        color: Colors.grey.shade600,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    if (entry.customerId != null)
-                      Text(
-                        '#${entry.customerId}',
-                        style: TextStyle(color: Colors.grey.shade500),
-                      ),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Wrap(
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: AlignmentDirectional.centerEnd,
+                    child: metaColumn,
+                  ),
+                ] else
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      avatar,
+                      const SizedBox(width: 12),
+                      Expanded(child: titleText),
+                      const SizedBox(width: 8),
+                      metaColumn,
+                    ],
+                  ),
+                const SizedBox(height: 14),
+                Wrap(
               spacing: 8,
               runSpacing: 8,
               children: [
@@ -808,7 +812,9 @@ class _AuditLogCard extends StatelessWidget {
                         .toList(),
               ),
             ],
-          ],
+              ],
+            );
+          },
         ),
       ),
     );
@@ -863,43 +869,65 @@ class _AuditLogTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      child: Align(
-        alignment: Alignment.topCenter,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1200),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                _TableHeader(
-                  isAdminActivity: isAdminActivity,
-                  selectedActorType: selectedActorType,
-                  categoryFilter: categoryFilter,
-                ),
-                if (entries.isEmpty)
-                  const SizedBox.shrink()
-                else
-                  ...entries.map(
-                    (entry) =>
-                        _TableRow(entry, isAdminActivity: isAdminActivity),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const double tableMinWidth = 960;
+        final double minChildWidth = math.max(
+          constraints.maxWidth,
+          tableMinWidth,
+        );
+        return SingleChildScrollView(
+          scrollDirection: Axis.vertical,
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            physics: const ClampingScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minWidth: minChildWidth),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1200),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          _TableHeader(
+                            isAdminActivity: isAdminActivity,
+                            selectedActorType: selectedActorType,
+                            categoryFilter: categoryFilter,
+                          ),
+                          if (entries.isEmpty)
+                            const SizedBox.shrink()
+                          else
+                            ...entries.map(
+                              (entry) => _TableRow(
+                                entry,
+                                isAdminActivity: isAdminActivity,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
                   ),
-              ],
+                ),
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
@@ -1044,16 +1072,6 @@ class _TableRow extends StatelessWidget {
 
   const _TableRow(this.entry, {this.isAdminActivity = false});
 
-  String get _displayActivityTitle {
-    if (entry.actorType.toLowerCase() == 'admin') return entry.activityTitle;
-    final lower = entry.activityTitle.toLowerCase();
-    if (lower.contains('customer timed out')) return 'Member timed out';
-    if (lower.contains('customer timed in')) return 'Member timed in';
-    if (lower.contains('customer logged out')) return 'Member logged out';
-    if (lower.contains('customer logged in')) return 'Member logged in';
-    return entry.activityTitle.replaceFirst(RegExp('^Customer'), 'Member');
-  }
-
   String get _detailsText {
     if (entry.description != null && entry.description!.isNotEmpty) {
       return entry.description!;
@@ -1142,7 +1160,7 @@ class _TableRow extends StatelessWidget {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                _displayActivityTitle,
+                                entry.displayActivityTitle,
                                 textAlign: TextAlign.center,
                                 style: const TextStyle(
                                   fontSize: 16,
@@ -1240,25 +1258,35 @@ class _InfoPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16, color: Colors.grey.shade600),
-          const SizedBox(width: 6),
-          Text(
-            '$label: $value',
-            style: TextStyle(
-              color: Colors.grey.shade700,
-              fontWeight: FontWeight.w500,
+    final double maxPill =
+        (MediaQuery.sizeOf(context).width - 72).clamp(200.0, 560.0);
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: maxPill),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(999),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, size: 16, color: Colors.grey.shade600),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                '$label: $value',
+                style: TextStyle(
+                  color: Colors.grey.shade700,
+                  fontWeight: FontWeight.w500,
+                ),
+                softWrap: true,
+                maxLines: 4,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -1400,6 +1428,17 @@ class AuditLogEntry {
         '/${_pad2(day!)}'
         '/$year '
         '${_pad2(hour12)}:${_pad2(minute!)} ${isPm ? 'PM' : 'AM'}';
+  }
+
+  /// Wording aligned with the admin table (customer → member).
+  String get displayActivityTitle {
+    if (actorType.toLowerCase() == 'admin') return activityTitle;
+    final lower = activityTitle.toLowerCase();
+    if (lower.contains('customer timed out')) return 'Member timed out';
+    if (lower.contains('customer timed in')) return 'Member timed in';
+    if (lower.contains('customer logged out')) return 'Member logged out';
+    if (lower.contains('customer logged in')) return 'Member logged in';
+    return activityTitle.replaceFirst(RegExp(r'^Customer'), 'Member');
   }
 
   String get activityCategoryTitle {
