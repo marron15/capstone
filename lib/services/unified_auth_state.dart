@@ -8,6 +8,7 @@ import 'attendance_service.dart';
 import 'auth_service.dart';
 import 'membership_service.dart';
 import '../User Profile/profile_data.dart';
+import '../admin/services/api_service.dart';
 
 enum UserType { customer, admin, none }
 
@@ -141,15 +142,80 @@ class UnifiedAuthState extends ChangeNotifier {
     await _saveAdminTokens();
 
     notifyListeners();
+
+    _scheduleAdminLoginAudit(Map<String, dynamic>.from(admin));
+  }
+
+  void _scheduleAdminLoginAudit(Map<String, dynamic> admin) {
+    Future<void>.microtask(() async {
+      try {
+        final String first = (admin['first_name'] ?? '').toString().trim();
+        final String last = (admin['last_name'] ?? '').toString().trim();
+        final String name =
+            [first, last].where((s) => s.isNotEmpty).join(' ').trim();
+        final int? adminId =
+            admin['id'] is int
+                ? admin['id'] as int
+                : int.tryParse('${admin['id']}');
+        await ApiService.createAuditLog(
+          activityCategory: 'auth',
+          activityType: 'admin_login',
+          activityTitle: 'Admin logged in',
+          description:
+              'Admin ${name.isNotEmpty ? name : 'Unknown'} logged in to the admin dashboard.',
+          actorType: 'admin',
+          actorName: name.isNotEmpty ? name : null,
+          adminId: adminId,
+        );
+      } catch (e) {
+        debugPrint('Audit admin login: $e');
+      }
+    });
+  }
+
+  void _scheduleAdminLogoutAudit(Map<String, dynamic> admin) {
+    Future<void>.microtask(() async {
+      try {
+        final String first = (admin['first_name'] ?? '').toString().trim();
+        final String last = (admin['last_name'] ?? '').toString().trim();
+        final String name =
+            [first, last].where((s) => s.isNotEmpty).join(' ').trim();
+        final int? adminId =
+            admin['id'] is int
+                ? admin['id'] as int
+                : int.tryParse('${admin['id']}');
+        await ApiService.createAuditLog(
+          activityCategory: 'auth',
+          activityType: 'admin_logout',
+          activityTitle: 'Admin logged out',
+          description:
+              'Admin ${name.isNotEmpty ? name : 'Unknown'} logged out of the admin dashboard.',
+          actorType: 'admin',
+          actorName: name.isNotEmpty ? name : null,
+          adminId: adminId,
+        );
+      } catch (e) {
+        debugPrint('Audit admin logout: $e');
+      }
+    });
   }
 
   // Logout
   Future<void> logout() async {
+    Map<String, dynamic>? adminForAudit;
+    if (_userType == UserType.admin && _adminData != null) {
+      adminForAudit = Map<String, dynamic>.from(_adminData!);
+    }
+
     await _clearAllTokens();
     _userType = UserType.none;
     _clearCustomerData();
     _clearAdminData();
     notifyListeners();
+
+    if (adminForAudit != null) {
+      _scheduleAdminLogoutAudit(adminForAudit);
+    }
   }
 
   // Validate and restore customer auth

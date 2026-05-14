@@ -573,10 +573,7 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
       ),
     ];
 
-    final Widget row = Row(
-      mainAxisSize: MainAxisSize.min,
-      children: chips,
-    );
+    final Widget row = Row(mainAxisSize: MainAxisSize.min, children: chips);
 
     final Widget scroll = SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -657,12 +654,7 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
 
     if (useCardList) {
       return ListView.builder(
-        padding: EdgeInsets.fromLTRB(
-          horizontalPad,
-          8,
-          horizontalPad,
-          24,
-        ),
+        padding: EdgeInsets.fromLTRB(horizontalPad, 8, horizontalPad, 24),
         physics: const AlwaysScrollableScrollPhysics(),
         itemCount: _logs.length,
         itemBuilder: (context, index) => _AuditLogCard(entry: _logs[index]),
@@ -729,10 +721,7 @@ class _AuditLogCard extends StatelessWidget {
                   Text(
                     '#${entry.customerId}',
                     textAlign: TextAlign.end,
-                    style: TextStyle(
-                      color: Colors.grey.shade500,
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
                   ),
               ],
             );
@@ -767,57 +756,61 @@ class _AuditLogCard extends StatelessWidget {
                   ),
                 const SizedBox(height: 14),
                 Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                _InfoPill(
-                  label: 'Member',
-                  value: entry.customerName ?? 'Unknown',
-                  icon: Icons.person_outline,
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _InfoPill(
+                      label: 'Member',
+                      value: entry.customerName ?? 'Unknown',
+                      icon: Icons.person_outline,
+                    ),
+                    _InfoPill(
+                      label: 'Category',
+                      value: entry.activityCategoryTitle,
+                      icon: Icons.category_outlined,
+                    ),
+                  ],
                 ),
-                _InfoPill(
-                  label: 'Category',
-                  value: entry.activityCategoryTitle,
-                  icon: Icons.category_outlined,
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            if (entry.sections.isNotEmpty)
-              Wrap(
-                spacing: 8,
-                children:
-                    entry.sections
-                        .map(
-                          (section) => Chip(
-                            label: Text(section),
-                            backgroundColor: badgeColor.withValues(alpha: 0.12),
-                            labelStyle: TextStyle(color: badgeColor),
-                          ),
-                        )
-                        .toList(),
-              ),
-            if (entry.changeRows.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children:
-                    entry.changeRows
-                        .map(
-                          (row) => Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 2),
-                            child: Text(
-                              '${row.label}: ${row.oldValue ?? '—'} → ${row.newValue ?? '—'}',
-                              style: const TextStyle(
-                                fontFamily: 'RobotoMono',
-                                fontSize: 13,
+                const SizedBox(height: 12),
+                if (entry.sections.isNotEmpty)
+                  Wrap(
+                    spacing: 8,
+                    children:
+                        entry.sections
+                            .map(
+                              (section) => Chip(
+                                label: Text(section),
+                                backgroundColor: badgeColor.withValues(
+                                  alpha: 0.12,
+                                ),
+                                labelStyle: TextStyle(color: badgeColor),
                               ),
-                            ),
-                          ),
-                        )
-                        .toList(),
-              ),
-            ],
+                            )
+                            .toList(),
+                  ),
+                if (entry.changeRows.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children:
+                        entry.changeRows
+                            .map(
+                              (row) => Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 2,
+                                ),
+                                child: Text(
+                                  '${row.label}: ${row.oldValue ?? '—'} → ${row.newValue ?? '—'}',
+                                  style: const TextStyle(
+                                    fontFamily: 'RobotoMono',
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                            )
+                            .toList(),
+                  ),
+                ],
               ],
             );
           },
@@ -834,6 +827,8 @@ class _AuditLogCard extends StatelessWidget {
         return Icons.access_time;
       case 'auth':
         return Icons.login;
+      case 'export':
+        return Icons.picture_as_pdf_outlined;
       default:
         return Icons.event_note;
     }
@@ -853,8 +848,9 @@ class _AuditLogCard extends StatelessWidget {
     if (lower.contains('log in') || lower.contains('login'))
       return Colors.orange;
     if (lower.contains('log out') || lower.contains('logout'))
-      return Colors.orange;
+      return Colors.red;
     if (lower.contains('time')) return Colors.teal;
+    if (lower.contains('pdf')) return Colors.deepOrange;
     // Default fallback
     return Colors.grey;
   }
@@ -878,8 +874,7 @@ class _AuditLogTable extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final double viewW = constraints.maxWidth;
-        final double pad =
-            viewW < 400 ? 12.0 : (viewW < 720 ? 16.0 : 24.0);
+        final double pad = viewW < 400 ? 12.0 : (viewW < 720 ? 16.0 : 24.0);
         final double inner = math.max(0.0, viewW - pad * 2);
         // Below this width, scroll horizontally so columns (esp. Log ID) are not clipped.
         const double minTableForScroll = 880;
@@ -1389,8 +1384,10 @@ class _InfoPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double maxPill =
-        (MediaQuery.sizeOf(context).width - 72).clamp(200.0, 560.0);
+    final double maxPill = (MediaQuery.sizeOf(context).width - 72).clamp(
+      200.0,
+      560.0,
+    );
     return ConstrainedBox(
       constraints: BoxConstraints(maxWidth: maxPill),
       child: Container(
@@ -1599,6 +1596,12 @@ class AuditLogEntry {
         return 'Time In';
       }
     }
+    if (activityCategory == 'export') {
+      final normalized = activityType.toLowerCase();
+      if (normalized.contains('membership')) return 'Membership PDF';
+      if (normalized.contains('attendance')) return 'Time In/Out PDF';
+      return 'PDF export';
+    }
     return _categoryTitles[activityCategory] ?? activityCategory;
   }
 
@@ -1635,6 +1638,7 @@ class AuditLogEntry {
     'profile': 'Profile Updates',
     'attendance': 'Time In/Out',
     'auth': 'Login/Logout',
+    'export': 'PDF export',
   };
 
   static String _pad2(int value) => value.toString().padLeft(2, '0');

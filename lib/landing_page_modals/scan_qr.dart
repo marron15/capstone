@@ -241,6 +241,7 @@ mixin QrScanningMixin<T extends StatefulWidget> on State<T> {
       final snapshot = await AttendanceService.recordScan(
         customerId: customerId,
         adminPayload: payload,
+        customerName: unifiedAuthState.customerName,
       );
       if (!mounted) return;
       unifiedAuthState.applyAttendanceSnapshot(snapshot);

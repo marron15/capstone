@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../admin/services/api_service.dart';
 import '../member_pdf/renewal_membership.dart';
 import '../services/membership_service.dart';
 import '../services/unified_auth_state.dart';
@@ -211,6 +212,25 @@ class _MembershipHistoryDialogState extends State<_MembershipHistoryDialog> {
         rows: rowsToExport,
         dateRangeStr: filterDesc,
       );
+      try {
+        await ApiService.createAuditLog(
+          activityCategory: 'export',
+          activityType: 'pdf_membership_history',
+          activityTitle: 'Customer exported membership history PDF',
+          description:
+              'Member $_memberName exported membership history to PDF ($filterDesc, ${rowsToExport.length} row(s)).',
+          actorType: 'customer',
+          customerId: _customerId,
+          customerName: _memberName,
+          metadata: {
+            'export_type': 'membership_history_pdf',
+            'row_count': rowsToExport.length,
+            'filter': filterDesc,
+          },
+        );
+      } catch (e) {
+        debugPrint('Audit log membership PDF export: $e');
+      }
     } finally {
       if (!mounted) return;
       setState(() => _isExportingPdf = false);

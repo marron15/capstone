@@ -348,6 +348,7 @@ class AttendanceService {
   static Future<AttendanceSnapshot> recordScan({
     required int customerId,
     required String adminPayload,
+    String? customerName,
   }) async {
     try {
       final response = await http
@@ -374,6 +375,11 @@ class AttendanceService {
           if (payload is Map<String, dynamic>) {
             final snapshot = AttendanceSnapshot.fromJson(payload);
             _updatesController.add(snapshot);
+            _scheduleAttendanceAuditLog(
+              customerId: customerId,
+              customerName: customerName,
+              snapshot: snapshot,
+            );
             return snapshot;
           }
           throw AttendanceException(
@@ -394,6 +400,46 @@ class AttendanceService {
         'Unable to record attendance. Please try again.',
       );
     }
+  }
+
+  static void _scheduleAttendanceAuditLog({
+    required int customerId,
+    String? customerName,
+    required AttendanceSnapshot snapshot,
+  }) {
+    Future<void>.microtask(() async {
+      try {
+        final bool timedIn = snapshot.isClockedIn;
+        final String? verifier = snapshot.verifyingAdminName;
+        final String trimmedName = customerName?.trim() ?? '';
+        final String memberLabel =
+            trimmedName.isNotEmpty ? trimmedName : 'ID $customerId';
+        final String verifySuffix =
+            verifier != null && verifier.trim().isNotEmpty
+                ? ' (verified by ${verifier.trim()})'
+                : '';
+        await ApiService.createAuditLog(
+          activityCategory: 'attendance',
+          activityType: timedIn ? 'attendance_in' : 'attendance_out',
+          activityTitle: timedIn ? 'Customer timed in' : 'Customer timed out',
+          description:
+              timedIn
+                  ? 'Member $memberLabel timed in$verifySuffix.'
+                  : 'Member $memberLabel timed out$verifySuffix.',
+          actorType: 'customer',
+          customerId: customerId,
+          customerName: trimmedName.isNotEmpty ? trimmedName : null,
+          metadata: {
+            if (snapshot.attendanceId != null)
+              'attendance_id': snapshot.attendanceId,
+            if (verifier != null && verifier.trim().isNotEmpty)
+              'verified_by': verifier.trim(),
+          },
+        );
+      } catch (e) {
+        debugPrint('Attendance audit log: $e');
+      }
+    });
   }
 
   static String buildAdminQrPayload(Map<String, dynamic> adminData) {

@@ -7,6 +7,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
+import '../admin/services/api_service.dart';
 import '../services/attendance_service.dart';
 
 class TimeInOutHistoryExportController {
@@ -287,6 +288,28 @@ Future<void> exportTimeInOutHistoryReportPdf({
     );
 
     await Printing.sharePdf(bytes: bytes, filename: '$filename.pdf');
+
+    try {
+      await ApiService.createAuditLog(
+        activityCategory: 'export',
+        activityType: 'pdf_attendance_history',
+        activityTitle: 'Customer exported time in/out PDF',
+        description:
+            'Member $memberName exported Time In/Out history to PDF ($dateRangeStr, ${dataRows.length} row(s)).',
+        actorType: 'customer',
+        customerId: customerId,
+        customerName:
+            memberName.trim().isNotEmpty ? memberName.trim() : null,
+        metadata: {
+          'export_type': 'member_time_in_out_pdf',
+          'row_count': dataRows.length,
+          'source': 'member_portal',
+          if (dateRangeStr.isNotEmpty) 'date_range': dateRangeStr,
+        },
+      );
+    } catch (e) {
+      debugPrint('Audit log member time in/out PDF export: $e');
+    }
 
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(

@@ -332,12 +332,33 @@ class _MemberHistoryDialogState extends State<_MemberHistoryDialog> {
     }
     setState(() => _isExporting = true);
     try {
+      final List<Map<String, dynamic>> expandedLogs =
+          _expandLogsByEvent(_logs);
       await exportMemberHistoryToPdf(
         context: context,
         memberName: _memberName,
         customerId: _customerId,
-        logs: _expandLogsByEvent(_logs),
+        logs: expandedLogs,
       );
+      final int recordCount = expandedLogs.length;
+      try {
+        await ApiService.createAuditLog(
+          activityCategory: 'export',
+          activityType: 'pdf_attendance_history',
+          activityTitle: 'Customer exported time in/out PDF',
+          description:
+              'Member $_memberName exported Time In/Out history to PDF ($recordCount event row(s)).',
+          actorType: 'customer',
+          customerId: _customerId,
+          customerName: _memberName,
+          metadata: {
+            'export_type': 'attendance_history_pdf',
+            'record_count': recordCount,
+          },
+        );
+      } catch (e) {
+        debugPrint('Audit log member attendance PDF export: $e');
+      }
     } finally {
       if (mounted) setState(() => _isExporting = false);
     }
