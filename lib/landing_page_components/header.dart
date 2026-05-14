@@ -3,17 +3,30 @@ import '../services/unified_auth_state.dart';
 import '../services/apk_download_button.dart';
 import 'sidenav.dart';
 
-// TRANSPARENT HEADER (moved from main.dart)
+// Landing header: transparent over the hero; solid bar once scrolled (sticky).
 class MainHeader extends StatelessWidget {
   final bool isScrolled;
   final void Function(String section)? onSectionTap;
   const MainHeader({super.key, this.isScrolled = false, this.onSectionTap});
 
+  /// Top `Padding` for logged-in hero content so it clears the **expanded**
+  /// header (must stay in sync with [expandedHeaderHeight] breakpoints below).
+  static double loggedInHeroTopPadding(BuildContext context) {
+    final double width = MediaQuery.sizeOf(context).width;
+    final double topInset = MediaQuery.paddingOf(context).top;
+    final bool isDesktop = width >= 1180;
+    final bool isSmallMobile = width < 420;
+    final double expandedHeaderHeight =
+        isDesktop ? 160 : (isSmallMobile ? 96 : 108);
+    return topInset + expandedHeaderHeight + 16;
+  }
+
   @override
   Widget build(BuildContext context) {
     final Size screenSize = MediaQuery.of(context).size;
     final double topInset = MediaQuery.of(context).padding.top;
-    final bool isDesktop = MediaQuery.of(context).size.width >= 900;
+    // Wide enough for full inline nav + branding + actions (was 900 → overflow ~1000px).
+    final bool isDesktop = screenSize.width >= 1180;
     final bool isSmallMobile = screenSize.width < 420;
     final double expandedHeaderHeight =
         isDesktop ? 160 : (isSmallMobile ? 96 : 108);
@@ -21,7 +34,7 @@ class MainHeader extends StatelessWidget {
         isDesktop ? 80 : (isSmallMobile ? 68 : 74);
     final double horizontalPadding =
         isDesktop
-            ? 40
+            ? (screenSize.width < 1280 ? 24.0 : 40.0)
             : (screenSize.width < 360 ? 12 : (isSmallMobile ? 16 : 20));
     final double topContentPadding =
         isDesktop ? (topInset + 12) : (topInset + 6);
@@ -115,134 +128,171 @@ class MainHeader extends StatelessWidget {
             horizontalPadding,
             bottomContentPadding,
           ),
-          child: Align(
-            alignment: Alignment.center,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (!isDesktop)
-                  IconButton(
-                    onPressed: openMobileMenu,
-                    icon: const Icon(Icons.menu, color: Colors.white, size: 30),
-                    tooltip: 'Open menu',
-                  ),
-                if (!isDesktop) const SizedBox(width: 8),
-                if (isDesktop)
-                  const Text(
-                    'RNR FITNESS GYM',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 30,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.2,
-                    ),
-                  )
-                else
-                  Expanded(
-                    child: Text(
-                      'RNR FITNESS GYM',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: isSmallMobile ? 22 : 26,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.8,
-                      ),
-                    ),
-                  ),
-                if (isDesktop) const Spacer(),
-                if (!isDesktop) const SizedBox(width: 6),
-                if (isDesktop) ...[
-                  _HeaderNavTextButton(
-                    label: 'Home',
-                    onTap: () => onSectionTap?.call('Home'),
-                  ),
-                  _HeaderNavTextButton(
-                    label: 'Service',
-                    onTap: () => onSectionTap?.call('Service'),
-                  ),
-                  _HeaderNavTextButton(
-                    label: 'Products',
-                    onTap: () => onSectionTap?.call('Products'),
-                  ),
-                  _HeaderNavTextButton(
-                    label: 'Inquiries',
-                    onTap: () => onSectionTap?.call('Inquiries'),
-                  ),
-                  _HeaderNavTextButton(
-                    label: 'About Us',
-                    onTap: () => onSectionTap?.call('About Us'),
-                  ),
-                  const Spacer(),
-                ],
-                if (isDesktop) ...[
-                  AnimatedBuilder(
-                    animation: unifiedAuthState,
-                    builder: (context, child) {
-                      if (unifiedAuthState.isCustomerLoggedIn) {
-                        return Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              onPressed: () {
-                                Navigator.pushNamed(
-                                  context,
-                                  '/customer-profile',
-                                );
-                              },
-                              icon: const Icon(
-                                Icons.account_circle,
+          child:
+              isDesktop
+                  ? SizedBox(
+                    width: double.infinity,
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      alignment: Alignment.center,
+                      children: [
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: const Text(
+                              'RNR FITNESS GYM',
+                              style: TextStyle(
                                 color: Colors.white,
-                                size: 40,
+                                fontSize: 30,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1.2,
                               ),
-                              tooltip: 'Profile',
                             ),
-                            const SizedBox(width: 12),
-                            ElevatedButton(
-                              onPressed: handleLogout,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.red.withValues(
-                                  alpha: 0.8,
-                                ),
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                  vertical: 10,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                elevation: 0,
+                          ),
+                        ),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              AnimatedBuilder(
+                                animation: unifiedAuthState,
+                                builder: (context, child) {
+                                  if (unifiedAuthState.isCustomerLoggedIn) {
+                                    return Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        IconButton(
+                                          onPressed: () {
+                                            Navigator.pushNamed(
+                                              context,
+                                              '/customer-profile',
+                                            );
+                                          },
+                                          icon: const Icon(
+                                            Icons.account_circle,
+                                            color: Colors.white,
+                                            size: 45,
+                                          ),
+                                          tooltip: 'Profile',
+                                        ),
+                                        const SizedBox(width: 8),
+                                        ElevatedButton(
+                                          onPressed: handleLogout,
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.red
+                                                .withValues(alpha: 0.8),
+                                            foregroundColor: Colors.white,
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 16,
+                                              vertical: 10,
+                                            ),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                            elevation: 0,
+                                          ),
+                                          child: const Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(Icons.logout, size: 16),
+                                              SizedBox(width: 6),
+                                              Text(
+                                                'Logout',
+                                                style: TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  }
+                                  return const SizedBox.shrink();
+                                },
                               ),
-                              child: const Row(
+                              const SizedBox(width: 10),
+                              const ApkDownloadButton(),
+                            ],
+                          ),
+                        ),
+                        // True horizontal center of the header; painted last so
+                        // links stay tappable if they overlap the logo strip.
+                        Center(
+                          child: SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            physics: const BouncingScrollPhysics(),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                              ),
+                              child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.logout, size: 16),
-                                  SizedBox(width: 6),
-                                  Text(
-                                    'Logout',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                                  _HeaderNavTextButton(
+                                    label: 'Home',
+                                    onTap: () => onSectionTap?.call('Home'),
+                                  ),
+                                  _HeaderNavTextButton(
+                                    label: 'Service',
+                                    onTap: () => onSectionTap?.call('Service'),
+                                  ),
+                                  _HeaderNavTextButton(
+                                    label: 'Products',
+                                    onTap: () => onSectionTap?.call('Products'),
+                                  ),
+                                  _HeaderNavTextButton(
+                                    label: 'Inquiries',
+                                    onTap:
+                                        () => onSectionTap?.call('Inquiries'),
+                                  ),
+                                  _HeaderNavTextButton(
+                                    label: 'About Us',
+                                    onTap: () => onSectionTap?.call('About Us'),
                                   ),
                                 ],
                               ),
                             ),
-                          ],
-                        );
-                      }
-                      return const SizedBox.shrink();
-                    },
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                  : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      IconButton(
+                        onPressed: openMobileMenu,
+                        icon: const Icon(
+                          Icons.menu,
+                          color: Colors.white,
+                          size: 30,
+                        ),
+                        tooltip: 'Open menu',
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'RNR FITNESS GYM',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: isSmallMobile ? 22 : 26,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.8,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      const ApkDownloadButton(compact: true),
+                    ],
                   ),
-                  const SizedBox(width: 10),
-                  const ApkDownloadButton(),
-                ],
-                if (!isDesktop) const ApkDownloadButton(compact: true),
-              ],
-            ),
-          ),
         ),
       ),
     );
@@ -278,14 +328,16 @@ class _HeaderNavTextButtonState extends State<_HeaderNavTextButton> {
           onPressed: widget.onTap,
           style: TextButton.styleFrom(
             foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+            minimumSize: Size.zero,
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
           child: AnimatedDefaultTextStyle(
             duration: const Duration(milliseconds: 180),
             curve: Curves.easeInOut,
             style: TextStyle(
               color: textColor,
-              fontSize: 18,
+              fontSize: 20,
               fontWeight: FontWeight.w600,
             ),
             child: Text(widget.label),

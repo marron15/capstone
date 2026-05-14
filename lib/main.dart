@@ -377,9 +377,10 @@ class _LoginChoicePageState extends State<LoginChoicePage>
     _fadeController.forward();
     _slideController.forward();
 
-    // Listen to scroll to toggle sticky header style
+    // Listen to scroll to toggle compact header — use a low threshold so the
+    // bar height shrinks soon after scrolling (content passes underneath).
     _scrollController.addListener(() {
-      final scrolled = _scrollController.offset > 80;
+      final scrolled = _scrollController.offset > 24;
       if (scrolled != _isScrolled) {
         setState(() => _isScrolled = scrolled);
       }
@@ -464,12 +465,9 @@ class _LoginChoicePageState extends State<LoginChoicePage>
                                               : 80,
                                       top:
                                           unifiedAuthState.isCustomerLoggedIn
-                                              ? (MediaQuery.of(
-                                                        context,
-                                                      ).size.width <
-                                                      600
-                                                  ? 108
-                                                  : 96)
+                                              ? MainHeader.loggedInHeroTopPadding(
+                                                context,
+                                              )
                                               : 0,
                                     ),
                                     child:

@@ -571,8 +571,8 @@ class _HeroMembershipContainerState extends State<HeroMembershipContainer>
                                 20.0,
                                 36.0,
                               ),
-                      fontWeight: FontWeight.w700,
-                      height: 1.35,
+                      fontWeight: FontWeight.w600,
+                      height: 1.5,
                     ),
                   ),
                   SizedBox(
