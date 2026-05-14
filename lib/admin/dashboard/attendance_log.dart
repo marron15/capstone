@@ -747,111 +747,129 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
                     icon: Icon(_navCollapsed ? Icons.menu : Icons.chevron_left),
                   ),
                   const SizedBox(width: 8),
-                  // Title shrinks gracefully if the row gets crowded by the
-                  // sidebar or extra action buttons.
-                  Flexible(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
+                  Expanded(
+                    child: Align(
                       alignment: Alignment.centerLeft,
-                      child: const Text(
-                        'Time In/Out Log',
-                        maxLines: 1,
-                        softWrap: false,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: const Text(
+                          'Time In/Out Log',
+                          maxLines: 1,
+                          softWrap: false,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  const Spacer(),
-                  // Date picker
-                  OutlinedButton.icon(
-                    onPressed: () => _selectDate(context),
-                    icon: const Icon(Icons.calendar_today, size: 18),
-                    label: Text(
-                      _selectedDayFilter != null
-                          ? _formatDate(_selectedDayFilter)
-                          : _selectedDate != null
-                          ? _formatMonthYear(_selectedDate)
-                          : 'Select Month',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                    ),
-                  ),
-                  if (_selectedDayFilter != null) ...[
-                    const SizedBox(width: 8),
-                    OutlinedButton.icon(
-                      onPressed: _setWholeMonthFilter,
-                      icon: const Icon(Icons.filter_alt_off, size: 18),
-                      label: const Text('Whole Month'),
-                    ),
-                  ],
-                  const SizedBox(width: 8),
-                  if (unifiedAuthState.isAdminLoggedIn)
-                    OutlinedButton.icon(
-                      onPressed: _handleMyQrTap,
-                      icon: const Icon(Icons.qr_code_2, size: 18),
-                      label: const Text('My QR'),
-                    ),
-                  if (unifiedAuthState.isAdminLoggedIn)
-                    const SizedBox(width: 8),
-                  // Refresh button
-                  IconButton(
-                    icon: const Icon(Icons.refresh),
-                    tooltip: 'Refresh',
-                    onPressed: _loadAttendanceRecords,
                   ),
                 ],
               ),
             ),
-            // Search bar
+            // Search + export + filters (single toolbar row on desktop)
             Container(
               padding: const EdgeInsets.all(16),
               color: Colors.white,
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  SizedBox(
-                    width: 560,
-                    height: 42,
-                    child: TextField(
-                      controller: _searchController,
-                      decoration: InputDecoration(
-                        hintText:
-                            'Search by customer name, ID, time in, or time out...',
-                        prefixIcon: const Icon(Icons.search),
-                        suffixIcon:
-                            _searchQuery.isNotEmpty
-                                ? IconButton(
-                                  icon: const Icon(Icons.clear),
-                                  onPressed: () {
-                                    _searchController.clear();
-                                    setState(() => _searchQuery = '');
-                                    _filterRecords();
-                                  },
-                                )
-                                : null,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                  Expanded(
+                    child: SizedBox(
+                      height: 42,
+                      child: TextField(
+                        controller: _searchController,
+                        decoration: InputDecoration(
+                          hintText:
+                              'Search by customer name, ID, time in, or time out...',
+                          prefixIcon: const Icon(Icons.search),
+                          suffixIcon:
+                              _searchQuery.isNotEmpty
+                                  ? IconButton(
+                                    icon: const Icon(Icons.clear),
+                                    onPressed: () {
+                                      _searchController.clear();
+                                      setState(() => _searchQuery = '');
+                                      _filterRecords();
+                                    },
+                                  )
+                                  : null,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey.shade50,
                         ),
-                        filled: true,
-                        fillColor: Colors.grey.shade50,
+                        onChanged: (value) {
+                          setState(() => _searchQuery = value);
+                          _filterRecords();
+                        },
                       ),
-                      onChanged: (value) {
-                        setState(() => _searchQuery = value);
-                        _filterRecords();
-                      },
                     ),
                   ),
                   const SizedBox(width: 12),
                   _buildExportPdfButton(),
+                  const SizedBox(width: 8),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: () => _selectDate(context),
+                        icon: const Icon(Icons.calendar_today, size: 18),
+                        label: Text(
+                          _selectedDayFilter != null
+                              ? _formatDate(_selectedDayFilter)
+                              : _selectedDate != null
+                              ? _formatMonthYear(_selectedDate)
+                              : 'Select Month',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
+                        ),
+                      ),
+                      if (_selectedDayFilter != null) ...[
+                        const SizedBox(width: 8),
+                        OutlinedButton.icon(
+                          onPressed: _setWholeMonthFilter,
+                          icon: const Icon(Icons.filter_alt_off, size: 18),
+                          label: const Text('Whole Month'),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 10,
+                            ),
+                          ),
+                        ),
+                      ],
+                      const SizedBox(width: 8),
+                      if (unifiedAuthState.isAdminLoggedIn)
+                        OutlinedButton.icon(
+                          onPressed: _handleMyQrTap,
+                          icon: const Icon(Icons.qr_code_2, size: 18),
+                          label: const Text('My QR'),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 10,
+                            ),
+                          ),
+                        ),
+                      if (unifiedAuthState.isAdminLoggedIn)
+                        const SizedBox(width: 8),
+                      IconButton(
+                        icon: const Icon(Icons.refresh),
+                        tooltip: 'Refresh',
+                        onPressed: _loadAttendanceRecords,
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
