@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
 
 import '../admin/services/api_service.dart';
 import '../services/attendance_service.dart';
@@ -286,8 +285,6 @@ Future<void> exportTimeInOutHistoryReportPdf({
       fileExtension: 'pdf',
       mimeType: MimeType.pdf,
     );
-
-    await Printing.sharePdf(bytes: bytes, filename: '$filename.pdf');
 
     try {
       await ApiService.createAuditLog(

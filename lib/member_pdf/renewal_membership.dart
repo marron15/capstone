@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
 
 Future<pw.ThemeData> _loadBundledFontsTheme() async {
   try {
@@ -151,8 +150,6 @@ Future<void> exportMembershipHistoryPdf({
       fileExtension: 'pdf',
       mimeType: MimeType.pdf,
     );
-
-    await Printing.sharePdf(bytes: bytes, filename: '$filename.pdf');
 
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(

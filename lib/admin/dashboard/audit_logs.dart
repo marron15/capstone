@@ -347,7 +347,11 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox.shrink(),
-                    _buildHeader(context, isMobile),
+                    _buildHeader(
+                      context: context,
+                      isMobile: isMobile,
+                      useCardList: useCardList,
+                    ),
                     Expanded(
                       child: RefreshIndicator(
                         onRefresh: _fetchLogs,
@@ -364,7 +368,11 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
     );
   }
 
-  Widget _buildHeader(BuildContext context, bool isMobile) {
+  Widget _buildHeader({
+    required BuildContext context,
+    required bool isMobile,
+    required bool useCardList,
+  }) {
     return Container(
       padding: const EdgeInsets.all(16),
       color: Colors.transparent,
@@ -466,7 +474,113 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
             const SizedBox(height: 12),
             _buildActorFilterChipRow(isMobile: false),
           ],
+          if (useCardList && _shouldShowCategoryFilter) ...[
+            const SizedBox(height: 12),
+            _buildCompactCategoryFilterButton(context),
+          ],
         ],
+      ),
+    );
+  }
+
+  void _openCategoryFilterSheet(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      useSafeArea: true,
+      isScrollControlled: true,
+      builder: (ctx) {
+        final bool allSelected =
+            _selectedCategory == null || _selectedCategory!.isEmpty;
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.viewPaddingOf(ctx).bottom + 8,
+          ),
+          child: ListView(
+            shrinkWrap: true,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+                child: Row(
+                  children: [
+                    Icon(Icons.category_outlined, color: Colors.grey.shade700),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Filter by category',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              ListTile(
+                leading: Icon(
+                  allSelected ? Icons.check_circle : Icons.circle_outlined,
+                  color: Colors.blue.shade700,
+                ),
+                title: const Text('All categories'),
+                selected: allSelected,
+                onTap: () {
+                  Navigator.pop(ctx);
+                  if (!allSelected) {
+                    setState(() => _selectedCategory = null);
+                    _fetchLogs();
+                  }
+                },
+              ),
+              ..._categories.map(
+                (c) => ListTile(
+                  leading: Icon(
+                    _selectedCategory == c
+                        ? Icons.check_circle
+                        : Icons.circle_outlined,
+                    color: Colors.blue.shade700,
+                  ),
+                  title: Text(c),
+                  selected: _selectedCategory == c,
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    if (_selectedCategory != c) {
+                      setState(() => _selectedCategory = c);
+                      _fetchLogs();
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildCompactCategoryFilterButton(BuildContext context) {
+    final String summary =
+        (_selectedCategory == null || _selectedCategory!.isEmpty)
+            ? 'All categories'
+            : _selectedCategory!;
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: () => _openCategoryFilterSheet(context),
+        icon: Icon(Icons.filter_alt_outlined, color: Colors.blue.shade800),
+        label: Text(
+          'Category: $summary',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: Colors.black87,
+          backgroundColor: Colors.grey.shade50,
+          side: BorderSide(color: Colors.grey.shade400),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+        ),
       ),
     );
   }
