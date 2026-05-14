@@ -18,8 +18,8 @@ class SignupMembersModal extends StatefulWidget {
 class _SignupMembersModalState extends State<SignupMembersModal>
     with TickerProviderStateMixin {
   // UI state
-  bool _obscurePassword = true;
-  bool _obscureConfirm = true;
+  bool _obscurePassword = false;
+  bool _obscureConfirm = false;
   bool _isLoading = false;
   bool _isRequestingVerification = false;
   bool _verificationRequested = false;
@@ -264,16 +264,39 @@ class _SignupMembersModalState extends State<SignupMembersModal>
     super.dispose();
   }
 
+  /// Red asterisk for required fields (shown next to the floating label).
+  static Widget _requiredFieldLabel(String plainLabel) {
+    return Text.rich(
+      TextSpan(
+        style: const TextStyle(color: Colors.white),
+        children: [
+          TextSpan(text: plainLabel),
+          const TextSpan(
+            text: ' *',
+            style: TextStyle(
+              color: Colors.red,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   InputDecoration _inputDecoration({
     required String label,
     required IconData icon,
     String? hintText,
     String? errorText,
     Widget? suffixIcon,
+    bool requiredField = false,
   }) {
     return InputDecoration(
-      labelText: label,
-      labelStyle: const TextStyle(color: Colors.white),
+      label:
+          requiredField
+              ? _requiredFieldLabel(label)
+              : Text(label, style: const TextStyle(color: Colors.white)),
+      floatingLabelBehavior: FloatingLabelBehavior.auto,
       hintText: hintText,
       hintStyle: const TextStyle(color: Colors.white54),
       prefixIcon: Icon(icon, color: Colors.white),
@@ -667,6 +690,7 @@ class _SignupMembersModalState extends State<SignupMembersModal>
                   label: 'First Name',
                   icon: Icons.person_outline,
                   errorText: _firstNameError,
+                  requiredField: true,
                 ),
               ),
             ),
@@ -677,7 +701,7 @@ class _SignupMembersModalState extends State<SignupMembersModal>
                 inputFormatters: [_nameCapitalizationFormatter],
                 style: const TextStyle(color: Colors.white),
                 decoration: _inputDecoration(
-                  label: 'Middle Name',
+                  label: 'Middle Name (Optional)',
                   icon: Icons.person_outline,
                   hintText: 'Optional',
                 ),
@@ -693,6 +717,7 @@ class _SignupMembersModalState extends State<SignupMembersModal>
                   label: 'Last Name',
                   icon: Icons.person_outline,
                   errorText: _lastNameError,
+                  requiredField: true,
                 ),
               ),
             ),
@@ -705,6 +730,7 @@ class _SignupMembersModalState extends State<SignupMembersModal>
                   label: 'Membership Type',
                   icon: Icons.card_membership,
                   errorText: _membershipTypeError,
+                  requiredField: true,
                 ),
                 dropdownColor: Colors.blueGrey[900],
                 style: const TextStyle(color: Colors.white),
@@ -729,6 +755,7 @@ class _SignupMembersModalState extends State<SignupMembersModal>
                   icon: Icons.calendar_today,
                   hintText: 'YYYY-MM-DD',
                   errorText: _birthdateError,
+                  requiredField: true,
                 ),
                 onTap: () async {
                   final DateTime initial = _selectedBirthdate ?? DateTime(2000);
@@ -1030,6 +1057,7 @@ class _SignupMembersModalState extends State<SignupMembersModal>
                   icon: Icons.email_outlined,
                   hintText: 'example@email.com',
                   errorText: _emailError,
+                  requiredField: true,
                 ),
                 keyboardType: TextInputType.emailAddress,
               ),
@@ -1056,6 +1084,7 @@ class _SignupMembersModalState extends State<SignupMembersModal>
                         ),
                   ),
                   errorText: _passwordError,
+                  requiredField: true,
                 ),
               ),
             ),
@@ -1078,6 +1107,7 @@ class _SignupMembersModalState extends State<SignupMembersModal>
                             setState(() => _obscureConfirm = !_obscureConfirm),
                   ),
                   errorText: _confirmError,
+                  requiredField: true,
                 ),
               ),
             ),
@@ -1186,6 +1216,7 @@ class _SignupMembersModalState extends State<SignupMembersModal>
               label: 'Verification Code',
               icon: Icons.verified_outlined,
               errorText: _verificationError,
+              requiredField: true,
             ),
           ),
           const SizedBox(height: 8),
