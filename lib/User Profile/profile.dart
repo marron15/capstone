@@ -44,6 +44,7 @@ class _ProfilePageState extends State<ProfilePage>
   String? _emailError;
   bool _isSavingPersonal = false;
   bool _isSavingEmergency = false;
+  bool _isSavingAddress = false;
 
   DateTime? _birthdate;
   // Password field removed; no controller needed
@@ -489,6 +490,7 @@ class _ProfilePageState extends State<ProfilePage>
               SizedBox(height: 32),
 
               _buildActionButtons(
+                isDarkMode: _isDarkMode,
                 hasChanges: _hasPersonalChanges,
                 isSaving: _isSavingPersonal,
                 canSave: _canSavePersonal,
@@ -526,7 +528,9 @@ class _ProfilePageState extends State<ProfilePage>
                   _streetController,
                   'Street',
                   fontSize: textFieldFontSize,
-                  readOnly: true,
+                  readOnly: false,
+                  enabled: !_isSavingAddress,
+                  enableInteractiveSelection: true,
                 ),
                 SizedBox(height: 16),
                 _buildLabel('City', labelFontSize),
@@ -534,7 +538,9 @@ class _ProfilePageState extends State<ProfilePage>
                   _cityController,
                   'City',
                   fontSize: textFieldFontSize,
-                  readOnly: true,
+                  readOnly: false,
+                  enabled: !_isSavingAddress,
+                  enableInteractiveSelection: true,
                 ),
                 SizedBox(height: 16),
                 _buildLabel('State/Province', labelFontSize),
@@ -542,7 +548,9 @@ class _ProfilePageState extends State<ProfilePage>
                   _stateProvinceController,
                   'State/Province',
                   fontSize: textFieldFontSize,
-                  readOnly: true,
+                  readOnly: false,
+                  enabled: !_isSavingAddress,
+                  enableInteractiveSelection: true,
                 ),
                 SizedBox(height: 16),
                 _buildLabel('Postal Code', labelFontSize),
@@ -550,7 +558,9 @@ class _ProfilePageState extends State<ProfilePage>
                   _postalCodeController,
                   'Postal Code',
                   fontSize: textFieldFontSize,
-                  readOnly: true,
+                  readOnly: false,
+                  enabled: !_isSavingAddress,
+                  enableInteractiveSelection: true,
                 ),
                 SizedBox(height: 16),
                 _buildLabel('Country', labelFontSize),
@@ -558,7 +568,9 @@ class _ProfilePageState extends State<ProfilePage>
                   _countryController,
                   'Country',
                   fontSize: textFieldFontSize,
-                  readOnly: true,
+                  readOnly: false,
+                  enabled: !_isSavingAddress,
+                  enableInteractiveSelection: true,
                 ),
               ] else ...[
                 _buildRow(
@@ -568,6 +580,9 @@ class _ProfilePageState extends State<ProfilePage>
                     'Street',
                     labelFontSize,
                     textFieldFontSize,
+                    readOnly: false,
+                    enabled: !_isSavingAddress,
+                    enableInteractiveSelection: true,
                   ),
                   right: _buildLabeledField(
                     'City',
@@ -575,6 +590,9 @@ class _ProfilePageState extends State<ProfilePage>
                     'City',
                     labelFontSize,
                     textFieldFontSize,
+                    readOnly: false,
+                    enabled: !_isSavingAddress,
+                    enableInteractiveSelection: true,
                   ),
                 ),
                 SizedBox(height: 16),
@@ -585,6 +603,9 @@ class _ProfilePageState extends State<ProfilePage>
                     'State/Province',
                     labelFontSize,
                     textFieldFontSize,
+                    readOnly: false,
+                    enabled: !_isSavingAddress,
+                    enableInteractiveSelection: true,
                   ),
                   right: _buildLabeledField(
                     'Postal Code',
@@ -592,6 +613,9 @@ class _ProfilePageState extends State<ProfilePage>
                     'Postal Code',
                     labelFontSize,
                     textFieldFontSize,
+                    readOnly: false,
+                    enabled: !_isSavingAddress,
+                    enableInteractiveSelection: true,
                   ),
                 ),
                 SizedBox(height: 16),
@@ -602,13 +626,23 @@ class _ProfilePageState extends State<ProfilePage>
                     'Country',
                     labelFontSize,
                     textFieldFontSize,
+                    readOnly: false,
+                    enabled: !_isSavingAddress,
+                    enableInteractiveSelection: true,
                   ),
                   right: SizedBox.shrink(),
                 ),
               ],
               SizedBox(height: 32),
 
-              // Buttons removed for read-only mode
+              _buildActionButtons(
+                isDarkMode: _isDarkMode,
+                hasChanges: _hasAddressChanges,
+                isSaving: _isSavingAddress,
+                canSave: _canSaveAddress,
+                onCancel: _resetAddressFields,
+                onSave: _saveAddressInfo,
+              ),
             ],
           ),
         ),
@@ -683,6 +717,7 @@ class _ProfilePageState extends State<ProfilePage>
               SizedBox(height: 32),
 
               _buildActionButtons(
+                isDarkMode: _isDarkMode,
                 hasChanges: _hasEmergencyChanges,
                 isSaving: _isSavingEmergency,
                 canSave: _canSaveEmergency,
@@ -723,7 +758,7 @@ class _ProfilePageState extends State<ProfilePage>
         bottom: TabBar(
           controller: _tabController,
           labelColor: titleColor,
-          unselectedLabelColor: Colors.grey,
+          unselectedLabelColor: _isDarkMode ? Colors.white60 : Colors.grey,
           indicatorColor: Colors.blue,
           tabs: [
             Tab(icon: Icon(Icons.person), text: 'Personal Info'),
@@ -789,6 +824,32 @@ class _ProfilePageState extends State<ProfilePage>
     if (_emergencyNameController.text.trim().isEmpty) return false;
     if (_emergencyPhoneError != null) return false;
     return true;
+  }
+
+  bool get _hasAddressChanges {
+    final profile = profileNotifier.value;
+    String t(String s) => s.trim();
+    return t(_streetController.text) != t(profile.street ?? '') ||
+        t(_cityController.text) != t(profile.city ?? '') ||
+        t(_stateProvinceController.text) != t(profile.stateProvince ?? '') ||
+        t(_postalCodeController.text) != t(profile.postalCode ?? '') ||
+        t(_countryController.text) != t(profile.country ?? '');
+  }
+
+  bool get _canSaveAddress {
+    if (_isSavingAddress || !_hasAddressChanges) return false;
+    if (_streetController.text.trim().isEmpty) return false;
+    return true;
+  }
+
+  void _resetAddressFields() {
+    final profile = profileNotifier.value;
+    _streetController.text = profile.street ?? '';
+    _cityController.text = profile.city ?? '';
+    _stateProvinceController.text = profile.stateProvince ?? '';
+    _postalCodeController.text = profile.postalCode ?? '';
+    _countryController.text = profile.country ?? '';
+    setState(() {});
   }
 
   void _resetPersonalFields() {
@@ -883,11 +944,76 @@ class _ProfilePageState extends State<ProfilePage>
     }
   }
 
+  /// Same comma-separated format as signup / admin (`street, city, state, ...`).
+  String _composeAddressForApi() {
+    final parts =
+        [
+              _streetController.text,
+              _cityController.text,
+              _stateProvinceController.text,
+              _postalCodeController.text,
+              _countryController.text,
+            ]
+            .map((s) => s.trim())
+            .where((s) => s.isNotEmpty)
+            .toList();
+    return parts.join(', ');
+  }
+
+  Future<void> _saveAddressInfo() async {
+    if (!_canSaveAddress) return;
+    final int? customerId = unifiedAuthState.customerId;
+    if (customerId == null) {
+      _showSnack(
+        'Unable to update profile: missing customer ID',
+        isError: true,
+      );
+      return;
+    }
+
+    final String street = _streetController.text.trim();
+    final String city = _cityController.text.trim();
+    final String stateProvince = _stateProvinceController.text.trim();
+    final String postalCode = _postalCodeController.text.trim();
+    final String country = _countryController.text.trim();
+    final String addressLine = _composeAddressForApi();
+
+    setState(() => _isSavingAddress = true);
+    final Map<String, dynamic> payload = {
+      'customer_id': customerId,
+      'address': addressLine,
+    };
+
+    final result = await AuthService.updateProfile(payload);
+    if (!mounted) return;
+    setState(() => _isSavingAddress = false);
+
+    if (result.success) {
+      _patchProfileData(
+        address: addressLine,
+        street: street,
+        city: city,
+        stateProvince: stateProvince,
+        postalCode: postalCode,
+        country: country,
+      );
+      _showSnack('Address updated');
+    } else {
+      _showSnack(result.message, isError: true);
+    }
+  }
+
   void _patchProfileData({
     String? contactNumber,
     String? email,
     String? emergencyContactName,
     String? emergencyContactPhone,
+    String? address,
+    String? street,
+    String? city,
+    String? stateProvince,
+    String? postalCode,
+    String? country,
   }) {
     final current = profileNotifier.value;
     profileNotifier.value = ProfileData(
@@ -904,12 +1030,12 @@ class _ProfilePageState extends State<ProfilePage>
       emergencyContactPhone:
           emergencyContactPhone ?? current.emergencyContactPhone,
       password: current.password,
-      address: current.address,
-      street: current.street,
-      city: current.city,
-      stateProvince: current.stateProvince,
-      postalCode: current.postalCode,
-      country: current.country,
+      address: address ?? current.address,
+      street: street ?? current.street,
+      city: city ?? current.city,
+      stateProvince: stateProvince ?? current.stateProvince,
+      postalCode: postalCode ?? current.postalCode,
+      country: country ?? current.country,
       membershipExpiration: current.membershipExpiration,
     );
   }
@@ -1143,29 +1269,96 @@ class _ProfilePageState extends State<ProfilePage>
   }
 
   Widget _buildActionButtons({
+    required bool isDarkMode,
     required bool hasChanges,
     required bool isSaving,
     required bool canSave,
     required VoidCallback onCancel,
     required Future<void> Function() onSave,
   }) {
+    final bool cancelEnabled = hasChanges && !isSaving;
+    final bool saveEnabled = canSave;
+
+    final Color cancelFgNormal = isDarkMode ? Colors.white : Colors.black87;
+    final Color cancelFgDisabled =
+        isDarkMode ? const Color(0xFFBDBDBD) : const Color(0xFF616161);
+    final Color cancelBorderNormal =
+        isDarkMode ? Colors.white70 : Colors.grey.shade600;
+    final Color cancelBorderDisabled =
+        isDarkMode ? Colors.white38 : Colors.grey.shade400;
+    final Color? cancelBgNormal =
+        isDarkMode ? Colors.white.withValues(alpha: 0.14) : null;
+    final Color? cancelBgDisabled =
+        isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.grey.shade100;
+
     return Row(
       children: [
         OutlinedButton(
-          onPressed: (!hasChanges || isSaving) ? null : onCancel,
+          onPressed: cancelEnabled ? onCancel : null,
+          style: ButtonStyle(
+            foregroundColor: WidgetStateProperty.resolveWith((states) {
+              if (states.contains(WidgetState.disabled)) {
+                return cancelFgDisabled;
+              }
+              return cancelFgNormal;
+            }),
+            backgroundColor: WidgetStateProperty.resolveWith((states) {
+              if (states.contains(WidgetState.disabled)) {
+                return cancelBgDisabled;
+              }
+              return cancelBgNormal ?? Colors.transparent;
+            }),
+            side: WidgetStateProperty.resolveWith((states) {
+              if (states.contains(WidgetState.disabled)) {
+                return BorderSide(color: cancelBorderDisabled, width: 1.2);
+              }
+              return BorderSide(color: cancelBorderNormal, width: 1.2);
+            }),
+            padding: WidgetStateProperty.all(
+              const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            ),
+            overlayColor: WidgetStateProperty.resolveWith((states) {
+              if (states.contains(WidgetState.pressed)) {
+                return Colors.white.withValues(alpha: 0.12);
+              }
+              return null;
+            }),
+          ),
           child: const Text('Cancel'),
         ),
-        SizedBox(width: 12),
+        const SizedBox(width: 12),
         ElevatedButton(
-          onPressed: canSave ? () => onSave() : null,
+          onPressed: saveEnabled ? () => onSave() : null,
+          style: ButtonStyle(
+            foregroundColor: WidgetStateProperty.resolveWith((states) {
+              if (states.contains(WidgetState.disabled)) {
+                return isDarkMode
+                    ? Colors.white.withValues(alpha: 0.75)
+                    : Colors.black45;
+              }
+              return Colors.black87;
+            }),
+            backgroundColor: WidgetStateProperty.resolveWith((states) {
+              if (states.contains(WidgetState.disabled)) {
+                return isDarkMode
+                    ? Colors.grey.shade700
+                    : Colors.grey.shade400;
+              }
+              return const Color(0xFFFF8C00);
+            }),
+            padding: WidgetStateProperty.all(
+              const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            ),
+            elevation: WidgetStateProperty.all(0),
+          ),
           child:
               isSaving
-                  ? SizedBox(
+                  ? const SizedBox(
                     height: 18,
                     width: 18,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.black87),
                     ),
                   )
                   : const Text('Save Changes'),
