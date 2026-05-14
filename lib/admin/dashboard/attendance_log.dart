@@ -529,66 +529,121 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
       if (isMobile) {
         return Column(
           children: [
-            // Header row with menu button, title, and actions
+            // Header with title row and actions row stacked vertically so
+            // the "Attendance" title always has space to render on one line.
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(8, 12, 8, 8),
               color: Colors.transparent,
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  IconButton(
-                    tooltip: 'Open Menu',
-                    onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-                    icon: const Icon(Icons.menu),
-                  ),
-                  const SizedBox(width: 8),
-                  const Expanded(
-                    child: Text(
-                      'Attendance',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.black,
+                  // Title row: menu + "Attendance"
+                  Row(
+                    children: [
+                      IconButton(
+                        tooltip: 'Open Menu',
+                        onPressed:
+                            () => _scaffoldKey.currentState?.openDrawer(),
+                        icon: const Icon(Icons.menu),
+                        padding: EdgeInsets.zero,
+                        visualDensity: VisualDensity.compact,
+                        constraints: const BoxConstraints(
+                          minWidth: 40,
+                          minHeight: 40,
+                        ),
                       ),
-                    ),
-                  ),
-                  // Date picker button
-                  OutlinedButton.icon(
-                    onPressed: () => _selectDate(context),
-                    icon: const Icon(Icons.calendar_today, size: 16),
-                    label: Text(
-                      _selectedDayFilter != null
-                          ? _formatDate(_selectedDayFilter)
-                          : _formatMonthYear(_selectedDate),
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Attendance',
+                            maxLines: 1,
+                            softWrap: false,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.black,
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
-                  if (_selectedDayFilter != null) ...[
-                    const SizedBox(width: 8),
-                    IconButton(
-                      icon: const Icon(Icons.filter_alt_off, size: 20),
-                      tooltip: 'Use whole month',
-                      onPressed: _setWholeMonthFilter,
-                    ),
-                  ],
-                  if (unifiedAuthState.isAdminLoggedIn) ...[
-                    const SizedBox(width: 8),
-                    IconButton(
-                      icon: const Icon(Icons.qr_code_2, size: 20),
-                      onPressed: _handleMyQrTap,
-                      tooltip: 'My QR',
-                    ),
-                  ],
-                  const SizedBox(width: 8),
-                  IconButton(
-                    icon: const Icon(Icons.refresh, size: 20),
-                    tooltip: 'Refresh',
-                    onPressed: _loadAttendanceRecords,
+                  const SizedBox(height: 10),
+                  // Actions row: calendar filter + clear filter + qr + refresh
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => _selectDate(context),
+                          icon: const Icon(Icons.calendar_today, size: 16),
+                          label: Text(
+                            _selectedDayFilter != null
+                                ? _formatDate(_selectedDayFilter)
+                                : _formatMonthYear(_selectedDate),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 8,
+                            ),
+                            visualDensity: VisualDensity.compact,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                        ),
+                      ),
+                      if (_selectedDayFilter != null) ...[
+                        const SizedBox(width: 4),
+                        IconButton(
+                          icon: const Icon(Icons.filter_alt_off, size: 20),
+                          tooltip: 'Use whole month',
+                          onPressed: _setWholeMonthFilter,
+                          padding: EdgeInsets.zero,
+                          visualDensity: VisualDensity.compact,
+                          constraints: const BoxConstraints(
+                            minWidth: 36,
+                            minHeight: 36,
+                          ),
+                        ),
+                      ],
+                      if (unifiedAuthState.isAdminLoggedIn) ...[
+                        const SizedBox(width: 4),
+                        IconButton(
+                          icon: const Icon(Icons.qr_code_2, size: 22),
+                          onPressed: _handleMyQrTap,
+                          tooltip: 'My QR',
+                          padding: EdgeInsets.zero,
+                          visualDensity: VisualDensity.compact,
+                          constraints: const BoxConstraints(
+                            minWidth: 36,
+                            minHeight: 36,
+                          ),
+                        ),
+                      ],
+                      const SizedBox(width: 4),
+                      IconButton(
+                        icon: const Icon(Icons.refresh, size: 22),
+                        tooltip: 'Refresh',
+                        onPressed: _loadAttendanceRecords,
+                        padding: EdgeInsets.zero,
+                        visualDensity: VisualDensity.compact,
+                        constraints: const BoxConstraints(
+                          minWidth: 36,
+                          minHeight: 36,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -692,9 +747,23 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
                     icon: Icon(_navCollapsed ? Icons.menu : Icons.chevron_left),
                   ),
                   const SizedBox(width: 8),
-                  const Text(
-                    'Time In/Out Log',
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  // Title shrinks gracefully if the row gets crowded by the
+                  // sidebar or extra action buttons.
+                  Flexible(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: const Text(
+                        'Time In/Out Log',
+                        maxLines: 1,
+                        softWrap: false,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
                   ),
                   const Spacer(),
                   // Date picker
@@ -707,6 +776,8 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
                           : _selectedDate != null
                           ? _formatMonthYear(_selectedDate)
                           : 'Select Month',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(

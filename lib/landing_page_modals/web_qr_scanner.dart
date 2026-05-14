@@ -24,7 +24,8 @@ class _DomQrScannerOverlay {
 
   final Completer<String?> _completer;
   html.DivElement? _backdrop;
-  final List<StreamSubscription<dynamic>> _subs = <StreamSubscription<dynamic>>[];
+  final List<StreamSubscription<dynamic>> _subs =
+      <StreamSubscription<dynamic>>[];
   StreamSubscription<html.Event>? _keySub;
   bool _finished = false;
 
@@ -58,7 +59,10 @@ class _DomQrScannerOverlay {
           ..style.setProperty('border-radius', '12px')
           ..style.setProperty('padding', '20px 22px')
           ..style.setProperty('color', '#e0e0e0')
-          ..style.setProperty('font', '14px/1.45 system-ui, -apple-system, sans-serif');
+          ..style.setProperty(
+            'font',
+            '14px/1.45 system-ui, -apple-system, sans-serif',
+          );
 
     final html.ParagraphElement p =
         html.ParagraphElement()
@@ -80,7 +84,8 @@ class _DomQrScannerOverlay {
     panel.children.addAll(<html.Element>[p, btn]);
     backdrop.append(panel);
 
-    final List<StreamSubscription<dynamic>> subs = <StreamSubscription<dynamic>>[];
+    final List<StreamSubscription<dynamic>> subs =
+        <StreamSubscription<dynamic>>[];
 
     void dismiss() {
       for (final StreamSubscription<dynamic> s in subs) {
@@ -174,7 +179,10 @@ class _DomQrScannerOverlay {
         html.SpanElement()
           ..text = 'Scan Admin QR'
           ..style.setProperty('color', '#ffffff')
-          ..style.setProperty('font', '600 16px system-ui, -apple-system, sans-serif');
+          ..style.setProperty(
+            'font',
+            '600 16px system-ui, -apple-system, sans-serif',
+          );
 
     final html.ButtonElement closeBtn =
         html.ButtonElement()
@@ -205,7 +213,10 @@ class _DomQrScannerOverlay {
     final html.DivElement status =
         html.DivElement()
           ..style.setProperty('color', '#bfbfbf')
-          ..style.setProperty('font', '13px/1.4 system-ui, -apple-system, sans-serif')
+          ..style.setProperty(
+            'font',
+            '13px/1.4 system-ui, -apple-system, sans-serif',
+          )
           ..style.setProperty('text-align', 'center')
           ..style.setProperty('padding', '0 20px')
           ..text = 'Starting camera…';
@@ -217,7 +228,10 @@ class _DomQrScannerOverlay {
           ..style.setProperty('padding', '14px 16px')
           ..style.setProperty('flex-shrink', '0')
           ..style.setProperty('color', '#bfbfbf')
-          ..style.setProperty('font', '12px/1.45 system-ui, -apple-system, sans-serif')
+          ..style.setProperty(
+            'font',
+            '12px/1.45 system-ui, -apple-system, sans-serif',
+          )
           ..style.setProperty('text-align', 'center')
           ..text =
               'Align the admin QR in frame. Use https://. Safari Private can block '
@@ -262,16 +276,16 @@ class _DomQrScannerOverlay {
     final String protocol = html.window.location.protocol;
     if (protocol == 'https:') return true;
     final String? host = html.window.location.hostname;
-    return host == 'localhost' ||
-        host == '127.0.0.1' ||
-        host == '[::1]';
+    return host == 'localhost' || host == '127.0.0.1' || host == '[::1]';
   }
 
   static Future<html.MediaStream?> _requestCameraStream() async {
     final html.MediaDevices? devices = html.window.navigator.mediaDevices;
     if (devices == null) return null;
 
-    Future<html.MediaStream?> tryConstraints(Map<String, Object?> constraints) async {
+    Future<html.MediaStream?> tryConstraints(
+      Map<String, Object?> constraints,
+    ) async {
       try {
         return await devices.getUserMedia(constraints);
       } catch (_) {
@@ -302,7 +316,10 @@ class _DomQrScannerOverlay {
         await tryConstraints({'audio': false, 'video': true});
   }
 
-  Future<void> _startCamera(html.DivElement videoHost, html.DivElement status) async {
+  Future<void> _startCamera(
+    html.DivElement videoHost,
+    html.DivElement status,
+  ) async {
     try {
       final html.MediaStream? stream = await _requestCameraStream();
       if (stream == null) {
@@ -329,9 +346,7 @@ class _DomQrScannerOverlay {
       videoHost.append(video);
       _video = video;
 
-      _canvas =
-          html.CanvasElement()
-            ..style.setProperty('display', 'none');
+      _canvas = html.CanvasElement()..style.setProperty('display', 'none');
 
       try {
         await video.play();

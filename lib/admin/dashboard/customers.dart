@@ -1039,76 +1039,96 @@ class _CustomersPageState extends State<CustomersPage> {
     return isMobile
         ? Column(
           children: [
-            // Header row with menu button, title, and search
+            // Header with title row and search row stacked so the title
+            // always has space to render without competing with the search.
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(8, 12, 8, 8),
               color: Colors.transparent,
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  IconButton(
-                    tooltip: 'Open Menu',
-                    onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-                    icon: const Icon(Icons.menu),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      _showArchived ? 'Archived Members' : 'Members',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.black,
-                      ),
-                    ),
-                  ),
-                  // Search bar
-                  Flexible(
-                    child: SizedBox(
-                      height: 36,
-                      child: TextField(
-                        controller: _searchController,
-                        onChanged:
-                            (val) => setState(() {
-                              _searchQuery = val;
-                            }),
-                        style: const TextStyle(
-                          color: Colors.black87,
-                          fontSize: 14,
+                  // Title row: menu + "Members" / "Archived Members"
+                  Row(
+                    children: [
+                      IconButton(
+                        tooltip: 'Open Menu',
+                        onPressed:
+                            () => _scaffoldKey.currentState?.openDrawer(),
+                        icon: const Icon(Icons.menu),
+                        padding: EdgeInsets.zero,
+                        visualDensity: VisualDensity.compact,
+                        constraints: const BoxConstraints(
+                          minWidth: 40,
+                          minHeight: 40,
                         ),
-                        decoration: InputDecoration(
-                          hintText: 'Search',
-                          hintStyle: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey.shade500,
-                          ),
-                          prefixIcon: const Icon(
-                            Icons.search,
-                            size: 18,
-                            color: Colors.black54,
-                          ),
-                          filled: true,
-                          fillColor: Colors.white,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(20),
-                            borderSide: BorderSide(color: Colors.grey.shade300),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(20),
-                            borderSide: BorderSide(color: Colors.grey.shade300),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(20),
-                            borderSide: BorderSide(
-                              color: Colors.grey.shade400,
-                              width: 1.5,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            _showArchived ? 'Archived Members' : 'Members',
+                            maxLines: 1,
+                            softWrap: false,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.black,
                             ),
                           ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                          isDense: true,
                         ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  // Full-width search bar
+                  SizedBox(
+                    height: 38,
+                    child: TextField(
+                      controller: _searchController,
+                      onChanged:
+                          (val) => setState(() {
+                            _searchQuery = val;
+                          }),
+                      style: const TextStyle(
+                        color: Colors.black87,
+                        fontSize: 14,
+                      ),
+                      decoration: InputDecoration(
+                        hintText: 'Search',
+                        hintStyle: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade500,
+                        ),
+                        prefixIcon: const Icon(
+                          Icons.search,
+                          size: 18,
+                          color: Colors.black54,
+                        ),
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(20),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(20),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(20),
+                          borderSide: BorderSide(
+                            color: Colors.grey.shade400,
+                            width: 1.5,
+                          ),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        isDense: true,
                       ),
                     ),
                   ),
@@ -1355,17 +1375,30 @@ class _CustomersPageState extends State<CustomersPage> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Row(
+                                      // Name + ID chip use Wrap so the chip
+                                      // moves to a new line on very narrow
+                                      // screens instead of being clipped.
+                                      Wrap(
+                                        spacing: 8,
+                                        runSpacing: 4,
+                                        crossAxisAlignment:
+                                            WrapCrossAlignment.center,
                                         children: [
-                                          Text(
-                                            customer['name'] ?? '',
-                                            style: const TextStyle(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.black87,
+                                          ConstrainedBox(
+                                            constraints: const BoxConstraints(
+                                              maxWidth: 220,
+                                            ),
+                                            child: Text(
+                                              customer['name'] ?? '',
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.black87,
+                                              ),
                                             ),
                                           ),
-                                          const SizedBox(width: 8),
                                           Container(
                                             padding: const EdgeInsets.symmetric(
                                               horizontal: 8,
@@ -1423,11 +1456,13 @@ class _CustomersPageState extends State<CustomersPage> {
                                     ],
                                   ),
                                 ),
-                                const SizedBox(width: 12),
-                                // Action buttons
+                                const SizedBox(width: 8),
+                                // Action buttons – kept compact so they never
+                                // overflow on narrow phones.
                                 Row(
+                                  mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    // View button
+                                    // View / Edit button
                                     Container(
                                       decoration: BoxDecoration(
                                         color: Colors.blue.shade50,
@@ -1450,20 +1485,20 @@ class _CustomersPageState extends State<CustomersPage> {
                                               );
                                           if (result == true && mounted) {
                                             setState(() {});
-                                            // Refresh home page data
                                             RefreshService().triggerRefresh();
                                           }
                                         },
-                                        padding: const EdgeInsets.all(8),
+                                        padding: EdgeInsets.zero,
+                                        visualDensity: VisualDensity.compact,
                                         constraints: const BoxConstraints(
-                                          minWidth: 36,
-                                          minHeight: 36,
+                                          minWidth: 34,
+                                          minHeight: 34,
                                         ),
                                         tooltip: 'View / Edit',
                                       ),
                                     ),
-                                    const SizedBox(width: 8),
-                                    // Archive/Restore button
+                                    const SizedBox(width: 6),
+                                    // Archive / Restore button
                                     Container(
                                       decoration: BoxDecoration(
                                         color:
@@ -1496,10 +1531,11 @@ class _CustomersPageState extends State<CustomersPage> {
                                                   ? Colors.green
                                                   : Colors.orange,
                                         ),
-                                        padding: const EdgeInsets.all(8),
+                                        padding: EdgeInsets.zero,
+                                        visualDensity: VisualDensity.compact,
                                         constraints: const BoxConstraints(
-                                          minWidth: 36,
-                                          minHeight: 36,
+                                          minWidth: 34,
+                                          minHeight: 34,
                                         ),
                                         tooltip:
                                             _showArchived
@@ -1646,55 +1682,74 @@ class _CustomersPageState extends State<CustomersPage> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      // Title
-                      Text(
-                        _showArchived ? 'Archived Members' : 'Members',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.black,
+                      // Title shrinks if the row gets crowded.
+                      Flexible(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            _showArchived ? 'Archived Members' : 'Members',
+                            maxLines: 1,
+                            softWrap: false,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.black,
+                            ),
+                          ),
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 12),
-                  Row(
+                  // Toolbar wraps onto multiple lines instead of overflowing
+                  // on narrower desktop widths (e.g. sidebar open at ~900px).
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
-                      // Search box (fixed width)
-                      SizedBox(
-                        width: 560,
-                        height: 42,
-                        child: TextField(
-                          controller: _searchController,
-                          onChanged:
-                              (val) => setState(() {
-                                _searchQuery = val;
-                              }),
-                          style: const TextStyle(color: Colors.black87),
-                          decoration: InputDecoration(
-                            hintText: 'Search',
-                            prefixIcon: const Icon(
-                              Icons.search,
-                              size: 20,
-                              color: Colors.black54,
-                            ),
-                            filled: true,
-                            fillColor: Colors.white,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(
-                                color: Colors.black26,
+                      // Search box (responsive width)
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(
+                          minWidth: 240,
+                          maxWidth: 560,
+                        ),
+                        child: SizedBox(
+                          height: 42,
+                          width: 560,
+                          child: TextField(
+                            controller: _searchController,
+                            onChanged:
+                                (val) => setState(() {
+                                  _searchQuery = val;
+                                }),
+                            style: const TextStyle(color: Colors.black87),
+                            decoration: InputDecoration(
+                              hintText: 'Search',
+                              prefixIcon: const Icon(
+                                Icons.search,
+                                size: 20,
+                                color: Colors.black54,
                               ),
+                              filled: true,
+                              fillColor: Colors.white,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: Colors.black26,
+                                ),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 0,
+                              ),
+                              isDense: true,
                             ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 0,
-                            ),
-                            isDense: true,
                           ),
                         ),
                       ),
-                      const SizedBox(width: 12),
                       // Export button (Excel icon + text)
                       OutlinedButton.icon(
                         onPressed:
@@ -1730,8 +1785,6 @@ class _CustomersPageState extends State<CustomersPage> {
                           ),
                         ),
                       ),
-                      // Membership/Expiration filters have been moved into table headers
-                      const SizedBox(width: 12),
                       OutlinedButton.icon(
                         onPressed:
                             _selectedCustomerIds.isEmpty
@@ -1777,7 +1830,6 @@ class _CustomersPageState extends State<CustomersPage> {
                           ),
                         ),
                       ),
-                      const Spacer(),
                       // View archives pill button
                       OutlinedButton.icon(
                         onPressed: _showArchivedCustomers,
