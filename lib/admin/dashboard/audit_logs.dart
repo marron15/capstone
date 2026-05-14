@@ -594,39 +594,45 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
       _selectedActorType == null || _selectedActorType == 'customer';
 
   Widget _buildCategoryHeaderFilter() {
-    return FittedBox(
-      fit: BoxFit.scaleDown,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            'Category',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: Colors.grey.shade800,
-              letterSpacing: 0.3,
+    return Align(
+      alignment: Alignment.center,
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Category',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: Colors.grey.shade800,
+                letterSpacing: 0.3,
+              ),
             ),
-          ),
-          const SizedBox(width: 4),
-          PopupMenuButton<String>(
-            tooltip: 'Filter category',
-            icon: const Icon(Icons.arrow_drop_down, size: 18),
-            onSelected: (val) {
-              setState(() => _selectedCategory = val.isEmpty ? null : val);
-              _fetchLogs();
-            },
-            itemBuilder:
-                (context) => [
-                  const PopupMenuItem(value: '', child: Text('All Categories')),
-                  ..._categories.map(
-                    (c) => PopupMenuItem(value: c, child: Text(c)),
-                  ),
-                ],
-          ),
-        ],
+            const SizedBox(width: 4),
+            PopupMenuButton<String>(
+              tooltip: 'Filter category',
+              icon: const Icon(Icons.arrow_drop_down, size: 18),
+              onSelected: (val) {
+                setState(() => _selectedCategory = val.isEmpty ? null : val);
+                _fetchLogs();
+              },
+              itemBuilder:
+                  (context) => [
+                    const PopupMenuItem(
+                      value: '',
+                      child: Text('All Categories'),
+                    ),
+                    ..._categories.map(
+                      (c) => PopupMenuItem(value: c, child: Text(c)),
+                    ),
+                  ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -871,26 +877,35 @@ class _AuditLogTable extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        const double tableMinWidth = 960;
-        final double minChildWidth = math.max(
-          constraints.maxWidth,
-          tableMinWidth,
-        );
-        return SingleChildScrollView(
-          scrollDirection: Axis.vertical,
-          physics: const AlwaysScrollableScrollPhysics(),
+        final double viewW = constraints.maxWidth;
+        final double pad =
+            viewW < 400 ? 12.0 : (viewW < 720 ? 16.0 : 24.0);
+        final double inner = math.max(0.0, viewW - pad * 2);
+        // Below this width, scroll horizontally so columns (esp. Log ID) are not clipped.
+        const double minTableForScroll = 880;
+        final double tableBodyWidth =
+            inner < minTableForScroll
+                ? minTableForScroll
+                : math.min(1200.0, inner);
+        // Strip at least viewport width so a narrow table stays centered in the viewport.
+        final double horizontalStripWidth = math.max(inner, tableBodyWidth);
+
+        return Padding(
+          padding: EdgeInsets.fromLTRB(pad, 16, pad, 24),
           child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            physics: const ClampingScrollPhysics(),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minWidth: minChildWidth),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            scrollDirection: Axis.vertical,
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              physics: const ClampingScrollPhysics(),
+              child: SizedBox(
+                width: horizontalStripWidth,
                 child: Align(
                   alignment: Alignment.topCenter,
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 1200),
+                  child: SizedBox(
+                    width: tableBodyWidth,
                     child: Container(
+                      clipBehavior: Clip.antiAlias,
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
@@ -957,7 +972,7 @@ class _TableHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
       decoration: BoxDecoration(
         color: Colors.grey.shade100,
         borderRadius: const BorderRadius.only(
@@ -969,19 +984,55 @@ class _TableHeader extends StatelessWidget {
         ),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children:
             isAdminActivity
                 ? const [
-                  _HeaderCell(text: 'Activity', flex: 2),
-                  _HeaderCell(text: 'Admin', flex: 2),
-                  _HeaderCell(text: 'Details', flex: 3),
-                  _HeaderCell(text: 'Date & Time (PH)', flex: 2),
+                  _HeaderCell(
+                    text: 'Activity',
+                    flex: 2,
+                    textAlign: TextAlign.start,
+                    cellAlignment: Alignment.centerLeft,
+                  ),
+                  _HeaderCell(
+                    text: 'Admin',
+                    flex: 2,
+                    textAlign: TextAlign.start,
+                    cellAlignment: Alignment.centerLeft,
+                  ),
+                  _HeaderCell(
+                    text: 'Details',
+                    flex: 3,
+                    textAlign: TextAlign.start,
+                    cellAlignment: Alignment.centerLeft,
+                  ),
+                  _HeaderCell(
+                    text: 'Date & Time (PH)',
+                    flex: 2,
+                    textAlign: TextAlign.center,
+                    cellAlignment: Alignment.center,
+                  ),
                 ]
                 : [
-                  const _HeaderCell(text: 'Activity', flex: 3),
-                  _HeaderCell(text: _actorColumnHeader, flex: 2),
+                  const _HeaderCell(
+                    text: 'Activity',
+                    flex: 3,
+                    textAlign: TextAlign.start,
+                    cellAlignment: Alignment.centerLeft,
+                  ),
+                  _HeaderCell(
+                    text: _actorColumnHeader,
+                    flex: 2,
+                    textAlign: TextAlign.start,
+                    cellAlignment: Alignment.centerLeft,
+                  ),
                   _HeaderCategoryCell(flex: 2, child: categoryFilter),
-                  const _HeaderCell(text: 'Date & Time (PH)', flex: 2),
+                  const _HeaderCell(
+                    text: 'Date & Time (PH)',
+                    flex: 2,
+                    textAlign: TextAlign.center,
+                    cellAlignment: Alignment.center,
+                  ),
                   const _HeaderIdCell(text: 'Log ID'),
                 ],
       ),
@@ -992,22 +1043,36 @@ class _TableHeader extends StatelessWidget {
 class _HeaderCell extends StatelessWidget {
   final String text;
   final int flex;
-  const _HeaderCell({required this.text, required this.flex});
+  final TextAlign textAlign;
+  final AlignmentGeometry cellAlignment;
+
+  const _HeaderCell({
+    required this.text,
+    required this.flex,
+    this.textAlign = TextAlign.start,
+    this.cellAlignment = Alignment.centerLeft,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
       flex: flex,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: Text(
-          text,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: Colors.grey.shade800,
-            letterSpacing: 0.5,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+        child: Align(
+          alignment: cellAlignment,
+          child: Text(
+            text,
+            textAlign: textAlign,
+            softWrap: true,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: Colors.grey.shade800,
+              letterSpacing: 0.2,
+            ),
           ),
         ),
       ),
@@ -1025,20 +1090,26 @@ class _HeaderCategoryCell extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expanded(
       flex: flex,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        child:
-            child ??
-            Text(
-              'Category',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: Colors.grey.shade800,
-                letterSpacing: 0.5,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+        child: Align(
+          alignment: Alignment.center,
+          child:
+              child ??
+              Text(
+                'Category',
+                textAlign: TextAlign.center,
+                softWrap: true,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.grey.shade800,
+                  letterSpacing: 0.2,
+                ),
               ),
-            ),
+        ),
       ),
     );
   }
@@ -1051,15 +1122,24 @@ class _HeaderIdCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 90,
-      child: Text(
-        text,
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.w700,
-          color: Colors.grey.shade800,
-          letterSpacing: 0.5,
+      width: 100,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+        child: Align(
+          alignment: Alignment.center,
+          child: Text(
+            text,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            softWrap: true,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: Colors.grey.shade800,
+              letterSpacing: 0.2,
+            ),
+          ),
         ),
       ),
     );
@@ -1088,22 +1168,28 @@ class _TableRow extends StatelessWidget {
     return Column(
       children: [
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children:
                 isAdminActivity
                     ? [
                       Expanded(
                         flex: 2,
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          child: Text(
-                            entry.activityTitle,
-                            textAlign: TextAlign.left,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.black87,
+                          padding: const EdgeInsets.symmetric(horizontal: 6),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              entry.activityTitle,
+                              textAlign: TextAlign.start,
+                              softWrap: true,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black87,
+                                height: 1.35,
+                              ),
                             ),
                           ),
                         ),
@@ -1111,14 +1197,19 @@ class _TableRow extends StatelessWidget {
                       Expanded(
                         flex: 2,
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          child: Text(
-                            entry.actorName ?? 'Unknown',
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.black87,
+                          padding: const EdgeInsets.symmetric(horizontal: 6),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              entry.actorName ?? 'Unknown',
+                              textAlign: TextAlign.start,
+                              softWrap: true,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black87,
+                                height: 1.35,
+                              ),
                             ),
                           ),
                         ),
@@ -1126,26 +1217,39 @@ class _TableRow extends StatelessWidget {
                       Expanded(
                         flex: 3,
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          child: Text(
-                            _detailsText,
-                            textAlign: TextAlign.left,
-                            style: TextStyle(
-                              fontSize: 15,
-                              color: Colors.grey.shade700,
-                              height: 1.4,
+                          padding: const EdgeInsets.symmetric(horizontal: 6),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              _detailsText,
+                              textAlign: TextAlign.start,
+                              softWrap: true,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey.shade700,
+                                height: 1.4,
+                              ),
                             ),
                           ),
                         ),
                       ),
                       Expanded(
                         flex: 2,
-                        child: Text(
-                          entry.formattedTimestamp,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 15,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 6),
+                          child: Align(
+                            alignment: Alignment.center,
+                            child: Text(
+                              entry.formattedTimestamp,
+                              textAlign: TextAlign.center,
+                              softWrap: true,
+                              maxLines: 3,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                                height: 1.25,
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -1154,45 +1258,51 @@ class _TableRow extends StatelessWidget {
                       Expanded(
                         flex: 3,
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                entry.displayActivityTitle,
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.black87,
-                                ),
+                          padding: const EdgeInsets.symmetric(horizontal: 6),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              entry.displayActivityTitle,
+                              textAlign: TextAlign.start,
+                              softWrap: true,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black87,
+                                height: 1.35,
                               ),
-                              const SizedBox(height: 4),
-                              const SizedBox.shrink(),
-                            ],
+                            ),
                           ),
                         ),
                       ),
                       Expanded(
                         flex: 2,
-                        child: Text(
-                          entry.actorType == 'admin'
-                              ? (entry.actorName ?? 'Unknown')
-                              : (entry.customerName ?? 'Unknown'),
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 15,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 6),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              entry.actorType == 'admin'
+                                  ? (entry.actorName ?? 'Unknown')
+                                  : (entry.customerName ?? 'Unknown'),
+                              textAlign: TextAlign.start,
+                              softWrap: true,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                                height: 1.35,
+                              ),
+                            ),
                           ),
                         ),
                       ),
                       Expanded(
                         flex: 2,
-                        child: Center(
+                        child: Align(
+                          alignment: Alignment.center,
                           child: Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
+                              horizontal: 10,
                               vertical: 6,
                             ),
                             decoration: BoxDecoration(
@@ -1206,33 +1316,54 @@ class _TableRow extends StatelessWidget {
                               style: TextStyle(
                                 color: badgeColor,
                                 fontWeight: FontWeight.w700,
+                                fontSize: 13,
                               ),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               textAlign: TextAlign.center,
+                              softWrap: true,
                             ),
                           ),
                         ),
                       ),
                       Expanded(
                         flex: 2,
-                        child: Text(
-                          entry.formattedTimestamp,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 15,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 6),
+                          child: Align(
+                            alignment: Alignment.center,
+                            child: Text(
+                              entry.formattedTimestamp,
+                              textAlign: TextAlign.center,
+                              softWrap: true,
+                              maxLines: 3,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                                height: 1.25,
+                              ),
+                            ),
                           ),
                         ),
                       ),
                       SizedBox(
-                        width: 90,
-                        child: Text(
-                          '#${entry.id}',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.grey.shade600,
-                            fontWeight: FontWeight.w600,
+                        width: 100,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: Align(
+                            alignment: Alignment.center,
+                            child: Text(
+                              '#${entry.id}',
+                              textAlign: TextAlign.center,
+                              softWrap: true,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: Colors.grey.shade600,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                              ),
+                            ),
                           ),
                         ),
                       ),
