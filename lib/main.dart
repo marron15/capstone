@@ -22,6 +22,7 @@ import 'landing_page_components/products.dart';
 import 'landing_page_components/trainers.dart';
 import 'landing_page_components/landing_page.dart';
 import 'landing_page_components/header.dart';
+import 'landing_page_components/page_visit_count.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -514,7 +515,11 @@ class _LoginChoicePageState extends State<LoginChoicePage>
                                                   ),
                                                 ),
                                                 const SizedBox(height: 40),
-                                                Row(
+                                                Wrap(
+                                                  spacing: 20,
+                                                  runSpacing: 12,
+                                                  crossAxisAlignment:
+                                                      WrapCrossAlignment.center,
                                                   children: [
                                                     ElevatedButton(
                                                       onPressed: () {
@@ -531,28 +536,24 @@ class _LoginChoicePageState extends State<LoginChoicePage>
                                                               0xFFFF8C00,
                                                             ),
                                                         padding:
-                                                            const EdgeInsets.symmetric(
-                                                              horizontal: 32,
-                                                              vertical: 20,
-                                                            ),
-                                                        shape: RoundedRectangleBorder(
+                                                            HeroCtaStyle.padding,
+                                                        minimumSize: Size.zero,
+                                                        tapTargetSize:
+                                                            MaterialTapTargetSize
+                                                                .shrinkWrap,
+                                                        shape: const RoundedRectangleBorder(
                                                           borderRadius:
-                                                              BorderRadius.circular(
-                                                                4,
-                                                              ),
+                                                              HeroCtaStyle
+                                                                  .borderRadius,
                                                         ),
                                                       ),
                                                       child: const Text(
                                                         'Login',
-                                                        style: TextStyle(
-                                                          fontSize: 16,
-                                                          color: Colors.white,
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                        ),
+                                                        style:
+                                                            HeroCtaStyle
+                                                                .labelStyle,
                                                       ),
                                                     ),
-                                                    const SizedBox(width: 20),
                                                     OutlinedButton(
                                                       onPressed: () {
                                                         showDialog(
@@ -563,32 +564,28 @@ class _LoginChoicePageState extends State<LoginChoicePage>
                                                         );
                                                       },
                                                       style: OutlinedButton.styleFrom(
-                                                        side: const BorderSide(
-                                                          color: Colors.white,
-                                                          width: 2,
-                                                        ),
+                                                        side: HeroCtaStyle
+                                                            .outlinedBorder,
                                                         padding:
-                                                            const EdgeInsets.symmetric(
-                                                              horizontal: 32,
-                                                              vertical: 20,
-                                                            ),
-                                                        shape: RoundedRectangleBorder(
+                                                            HeroCtaStyle.padding,
+                                                        minimumSize: Size.zero,
+                                                        tapTargetSize:
+                                                            MaterialTapTargetSize
+                                                                .shrinkWrap,
+                                                        shape: const RoundedRectangleBorder(
                                                           borderRadius:
-                                                              BorderRadius.circular(
-                                                                4,
-                                                              ),
+                                                              HeroCtaStyle
+                                                                  .borderRadius,
                                                         ),
                                                       ),
                                                       child: const Text(
                                                         'Register Now',
-                                                        style: TextStyle(
-                                                          fontSize: 16,
-                                                          color: Colors.white,
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                        ),
+                                                        style:
+                                                            HeroCtaStyle
+                                                                .labelStyle,
                                                       ),
                                                     ),
+                                                    const HeroVisitCountBadge(),
                                                   ],
                                                 ),
                                               ],
