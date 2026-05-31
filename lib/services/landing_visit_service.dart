@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LandingVisitStats {
   final int visitCount;
@@ -31,6 +32,8 @@ class LandingVisitService {
 
   static String get _landingBase =>
       'https://${_apiHost()}/gym_api/landingPageVisitCount';
+
+  static const String _visitRecordedKey = 'landing_visit_recorded_v1';
 
   static Future<LandingVisitStats?> fetchStats() async {
     try {
@@ -64,6 +67,13 @@ class LandingVisitService {
   /// Records one landing-page visit and returns updated stats.
   static Future<LandingVisitStats?> recordVisit() async {
     try {
+      final prefs = await SharedPreferences.getInstance();
+      final bool hasRecordedVisit = prefs.getBool(_visitRecordedKey) ?? false;
+
+      if (hasRecordedVisit) {
+        return await fetchStats();
+      }
+
       final response = await http.post(
         Uri.parse('$_landingBase/recordLandingVisit.php'),
         headers: {
@@ -85,6 +95,8 @@ class LandingVisitService {
         debugPrint('LandingVisitService.recordVisit: ${body['message']}');
         return null;
       }
+
+      await prefs.setBool(_visitRecordedKey, true);
 
       return LandingVisitStats.fromJson(
         Map<String, dynamic>.from(body['data'] as Map),
