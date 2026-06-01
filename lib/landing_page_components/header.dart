@@ -7,7 +7,14 @@ import 'sidenav.dart';
 class MainHeader extends StatelessWidget {
   final bool isScrolled;
   final void Function(String section)? onSectionTap;
-  const MainHeader({super.key, this.isScrolled = false, this.onSectionTap});
+  final String? selectedSection;
+
+  const MainHeader({
+    super.key,
+    this.isScrolled = false,
+    this.onSectionTap,
+    this.selectedSection,
+  });
 
   /// Top `Padding` for logged-in hero content so it clears the **expanded**
   /// header (must stay in sync with [expandedHeaderHeight] breakpoints below).
@@ -68,6 +75,7 @@ class MainHeader extends StatelessWidget {
                   width: MediaQuery.of(dialogContext).size.width * 0.82,
                   child: LandingSideNav(
                     onSectionTap: onSectionTap,
+                    selectedSection: selectedSection,
                     onProfileTap: () {
                       Navigator.of(dialogContext).pop();
                       Navigator.pushNamed(context, '/customer-profile');

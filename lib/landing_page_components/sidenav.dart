@@ -8,12 +8,14 @@ class LandingSideNav extends StatelessWidget {
   final void Function(String section)? onSectionTap;
   final VoidCallback onProfileTap;
   final Future<void> Function() onLogoutTap;
+  final String? selectedSection;
 
   const LandingSideNav({
     super.key,
     this.onSectionTap,
     required this.onProfileTap,
     required this.onLogoutTap,
+    this.selectedSection,
   });
 
   static const List<String> _sections = [
@@ -24,48 +26,34 @@ class LandingSideNav extends StatelessWidget {
     'About Us',
   ];
 
-  static IconData _iconForSection(String section) {
-    switch (section) {
-      case 'Home':
-        return Icons.home_rounded;
-      case 'Service':
-        return Icons.fitness_center_rounded;
-      case 'Products':
-        return Icons.shopping_bag_rounded;
-      case 'Inquiries':
-        return Icons.mail_outline_rounded;
-      case 'About Us':
-        return Icons.info_outline_rounded;
-      default:
-        return Icons.circle_outlined;
-    }
-  }
+  static const Color _highlightColor = Color(0xFFFFA812);
 
   /// Same outer spacing pattern as admin `_navItem` (margin + ListTile paddings).
   Widget _navRow({
-    required IconData icon,
     required String label,
     required VoidCallback onTap,
+    bool isSelected = false,
   }) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: Colors.transparent,
+        color:
+            isSelected
+                ? _highlightColor.withValues(alpha: 0.22)
+                : Colors.transparent,
         borderRadius: BorderRadius.circular(12),
       ),
       child: ListTile(
         dense: true,
-        leading: Icon(
-          icon,
-          color: Colors.white.withValues(alpha: 0.92),
-          size: 20,
-        ),
         title: Text(
           label,
           style: TextStyle(
             fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: Colors.white.withValues(alpha: 0.95),
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+            color:
+                isSelected
+                    ? _highlightColor
+                    : Colors.white.withValues(alpha: 0.95),
           ),
         ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -76,7 +64,6 @@ class LandingSideNav extends StatelessWidget {
           top: 4,
           bottom: 4,
         ),
-        minLeadingWidth: 24,
         minVerticalPadding: 0,
       ),
     );
@@ -151,15 +138,11 @@ class LandingSideNav extends StatelessWidget {
                         ),
                       ),
                       if (loggedIn)
-                        _navRow(
-                          icon: Icons.account_circle_outlined,
-                          label: 'Profile',
-                          onTap: onProfileTap,
-                        ),
+                        _navRow(label: 'Profile', onTap: onProfileTap),
                       for (final section in _sections)
                         _navRow(
-                          icon: _iconForSection(section),
                           label: section,
+                          isSelected: selectedSection == section,
                           onTap: () {
                             Navigator.of(context).pop();
                             onSectionTap?.call(section);
@@ -185,7 +168,11 @@ class LandingSideNav extends StatelessWidget {
                               ),
                               elevation: 0,
                             ),
-                            icon: const Icon(Icons.logout, size: 18),
+                            icon: const Icon(
+                              Icons.logout,
+                              color: Colors.red,
+                              size: 18,
+                            ),
                             label: const Text(
                               'Logout',
                               style: TextStyle(

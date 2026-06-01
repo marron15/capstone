@@ -303,6 +303,7 @@ class _LoginChoicePageState extends State<LoginChoicePage>
   late Animation<Offset> _slideAnimation;
   final ScrollController _scrollController = ScrollController();
   bool _isScrolled = false;
+  String _selectedNavSection = 'Home';
 
   // Section keys for scroll navigation
   final GlobalKey _equipmentKey = GlobalKey();
@@ -311,6 +312,7 @@ class _LoginChoicePageState extends State<LoginChoicePage>
   final GlobalKey _footerKey = GlobalKey();
 
   void _scrollToSection(String section) {
+    setState(() => _selectedNavSection = section);
     GlobalKey? targetKey;
     switch (section) {
       case 'Home':
@@ -646,7 +648,11 @@ class _LoginChoicePageState extends State<LoginChoicePage>
             ),
           ),
           // Sticky header — transparent on hero, solid when scrolled
-          MainHeader(isScrolled: _isScrolled, onSectionTap: _scrollToSection),
+          MainHeader(
+            isScrolled: _isScrolled,
+            onSectionTap: _scrollToSection,
+            selectedSection: _selectedNavSection,
+          ),
         ],
       ),
     );
