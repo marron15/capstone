@@ -165,6 +165,18 @@ class _MembershipHistoryDialogState extends State<_MembershipHistoryDialog> {
   String _formatMonthLabel(DateTime d) =>
       '${d.month.toString().padLeft(2, '0')}/${d.year}';
 
+  bool _isSameMonth(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month;
+  }
+
+  void _clearAllFilters() {
+    setState(() {
+      _statusFilter = 'All';
+      _selectedDate = DateTime.now();
+      _selectedDayFilter = null;
+    });
+  }
+
   Future<void> _pickDateFilter() async {
     final DateTime today = DateTime.now();
     final DateTime? picked = await showDatePicker(
@@ -240,6 +252,13 @@ class _MembershipHistoryDialogState extends State<_MembershipHistoryDialog> {
   // ── Header ────────────────────────────────────────────────────────────────
 
   Widget _buildHeader() {
+    final DateTime now = DateTime.now();
+    final bool hasFilters =
+        _statusFilter != 'All' ||
+        _selectedDayFilter != null ||
+        !_isSameMonth(_selectedDate, now);
+    final bool showTopClearFilters = hasFilters && _visibleRows().isNotEmpty;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(20, 18, 14, 16),
@@ -346,19 +365,56 @@ class _MembershipHistoryDialogState extends State<_MembershipHistoryDialog> {
                       ),
                     ),
                   ),
-                  if (_selectedDayFilter != null)
-                    IconButton(
-                      onPressed: _setWholeMonthFilter,
-                      tooltip: 'Select month',
+                  OutlinedButton.icon(
+                    onPressed: _setWholeMonthFilter,
+                    icon: const Icon(
+                      Icons.calendar_view_month,
+                      size: 14,
+                      color: Colors.white70,
+                    ),
+                    label: Text(
+                      _isSameMonth(_selectedDate, now)
+                          ? 'Select Month'
+                          : _formatMonthLabel(_selectedDate),
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Colors.white24, width: 1),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      minimumSize: const Size(0, 34),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                  if (showTopClearFilters)
+                    OutlinedButton.icon(
+                      onPressed: _clearAllFilters,
                       icon: const Icon(
-                        Icons.filter_alt_off,
-                        size: 18,
+                        Icons.close,
+                        size: 14,
                         color: Colors.white70,
                       ),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(
-                        minWidth: 32,
-                        minHeight: 32,
+                      label: const Text(
+                        'Clear All Filters',
+                        style: TextStyle(color: Colors.white70, fontSize: 12),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Colors.white24, width: 1),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        minimumSize: const Size(0, 34),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
                     ),
                   ElevatedButton.icon(
@@ -659,47 +715,11 @@ class _MembershipHistoryDialogState extends State<_MembershipHistoryDialog> {
       );
     }
 
-    // Records exist but active filter yields nothing → still show table + hint
+    // Records exist but active filter yields nothing → show empty table
     if (visibleRows.isEmpty) {
-      return Padding(
+      return SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.search_off_rounded,
-                      size: 52,
-                      color: Colors.grey.shade300,
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'No records match the current filter.',
-                      style: TextStyle(
-                        color: Colors.grey.shade500,
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    OutlinedButton.icon(
-                      onPressed:
-                          () => setState(() {
-                            _statusFilter = 'All';
-                            _selectedDayFilter = null;
-                          }),
-                      icon: const Icon(Icons.filter_alt_off, size: 16),
-                      label: const Text('Clear All Filters'),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
+        child: _buildTable(),
       );
     }
 

@@ -195,6 +195,18 @@ class _TimeInOutHistoryModalState extends State<TimeInOutHistoryModal> {
   String _formatMonthLabel(DateTime d) =>
       '${d.month.toString().padLeft(2, '0')}/${d.year}';
 
+  bool _isSameMonth(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month;
+  }
+
+  void _clearAllFilters() {
+    setState(() {
+      _statusFilter = 'All';
+      _selectedDate = DateTime.now();
+      _selectedDayFilter = null;
+    });
+  }
+
   Future<void> _pickDateFilter() async {
     final DateTime today = DateTime.now();
     final DateTime? picked = await showDatePicker(
@@ -309,6 +321,12 @@ class _TimeInOutHistoryModalState extends State<TimeInOutHistoryModal> {
         visible.where((r) => r.status.toUpperCase() == 'IN').length;
     final int totalOut =
         visible.where((r) => r.status.toUpperCase() == 'OUT').length;
+    final DateTime now = DateTime.now();
+    final bool hasFilters =
+        _statusFilter != 'All' ||
+        _selectedDayFilter != null ||
+        !_isSameMonth(_selectedDate, now);
+    final bool showTopClearFilters = hasFilters && visible.isNotEmpty;
 
     return Dialog(
       insetPadding: EdgeInsets.symmetric(
@@ -363,7 +381,7 @@ class _TimeInOutHistoryModalState extends State<TimeInOutHistoryModal> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 const Text(
-                                  'Attendance History',
+                                  'Time In/Out History',
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 16,
@@ -443,19 +461,65 @@ class _TimeInOutHistoryModalState extends State<TimeInOutHistoryModal> {
                               ),
                             ),
                           ),
-                          if (_selectedDayFilter != null)
-                            IconButton(
-                              onPressed: _setWholeMonthFilter,
-                              tooltip: 'Show whole month',
+                          OutlinedButton.icon(
+                            onPressed: _setWholeMonthFilter,
+                            icon: const Icon(
+                              Icons.calendar_view_month,
+                              size: 14,
+                              color: Colors.white70,
+                            ),
+                            label: Text(
+                              _isSameMonth(_selectedDate, DateTime.now())
+                                  ? 'Select Month'
+                                  : _formatMonthLabel(_selectedDate),
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 12,
+                              ),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(
+                                color: Colors.white24,
+                                width: 1,
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              minimumSize: const Size(0, 34),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                          ),
+                          if (showTopClearFilters)
+                            OutlinedButton.icon(
+                              onPressed: _clearAllFilters,
                               icon: const Icon(
-                                Icons.filter_alt_off,
-                                size: 18,
+                                Icons.close,
+                                size: 14,
                                 color: Colors.white70,
                               ),
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(
-                                minWidth: 32,
-                                minHeight: 32,
+                              label: const Text(
+                                'Clear All Filters',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(
+                                  color: Colors.white24,
+                                  width: 1,
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
+                                ),
+                                minimumSize: const Size(0, 34),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
                               ),
                             ),
                           ValueListenableBuilder<bool>(
@@ -567,6 +631,12 @@ class _TimeInOutHistoryModalState extends State<TimeInOutHistoryModal> {
             const Text(
               'No records match the current filter.',
               style: TextStyle(color: Colors.black45),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: _clearAllFilters,
+              icon: const Icon(Icons.close),
+              label: const Text('Clear All Filters'),
             ),
           ],
         ),
