@@ -1,4 +1,5 @@
 {
+    "id": "/",
     "name": "RNR Fitness Gym",
     "short_name": "RNR Fitness",
     "start_url": "./",
@@ -8,6 +9,12 @@
     "description": "Access gym memberships, trainers, and services.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
+    "related_applications": [
+        {
+            "platform": "webapp",
+            "url": "https://rnrgym.com/manifest.json"
+        }
+    ],
     "scope": "./",
     "icons": [
         {

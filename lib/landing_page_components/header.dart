@@ -343,7 +343,7 @@ class _BrandLogo extends StatelessWidget {
           'FITNESS GYM',
           style: TextStyle(
             color: Colors.white,
-            fontSize: fontSize,
+            fontSize: 20,
             fontWeight: FontWeight.bold,
             letterSpacing: letterSpacing,
             height: 1.0,

@@ -1,19 +1,22 @@
-const CACHE_NAME = 'rnr-fitness-v1';
+const CACHE_NAME = 'rnr-fitness-v6';
 const STATIC_ASSETS = [
   './',
   './index.html',
   './manifest.json',
   './jsqr.min.js',
-  './favicon.png',
   './icons/Icon-192.png',
   './icons/Icon-512.png',
-  './icons/Icon-maskable-192.png',
-  './icons/Icon-maskable-512.png',
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS)),
+    caches.open(CACHE_NAME).then((cache) =>
+      Promise.allSettled(
+        STATIC_ASSETS.map((url) =>
+          cache.add(new Request(url, { cache: 'reload' })).catch(() => undefined),
+        ),
+      ),
+    ),
   );
   self.skipWaiting();
 });

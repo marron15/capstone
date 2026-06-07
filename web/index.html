@@ -85,6 +85,20 @@
 
   <title>RNR Fitness Gym</title>
   <link rel="manifest" href="manifest.json">
+
+  <!-- Capture beforeinstallprompt as early as possible (before Flutter loads). -->
+  <script>
+    window.__deferredPwaPrompt = null;
+    window.addEventListener(
+      'beforeinstallprompt',
+      function (e) {
+        e.preventDefault();
+        window.__deferredPwaPrompt = e;
+        window.dispatchEvent(new CustomEvent('pwa-installable', { detail: true }));
+      },
+      { capture: true },
+    );
+  </script>
 </head>
 <body>
   <script>
@@ -113,180 +127,224 @@
   </script>
   <!-- PWA Install Prompt Handler -->
   <script>
-    let deferredPwaPrompt;
+    window.isPwaStandalone = function () { return false; };
+    window.isPwaInstalled = function () { return false; };
+    window.isPwaInstallAvailable = function () { return false; };
+    window.getPwaInstallReason = function () { return 'loading'; };
+    window.triggerPwaInstallPromptSync = function () { return false; };
+    window.getPwaInstallOutcome = async function () { return 'unavailable'; };
+    window.triggerPwaInstall = async function () { return false; };
+
     let isStandalone = false;
+    let installedDetected = false;
     let manifestLoaded = false;
+    let swRegistered = false;
+    const INSTALLED_FLAG = 'rnrPwaInstalled';
+
+    try {
+      installedDetected = window.localStorage.getItem(INSTALLED_FLAG) === '1';
+    } catch (e) {
+      installedDetected = false;
+    }
+
+    function markInstalled() {
+      installedDetected = true;
+      try {
+        window.localStorage.setItem(INSTALLED_FLAG, '1');
+      } catch (e) {
+        /* ignore storage errors */
+      }
+      window.dispatchEvent(new CustomEvent('pwa-installed', { detail: true }));
+    }
+
+    function markUninstalled() {
+      installedDetected = false;
+      try {
+        window.localStorage.removeItem(INSTALLED_FLAG);
+      } catch (e) {
+        /* ignore storage errors */
+      }
+      window.dispatchEvent(new CustomEvent('pwa-check-availability', { detail: true }));
+    }
     const shouldLogPwa =
       ['localhost', '127.0.0.1', ''].includes(window.location.hostname);
     const pwaLog = (...args) => {
-      if (shouldLogPwa) {
-        console.log(...args);
-      }
+      if (shouldLogPwa) console.log(...args);
     };
     const pwaWarn = (...args) => {
-      if (shouldLogPwa) {
-        console.warn(...args);
-      }
+      if (shouldLogPwa) console.warn(...args);
     };
-    
-    // Check if app is already installed (standalone mode)
-    if (window.matchMedia('(display-mode: standalone)').matches || 
+
+    function getDeferredPrompt() {
+      return window.__deferredPwaPrompt || null;
+    }
+
+    function clearDeferredPrompt() {
+      window.__deferredPwaPrompt = null;
+    }
+
+    function isIosSafari() {
+      const ua = navigator.userAgent || '';
+      return /iPhone|iPad|iPod/.test(ua) && !window.MSStream;
+    }
+
+    function isChromiumBrowser() {
+      const ua = navigator.userAgent || '';
+      return /Chrome|CriOS|Chromium|Edg|OPR|SamsungBrowser/.test(ua);
+    }
+
+    if (window.matchMedia('(display-mode: standalone)').matches ||
         window.navigator.standalone === true ||
         document.referrer.includes('android-app://')) {
       isStandalone = true;
-      pwaLog('PWA: App is already installed (standalone mode)');
+      installedDetected = true;
+      pwaLog('PWA: App is running in standalone mode');
     }
 
-    // Check if manifest is accessible
-    // Try multiple possible paths
+    // Detect an already-installed PWA even when viewing in a normal browser tab.
+    if (navigator.getInstalledRelatedApps) {
+      navigator.getInstalledRelatedApps().then((apps) => {
+        if (apps && apps.length > 0) {
+          pwaLog('PWA: Detected installed related app(s):', apps.length);
+          markInstalled();
+        } else if (!isStandalone) {
+          // Browser no longer reports it as installed; clear a stale flag.
+          markUninstalled();
+        }
+      }).catch(() => {
+        /* getInstalledRelatedApps unsupported or blocked; rely on other signals. */
+      });
+    }
+
     const manifestPaths = [
       'manifest.json',
       './manifest.json',
-      '/manifest.json',
-      window.location.pathname.replace(/\/[^/]*$/, '/manifest.json')
+      new URL('manifest.json', document.baseURI).href,
     ];
-    
+
     let manifestCheckAttempts = 0;
     const checkManifest = (path) => {
       fetch(path)
-        .then(response => {
+        .then((response) => {
           if (response.ok) {
             manifestLoaded = true;
             pwaLog('PWA: Manifest loaded successfully from', path);
-            // Dispatch event to inform Flutter that manifest is available
             window.dispatchEvent(new CustomEvent('pwa-manifest-ready', { detail: true }));
           } else if (manifestCheckAttempts < manifestPaths.length - 1) {
             manifestCheckAttempts++;
             checkManifest(manifestPaths[manifestCheckAttempts]);
           }
         })
-        .catch(error => {
+        .catch(() => {
           if (manifestCheckAttempts < manifestPaths.length - 1) {
             manifestCheckAttempts++;
             checkManifest(manifestPaths[manifestCheckAttempts]);
-          } else {
-            pwaWarn('PWA: Manifest check failed for all paths:', error);
           }
         });
     };
-    
+
     checkManifest(manifestPaths[0]);
 
-    // Listen for the beforeinstallprompt event
-    window.addEventListener('beforeinstallprompt', (e) => {
-      pwaLog('PWA: Install prompt available');
-      // Prevent the default mini-infobar from appearing on mobile
-      e.preventDefault();
-      // Store the event so it can be triggered later
-      deferredPwaPrompt = e;
-      // Dispatch a custom event to inform Flutter
-      window.dispatchEvent(new CustomEvent('pwa-installable', { detail: true }));
-    });
+    window.isPwaStandalone = function () {
+      return isStandalone;
+    };
 
-    // Check if PWA install is available
-    window.isPwaInstallAvailable = function() {
-      // Don't show if already installed
-      if (isStandalone) {
-        return false;
-      }
-      
-      // If beforeinstallprompt event fired, install is definitely available
-      if (deferredPwaPrompt !== undefined) {
+    window.isPwaInstalled = function () {
+      return isStandalone || installedDetected;
+    };
+
+    window.isPwaInstallAvailable = function () {
+      if (isStandalone || installedDetected || !window.isSecureContext) return false;
+      if (getDeferredPrompt()) return true;
+      if (isIosSafari()) return true;
+      return manifestLoaded && isChromiumBrowser();
+    };
+
+    // Returns a reason code explaining the current install state. Used to show
+    // a precise message when the native prompt is not available.
+    window.getPwaInstallReason = function () {
+      if (isStandalone || installedDetected) return 'installed';
+      if (!window.isSecureContext) return 'insecure';
+      if (getDeferredPrompt()) return 'ready';
+      if (isIosSafari()) return 'ios';
+      if (!manifestLoaded) return 'no-manifest';
+      if (!swRegistered) return 'no-sw';
+      if (!isChromiumBrowser()) return 'unsupported-browser';
+      // Chromium + manifest + SW but no deferred prompt: usually already
+      // installed on this device/profile, or the prompt was already used.
+      return 'already-installed-or-used';
+    };
+
+    // Must run synchronously inside the user's click handler (before any await).
+    window.triggerPwaInstallPromptSync = function () {
+      if (isStandalone) return false;
+
+      const promptEvent = getDeferredPrompt();
+      if (!promptEvent) return false;
+
+      try {
+        promptEvent.prompt();
         return true;
-      }
-      
-      // Fallback: Check if manifest is loaded and we're not in standalone mode
-      // This allows the button to show even if beforeinstallprompt hasn't fired yet
-      // The browser will show its own prompt if needed
-      if (manifestLoaded && !isStandalone) {
-        // Check if we're on a supported platform
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
-        const isEdge = /Edg/.test(navigator.userAgent);
-        const isSafari = /Safari/.test(navigator.userAgent) && /Apple Computer/.test(navigator.vendor);
-        
-        // Show button on supported browsers
-        if (isMobile || isChrome || isEdge || (isSafari && isMobile)) {
-          return true;
-        }
-      }
-      
-      return false;
-    };
-
-    // Trigger the PWA install prompt
-    window.triggerPwaInstall = async function() {
-      if (isStandalone) {
-        pwaLog('PWA: App is already installed');
+      } catch (error) {
+        pwaWarn('PWA: prompt() failed:', error);
+        clearDeferredPrompt();
         return false;
       }
+    };
 
-      if (deferredPwaPrompt) {
-        // Show the install prompt
-        deferredPwaPrompt.prompt();
-        
-        // Wait for the user to respond to the prompt
-        const { outcome } = await deferredPwaPrompt.userChoice;
+    window.getPwaInstallOutcome = async function () {
+      const promptEvent = getDeferredPrompt();
+      if (!promptEvent) return 'unavailable';
+
+      try {
+        const { outcome } = await promptEvent.userChoice;
         pwaLog('PWA: User response:', outcome);
-        
-        // Clear the deferred prompt as it can only be used once
-        deferredPwaPrompt = null;
-        
-        // Dispatch event to inform Flutter
+        clearDeferredPrompt();
         window.dispatchEvent(new CustomEvent('pwa-install-result', { detail: outcome }));
-        
-        return outcome === 'accepted';
-      } else {
-        // Fallback: Try to show browser's native install prompt
-        // This works for browsers that support it
-        pwaLog('PWA: Using fallback install method');
-        
-        // For iOS Safari, show instructions
-        if (/iPhone|iPad|iPod/.test(navigator.userAgent) && !window.MSStream) {
-          alert('To install this app:\n1. Tap the Share button\n2. Select "Add to Home Screen"');
-          return false;
-        }
-        
-        // For other browsers, the manifest should trigger the install prompt
-        // If it doesn't, we can't do much more
-        return false;
+        return outcome;
+      } catch (error) {
+        pwaWarn('PWA: userChoice failed:', error);
+        clearDeferredPrompt();
+        return 'dismissed';
       }
     };
 
-    // Handle successful installation
+    window.triggerPwaInstall = async function () {
+      const started = window.triggerPwaInstallPromptSync();
+      if (!started) return false;
+      const outcome = await window.getPwaInstallOutcome();
+      return outcome === 'accepted';
+    };
+
     window.addEventListener('appinstalled', () => {
       pwaLog('PWA: App installed');
-      isStandalone = true;
-      deferredPwaPrompt = null;
-      window.dispatchEvent(new CustomEvent('pwa-installed', { detail: true }));
+      clearDeferredPrompt();
+      markInstalled();
     });
 
-    // Periodic check for installability (in case beforeinstallprompt fires late)
     setInterval(() => {
-      if (!isStandalone && manifestLoaded && !deferredPwaPrompt) {
-        // Re-check availability periodically
+      if (!isStandalone && getDeferredPrompt()) {
         window.dispatchEvent(new CustomEvent('pwa-check-availability', { detail: true }));
       }
     }, 3000);
 
-    // Show install button after a delay if manifest is loaded
-    // This handles cases where beforeinstallprompt might not fire immediately
-    setTimeout(() => {
-      if (!isStandalone && manifestLoaded) {
-        pwaLog('PWA: Manifest loaded, install should be available');
-        // Force a check by dispatching an event
-        window.dispatchEvent(new CustomEvent('pwa-manifest-ready', { detail: true }));
-      }
-    }, 2000);
+    const registerServiceWorker = () => {
+      const swUrl = new URL('sw.js', document.baseURI).href;
+      navigator.serviceWorker.register(swUrl).then(() => {
+        swRegistered = true;
+        pwaLog('PWA: Service worker registered at', swUrl);
+        window.dispatchEvent(new CustomEvent('pwa-check-availability', { detail: true }));
+      }).catch((error) => {
+        pwaWarn('PWA: Service worker registration failed:', error);
+      });
+    };
 
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js').then(() => {
-          pwaLog('PWA: Service worker registered');
-        }).catch((error) => {
-          pwaWarn('PWA: Service worker registration failed:', error);
-        });
-      });
+      if (document.readyState === 'complete') {
+        registerServiceWorker();
+      } else {
+        window.addEventListener('load', registerServiceWorker);
+      }
     }
   </script>
 
