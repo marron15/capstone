@@ -31,7 +31,9 @@ class _TrainersSectionState extends State<TrainersSection> {
 
   Future<void> _load() async {
     setState(() => _isLoading = true);
-    final List<Map<String, String>> list = await ApiService.getAllTrainers();
+    // Request contact numbers for the inquiries section (public scope omits them).
+    final List<Map<String, String>> list =
+        await ApiService.getAllTrainers(adminScope: true);
     // Show only active trainers on the public landing page
     final filtered =
         list
@@ -356,7 +358,7 @@ class _TrainersSectionState extends State<TrainersSection> {
   }
 }
 
-class _TrainerCard extends StatefulWidget {
+class _TrainerCard extends StatelessWidget {
   final String name;
   final String contact;
   final bool isMobile;
@@ -368,18 +370,8 @@ class _TrainerCard extends StatefulWidget {
   });
 
   @override
-  State<_TrainerCard> createState() => _TrainerCardState();
-}
-
-class _TrainerCardState extends State<_TrainerCard> {
-  bool _isHovering = false;
-
-  @override
   Widget build(BuildContext context) {
-    final String name = widget.name;
-    final String contact = widget.contact;
     final double screenWidth = MediaQuery.of(context).size.width;
-    final bool isMobile = widget.isMobile;
 
     if (isMobile) {
       // Mobile-optimized layout based on the first image
@@ -495,88 +487,78 @@ class _TrainerCardState extends State<_TrainerCard> {
     );
 
     return Center(
-      child: MouseRegion(
-        onEnter: (_) => setState(() => _isHovering = true),
-        onExit: (_) => setState(() => _isHovering = false),
-        cursor: SystemMouseCursors.basic,
-        child: Container(
-          width: cardWidth,
-          padding: cardPadding,
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFF0E0E0E), Color(0xFF1B1B1B)],
+      child: Container(
+        width: cardWidth,
+        padding: cardPadding,
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF0E0E0E), Color(0xFF1B1B1B)],
+          ),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: Colors.white24, width: 1.6),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.45),
+              blurRadius: 18,
+              offset: const Offset(0, 10),
             ),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: Colors.white24, width: 1.6),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.45),
-                blurRadius: 18,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Accent bar (hover only)
-              AnimatedOpacity(
-                opacity: _isHovering ? 1.0 : 0.0,
-                duration: const Duration(milliseconds: 180),
-                child: Container(
-                  width: 56,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(2),
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFFFA812), Color(0xFFFF7A12)],
-                    ),
-                  ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              width: 56,
+              height: 4,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(2),
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFFFA812), Color(0xFFFF7A12)],
                 ),
               ),
-              const SizedBox(height: 12),
-              Text(
-                name,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: nameFont,
-                  letterSpacing: 0.2,
-                ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              name,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: nameFont,
+                letterSpacing: 0.2,
               ),
-              const SizedBox(height: 6),
-              if (contact.isNotEmpty)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.06),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.white24, width: 1),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.phone, size: 16, color: Colors.white70),
-                      const SizedBox(width: 6),
-                      Text(
-                        contact,
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: phoneFont,
-                        ),
+            ),
+            const SizedBox(height: 6),
+            if (contact.isNotEmpty)
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.white24, width: 1),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.phone, size: 16, color: Colors.white70),
+                    const SizedBox(width: 6),
+                    Text(
+                      contact,
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: phoneFont,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-            ],
-          ),
+              ),
+          ],
         ),
       ),
     );
