@@ -1495,9 +1495,68 @@ class _CustomersPageState extends State<CustomersPage> {
                                   ),
                                 ),
                                 const SizedBox(width: 8),
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
+                                Wrap(
+                                  spacing: 6,
+                                  runSpacing: 6,
+                                  alignment: WrapAlignment.end,
                                   children: [
+                                    Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.purple.shade50,
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: Colors.purple.shade200,
+                                        ),
+                                      ),
+                                      child: IconButton(
+                                        onPressed:
+                                            () => showMemberHistoryModal(
+                                              context,
+                                              customer,
+                                            ),
+                                        icon: Icon(
+                                          Icons.access_time,
+                                          size: 18,
+                                          color: Colors.purple.shade700,
+                                        ),
+                                        padding: EdgeInsets.zero,
+                                        visualDensity: VisualDensity.compact,
+                                        constraints: const BoxConstraints(
+                                          minWidth: 34,
+                                          minHeight: 34,
+                                        ),
+                                        tooltip: 'Time In/Out History',
+                                      ),
+                                    ),
+                                    Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.indigo.shade50,
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: Colors.indigo.shade200,
+                                        ),
+                                      ),
+                                      child: IconButton(
+                                        onPressed:
+                                            () =>
+                                                showRenewMembershipHistoryModal(
+                                                  context,
+                                                  customer,
+                                                ),
+                                        icon: Icon(
+                                          Icons.autorenew_rounded,
+                                          size: 18,
+                                          color: Colors.indigo.shade700,
+                                        ),
+                                        padding: EdgeInsets.zero,
+                                        visualDensity: VisualDensity.compact,
+                                        constraints: const BoxConstraints(
+                                          minWidth: 34,
+                                          minHeight: 34,
+                                        ),
+                                        tooltip: 'Renew Membership History',
+                                      ),
+                                    ),
                                     Container(
                                       decoration: BoxDecoration(
                                         color: Colors.blue.shade50,
@@ -1507,9 +1566,9 @@ class _CustomersPageState extends State<CustomersPage> {
                                         ),
                                       ),
                                       child: IconButton(
-                                        icon: const Icon(
+                                        icon: Icon(
                                           Icons.edit_outlined,
-                                          color: Colors.blue,
+                                          color: Colors.blue.shade700,
                                           size: 18,
                                         ),
                                         onPressed: () async {
@@ -1532,7 +1591,6 @@ class _CustomersPageState extends State<CustomersPage> {
                                         tooltip: 'View / Edit',
                                       ),
                                     ),
-                                    const SizedBox(width: 6),
                                     Container(
                                       decoration: BoxDecoration(
                                         color:

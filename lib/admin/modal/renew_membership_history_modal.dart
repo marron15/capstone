@@ -361,14 +361,19 @@ class _RenewMembershipHistoryDialogState
   @override
   Widget build(BuildContext context) {
     final Size size = MediaQuery.of(context).size;
+    final bool isWide = size.width >= 700;
+    final bool isCompact = size.width < 560;
 
     return Dialog(
-      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+      insetPadding: EdgeInsets.symmetric(
+        horizontal: isWide ? 24 : (isCompact ? 8 : 16),
+        vertical: isWide ? 32 : (isCompact ? 10 : 20),
+      ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: ConstrainedBox(
         constraints: BoxConstraints(
           maxWidth: 900,
-          maxHeight: size.height * 0.85,
+          maxHeight: size.height * (isCompact ? 0.95 : 0.85),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -380,100 +385,145 @@ class _RenewMembershipHistoryDialogState
 
   Widget _buildHeader() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(24, 20, 16, 16),
+      width: double.infinity,
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade100,
-              borderRadius: BorderRadius.circular(10),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final bool compactHeader = constraints.maxWidth < 640;
+          return Padding(
+            padding: EdgeInsets.fromLTRB(
+              compactHeader ? 16 : 24,
+              compactHeader ? 16 : 20,
+              compactHeader ? 8 : 16,
+              compactHeader ? 14 : 16,
             ),
-            child: const Icon(
-              Icons.autorenew_rounded,
-              color: Colors.black87,
-              size: 22,
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Renew Membership History',
-                  style: TextStyle(
-                    color: Colors.black,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.2,
-                  ),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.autorenew_rounded,
+                        color: Colors.black87,
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Renew Membership History',
+                            style: TextStyle(
+                              color: Colors.black,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.2,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '$_memberName  •  ID #$_customerId',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: Colors.black.withValues(alpha: 0.7),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (!compactHeader) ...[
+                      const SizedBox(width: 10),
+                      _buildDateRangeButton(),
+                      const SizedBox(width: 10),
+                      _buildExportButton(),
+                      const SizedBox(width: 4),
+                    ],
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(
+                        Icons.close_rounded,
+                        color: Colors.black87,
+                      ),
+                      tooltip: 'Close',
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 36,
+                        minHeight: 36,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  '$_memberName  •  ID #$_customerId',
-                  style: TextStyle(
-                    color: Colors.black.withValues(alpha: 0.7),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w400,
+                if (compactHeader) ...[
+                  const SizedBox(height: 12),
+                  Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [_buildDateRangeButton(), _buildExportButton()],
                   ),
-                ),
+                ],
               ],
             ),
-          ),
-          const SizedBox(width: 10),
-          OutlinedButton.icon(
-            onPressed: _pickDateRange,
-            icon: const Icon(Icons.event, size: 16),
-            label: Text(
-              formatDateRangeLabel(_dateRange ?? currentMonthDateRange()),
-              overflow: TextOverflow.ellipsis,
-            ),
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              minimumSize: const Size(0, 40),
-            ),
-          ),
-          const SizedBox(width: 10),
-          ElevatedButton.icon(
-            onPressed: (_isLoading || _isExportingPdf) ? null : _exportPdf,
-            icon:
-                _isExportingPdf
-                    ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                    : const Icon(Icons.picture_as_pdf_outlined, size: 18),
-            label: Text(_isExportingPdf ? 'Exporting...' : 'Export PDF'),
-            style: ElevatedButton.styleFrom(
-              elevation: 0,
-              backgroundColor: Colors.red.shade700,
-              foregroundColor: Colors.white,
-              disabledBackgroundColor: Colors.white,
-              disabledForegroundColor: Colors.red.shade700,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              minimumSize: const Size(0, 40),
-            ),
-          ),
-          const SizedBox(width: 10),
-          IconButton(
-            onPressed: () => Navigator.of(context).pop(),
-            icon: const Icon(Icons.close_rounded, color: Colors.black87),
-            tooltip: 'Close',
-          ),
-        ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildDateRangeButton() {
+    return OutlinedButton.icon(
+      onPressed: _pickDateRange,
+      icon: const Icon(Icons.event, size: 16),
+      label: Text(
+        formatDateRangeLabel(_dateRange ?? currentMonthDateRange()),
+        overflow: TextOverflow.ellipsis,
+      ),
+      style: OutlinedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        minimumSize: const Size(0, 40),
+      ),
+    );
+  }
+
+  Widget _buildExportButton() {
+    return ElevatedButton.icon(
+      onPressed: (_isLoading || _isExportingPdf) ? null : _exportPdf,
+      icon:
+          _isExportingPdf
+              ? const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
+              : const Icon(Icons.picture_as_pdf_outlined, size: 18),
+      label: Text(_isExportingPdf ? 'Exporting...' : 'Export PDF'),
+      style: ElevatedButton.styleFrom(
+        elevation: 0,
+        backgroundColor: Colors.red.shade700,
+        foregroundColor: Colors.white,
+        disabledBackgroundColor: Colors.white,
+        disabledForegroundColor: Colors.red.shade700,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        minimumSize: const Size(0, 40),
       ),
     );
   }
