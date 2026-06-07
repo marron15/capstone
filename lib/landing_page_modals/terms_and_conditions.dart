@@ -53,7 +53,7 @@ class TermsAndConditionsModal extends StatelessWidget {
                   ),
                   IconButton(
                     icon: const Icon(Icons.close, color: Colors.white),
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: () => Navigator.of(context).pop(false),
                     tooltip: 'Close',
                   ),
                 ],
@@ -152,7 +152,7 @@ class TermsAndConditionsModal extends StatelessWidget {
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () => Navigator.of(context).pop(),
+                  onPressed: () => Navigator.of(context).pop(true),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.black,
                     foregroundColor: Colors.white,
