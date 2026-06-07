@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/unified_auth_state.dart';
-import '../services/apk_download_button.dart';
+import '../services/pwa_install_button.dart';
 import '../utils/auth_feedback.dart';
 import '../utils/logout_confirm_dialog.dart';
 import 'sidenav.dart';
@@ -221,7 +221,7 @@ class MainHeader extends StatelessWidget {
                                 },
                               ),
                               const SizedBox(width: 10),
-                              const ApkDownloadButton(),
+                              const PwaInstallButton(),
                             ],
                           ),
                         ),
@@ -292,7 +292,7 @@ class MainHeader extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 6),
-                      const ApkDownloadButton(compact: true),
+                      const PwaInstallButton(compact: true),
                     ],
                   ),
         ),

@@ -1,44 +1,75 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-import 'apk_download_service.dart';
+import 'pwa_js_bridge.dart' as pwa_js;
 
-class ApkDownloadButton extends StatefulWidget {
+class PwaInstallButton extends StatefulWidget {
   final bool compact;
 
-  const ApkDownloadButton({super.key, this.compact = false});
+  const PwaInstallButton({super.key, this.compact = false});
 
   @override
-  State<ApkDownloadButton> createState() => _ApkDownloadButtonState();
+  State<PwaInstallButton> createState() => _PwaInstallButtonState();
 }
 
-class _ApkDownloadButtonState extends State<ApkDownloadButton> {
+class _PwaInstallButtonState extends State<PwaInstallButton> {
   bool _isBusy = false;
+  bool _isAvailable = false;
 
-  Future<void> _handleDownload() async {
+  @override
+  void initState() {
+    super.initState();
+    if (kIsWeb) {
+      Future<void>.delayed(const Duration(milliseconds: 500), _checkAvailability);
+      _startPeriodicCheck();
+    }
+  }
+
+  void _startPeriodicCheck() {
+    Future<void>.delayed(const Duration(seconds: 3), () {
+      if (!mounted) return;
+      _checkAvailability();
+      _startPeriodicCheck();
+    });
+  }
+
+  void _checkAvailability() {
+    if (!kIsWeb) return;
+    final bool available = pwa_js.isInstallAvailable();
+    if (mounted && available != _isAvailable) {
+      setState(() => _isAvailable = available);
+    }
+  }
+
+  Future<void> _handleInstall() async {
     if (!kIsWeb) {
-      _showSnackBar('APK download is only available on the web version.');
+      _showSnackBar('App install is only available on the web version.');
       return;
     }
 
     if (_isBusy) return;
-    setState(() {
-      _isBusy = true;
-    });
+    setState(() => _isBusy = true);
 
-    final bool started = await ApkDownloadService.triggerDownload();
-    if (!mounted) return;
-    _showSnackBar(
-      started
-          ? 'Starting download for ${ApkDownloadService.apkFileName}'
-          : 'APK file is missing. Please upload it to web/downloads.',
-      started ? Colors.green : Colors.orange,
-    );
-
-    if (mounted) {
-      setState(() {
-        _isBusy = false;
-      });
+    try {
+      final bool installed = await pwa_js.triggerInstall();
+      if (!mounted) return;
+      _showSnackBar(
+        installed
+            ? 'App installed successfully!'
+            : 'Installation cancelled or dismissed.',
+        installed ? Colors.green : Colors.orange,
+      );
+      if (installed) {
+        setState(() => _isAvailable = false);
+      }
+    } catch (error) {
+      if (mounted) {
+        _showSnackBar('Install error: $error', Colors.red);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isBusy = false);
+      }
     }
   }
 
@@ -55,13 +86,17 @@ class _ApkDownloadButtonState extends State<ApkDownloadButton> {
 
   @override
   Widget build(BuildContext context) {
+    if (!kIsWeb || !_isAvailable) {
+      return const SizedBox.shrink();
+    }
+
     return Tooltip(
-      message: _isBusy ? 'Preparing APK...' : 'Install Rnr Gym App',
+      message: _isBusy ? 'Installing...' : 'Install RNR Fitness App',
       child:
           widget.compact
               ? IconButton(
-                onPressed: _isBusy ? null : _handleDownload,
-                tooltip: _isBusy ? 'Preparing APK...' : 'Download APK',
+                onPressed: _isBusy ? null : _handleInstall,
+                tooltip: _isBusy ? 'Installing...' : 'Install App',
                 icon:
                     _isBusy
                         ? const SizedBox(
@@ -75,7 +110,7 @@ class _ApkDownloadButtonState extends State<ApkDownloadButton> {
                           ),
                         )
                         : const Icon(
-                          Icons.download,
+                          Icons.install_mobile,
                           color: Colors.white,
                           size: 24,
                         ),
@@ -85,7 +120,7 @@ class _ApkDownloadButtonState extends State<ApkDownloadButton> {
                 ),
               )
               : TextButton.icon(
-                onPressed: _isBusy ? null : _handleDownload,
+                onPressed: _isBusy ? null : _handleInstall,
                 icon:
                     _isBusy
                         ? const SizedBox(
@@ -99,12 +134,12 @@ class _ApkDownloadButtonState extends State<ApkDownloadButton> {
                           ),
                         )
                         : const Icon(
-                          Icons.download,
+                          Icons.install_mobile,
                           color: Colors.white,
                           size: 18,
                         ),
                 label: const Text(
-                  'Download',
+                  'Install',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 14,

@@ -278,13 +278,22 @@
         window.dispatchEvent(new CustomEvent('pwa-manifest-ready', { detail: true }));
       }
     }, 2000);
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').then(() => {
+          pwaLog('PWA: Service worker registered');
+        }).catch((error) => {
+          pwaWarn('PWA: Service worker registration failed:', error);
+        });
+      });
+    }
   </script>
 
   <!-- Same-origin jsQR so Safari privacy / tracker blocking does not remove the scanner (CDN scripts are often blocked). -->
   <script src="jsqr.min.js"></script>
 
-  <!-- Service worker is automatically handled by Flutter's flutter_bootstrap.js -->
-  <!-- Note: Run patch_bootstrap.ps1 after building to disable service worker -->
+  <!-- Note: Run patch_bootstrap.js after building to disable Flutter's service worker. -->
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
