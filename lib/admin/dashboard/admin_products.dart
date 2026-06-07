@@ -21,6 +21,8 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
   bool _showArchived = false;
   final List<int> _productIds = [];
   static const double _drawerWidth = 280;
+  static const int _pageSize = 20;
+  int _pageIndex = 0;
   bool _navCollapsed = false;
 
   Widget _buildArchiveEmpty({
@@ -147,7 +149,153 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
     }).toList();
   }
 
-  Widget _buildMobileProductCard(Product product, int index) {
+  int get _productTotalPages {
+    final int count = _visibleProducts().length;
+    if (count == 0) return 1;
+    return (count / _pageSize).ceil();
+  }
+
+  int get _safeProductPageIndex => _pageIndex.clamp(0, _productTotalPages - 1);
+
+  List<Product> _getPaginatedProducts() {
+    final List<Product> visible = _visibleProducts();
+    if (visible.length <= _pageSize) return visible;
+    final int start = _safeProductPageIndex * _pageSize;
+    final int end = (start + _pageSize).clamp(0, visible.length);
+    return visible.sublist(start, end);
+  }
+
+  void _goToProductPage(int page) {
+    setState(() {
+      _pageIndex = page.clamp(0, _productTotalPages - 1);
+    });
+  }
+
+  Widget _buildProductsPagination({bool compact = false}) {
+    final int total = _visibleProducts().length;
+    if (total <= _pageSize) return const SizedBox.shrink();
+
+    final int totalPages = _productTotalPages;
+    final int page = _safeProductPageIndex;
+    final int start = page * _pageSize + 1;
+    final int end = ((page + 1) * _pageSize).clamp(0, total);
+    final bool canPrev = page > 0;
+    final bool canNext = page < totalPages - 1;
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 12 : 16,
+        vertical: compact ? 10 : 12,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        border: Border(top: BorderSide(color: Colors.grey.shade300)),
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(12),
+          bottomRight: Radius.circular(12),
+        ),
+      ),
+      child:
+          compact
+              ? Column(
+                children: [
+                  Text(
+                    'Showing $start–$end of $total',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade700,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildPaginationIconButton(
+                        icon: Icons.chevron_left,
+                        enabled: canPrev,
+                        onPressed: () => _goToProductPage(page - 1),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        child: Text(
+                          '${page + 1} / $totalPages',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ),
+                      _buildPaginationIconButton(
+                        icon: Icons.chevron_right,
+                        enabled: canNext,
+                        onPressed: () => _goToProductPage(page + 1),
+                      ),
+                    ],
+                  ),
+                ],
+              )
+              : Row(
+                children: [
+                  Text(
+                    'Showing $start–$end of $total',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey.shade700,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const Spacer(),
+                  _buildPaginationIconButton(
+                    icon: Icons.chevron_left,
+                    enabled: canPrev,
+                    onPressed: () => _goToProductPage(page - 1),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Text(
+                      '${page + 1} / $totalPages',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ),
+                  _buildPaginationIconButton(
+                    icon: Icons.chevron_right,
+                    enabled: canNext,
+                    onPressed: () => _goToProductPage(page + 1),
+                  ),
+                ],
+              ),
+    );
+  }
+
+  Widget _buildPaginationIconButton({
+    required IconData icon,
+    required bool enabled,
+    required VoidCallback onPressed,
+  }) {
+    return IconButton(
+      tooltip: icon == Icons.chevron_left ? 'Previous page' : 'Next page',
+      onPressed: enabled ? onPressed : null,
+      icon: Icon(
+        icon,
+        size: 22,
+        color: enabled ? Colors.black87 : Colors.grey.shade400,
+      ),
+      padding: const EdgeInsets.all(8),
+      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+    );
+  }
+
+  Widget _buildMobileProductCard(Product product) {
+    final int productId = product.id ?? 0;
+    final int listIndex = products.indexWhere((p) => p.id == productId);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -220,11 +368,7 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                               border: Border.all(color: Colors.grey.shade300),
                             ),
                             child: Text(
-                              'ID: ' +
-                                  ((index >= 0 && index < _productIds.length)
-                                          ? _productIds[index]
-                                          : 0)
-                                      .toString(),
+                              'ID: $productId',
                               style: TextStyle(
                                 fontSize: 11,
                                 color: Colors.grey.shade800,
@@ -279,7 +423,7 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                         onPressed:
                             () => _showAddProductDialog(
                               product: product,
-                              index: index,
+                              index: listIndex >= 0 ? listIndex : null,
                             ),
                         padding: const EdgeInsets.all(8),
                         constraints: const BoxConstraints(
@@ -307,10 +451,7 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                       ),
                       child: IconButton(
                         onPressed: () async {
-                          final int id =
-                              (index >= 0 && index < _productIds.length)
-                                  ? _productIds[index]
-                                  : 0;
+                          final int id = productId;
                           if (id == 0) return;
                           final bool wasArchived = _showArchived;
                           final bool ok =
@@ -485,7 +626,10 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                                 child: TextField(
                                   controller: _searchController,
                                   onChanged: (value) {
-                                    setState(() => _searchQuery = value);
+                                    setState(() {
+                                      _searchQuery = value;
+                                      _pageIndex = 0;
+                                    });
                                   },
                                   style: const TextStyle(
                                     color: Colors.black87,
@@ -511,9 +655,10 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                                               ),
                                               onPressed: () {
                                                 _searchController.clear();
-                                                setState(
-                                                  () => _searchQuery = '',
-                                                );
+                                                setState(() {
+                                                  _searchQuery = '';
+                                                  _pageIndex = 0;
+                                                });
                                               },
                                             )
                                             : null,
@@ -563,11 +708,10 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                                       Expanded(
                                         child: ElevatedButton.icon(
                                           onPressed: () async {
-                                            setState(
-                                              () =>
-                                                  _showArchived =
-                                                      !_showArchived,
-                                            );
+                                            setState(() {
+                                              _showArchived = !_showArchived;
+                                              _pageIndex = 0;
+                                            });
                                             await _fetchProducts();
                                           },
                                           icon: Icon(
@@ -668,16 +812,12 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 16,
                                 ),
-                                children:
-                                    _visibleProducts().map((product) {
-                                      final index = _visibleProducts().indexOf(
-                                        product,
-                                      );
-                                      return _buildMobileProductCard(
-                                        product,
-                                        index,
-                                      );
-                                    }).toList(),
+                                children: [
+                                  ..._getPaginatedProducts().map(
+                                    _buildMobileProductCard,
+                                  ),
+                                  _buildProductsPagination(compact: true),
+                                ],
                               ),
                             ),
                           ],
@@ -728,9 +868,10 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                                         child: TextField(
                                           controller: _searchController,
                                           onChanged:
-                                              (v) => setState(
-                                                () => _searchQuery = v,
-                                              ),
+                                              (v) => setState(() {
+                                                _searchQuery = v;
+                                                _pageIndex = 0;
+                                              }),
                                           style: const TextStyle(
                                             color: Colors.black87,
                                           ),
@@ -764,10 +905,10 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                                       const Spacer(),
                                       OutlinedButton.icon(
                                         onPressed: () async {
-                                          setState(
-                                            () =>
-                                                _showArchived = !_showArchived,
-                                          );
+                                          setState(() {
+                                            _showArchived = !_showArchived;
+                                            _pageIndex = 0;
+                                          });
                                           await _fetchProducts();
                                         },
                                         icon: Icon(
@@ -964,18 +1105,19 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                                               'Archived products will appear here',
                                           actionLabel: 'Show Active Products',
                                           onAction: () async {
-                                            setState(
-                                              () => _showArchived = false,
-                                            );
+                                            setState(() {
+                                              _showArchived = false;
+                                              _pageIndex = 0;
+                                            });
                                             await _fetchProducts();
                                           },
                                         )
                                       else
-                                        ..._visibleProducts().asMap().entries.map((
+                                        ..._getPaginatedProducts().asMap().entries.map((
                                           entry,
                                         ) {
-                                          final index = entry.key;
                                           final product = entry.value;
+                                          final int productId = product.id ?? 0;
                                           return Column(
                                             children: [
                                               Row(
@@ -1004,7 +1146,7 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                                                           ),
                                                         ),
                                                         child: Text(
-                                                          '#${((index >= 0 && index < _productIds.length) ? _productIds[index] : 0).toString()}',
+                                                          '#$productId',
                                                           style:
                                                               const TextStyle(
                                                                 color: Color(
@@ -1155,7 +1297,12 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                                                                 () => _showAddProductDialog(
                                                                   product:
                                                                       product,
-                                                                  index: index,
+                                                                  index:
+                                                                      products.indexWhere(
+                                                                        (p) =>
+                                                                            p.id ==
+                                                                            productId,
+                                                                      ),
                                                                 ),
                                                             icon: Icon(
                                                               Icons
@@ -1201,13 +1348,10 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                                                           child: IconButton(
                                                             onPressed: () async {
                                                               final int id =
-                                                                  (index >= 0 &&
-                                                                          index <
-                                                                              _productIds.length)
-                                                                      ? _productIds[index]
-                                                                      : 0;
-                                                              if (id == 0)
+                                                                  productId;
+                                                              if (id == 0) {
                                                                 return;
+                                                              }
                                                               final bool
                                                               wasArchived =
                                                                   _showArchived;
@@ -1290,6 +1434,7 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                                             ],
                                           );
                                         }),
+                                      _buildProductsPagination(),
                                     ],
                                   ),
                                 ),

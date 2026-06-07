@@ -38,6 +38,8 @@ class _CustomersPageState extends State<CustomersPage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   Timer? _countdownTimer;
   final Set<int> _selectedCustomerIds = {};
+  static const int _pageSize = 20;
+  int _pageIndex = 0;
 
   @override
   void initState() {
@@ -330,6 +332,7 @@ class _CustomersPageState extends State<CustomersPage> {
     setState(() {
       _showArchived = !_showArchived;
       _selectedCustomerIds.clear();
+      _pageIndex = 0;
     });
   }
 
@@ -415,6 +418,150 @@ class _CustomersPageState extends State<CustomersPage> {
     }
 
     return result;
+  }
+
+  int get _customerTotalPages {
+    final int count = _getVisibleCustomers().length;
+    if (count == 0) return 1;
+    return (count / _pageSize).ceil();
+  }
+
+  int get _safeCustomerPageIndex =>
+      _pageIndex.clamp(0, _customerTotalPages - 1);
+
+  List<Map<String, dynamic>> _getPaginatedCustomers() {
+    final List<Map<String, dynamic>> visible = _getVisibleCustomers();
+    if (visible.length <= _pageSize) return visible;
+    final int start = _safeCustomerPageIndex * _pageSize;
+    final int end = (start + _pageSize).clamp(0, visible.length);
+    return visible.sublist(start, end);
+  }
+
+  void _goToCustomerPage(int page) {
+    setState(() {
+      _pageIndex = page.clamp(0, _customerTotalPages - 1);
+    });
+  }
+
+  Widget _buildCustomersPagination({bool compact = false}) {
+    final int total = _getVisibleCustomers().length;
+    if (total <= _pageSize) return const SizedBox.shrink();
+
+    final int totalPages = _customerTotalPages;
+    final int page = _safeCustomerPageIndex;
+    final int start = page * _pageSize + 1;
+    final int end = ((page + 1) * _pageSize).clamp(0, total);
+    final bool canPrev = page > 0;
+    final bool canNext = page < totalPages - 1;
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 12 : 16,
+        vertical: compact ? 10 : 12,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        border: Border(top: BorderSide(color: Colors.grey.shade300)),
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(12),
+          bottomRight: Radius.circular(12),
+        ),
+      ),
+      child:
+          compact
+              ? Column(
+                children: [
+                  Text(
+                    'Showing $start–$end of $total',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade700,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildPaginationIconButton(
+                        icon: Icons.chevron_left,
+                        enabled: canPrev,
+                        onPressed: () => _goToCustomerPage(page - 1),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        child: Text(
+                          '${page + 1} / $totalPages',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ),
+                      _buildPaginationIconButton(
+                        icon: Icons.chevron_right,
+                        enabled: canNext,
+                        onPressed: () => _goToCustomerPage(page + 1),
+                      ),
+                    ],
+                  ),
+                ],
+              )
+              : Row(
+                children: [
+                  Text(
+                    'Showing $start–$end of $total',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey.shade700,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const Spacer(),
+                  _buildPaginationIconButton(
+                    icon: Icons.chevron_left,
+                    enabled: canPrev,
+                    onPressed: () => _goToCustomerPage(page - 1),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Text(
+                      '${page + 1} / $totalPages',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ),
+                  _buildPaginationIconButton(
+                    icon: Icons.chevron_right,
+                    enabled: canNext,
+                    onPressed: () => _goToCustomerPage(page + 1),
+                  ),
+                ],
+              ),
+    );
+  }
+
+  Widget _buildPaginationIconButton({
+    required IconData icon,
+    required bool enabled,
+    required VoidCallback onPressed,
+  }) {
+    return IconButton(
+      tooltip: icon == Icons.chevron_left ? 'Previous page' : 'Next page',
+      onPressed: enabled ? onPressed : null,
+      icon: Icon(
+        icon,
+        size: 22,
+        color: enabled ? Colors.black87 : Colors.grey.shade400,
+      ),
+      padding: const EdgeInsets.all(8),
+      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+    );
   }
 
   Future<void> _restoreCustomer(Map<String, dynamic> customer) async {
@@ -797,6 +944,7 @@ class _CustomersPageState extends State<CustomersPage> {
                   _showExpiredOnly = false;
                   _showNotExpiredOnly = true;
                 }
+                _pageIndex = 0;
               }),
           itemBuilder:
               (context) => [
@@ -1091,6 +1239,7 @@ class _CustomersPageState extends State<CustomersPage> {
                       onChanged:
                           (val) => setState(() {
                             _searchQuery = val;
+                            _pageIndex = 0;
                           }),
                       style: const TextStyle(
                         color: Colors.black87,
@@ -1230,6 +1379,7 @@ class _CustomersPageState extends State<CustomersPage> {
                       onPressed:
                           () => setState(() {
                             _showExpiredOnly = !_showExpiredOnly;
+                            _pageIndex = 0;
                           }),
                       icon: Icon(
                         Icons.warning_amber_rounded,
@@ -1305,6 +1455,7 @@ class _CustomersPageState extends State<CustomersPage> {
                             if (val == null) return;
                             setState(() {
                               _membershipFilter = val;
+                              _pageIndex = 0;
                             });
                           },
                           style: const TextStyle(
@@ -1323,7 +1474,7 @@ class _CustomersPageState extends State<CustomersPage> {
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 children: [
-                  ..._getVisibleCustomers().map((customer) {
+                  ..._getPaginatedCustomers().map((customer) {
                     final expirationDate =
                         customer['expirationDate'] as DateTime;
                     final startDate = customer['startDate'] as DateTime;
@@ -1656,6 +1807,7 @@ class _CustomersPageState extends State<CustomersPage> {
                       ),
                     );
                   }),
+                  _buildCustomersPagination(compact: true),
                 ],
               ),
             ),
@@ -1724,6 +1876,7 @@ class _CustomersPageState extends State<CustomersPage> {
                             onChanged:
                                 (val) => setState(() {
                                   _searchQuery = val;
+                                  _pageIndex = 0;
                                 }),
                             style: const TextStyle(color: Colors.black87),
                             decoration: InputDecoration(
@@ -1969,7 +2122,7 @@ class _CustomersPageState extends State<CustomersPage> {
                         ),
                       ),
                       // Data Rows
-                      ..._getVisibleCustomers().map((customer) {
+                      ..._getPaginatedCustomers().map((customer) {
                         final expirationDate =
                             customer['expirationDate'] as DateTime;
                         final startDate = customer['startDate'] as DateTime;
@@ -2310,6 +2463,7 @@ class _CustomersPageState extends State<CustomersPage> {
                           ],
                         );
                       }),
+                      _buildCustomersPagination(),
                     ],
                   ),
                 ),

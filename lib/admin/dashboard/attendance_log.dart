@@ -62,6 +62,8 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
   DateTime? _selectedDate;
   DateTime? _selectedDayFilter;
   static const double _drawerWidth = 280;
+  static const int _pageSize = 20;
+  int _pageIndex = 0;
   bool _navCollapsed = false;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   StreamSubscription<AttendanceSnapshot>? _attendanceSubscription;
@@ -200,6 +202,149 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
     });
   }
 
+  int get _attendanceTotalPages {
+    final int count = _filteredRecords.length;
+    if (count == 0) return 1;
+    return (count / _pageSize).ceil();
+  }
+
+  int get _safeAttendancePageIndex =>
+      _pageIndex.clamp(0, _attendanceTotalPages - 1);
+
+  List<_AttendanceDisplayRow> _getPaginatedRecords() {
+    if (_filteredRecords.length <= _pageSize) return _filteredRecords;
+    final int start = _safeAttendancePageIndex * _pageSize;
+    final int end = (start + _pageSize).clamp(0, _filteredRecords.length);
+    return _filteredRecords.sublist(start, end);
+  }
+
+  void _goToAttendancePage(int page) {
+    setState(() {
+      _pageIndex = page.clamp(0, _attendanceTotalPages - 1);
+    });
+  }
+
+  Widget _buildAttendancePagination({bool compact = false}) {
+    final int total = _filteredRecords.length;
+    if (total <= _pageSize) return const SizedBox.shrink();
+
+    final int totalPages = _attendanceTotalPages;
+    final int page = _safeAttendancePageIndex;
+    final int start = page * _pageSize + 1;
+    final int end = ((page + 1) * _pageSize).clamp(0, total);
+    final bool canPrev = page > 0;
+    final bool canNext = page < totalPages - 1;
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 12 : 16,
+        vertical: compact ? 10 : 12,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        border: Border(top: BorderSide(color: Colors.grey.shade300)),
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(12),
+          bottomRight: Radius.circular(12),
+        ),
+      ),
+      child:
+          compact
+              ? Column(
+                children: [
+                  Text(
+                    'Showing $start–$end of $total',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade700,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildPaginationIconButton(
+                        icon: Icons.chevron_left,
+                        enabled: canPrev,
+                        onPressed: () => _goToAttendancePage(page - 1),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        child: Text(
+                          '${page + 1} / $totalPages',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ),
+                      _buildPaginationIconButton(
+                        icon: Icons.chevron_right,
+                        enabled: canNext,
+                        onPressed: () => _goToAttendancePage(page + 1),
+                      ),
+                    ],
+                  ),
+                ],
+              )
+              : Row(
+                children: [
+                  Text(
+                    'Showing $start–$end of $total',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey.shade700,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const Spacer(),
+                  _buildPaginationIconButton(
+                    icon: Icons.chevron_left,
+                    enabled: canPrev,
+                    onPressed: () => _goToAttendancePage(page - 1),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Text(
+                      '${page + 1} / $totalPages',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ),
+                  _buildPaginationIconButton(
+                    icon: Icons.chevron_right,
+                    enabled: canNext,
+                    onPressed: () => _goToAttendancePage(page + 1),
+                  ),
+                ],
+              ),
+    );
+  }
+
+  Widget _buildPaginationIconButton({
+    required IconData icon,
+    required bool enabled,
+    required VoidCallback onPressed,
+  }) {
+    return IconButton(
+      tooltip: icon == Icons.chevron_left ? 'Previous page' : 'Next page',
+      onPressed: enabled ? onPressed : null,
+      icon: Icon(
+        icon,
+        size: 22,
+        color: enabled ? Colors.black87 : Colors.grey.shade400,
+      ),
+      padding: const EdgeInsets.all(8),
+      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+    );
+  }
+
   Widget _buildStatusFilterHeader() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -223,7 +368,10 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
           constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
           icon: const Icon(Icons.arrow_drop_down, size: 18),
           onSelected: (value) {
-            _statusFilter = value;
+            setState(() {
+              _statusFilter = value;
+              _pageIndex = 0;
+            });
             _filterRecords();
           },
           itemBuilder:
@@ -310,6 +458,7 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
       setState(() {
         _selectedDate = picked;
         _selectedDayFilter = picked;
+        _pageIndex = 0;
       });
       _loadAttendanceRecords();
       _scheduleMidnightRefresh();
@@ -320,6 +469,7 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
     if (_selectedDate == null) return;
     setState(() {
       _selectedDayFilter = null;
+      _pageIndex = 0;
     });
     _filterRecords();
   }
@@ -341,6 +491,7 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
         _selectedDate = DateTime.now();
         _selectedDayFilter = null;
         _searchQuery = '';
+        _pageIndex = 0;
       });
       _loadAttendanceRecords();
       _scheduleMidnightRefresh();
@@ -659,7 +810,10 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
                       child: TextField(
                         controller: _searchController,
                         onChanged: (value) {
-                          setState(() => _searchQuery = value);
+                          setState(() {
+                            _searchQuery = value;
+                            _pageIndex = 0;
+                          });
                           _filterRecords();
                         },
                         style: const TextStyle(
@@ -683,7 +837,10 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
                                     icon: const Icon(Icons.clear, size: 18),
                                     onPressed: () {
                                       _searchController.clear();
-                                      setState(() => _searchQuery = '');
+                                      setState(() {
+                                        _searchQuery = '';
+                                        _pageIndex = 0;
+                                      });
                                       _filterRecords();
                                     },
                                   )
@@ -791,7 +948,10 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
                                     icon: const Icon(Icons.clear),
                                     onPressed: () {
                                       _searchController.clear();
-                                      setState(() => _searchQuery = '');
+                                      setState(() {
+                                        _searchQuery = '';
+                                        _pageIndex = 0;
+                                      });
                                       _filterRecords();
                                     },
                                   )
@@ -803,7 +963,10 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
                           fillColor: Colors.grey.shade50,
                         ),
                         onChanged: (value) {
-                          setState(() => _searchQuery = value);
+                          setState(() {
+                            _searchQuery = value;
+                            _pageIndex = 0;
+                          });
                           _filterRecords();
                         },
                       ),
@@ -960,8 +1123,8 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
         return Expanded(
           child: ListView(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            children:
-                _filteredRecords.map((record) {
+            children: [
+              ..._getPaginatedRecords().map((record) {
                   final DateTime? timeIn = record.timeIn;
                   final DateTime? timeOut = record.timeOut;
                   final DateTime? date = record.date;
@@ -1093,7 +1256,9 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
                       ),
                     ),
                   );
-                }).toList(),
+              }),
+              _buildAttendancePagination(compact: true),
+            ],
           ),
         );
       } else {
@@ -1191,13 +1356,13 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
                   ListView.separated(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    itemCount: _filteredRecords.length,
+                    itemCount: _getPaginatedRecords().length,
                     separatorBuilder:
                         (context, index) =>
                             Divider(height: 1, color: Colors.grey.shade200),
                     itemBuilder: (context, index) {
                       final _AttendanceDisplayRow record =
-                          _filteredRecords[index];
+                          _getPaginatedRecords()[index];
                       final DateTime? timeIn = record.timeIn;
                       final DateTime? timeOut = record.timeOut;
                       final DateTime? date = record.date;
@@ -1284,6 +1449,7 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
                       );
                     },
                   ),
+                  _buildAttendancePagination(),
                 ],
               ),
             ),

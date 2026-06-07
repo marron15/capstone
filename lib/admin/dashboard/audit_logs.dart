@@ -30,6 +30,8 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
   DateTimeRange? _dateRange;
   Timer? _searchDebounce;
   Timer? _autoRefreshTimer;
+  static const int _pageSize = 20;
+  int _pageIndex = 0;
 
   @override
   void initState() {
@@ -184,7 +186,10 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
     if (!mounted) return;
     if (pickedRange == null) return;
 
-    setState(() => _dateRange = pickedRange);
+    setState(() {
+      _dateRange = pickedRange;
+      _pageIndex = 0;
+    });
     _fetchLogs();
   }
 
@@ -271,6 +276,7 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
 
   void _handleSearchChanged(String value) {
     _searchQuery = value;
+    _pageIndex = 0;
     _searchDebounce?.cancel();
     _searchDebounce = Timer(const Duration(milliseconds: 350), _fetchLogs);
   }
@@ -280,8 +286,147 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
     setState(() {
       _selectedActorType = actorType;
       _selectedCategory = null;
+      _pageIndex = 0;
     });
     _fetchLogs();
+  }
+
+  int get _logTotalPages {
+    final int count = _logs.length;
+    if (count == 0) return 1;
+    return (count / _pageSize).ceil();
+  }
+
+  int get _safeLogPageIndex => _pageIndex.clamp(0, _logTotalPages - 1);
+
+  List<AuditLogEntry> _getPaginatedLogs() {
+    if (_logs.length <= _pageSize) return _logs;
+    final int start = _safeLogPageIndex * _pageSize;
+    final int end = (start + _pageSize).clamp(0, _logs.length);
+    return _logs.sublist(start, end);
+  }
+
+  void _goToLogPage(int page) {
+    setState(() {
+      _pageIndex = page.clamp(0, _logTotalPages - 1);
+    });
+  }
+
+  Widget _buildLogsPagination({bool compact = false}) {
+    final int total = _logs.length;
+    if (total <= _pageSize) return const SizedBox.shrink();
+
+    final int totalPages = _logTotalPages;
+    final int page = _safeLogPageIndex;
+    final int start = page * _pageSize + 1;
+    final int end = ((page + 1) * _pageSize).clamp(0, total);
+    final bool canPrev = page > 0;
+    final bool canNext = page < totalPages - 1;
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 12 : 16,
+        vertical: compact ? 10 : 12,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        border: Border(top: BorderSide(color: Colors.grey.shade300)),
+      ),
+      child:
+          compact
+              ? Column(
+                children: [
+                  Text(
+                    'Showing $start–$end of $total',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade700,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildPaginationIconButton(
+                        icon: Icons.chevron_left,
+                        enabled: canPrev,
+                        onPressed: () => _goToLogPage(page - 1),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        child: Text(
+                          '${page + 1} / $totalPages',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ),
+                      _buildPaginationIconButton(
+                        icon: Icons.chevron_right,
+                        enabled: canNext,
+                        onPressed: () => _goToLogPage(page + 1),
+                      ),
+                    ],
+                  ),
+                ],
+              )
+              : Row(
+                children: [
+                  Text(
+                    'Showing $start–$end of $total',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey.shade700,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const Spacer(),
+                  _buildPaginationIconButton(
+                    icon: Icons.chevron_left,
+                    enabled: canPrev,
+                    onPressed: () => _goToLogPage(page - 1),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Text(
+                      '${page + 1} / $totalPages',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ),
+                  _buildPaginationIconButton(
+                    icon: Icons.chevron_right,
+                    enabled: canNext,
+                    onPressed: () => _goToLogPage(page + 1),
+                  ),
+                ],
+              ),
+    );
+  }
+
+  Widget _buildPaginationIconButton({
+    required IconData icon,
+    required bool enabled,
+    required VoidCallback onPressed,
+  }) {
+    return IconButton(
+      tooltip: icon == Icons.chevron_left ? 'Previous page' : 'Next page',
+      onPressed: enabled ? onPressed : null,
+      icon: Icon(
+        icon,
+        size: 22,
+        color: enabled ? Colors.black87 : Colors.grey.shade400,
+      ),
+      padding: const EdgeInsets.all(8),
+      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+    );
   }
 
   bool _isReservationEntry(AuditLogEntry entry) {
@@ -525,7 +670,10 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
                 onTap: () {
                   Navigator.pop(ctx);
                   if (!allSelected) {
-                    setState(() => _selectedCategory = null);
+                    setState(() {
+                      _selectedCategory = null;
+                      _pageIndex = 0;
+                    });
                     _fetchLogs();
                   }
                 },
@@ -543,7 +691,10 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
                   onTap: () {
                     Navigator.pop(ctx);
                     if (_selectedCategory != c) {
-                      setState(() => _selectedCategory = c);
+                      setState(() {
+                        _selectedCategory = c;
+                        _pageIndex = 0;
+                      });
                       _fetchLogs();
                     }
                   },
@@ -728,7 +879,10 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
               tooltip: 'Filter category',
               icon: const Icon(Icons.arrow_drop_down, size: 18),
               onSelected: (val) {
-                setState(() => _selectedCategory = val.isEmpty ? null : val);
+                setState(() {
+                  _selectedCategory = val.isEmpty ? null : val;
+                  _pageIndex = 0;
+                });
                 _fetchLogs();
               },
               itemBuilder:
@@ -766,21 +920,36 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
     final double horizontalPad =
         MediaQuery.sizeOf(context).width < 360 ? 12.0 : 24.0;
 
+    final List<AuditLogEntry> paginatedLogs = _getPaginatedLogs();
+
     if (useCardList) {
-      return ListView.builder(
+      return ListView(
         padding: EdgeInsets.fromLTRB(horizontalPad, 8, horizontalPad, 24),
         physics: const AlwaysScrollableScrollPhysics(),
-        itemCount: _logs.length,
-        itemBuilder: (context, index) => _AuditLogCard(entry: _logs[index]),
+        children: [
+          ...paginatedLogs.map((entry) => _AuditLogCard(entry: entry)),
+          _buildLogsPagination(compact: true),
+        ],
       );
     }
 
-    return _AuditLogTable(
-      entries: _logs,
-      isAdminActivity: _selectedActorType == 'admin',
-      selectedActorType: _selectedActorType,
-      categoryFilter:
-          _shouldShowCategoryFilter ? _buildCategoryHeaderFilter() : null,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          child: _AuditLogTable(
+            entries: paginatedLogs,
+            isAdminActivity: _selectedActorType == 'admin',
+            selectedActorType: _selectedActorType,
+            categoryFilter:
+                _shouldShowCategoryFilter ? _buildCategoryHeaderFilter() : null,
+          ),
+        ),
+        Padding(
+          padding: EdgeInsets.fromLTRB(horizontalPad, 0, horizontalPad, 16),
+          child: _buildLogsPagination(),
+        ),
+      ],
     );
   }
 }
