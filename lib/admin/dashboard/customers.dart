@@ -16,7 +16,6 @@ class CustomersPage extends StatefulWidget {
 }
 
 class _CustomersPageState extends State<CustomersPage> {
-  // Data loaded from database
   List<Map<String, dynamic>> _customers = [];
   bool _isLoading = true;
   String? _errorMessage;
@@ -44,13 +43,8 @@ class _CustomersPageState extends State<CustomersPage> {
   void initState() {
     super.initState();
     _loadCustomers();
-    // Start timer for live countdown updates (updates every second)
-    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (mounted) {
-        setState(() {
-          // Trigger rebuild to update countdown displays
-        });
-      }
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
     });
   }
 
@@ -59,15 +53,6 @@ class _CustomersPageState extends State<CustomersPage> {
     _countdownTimer?.cancel();
     _searchController.dispose();
     super.dispose();
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Refresh data when returning from other pages
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadCustomers();
-    });
   }
 
   Future<void> _confirmAndArchive(Map<String, dynamic> customer) async {
@@ -106,38 +91,36 @@ class _CustomersPageState extends State<CustomersPage> {
       }
 
       setState(() => _isLoading = true);
-      final res = await ApiService.archiveCustomer(id: id);
-      if (res['success'] == true) {
-        // Move customer from active to archived list locally
-        setState(() {
-          _customers.removeWhere(
-            (c) => c['customerId'] == customer['customerId'],
-          );
-          _archivedCustomers.add(customer);
-        });
-
+      try {
+        final res = await ApiService.archiveCustomer(id: id);
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              '${customer['name'] ?? 'Customer'} has been archived',
+
+        if (res['success'] == true) {
+          setState(() {
+            _customers.removeWhere(
+              (c) => c['customerId'] == customer['customerId'],
+            );
+            _archivedCustomers.add(customer);
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                '${customer['name'] ?? 'Customer'} has been archived',
+              ),
+              backgroundColor: Colors.orange,
             ),
-            backgroundColor: Colors.orange,
-          ),
-        );
-
-        // Refresh home page data
-        RefreshService().triggerRefresh();
-      } else {
-        setState(() => _isLoading = false);
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(res['message'] ?? 'Failed to archive customer'),
-          ),
-        );
+          );
+          RefreshService().triggerRefresh();
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(res['message'] ?? 'Failed to archive customer'),
+            ),
+          );
+        }
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
       }
-      setState(() => _isLoading = false);
     }
   }
 
@@ -335,7 +318,6 @@ class _CustomersPageState extends State<CustomersPage> {
     });
   }
 
-  // Returns the list currently visible, filtered by search
   List<Map<String, dynamic>> _getVisibleCustomers() {
     final List<Map<String, dynamic>> source =
         _showArchived ? _archivedCustomers : _customers;
@@ -369,7 +351,6 @@ class _CustomersPageState extends State<CustomersPage> {
               (type.startsWith('half') && type.contains('month'));
         }).toList();
 
-    // Expired-only filter (applied after membership/search filters)
     List<Map<String, dynamic>> result = filtered;
     if (_showExpiredOnly) {
       result = filtered.where(_isCustomerExpired).toList();
@@ -538,79 +519,66 @@ class _CustomersPageState extends State<CustomersPage> {
     }
 
     setState(() => _isLoading = true);
-    final res = await ApiService.restoreCustomer(id: id);
-    if (res['success'] == true) {
-      // Move customer from archived to active list locally
-      setState(() {
-        _archivedCustomers.removeWhere(
-          (c) => c['customerId'] == customer['customerId'],
+    try {
+      final res = await ApiService.restoreCustomer(id: id);
+      if (!mounted) return;
+
+      if (res['success'] == true) {
+        setState(() {
+          _archivedCustomers.removeWhere(
+            (c) => c['customerId'] == customer['customerId'],
+          );
+          _customers.add(customer);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '${customer['name'] ?? 'Customer'} has been restored',
+            ),
+            backgroundColor: Colors.green,
+          ),
         );
-        _customers.add(customer);
-      });
-
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${customer['name'] ?? 'Customer'} has been restored'),
-          backgroundColor: Colors.green,
-        ),
-      );
-
-      // Refresh home page data
-      RefreshService().triggerRefresh();
-    } else {
-      setState(() => _isLoading = false);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(res['message'] ?? 'Failed to restore customer')),
-      );
+        RefreshService().triggerRefresh();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(res['message'] ?? 'Failed to restore customer'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
-    setState(() => _isLoading = false);
   }
 
   Future<void> _loadCustomers() async {
-    // Start loading customers
-
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
     try {
-      // Load active customers only (with passwords for admin editing)
-      // Fetch active customers with passwords for admin editing
       final result = await ApiService.getCustomersByStatusWithPasswords(
         status: 'active',
       );
-      // Avoid logging the entire result payload
 
       if (result['success'] == true && result['data'] != null) {
-        List<Map<String, dynamic>> loadedCustomers = [];
+        final List<Map<String, dynamic>> loadedCustomers = [];
 
-        for (var customerData in result['data']) {
-          // Convert API customer data to customer format
-          final customer = _convertCustomerData(customerData);
-          loadedCustomers.add(customer);
+        for (final customerData in result['data']) {
+          loadedCustomers.add(_convertCustomerData(customerData));
         }
 
-        // Loaded active customers count
-
-        // Load archived customers
-        // Loading archived customers
-        // Backend marks archived customers as "inactive"
         final archivedResult = await ApiService.getCustomersByStatus(
           status: 'inactive',
         );
-        List<Map<String, dynamic>> loadedArchivedCustomers = [];
+        final List<Map<String, dynamic>> loadedArchivedCustomers = [];
 
         if (archivedResult['success'] == true &&
             archivedResult['data'] != null) {
-          for (var customerData in archivedResult['data']) {
-            // Convert API customer data to customer format
-            final customer = _convertCustomerData(customerData);
-            loadedArchivedCustomers.add(customer);
+          for (final customerData in archivedResult['data']) {
+            loadedArchivedCustomers.add(_convertCustomerData(customerData));
           }
-          // Loaded archived customers count
         }
 
         if (mounted) {
@@ -644,7 +612,6 @@ class _CustomersPageState extends State<CustomersPage> {
   }
 
   Map<String, dynamic> _convertCustomerData(Map<String, dynamic> customerData) {
-    // Normalize membership type from various possible fields
     String normalizeMembershipType(String? raw) {
       final String val = (raw ?? '').trim().toLowerCase();
       if (val.isEmpty) return '';
@@ -656,7 +623,6 @@ class _CustomersPageState extends State<CustomersPage> {
       return 'Monthly';
     }
 
-    // Prefer nested membership field if present
     final Map<String, dynamic>? membership =
         customerData['membership'] is Map<String, dynamic>
             ? customerData['membership'] as Map<String, dynamic>
@@ -671,7 +637,6 @@ class _CustomersPageState extends State<CustomersPage> {
     DateTime expirationDate;
     DateTime startDate;
 
-    // Parse dates from any available keys
     String? expirationRaw =
         (membership?['expiration_date'] ?? customerData['expiration_date'])
             ?.toString();
@@ -737,19 +702,15 @@ class _CustomersPageState extends State<CustomersPage> {
       'customerId': customerData['customer_id'] ?? customerData['id'],
       'createdAt':
           customerData['customer_created_at'] ?? customerData['created_at'],
-      // Include original API data for the modal
       'first_name': customerData['first_name'],
       'last_name': customerData['last_name'],
       'middle_name': customerData['middle_name'],
       'phone_number': customerData['phone_number'],
       'emergency_contact_name': customerData['emergency_contact_name'],
       'emergency_contact_number': customerData['emergency_contact_number'],
-      // Address information (if available)
       'address_details': customerData['address_details'],
       'address': customerData['address'],
-      // Include password for admin editing
       'password': customerData['password'],
-      // Pass through any nested membership for downstream use
       'membership': membership,
       'membership_type': membershipType,
       'start_date': startRaw,
@@ -864,7 +825,6 @@ class _CustomersPageState extends State<CustomersPage> {
     return '$mm/$dd/$yyyy';
   }
 
-  // Header cell with dropdown for membership filter
   Widget _buildMembershipHeader() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -898,7 +858,6 @@ class _CustomersPageState extends State<CustomersPage> {
     );
   }
 
-  // Header cell with dropdown for expiration filter
   Widget _buildExpirationHeader() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -1063,10 +1022,81 @@ class _CustomersPageState extends State<CustomersPage> {
     );
   }
 
+  Widget _buildSearchField({required bool compact}) {
+    void onSearchChanged(String val) {
+      setState(() {
+        _searchQuery = val;
+        _pageIndex = 0;
+      });
+    }
+
+    if (compact) {
+      return SizedBox(
+        height: 38,
+        child: TextField(
+          controller: _searchController,
+          onChanged: onSearchChanged,
+          style: const TextStyle(color: Colors.black87, fontSize: 14),
+          decoration: InputDecoration(
+            hintText: 'Search',
+            hintStyle: TextStyle(fontSize: 14, color: Colors.grey.shade500),
+            prefixIcon: const Icon(
+              Icons.search,
+              size: 18,
+              color: Colors.black54,
+            ),
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(20),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(20),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(20),
+              borderSide: BorderSide(color: Colors.grey.shade400, width: 1.5),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 8,
+            ),
+            isDense: true,
+          ),
+        ),
+      );
+    }
+
+    return SizedBox(
+      width: 560,
+      height: 42,
+      child: TextField(
+        controller: _searchController,
+        onChanged: onSearchChanged,
+        style: const TextStyle(color: Colors.black87),
+        decoration: InputDecoration(
+          hintText: 'Search',
+          prefixIcon: const Icon(Icons.search, size: 20, color: Colors.black54),
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Colors.black26),
+          ),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 0,
+          ),
+          isDense: true,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    // No-op: fixed sidenav layout; no header-driven responsiveness required here
-
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 768;
 
@@ -1088,7 +1118,6 @@ class _CustomersPageState extends State<CustomersPage> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Desktop sidebar - hidden on mobile
             if (!isMobile)
               AnimatedContainer(
                 duration: const Duration(milliseconds: 350),
@@ -1111,12 +1140,7 @@ class _CustomersPageState extends State<CustomersPage> {
                 duration: const Duration(milliseconds: 250),
                 curve: Curves.easeOutCubic,
                 decoration: const BoxDecoration(color: Colors.white),
-                child: Column(
-                  children: [
-                    const SizedBox.shrink(),
-                    Expanded(child: _buildBody()),
-                  ],
-                ),
+                child: Column(children: [Expanded(child: _buildBody())]),
               ),
             ),
           ],
@@ -1158,31 +1182,20 @@ class _CustomersPageState extends State<CustomersPage> {
               textAlign: TextAlign.center,
               style: const TextStyle(color: Colors.grey),
             ),
-            const SizedBox(height: 24),
-            // Removed retry button - no refresh functionality needed
           ],
         ),
       );
     }
 
-    // Always render the table shell; even when there are no customers
-
-    // Keep header visible for archives even when empty
-
-    // Keep header visible for active view even when empty
-
     return isMobile
         ? Column(
           children: [
-            // Header with title row and search row stacked so the title
-            // always has space to render without competing with the search.
             Container(
               padding: const EdgeInsets.fromLTRB(8, 12, 8, 8),
               color: Colors.transparent,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Title row: menu + "Members" / "Archived Members"
                   Row(
                     children: [
                       IconButton(
@@ -1218,118 +1231,55 @@ class _CustomersPageState extends State<CustomersPage> {
                     ],
                   ),
                   const SizedBox(height: 10),
-                  // Full-width search bar
-                  SizedBox(
-                    height: 38,
-                    child: TextField(
-                      controller: _searchController,
-                      onChanged:
-                          (val) => setState(() {
-                            _searchQuery = val;
-                            _pageIndex = 0;
-                          }),
-                      style: const TextStyle(
-                        color: Colors.black87,
-                        fontSize: 14,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: 'Search',
-                        hintStyle: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey.shade500,
-                        ),
-                        prefixIcon: const Icon(
-                          Icons.search,
-                          size: 18,
-                          color: Colors.black54,
-                        ),
-                        filled: true,
-                        fillColor: Colors.white,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(20),
-                          borderSide: BorderSide(color: Colors.grey.shade300),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(20),
-                          borderSide: BorderSide(color: Colors.grey.shade300),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(20),
-                          borderSide: BorderSide(
-                            color: Colors.grey.shade400,
-                            width: 1.5,
-                          ),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
-                        ),
-                        isDense: true,
-                      ),
+                  _buildSearchField(compact: true),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: ElevatedButton.icon(
+                onPressed: _showArchivedCustomers,
+                icon: Icon(
+                  _showArchived ? Icons.people : Icons.archive,
+                  size: 16,
+                ),
+                label: Text(
+                  _showArchived ? 'View Active' : 'View Archives',
+                  style: const TextStyle(fontSize: 12),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.black87,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                ).copyWith(
+                  side: WidgetStateProperty.resolveWith(
+                    (states) => BorderSide(
+                      color:
+                          states.contains(WidgetState.hovered)
+                              ? const Color(0xFFFFA812)
+                              : Colors.black26,
                     ),
                   ),
-                ],
+                ),
               ),
             ),
-            // Action buttons for mobile - matching admin_profile.dart pattern
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              color: Colors.transparent,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: _showArchivedCustomers,
-                          icon: Icon(
-                            _showArchived ? Icons.people : Icons.archive,
-                            size: 16,
-                          ),
-                          label: Text(
-                            _showArchived ? 'View Active' : 'View Archives',
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: Colors.black87,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
-                            ),
-                          ).copyWith(
-                            side: WidgetStateProperty.resolveWith(
-                              (states) => BorderSide(
-                                color:
-                                    states.contains(WidgetState.hovered)
-                                        ? const Color(0xFFFFA812)
-                                        : Colors.black26,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            // Mobile filters
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Row(
                 children: [
-                  // Expired-only toggle
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed:
                           () => setState(() {
                             _showExpiredOnly = !_showExpiredOnly;
+                            _showNotExpiredOnly = false;
                             _pageIndex = 0;
                           }),
                       icon: Icon(
@@ -1358,7 +1308,6 @@ class _CustomersPageState extends State<CustomersPage> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  // Membership filter dropdown
                   Expanded(
                     child: Container(
                       height: 40,
@@ -1459,7 +1408,6 @@ class _CustomersPageState extends State<CustomersPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Header row with name and actions
                             Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -1468,9 +1416,6 @@ class _CustomersPageState extends State<CustomersPage> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      // Name + ID chip use Wrap so the chip
-                                      // moves to a new line on very narrow
-                                      // screens instead of being clipped.
                                       Wrap(
                                         spacing: 8,
                                         runSpacing: 4,
@@ -1550,12 +1495,9 @@ class _CustomersPageState extends State<CustomersPage> {
                                   ),
                                 ),
                                 const SizedBox(width: 8),
-                                // Action buttons – kept compact so they never
-                                // overflow on narrow phones.
                                 Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    // View / Edit button
                                     Container(
                                       decoration: BoxDecoration(
                                         color: Colors.blue.shade50,
@@ -1591,7 +1533,6 @@ class _CustomersPageState extends State<CustomersPage> {
                                       ),
                                     ),
                                     const SizedBox(width: 6),
-                                    // Archive / Restore button
                                     Container(
                                       decoration: BoxDecoration(
                                         color:
@@ -1641,11 +1582,9 @@ class _CustomersPageState extends State<CustomersPage> {
                               ],
                             ),
                             const SizedBox(height: 20),
-                            // Info grid - 2 cards centered for good balance
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                // Contact card
                                 Expanded(
                                   flex: 1,
                                   child: _buildInfoCard(
@@ -1656,7 +1595,6 @@ class _CustomersPageState extends State<CustomersPage> {
                                   ),
                                 ),
                                 const SizedBox(width: 16),
-                                // Status card
                                 Expanded(
                                   flex: 1,
                                   child: _buildInfoCard(
@@ -1671,7 +1609,6 @@ class _CustomersPageState extends State<CustomersPage> {
                               ],
                             ),
                             const SizedBox(height: 16),
-                            // Membership details
                             Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
@@ -1758,7 +1695,6 @@ class _CustomersPageState extends State<CustomersPage> {
         : Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top controls styled like the reference design
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
@@ -1777,7 +1713,6 @@ class _CustomersPageState extends State<CustomersPage> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      // Title shrinks if the row gets crowded.
                       Flexible(
                         child: FittedBox(
                           fit: BoxFit.scaleDown,
@@ -1800,40 +1735,7 @@ class _CustomersPageState extends State<CustomersPage> {
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      SizedBox(
-                        width: 560,
-                        height: 42,
-                        child: TextField(
-                          controller: _searchController,
-                          onChanged:
-                              (val) => setState(() {
-                                _searchQuery = val;
-                                _pageIndex = 0;
-                              }),
-                          style: const TextStyle(color: Colors.black87),
-                          decoration: InputDecoration(
-                            hintText: 'Search',
-                            prefixIcon: const Icon(
-                              Icons.search,
-                              size: 20,
-                              color: Colors.black54,
-                            ),
-                            filled: true,
-                            fillColor: Colors.white,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(
-                                color: Colors.black26,
-                              ),
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 0,
-                            ),
-                            isDense: true,
-                          ),
-                        ),
-                      ),
+                      _buildSearchField(compact: false),
                       const SizedBox(width: 12),
                       OutlinedButton.icon(
                         onPressed:
@@ -1880,7 +1782,7 @@ class _CustomersPageState extends State<CustomersPage> {
                           ),
                         ),
                       ),
-                      // View archives pill button
+                      const SizedBox(width: 12),
                       OutlinedButton.icon(
                         onPressed: _showArchivedCustomers,
                         icon: Icon(
@@ -1935,7 +1837,6 @@ class _CustomersPageState extends State<CustomersPage> {
                   ),
                   child: Column(
                     children: [
-                      // Header Row (match admin_profile.dart styling)
                       Container(
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         decoration: BoxDecoration(
@@ -2019,7 +1920,6 @@ class _CustomersPageState extends State<CustomersPage> {
                           ],
                         ),
                       ),
-                      // Data Rows
                       ..._getPaginatedCustomers().map((customer) {
                         final expirationDate =
                             customer['expirationDate'] as DateTime;
@@ -2248,7 +2148,6 @@ class _CustomersPageState extends State<CustomersPage> {
                                       mainAxisAlignment:
                                           MainAxisAlignment.center,
                                       children: [
-                                        // History icon button
                                         Container(
                                           decoration: BoxDecoration(
                                             color: Colors.purple.shade50,
@@ -2279,7 +2178,6 @@ class _CustomersPageState extends State<CustomersPage> {
                                           ),
                                         ),
                                         const SizedBox(width: 8),
-                                        // Membership history button
                                         Container(
                                           decoration: BoxDecoration(
                                             color: Colors.indigo.shade50,
@@ -2311,7 +2209,6 @@ class _CustomersPageState extends State<CustomersPage> {
                                           ),
                                         ),
                                         const SizedBox(width: 8),
-                                        // View/Edit icon button styled like admin table
                                         Container(
                                           decoration: BoxDecoration(
                                             color: Colors.blue.shade50,
@@ -2324,16 +2221,13 @@ class _CustomersPageState extends State<CustomersPage> {
                                           ),
                                           child: IconButton(
                                             onPressed: () async {
-                                              // Open customer modal
                                               final result =
                                                   await CustomerViewEditModal.showCustomerModal(
                                                     context,
                                                     customer,
                                                   );
-                                              // Modal result handled below
                                               if (result == true && mounted) {
                                                 setState(() {});
-                                                // Refresh home page data
                                                 RefreshService()
                                                     .triggerRefresh();
                                               }
@@ -2371,7 +2265,6 @@ class _CustomersPageState extends State<CustomersPage> {
         );
   }
 
-  // Build styled phone number button for desktop view
   Widget _buildPhoneNumberButton(String phoneNumber) {
     if (phoneNumber == 'N/A' ||
         phoneNumber.isEmpty ||
@@ -2392,7 +2285,7 @@ class _CustomersPageState extends State<CustomersPage> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: const Color(0xFFE8F5E8), // Light green background
+          color: const Color(0xFFE8F5E8),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: const Color(0xFF4CAF50).withValues(alpha: 0.3),
@@ -2402,17 +2295,13 @@ class _CustomersPageState extends State<CustomersPage> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.phone,
-              size: 16,
-              color: const Color(0xFF2E7D32), // Darker green icon
-            ),
+            Icon(Icons.phone, size: 16, color: const Color(0xFF2E7D32)),
             const SizedBox(width: 6),
             Text(
               phoneNumber,
               style: const TextStyle(
                 fontSize: 15,
-                color: Color(0xFF2E7D32), // Darker green text
+                color: Color(0xFF2E7D32),
                 fontWeight: FontWeight.w500,
               ),
             ),

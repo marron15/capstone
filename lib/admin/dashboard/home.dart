@@ -1069,12 +1069,21 @@ class _StatisticPageState extends State<StatisticPage>
           ),
           padding: EdgeInsets.symmetric(horizontal: isMobile ? 12 : 18),
           minimumSize: Size(isMobile ? 72 : 150, isMobile ? 36 : 40),
-          maximumSize: Size(
-            isMobile ? double.infinity : 200,
-            isMobile ? 36 : 40,
-          ),
         ),
       ),
+    );
+  }
+
+  Widget _buildDateFilterAndExportRow(bool isMobile) {
+    return Wrap(
+      spacing: 12,
+      runSpacing: 12,
+      alignment: WrapAlignment.end,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        _buildDateRangeButton(isMobile),
+        _buildExportButton(isMobile),
+      ],
     );
   }
 
@@ -1850,43 +1859,44 @@ class _StatisticPageState extends State<StatisticPage>
                             ),
                           SizedBox(width: isMobile ? 4 : 8),
                           Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        'Statistics Report',
-                                        style: TextStyle(
-                                          fontSize: isMobile ? 20 : 28,
-                                          fontWeight: FontWeight.w800,
-                                          color: Colors.black,
+                            child:
+                                isMobile
+                                    ? Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
+                                      children: [
+                                        Text(
+                                          'Statistics Report',
+                                          style: TextStyle(
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.w800,
+                                            color: Colors.black,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
                                         ),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
+                                        const SizedBox(height: 12),
+                                        _buildDateFilterAndExportRow(true),
+                                      ],
+                                    )
+                                    : Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            'Statistics Report',
+                                            style: const TextStyle(
+                                              fontSize: 28,
+                                              fontWeight: FontWeight.w800,
+                                              color: Colors.black,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 16),
+                                        _buildDateFilterAndExportRow(false),
+                                      ],
                                     ),
-                                    if (isMobile) _buildExportButton(isMobile),
-                                  ],
-                                ),
-                                SizedBox(height: isMobile ? 12 : 12),
-                                if (isMobile)
-                                  SizedBox(
-                                    width: double.infinity,
-                                    child: Center(
-                                      child: _buildDateRangeButton(isMobile),
-                                    ),
-                                  )
-                                else
-                                  Row(
-                                    children: [
-                                      _buildExportButton(isMobile),
-                                      const Spacer(),
-                                      _buildDateRangeButton(isMobile),
-                                    ],
-                                  ),
-                              ],
-                            ),
                           ),
                         ],
                       ),
