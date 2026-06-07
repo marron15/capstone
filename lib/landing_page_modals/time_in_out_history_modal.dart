@@ -42,8 +42,7 @@ class _TimeInOutHistoryModalState extends State<TimeInOutHistoryModal> {
   final TimeInOutHistoryExportController _exportController =
       TimeInOutHistoryExportController();
   String _statusFilter = 'All';
-  DateTime _selectedDate = DateTime.now();
-  DateTime? _selectedDayFilter;
+  DateTimeRange? _dateRange;
 
   int _sortColumnIndex = 0;
   bool _sortAscending = false;
@@ -51,6 +50,7 @@ class _TimeInOutHistoryModalState extends State<TimeInOutHistoryModal> {
   @override
   void initState() {
     super.initState();
+    _dateRange = currentMonthDateRange();
     _loadHistory();
   }
 
@@ -175,84 +175,61 @@ class _TimeInOutHistoryModalState extends State<TimeInOutHistoryModal> {
               .where((r) => r.status.toUpperCase() == _statusFilter)
               .toList();
     }
+    final DateTimeRange effectiveRange = _dateRange ?? currentMonthDateRange();
     filtered =
         filtered.where((row) {
           final DateTime? d = (row.timeIn ?? row.timeOut)?.toLocal();
           if (d == null) return false;
-          if (_selectedDayFilter != null) {
-            return d.year == _selectedDayFilter!.year &&
-                d.month == _selectedDayFilter!.month &&
-                d.day == _selectedDayFilter!.day;
-          }
-          return d.year == _selectedDate.year && d.month == _selectedDate.month;
+          return isDateWithinRange(d, effectiveRange);
         }).toList();
     return filtered;
-  }
-
-  String _formatDateLabel(DateTime d) =>
-      '${d.month.toString().padLeft(2, '0')}/${d.day.toString().padLeft(2, '0')}/${d.year}';
-
-  String _formatMonthLabel(DateTime d) =>
-      '${d.month.toString().padLeft(2, '0')}/${d.year}';
-
-  bool _isSameMonth(DateTime a, DateTime b) {
-    return a.year == b.year && a.month == b.month;
   }
 
   void _clearAllFilters() {
     setState(() {
       _statusFilter = 'All';
-      _selectedDate = DateTime.now();
-      _selectedDayFilter = null;
+      _dateRange = currentMonthDateRange();
     });
   }
 
-  Future<void> _pickDateFilter() async {
-    final DateTime today = DateTime.now();
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedDayFilter ?? _selectedDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(today.year, today.month, today.day),
-    );
-    if (picked == null) return;
-    setState(() {
-      _selectedDate = picked;
-      _selectedDayFilter = picked;
-    });
-  }
-
-  Future<void> _setWholeMonthFilter() async {
-    final DateTime? picked = await showMonthPickerDialog(
+  Future<void> _pickDateRange() async {
+    final DateTimeRange? picked = await showDateRangePickerDialog(
       context,
-      _selectedDate,
+      initialRange: _dateRange,
     );
-    if (picked == null) return;
-    setState(() {
-      _selectedDate = picked;
-      _selectedDayFilter = null;
-    });
+    if (picked == null || !mounted) return;
+    setState(() => _dateRange = picked);
   }
 
-  /// Filtered AttendanceRecord list for PDF export.
+  Widget _buildDateRangeButton() {
+    return OutlinedButton.icon(
+      onPressed: _pickDateRange,
+      icon: const Icon(Icons.event, size: 14, color: Colors.white70),
+      label: Text(
+        formatDateRangeLabel(_dateRange ?? currentMonthDateRange()),
+        style: const TextStyle(color: Colors.white70, fontSize: 12),
+      ),
+      style: OutlinedButton.styleFrom(
+        side: const BorderSide(color: Colors.white24, width: 1),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        minimumSize: const Size(0, 34),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+    );
+  }
+
   List<AttendanceRecord> _visibleRecords() {
+    final DateTimeRange effectiveRange = _dateRange ?? currentMonthDateRange();
     return _records.where((record) {
       final DateTime? d = (record.timeIn ?? record.timeOut)?.toLocal();
       if (d == null) return false;
-      if (_selectedDayFilter != null) {
-        return d.year == _selectedDayFilter!.year &&
-            d.month == _selectedDayFilter!.month &&
-            d.day == _selectedDayFilter!.day;
-      }
-      return d.year == _selectedDate.year && d.month == _selectedDate.month;
+      return isDateWithinRange(d, effectiveRange);
     }).toList();
   }
 
   String _buildDateRangeStr() {
     final String base =
-        _selectedDayFilter != null
-            ? _formatDateLabel(_selectedDayFilter!)
-            : 'Month of ${_formatMonthLabel(_selectedDate)}';
+        formatDateRangeLabel(_dateRange ?? currentMonthDateRange());
     return _statusFilter != 'All' ? '$base | Status: $_statusFilter' : base;
   }
 
@@ -321,11 +298,9 @@ class _TimeInOutHistoryModalState extends State<TimeInOutHistoryModal> {
         visible.where((r) => r.status.toUpperCase() == 'IN').length;
     final int totalOut =
         visible.where((r) => r.status.toUpperCase() == 'OUT').length;
-    final DateTime now = DateTime.now();
+    final DateTimeRange effectiveRange = _dateRange ?? currentMonthDateRange();
     final bool hasFilters =
-        _statusFilter != 'All' ||
-        _selectedDayFilter != null ||
-        !_isSameMonth(_selectedDate, now);
+        _statusFilter != 'All' || !isCurrentMonthRange(effectiveRange);
     final bool showTopClearFilters = hasFilters && visible.isNotEmpty;
 
     return Dialog(
@@ -430,68 +405,7 @@ class _TimeInOutHistoryModalState extends State<TimeInOutHistoryModal> {
                             label: 'Out: $totalOut',
                             color: const Color(0xFFC62828),
                           ),
-                          OutlinedButton.icon(
-                            onPressed: _pickDateFilter,
-                            icon: const Icon(
-                              Icons.calendar_today,
-                              size: 14,
-                              color: Colors.white70,
-                            ),
-                            label: Text(
-                              _selectedDayFilter != null
-                                  ? _formatDateLabel(_selectedDayFilter!)
-                                  : _formatMonthLabel(_selectedDate),
-                              style: const TextStyle(
-                                color: Colors.white70,
-                                fontSize: 12,
-                              ),
-                            ),
-                            style: OutlinedButton.styleFrom(
-                              side: const BorderSide(
-                                color: Colors.white24,
-                                width: 1,
-                              ),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
-                              ),
-                              minimumSize: const Size(0, 34),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                          ),
-                          OutlinedButton.icon(
-                            onPressed: _setWholeMonthFilter,
-                            icon: const Icon(
-                              Icons.calendar_view_month,
-                              size: 14,
-                              color: Colors.white70,
-                            ),
-                            label: Text(
-                              _isSameMonth(_selectedDate, DateTime.now())
-                                  ? 'Select Month'
-                                  : _formatMonthLabel(_selectedDate),
-                              style: const TextStyle(
-                                color: Colors.white70,
-                                fontSize: 12,
-                              ),
-                            ),
-                            style: OutlinedButton.styleFrom(
-                              side: const BorderSide(
-                                color: Colors.white24,
-                                width: 1,
-                              ),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
-                              ),
-                              minimumSize: const Size(0, 34),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                          ),
+                          _buildDateRangeButton(),
                           if (showTopClearFilters)
                             OutlinedButton.icon(
                               onPressed: _clearAllFilters,

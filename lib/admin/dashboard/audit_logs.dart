@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 
 import '../services/api_service.dart';
 import '../sidenav.dart';
+import '../../landing_page_modals/date_scope_pickers.dart';
 
 class AuditLogsPage extends StatefulWidget {
   const AuditLogsPage({super.key});
@@ -36,7 +37,7 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
   @override
   void initState() {
     super.initState();
-    _dateRange = _currentMonthRange();
+    _dateRange = currentMonthDateRange();
     _fetchLogs();
     _startAutoRefresh();
   }
@@ -57,137 +58,21 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
     });
   }
 
-  DateTimeRange _currentMonthRange() {
-    final now = DateTime.now();
-    final start = DateTime(now.year, now.month, 1);
-    final end = DateTime(
-      now.year,
-      now.month + 1,
-      1,
-    ).subtract(const Duration(seconds: 1));
-    return DateTimeRange(start: start, end: end);
-  }
-
   String _formatRangeLabel() {
-    final range = _dateRange ?? _currentMonthRange();
-    String fmt(DateTime d) =>
-        '${d.month.toString().padLeft(2, '0')}/${d.day.toString().padLeft(2, '0')}/${d.year}';
-    return '${fmt(range.start)} - ${fmt(range.end)}';
+    return formatDateRangeLabel(_dateRange ?? currentMonthDateRange());
   }
 
   Future<void> _pickDateRange() async {
-    final DateTime now = DateTime.now();
-    final DateTimeRange seed = _dateRange ?? _currentMonthRange();
-    final DateTime? startInitial = seed.start;
-    final DateTime? endInitial = seed.end;
-
-    final DateTimeRange? pickedRange = await showDialog<DateTimeRange?>(
-      context: context,
-      builder: (ctx) {
-        DateTime? localStart = startInitial;
-        DateTime? localEnd = endInitial;
-
-        Future<void> pickStart(StateSetter setModalState) async {
-          final res = await showDatePicker(
-            context: ctx,
-            initialDate: localStart ?? now,
-            firstDate: DateTime(now.year - 5),
-            lastDate: DateTime(now.year + 5),
-            helpText: 'Select start date',
-          );
-          if (res != null) {
-            final normalized = DateTime(res.year, res.month, res.day);
-            if (localEnd != null && localEnd!.isBefore(normalized)) {
-              localEnd = normalized;
-            }
-            setModalState(() => localStart = normalized);
-          }
-        }
-
-        Future<void> pickEnd(StateSetter setModalState) async {
-          final res = await showDatePicker(
-            context: ctx,
-            initialDate: localEnd ?? localStart ?? now,
-            firstDate: DateTime(now.year - 5),
-            lastDate: DateTime(now.year + 5),
-            helpText: 'Select end date',
-          );
-          if (res != null) {
-            final normalized = DateTime(
-              res.year,
-              res.month,
-              res.day,
-              23,
-              59,
-              59,
-            );
-            if (localStart != null && normalized.isBefore(localStart!)) {
-              return;
-            }
-            setModalState(() => localEnd = normalized);
-          }
-        }
-
-        return StatefulBuilder(
-          builder: (ctx, setState) {
-            return AlertDialog(
-              title: const Text('Select date range'),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ListTile(
-                    leading: const Icon(Icons.event),
-                    title: Text(
-                      localStart == null
-                          ? 'Select start date'
-                          : '${localStart!.month.toString().padLeft(2, '0')}/${localStart!.day.toString().padLeft(2, '0')}/${localStart!.year}',
-                    ),
-                    onTap: () => pickStart(setState),
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.event_available),
-                    title: Text(
-                      localEnd == null
-                          ? 'Select end date'
-                          : '${localEnd!.month.toString().padLeft(2, '0')}/${localEnd!.day.toString().padLeft(2, '0')}/${localEnd!.year}',
-                    ),
-                    onTap: () => pickEnd(setState),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(ctx).pop(_currentMonthRange()),
-                  child: const Text('Clear (This Month)'),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.of(ctx).pop(),
-                  child: const Text('Cancel'),
-                ),
-                ElevatedButton(
-                  onPressed:
-                      localStart == null || localEnd == null
-                          ? null
-                          : () => Navigator.of(ctx).pop(
-                            DateTimeRange(start: localStart!, end: localEnd!),
-                          ),
-                  child: const Text('Apply'),
-                ),
-              ],
-            );
-          },
-        );
-      },
+    final DateTimeRange? picked = await showDateRangePickerDialog(
+      context,
+      initialRange: _dateRange,
     );
 
     if (!mounted) return;
-    if (pickedRange == null) return;
+    if (picked == null) return;
 
     setState(() {
-      _dateRange = pickedRange;
+      _dateRange = picked;
       _pageIndex = 0;
     });
     _fetchLogs();
@@ -237,7 +122,7 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
           }).toList();
     }
 
-    final DateTimeRange effectiveRange = _dateRange ?? _currentMonthRange();
+    final DateTimeRange effectiveRange = _dateRange ?? currentMonthDateRange();
     filteredLogs =
         filteredLogs.where((entry) {
           final DateTime? createdAt = entry.createdAt;

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../pdf/export_attendance_log.dart';
+import '../../landing_page_modals/date_scope_pickers.dart';
 import '../../services/attendance_service.dart';
 import '../../services/unified_auth_state.dart';
 import '../sidenav.dart';
@@ -59,8 +60,7 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
   String _statusFilter = 'All';
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  DateTime? _selectedDate;
-  DateTime? _selectedDayFilter;
+  DateTimeRange? _dateRange;
   static const double _drawerWidth = 280;
   static const int _pageSize = 20;
   int _pageIndex = 0;
@@ -72,7 +72,7 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
   @override
   void initState() {
     super.initState();
-    _selectedDate = DateTime.now();
+    _dateRange = currentMonthDateRange();
     _loadAttendanceRecords();
     _attendanceSubscription = AttendanceService.updates.listen((_) {
       if (!mounted) return;
@@ -181,21 +181,13 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
               .toList();
     }
 
-    // Default filter is whole month, with optional exact-day override.
-    if (_selectedDate != null) {
-      filtered =
-          filtered.where((record) {
-            final DateTime? recordDate = record.date;
-            if (recordDate == null) return false;
-            if (_selectedDayFilter != null) {
-              return recordDate.year == _selectedDayFilter!.year &&
-                  recordDate.month == _selectedDayFilter!.month &&
-                  recordDate.day == _selectedDayFilter!.day;
-            }
-            return recordDate.year == _selectedDate!.year &&
-                recordDate.month == _selectedDate!.month;
-          }).toList();
-    }
+    final DateTimeRange effectiveRange = _dateRange ?? currentMonthDateRange();
+    filtered =
+        filtered.where((record) {
+          final DateTime? recordDate = record.date;
+          if (recordDate == null) return false;
+          return isDateWithinRange(recordDate, effectiveRange);
+        }).toList();
 
     setState(() {
       _filteredRecords = filtered;
@@ -446,32 +438,46 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
     return rows;
   }
 
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime today = DateTime.now();
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate ?? DateTime.now(),
-      firstDate: DateTime(2020),
-      lastDate: DateTime(today.year, today.month, today.day),
+  Future<void> _pickDateRange() async {
+    final DateTimeRange? picked = await showDateRangePickerDialog(
+      context,
+      initialRange: _dateRange,
     );
-    if (picked != null) {
-      setState(() {
-        _selectedDate = picked;
-        _selectedDayFilter = picked;
-        _pageIndex = 0;
-      });
-      _loadAttendanceRecords();
-      _scheduleMidnightRefresh();
-    }
-  }
-
-  void _setWholeMonthFilter() {
-    if (_selectedDate == null) return;
+    if (picked == null || !mounted) return;
     setState(() {
-      _selectedDayFilter = null;
+      _dateRange = picked;
       _pageIndex = 0;
     });
     _filterRecords();
+    _scheduleMidnightRefresh();
+  }
+
+  Widget _buildDateRangeButton({bool compact = false}) {
+    return OutlinedButton.icon(
+      onPressed: _pickDateRange,
+      icon: Icon(Icons.event, size: compact ? 16 : 18),
+      label: Text(
+        formatDateRangeLabel(_dateRange ?? currentMonthDateRange()),
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          fontSize: compact ? 12 : 13,
+          fontWeight: compact ? FontWeight.w600 : null,
+        ),
+      ),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: Colors.black87,
+        backgroundColor: Colors.white,
+        side: BorderSide(color: Colors.grey.shade300),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(compact ? 10 : 18),
+        ),
+        padding: EdgeInsets.symmetric(
+          horizontal: compact ? 10 : 12,
+          vertical: compact ? 8 : 10,
+        ),
+        visualDensity: compact ? VisualDensity.compact : null,
+      ),
+    );
   }
 
   void _scheduleMidnightRefresh() {
@@ -488,8 +494,7 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
       // Clear search query when date changes automatically
       _searchController.clear();
       setState(() {
-        _selectedDate = DateTime.now();
-        _selectedDayFilter = null;
+        _dateRange = currentMonthDateRange();
         _searchQuery = '';
         _pageIndex = 0;
       });
@@ -514,13 +519,6 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
     final String month = date.month.toString().padLeft(2, '0');
     final String year = date.year.toString();
     return '$month/$day/$year';
-  }
-
-  String _formatMonthYear(DateTime? date) {
-    if (date == null) return 'Month';
-    final String month = date.month.toString().padLeft(2, '0');
-    final String year = date.year.toString();
-    return '$month/$year';
   }
 
   String _formatDuration(Duration? duration) {
@@ -724,50 +722,10 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
                     ],
                   ),
                   const SizedBox(height: 10),
-                  // Actions row: calendar filter + clear filter + qr + refresh
+                  // Actions row: date range + qr + refresh
                   Row(
                     children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () => _selectDate(context),
-                          icon: const Icon(Icons.calendar_today, size: 16),
-                          label: Text(
-                            _selectedDayFilter != null
-                                ? _formatDate(_selectedDayFilter)
-                                : _formatMonthYear(_selectedDate),
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 8,
-                            ),
-                            visualDensity: VisualDensity.compact,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                        ),
-                      ),
-                      if (_selectedDayFilter != null) ...[
-                        const SizedBox(width: 4),
-                        IconButton(
-                          icon: const Icon(Icons.filter_alt_off, size: 20),
-                          tooltip: 'Use whole month',
-                          onPressed: _setWholeMonthFilter,
-                          padding: EdgeInsets.zero,
-                          visualDensity: VisualDensity.compact,
-                          constraints: const BoxConstraints(
-                            minWidth: 36,
-                            minHeight: 36,
-                          ),
-                        ),
-                      ],
+                      Expanded(child: _buildDateRangeButton(compact: true)),
                       if (unifiedAuthState.isAdminLoggedIn) ...[
                         const SizedBox(width: 4),
                         IconButton(
@@ -978,39 +936,7 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      OutlinedButton.icon(
-                        onPressed: () => _selectDate(context),
-                        icon: const Icon(Icons.calendar_today, size: 18),
-                        label: Text(
-                          _selectedDayFilter != null
-                              ? _formatDate(_selectedDayFilter)
-                              : _selectedDate != null
-                              ? _formatMonthYear(_selectedDate)
-                              : 'Select Month',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 10,
-                          ),
-                        ),
-                      ),
-                      if (_selectedDayFilter != null) ...[
-                        const SizedBox(width: 8),
-                        OutlinedButton.icon(
-                          onPressed: _setWholeMonthFilter,
-                          icon: const Icon(Icons.filter_alt_off, size: 18),
-                          label: const Text('Whole Month'),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 10,
-                            ),
-                          ),
-                        ),
-                      ],
+                      _buildDateRangeButton(),
                       const SizedBox(width: 8),
                       if (unifiedAuthState.isAdminLoggedIn)
                         OutlinedButton.icon(
@@ -1105,11 +1031,7 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  _selectedDate != null
-                      ? _selectedDayFilter != null
-                          ? 'for ${_formatDate(_selectedDayFilter)}'
-                          : 'for ${_formatMonthYear(_selectedDate)}'
-                      : '',
+                  'for ${formatDateRangeLabel(_dateRange ?? currentMonthDateRange())}',
                   style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
                 ),
               ],
@@ -1125,137 +1047,137 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             children: [
               ..._getPaginatedRecords().map((record) {
-                  final DateTime? timeIn = record.timeIn;
-                  final DateTime? timeOut = record.timeOut;
-                  final DateTime? date = record.date;
-                  final Duration? duration = record.duration;
+                final DateTime? timeIn = record.timeIn;
+                final DateTime? timeOut = record.timeOut;
+                final DateTime? date = record.date;
+                final Duration? duration = record.duration;
 
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.grey.shade200),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.08),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      record.customerName,
-                                      style: const TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.black87,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'ID: ${record.customerId}',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey.shade600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              _buildStatusChip(record),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _buildInfoCard(
-                                  'Date',
-                                  _formatDate(date),
-                                  Icons.calendar_today,
-                                  Colors.blue,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: _buildInfoCard(
-                                  'Time In',
-                                  _formatTime(timeIn),
-                                  Icons.login,
-                                  Colors.green,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _buildInfoCard(
-                                  'Time Out',
-                                  _formatTime(timeOut),
-                                  Icons.logout,
-                                  Colors.red,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: _buildInfoCard(
-                                  'Duration',
-                                  _formatDuration(duration),
-                                  Icons.access_time,
-                                  Colors.orange,
-                                ),
-                              ),
-                            ],
-                          ),
-                          if (record.verifyingAdminName != null &&
-                              record.verifyingAdminName!.isNotEmpty) ...[
-                            const SizedBox(height: 8),
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade50,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: Colors.grey.shade200),
-                              ),
-                              child: Row(
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.grey.shade200),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.08),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Icon(
-                                    Icons.verified_user,
-                                    size: 16,
-                                    color: Colors.grey.shade600,
+                                  Text(
+                                    record.customerName,
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black87,
+                                    ),
                                   ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      'Verified by: ${record.verifyingAdminName}',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey.shade700,
-                                      ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'ID: ${record.customerId}',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey.shade600,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
+                            _buildStatusChip(record),
                           ],
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildInfoCard(
+                                'Date',
+                                _formatDate(date),
+                                Icons.calendar_today,
+                                Colors.blue,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _buildInfoCard(
+                                'Time In',
+                                _formatTime(timeIn),
+                                Icons.login,
+                                Colors.green,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildInfoCard(
+                                'Time Out',
+                                _formatTime(timeOut),
+                                Icons.logout,
+                                Colors.red,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _buildInfoCard(
+                                'Duration',
+                                _formatDuration(duration),
+                                Icons.access_time,
+                                Colors.orange,
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (record.verifyingAdminName != null &&
+                            record.verifyingAdminName!.isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade50,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.grey.shade200),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.verified_user,
+                                  size: 16,
+                                  color: Colors.grey.shade600,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Verified by: ${record.verifyingAdminName}',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey.shade700,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ],
-                      ),
+                      ],
                     ),
-                  );
+                  ),
+                );
               }),
               _buildAttendancePagination(compact: true),
             ],

@@ -2,6 +2,163 @@ import 'package:flutter/material.dart';
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
+/// First day of the current month through last second of the current month.
+DateTimeRange currentMonthDateRange() {
+  final now = DateTime.now();
+  final start = DateTime(now.year, now.month, 1);
+  final end = DateTime(
+    now.year,
+    now.month + 1,
+    1,
+  ).subtract(const Duration(seconds: 1));
+  return DateTimeRange(start: start, end: end);
+}
+
+String formatDateRangeLabel(DateTimeRange range) {
+  String fmt(DateTime d) =>
+      '${d.month.toString().padLeft(2, '0')}/${d.day.toString().padLeft(2, '0')}/${d.year}';
+  return '${fmt(range.start)} - ${fmt(range.end)}';
+}
+
+bool isSameCalendarDay(DateTime a, DateTime b) {
+  return a.year == b.year && a.month == b.month && a.day == b.day;
+}
+
+bool isCurrentMonthRange(DateTimeRange range) {
+  final current = currentMonthDateRange();
+  return isSameCalendarDay(range.start, current.start) &&
+      isSameCalendarDay(range.end, current.end);
+}
+
+/// Compares calendar dates only (ignores time-of-day on [date]).
+bool isDateWithinRange(DateTime date, DateTimeRange range) {
+  final local = date.toLocal();
+  final day = DateTime(local.year, local.month, local.day);
+  final start = DateTime(
+    range.start.year,
+    range.start.month,
+    range.start.day,
+  );
+  final end = DateTime(range.end.year, range.end.month, range.end.day);
+  return !day.isBefore(start) && !day.isAfter(end);
+}
+
+/// Audit-log style start/end date picker. Returns null when cancelled.
+/// "Clear (This Month)" returns [currentMonthDateRange].
+Future<DateTimeRange?> showDateRangePickerDialog(
+  BuildContext context, {
+  DateTimeRange? initialRange,
+  int yearsBack = 5,
+  int yearsForward = 5,
+}) async {
+  final DateTime now = DateTime.now();
+  final DateTimeRange seed = initialRange ?? currentMonthDateRange();
+  final DateTime? startInitial = seed.start;
+  final DateTime? endInitial = seed.end;
+
+  return showDialog<DateTimeRange?>(
+    context: context,
+    builder: (ctx) {
+      DateTime? localStart = startInitial;
+      DateTime? localEnd = endInitial;
+
+      Future<void> pickStart(StateSetter setModalState) async {
+        final res = await showDatePicker(
+          context: ctx,
+          initialDate: localStart ?? now,
+          firstDate: DateTime(now.year - yearsBack),
+          lastDate: DateTime(now.year + yearsForward),
+          helpText: 'Select start date',
+        );
+        if (res != null) {
+          final normalized = DateTime(res.year, res.month, res.day);
+          if (localEnd != null && localEnd!.isBefore(normalized)) {
+            localEnd = normalized;
+          }
+          setModalState(() => localStart = normalized);
+        }
+      }
+
+      Future<void> pickEnd(StateSetter setModalState) async {
+        final res = await showDatePicker(
+          context: ctx,
+          initialDate: localEnd ?? localStart ?? now,
+          firstDate: DateTime(now.year - yearsBack),
+          lastDate: DateTime(now.year + yearsForward),
+          helpText: 'Select end date',
+        );
+        if (res != null) {
+          final normalized = DateTime(
+            res.year,
+            res.month,
+            res.day,
+            23,
+            59,
+            59,
+          );
+          if (localStart != null && normalized.isBefore(localStart!)) {
+            return;
+          }
+          setModalState(() => localEnd = normalized);
+        }
+      }
+
+      return StatefulBuilder(
+        builder: (ctx, setState) {
+          return AlertDialog(
+            title: const Text('Select date range'),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.event),
+                  title: Text(
+                    localStart == null
+                        ? 'Select start date'
+                        : '${localStart!.month.toString().padLeft(2, '0')}/${localStart!.day.toString().padLeft(2, '0')}/${localStart!.year}',
+                  ),
+                  onTap: () => pickStart(setState),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.event_available),
+                  title: Text(
+                    localEnd == null
+                        ? 'Select end date'
+                        : '${localEnd!.month.toString().padLeft(2, '0')}/${localEnd!.day.toString().padLeft(2, '0')}/${localEnd!.year}',
+                  ),
+                  onTap: () => pickEnd(setState),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(currentMonthDateRange()),
+                child: const Text('Clear (This Month)'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed:
+                    localStart == null || localEnd == null
+                        ? null
+                        : () => Navigator.of(ctx).pop(
+                          DateTimeRange(start: localStart!, end: localEnd!),
+                        ),
+                child: const Text('Apply'),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+}
+
 /// Opens a month-grid picker dialog.
 /// Returns a [DateTime] with day=1 for the chosen month, or null if cancelled.
 Future<DateTime?> showMonthPickerDialog(
