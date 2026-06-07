@@ -487,8 +487,6 @@ class _ProfilePageState extends State<ProfilePage>
                 SizedBox(height: 16),
                 // Password field removed
               ],
-              SizedBox(height: 32),
-
               _buildActionButtons(
                 isDarkMode: _isDarkMode,
                 hasChanges: _hasPersonalChanges,
@@ -633,8 +631,6 @@ class _ProfilePageState extends State<ProfilePage>
                   right: SizedBox.shrink(),
                 ),
               ],
-              SizedBox(height: 32),
-
               _buildActionButtons(
                 isDarkMode: _isDarkMode,
                 hasChanges: _hasAddressChanges,
@@ -714,8 +710,6 @@ class _ProfilePageState extends State<ProfilePage>
                   ),
                 ),
               ],
-              SizedBox(height: 32),
-
               _buildActionButtons(
                 isDarkMode: _isDarkMode,
                 hasChanges: _hasEmergencyChanges,
@@ -1276,6 +1270,10 @@ class _ProfilePageState extends State<ProfilePage>
     required VoidCallback onCancel,
     required Future<void> Function() onSave,
   }) {
+    if (!hasChanges && !isSaving) {
+      return const SizedBox.shrink();
+    }
+
     final bool cancelEnabled = hasChanges && !isSaving;
     final bool saveEnabled = canSave;
 
@@ -1291,79 +1289,83 @@ class _ProfilePageState extends State<ProfilePage>
     final Color? cancelBgDisabled =
         isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.grey.shade100;
 
-    return Row(
-      children: [
-        OutlinedButton(
-          onPressed: cancelEnabled ? onCancel : null,
-          style: ButtonStyle(
-            foregroundColor: WidgetStateProperty.resolveWith((states) {
-              if (states.contains(WidgetState.disabled)) {
-                return cancelFgDisabled;
-              }
-              return cancelFgNormal;
-            }),
-            backgroundColor: WidgetStateProperty.resolveWith((states) {
-              if (states.contains(WidgetState.disabled)) {
-                return cancelBgDisabled;
-              }
-              return cancelBgNormal ?? Colors.transparent;
-            }),
-            side: WidgetStateProperty.resolveWith((states) {
-              if (states.contains(WidgetState.disabled)) {
-                return BorderSide(color: cancelBorderDisabled, width: 1.2);
-              }
-              return BorderSide(color: cancelBorderNormal, width: 1.2);
-            }),
-            padding: WidgetStateProperty.all(
-              const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+    return Padding(
+      padding: const EdgeInsets.only(top: 32),
+      child: Row(
+        children: [
+          OutlinedButton(
+            onPressed: cancelEnabled ? onCancel : null,
+            style: ButtonStyle(
+              foregroundColor: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.disabled)) {
+                  return cancelFgDisabled;
+                }
+                return cancelFgNormal;
+              }),
+              backgroundColor: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.disabled)) {
+                  return cancelBgDisabled;
+                }
+                return cancelBgNormal ?? Colors.transparent;
+              }),
+              side: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.disabled)) {
+                  return BorderSide(color: cancelBorderDisabled, width: 1.2);
+                }
+                return BorderSide(color: cancelBorderNormal, width: 1.2);
+              }),
+              padding: WidgetStateProperty.all(
+                const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              ),
+              overlayColor: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.pressed)) {
+                  return Colors.white.withValues(alpha: 0.12);
+                }
+                return null;
+              }),
             ),
-            overlayColor: WidgetStateProperty.resolveWith((states) {
-              if (states.contains(WidgetState.pressed)) {
-                return Colors.white.withValues(alpha: 0.12);
-              }
-              return null;
-            }),
+            child: const Text('Cancel'),
           ),
-          child: const Text('Cancel'),
-        ),
         const SizedBox(width: 12),
-        ElevatedButton(
-          onPressed: saveEnabled ? () => onSave() : null,
-          style: ButtonStyle(
-            foregroundColor: WidgetStateProperty.resolveWith((states) {
-              if (states.contains(WidgetState.disabled)) {
-                return isDarkMode
-                    ? Colors.white.withValues(alpha: 0.75)
-                    : Colors.black45;
-              }
-              return Colors.black87;
-            }),
-            backgroundColor: WidgetStateProperty.resolveWith((states) {
-              if (states.contains(WidgetState.disabled)) {
-                return isDarkMode
-                    ? Colors.grey.shade700
-                    : Colors.grey.shade400;
-              }
-              return const Color(0xFFFF8C00);
-            }),
-            padding: WidgetStateProperty.all(
-              const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          ElevatedButton(
+            onPressed: saveEnabled ? () => onSave() : null,
+            style: ButtonStyle(
+              foregroundColor: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.disabled)) {
+                  return isDarkMode
+                      ? Colors.white.withValues(alpha: 0.75)
+                      : Colors.black45;
+                }
+                return Colors.black87;
+              }),
+              backgroundColor: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.disabled)) {
+                  return isDarkMode
+                      ? Colors.grey.shade700
+                      : Colors.grey.shade400;
+                }
+                return const Color(0xFFFF8C00);
+              }),
+              padding: WidgetStateProperty.all(
+                const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              ),
+              elevation: WidgetStateProperty.all(0),
             ),
-            elevation: WidgetStateProperty.all(0),
+            child:
+                isSaving
+                    ? const SizedBox(
+                      height: 18,
+                      width: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor:
+                            AlwaysStoppedAnimation<Color>(Colors.black87),
+                      ),
+                    )
+                    : const Text('Save Changes'),
           ),
-          child:
-              isSaving
-                  ? const SizedBox(
-                    height: 18,
-                    width: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.black87),
-                    ),
-                  )
-                  : const Text('Save Changes'),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
