@@ -4,6 +4,7 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:file_saver/file_saver.dart';
+import '../../landing_page_modals/date_scope_pickers.dart';
 import '../services/api_service.dart';
 
 bool _hasLogValue(dynamic value) {
@@ -88,8 +89,7 @@ class _MemberHistoryDialogState extends State<_MemberHistoryDialog> {
   String? _error;
   bool _isExporting = false;
   String _statusFilter = 'All';
-  DateTime _selectedDate = DateTime.now();
-  DateTime? _selectedDayFilter;
+  DateTimeRange? _dateRange;
 
   // Sorting state
   int _sortColumnIndex = 0;
@@ -98,6 +98,7 @@ class _MemberHistoryDialogState extends State<_MemberHistoryDialog> {
   @override
   void initState() {
     super.initState();
+    _dateRange = currentMonthDateRange();
     _fetchLogs();
   }
 
@@ -188,21 +189,14 @@ class _MemberHistoryDialogState extends State<_MemberHistoryDialog> {
           return _normalizeStatus(log) == _statusFilter;
         }).toList();
 
+    final DateTimeRange effectiveRange = _dateRange ?? currentMonthDateRange();
     filtered =
         filtered.where((log) {
           final DateTime? recordDate = _parseLogDate(
             log['date'] ?? log['time_in'] ?? log['time_out'],
           );
           if (recordDate == null) return false;
-
-          if (_selectedDayFilter != null) {
-            return recordDate.year == _selectedDayFilter!.year &&
-                recordDate.month == _selectedDayFilter!.month &&
-                recordDate.day == _selectedDayFilter!.day;
-          }
-
-          return recordDate.year == _selectedDate.year &&
-              recordDate.month == _selectedDate.month;
+          return isDateWithinRange(recordDate, effectiveRange);
         }).toList();
 
     filtered.sort((a, b) {
@@ -242,39 +236,13 @@ class _MemberHistoryDialogState extends State<_MemberHistoryDialog> {
     return DateTime.tryParse(text)?.toLocal();
   }
 
-  String _formatDateLabel(DateTime date) {
-    final String mm = date.month.toString().padLeft(2, '0');
-    final String dd = date.day.toString().padLeft(2, '0');
-    final String yyyy = date.year.toString();
-    return '$mm/$dd/$yyyy';
-  }
-
-  String _formatMonthLabel(DateTime date) {
-    final String mm = date.month.toString().padLeft(2, '0');
-    final String yyyy = date.year.toString();
-    return '$mm/$yyyy';
-  }
-
-  Future<void> _pickDateFilter() async {
-    final DateTime today = DateTime.now();
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedDayFilter ?? _selectedDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(today.year, today.month, today.day),
+  Future<void> _pickDateRange() async {
+    final DateTimeRange? picked = await showDateRangePickerDialog(
+      context,
+      initialRange: _dateRange,
     );
-    if (picked == null) return;
-
-    setState(() {
-      _selectedDate = picked;
-      _selectedDayFilter = picked;
-    });
-  }
-
-  void _setWholeMonthFilter() {
-    setState(() {
-      _selectedDayFilter = null;
-    });
+    if (picked == null || !mounted) return;
+    setState(() => _dateRange = picked);
   }
 
   // ── Formatters ────────────────────────────────────────────
@@ -436,27 +404,17 @@ class _MemberHistoryDialogState extends State<_MemberHistoryDialog> {
           ),
           const SizedBox(width: 10),
           OutlinedButton.icon(
-            onPressed: _pickDateFilter,
-            icon: const Icon(Icons.calendar_today, size: 16),
+            onPressed: _pickDateRange,
+            icon: const Icon(Icons.event, size: 16),
             label: Text(
-              _selectedDayFilter != null
-                  ? _formatDateLabel(_selectedDayFilter!)
-                  : _formatMonthLabel(_selectedDate),
+              formatDateRangeLabel(_dateRange ?? currentMonthDateRange()),
+              overflow: TextOverflow.ellipsis,
             ),
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               minimumSize: const Size(0, 40),
             ),
           ),
-          if (_selectedDayFilter != null) ...[
-            const SizedBox(width: 10),
-            IconButton(
-              onPressed: _setWholeMonthFilter,
-              tooltip: 'Whole Month',
-              icon: const Icon(Icons.filter_alt_off),
-            ),
-            const SizedBox(width: 6),
-          ],
           const SizedBox(width: 10),
           // Export PDF button
           Padding(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../landing_page_modals/date_scope_pickers.dart';
 import '../pdf/admin_renewal_membership.dart';
 import '../services/api_service.dart';
 
@@ -30,8 +31,7 @@ class _RenewMembershipHistoryDialogState
   bool _isLoading = true;
   String? _error;
   String _typeFilter = 'All';
-  DateTime _selectedDate = DateTime.now();
-  DateTime? _selectedDayFilter;
+  DateTimeRange? _dateRange;
   int _sortColumnIndex = 4;
   bool _sortAscending = false;
   bool _isExportingPdf = false;
@@ -50,6 +50,7 @@ class _RenewMembershipHistoryDialogState
   @override
   void initState() {
     super.initState();
+    _dateRange = currentMonthDateRange();
     _fetchMembershipHistory();
   }
 
@@ -151,44 +152,13 @@ class _RenewMembershipHistoryDialogState
     });
   }
 
-  Future<void> _pickDate() async {
-    final DateTime now = DateTime.now();
-    final DateTime today = DateTime(now.year, now.month, now.day);
-    final DateTime baseDate = _selectedDayFilter ?? _selectedDate;
-    final DateTime initialDate = baseDate.isAfter(today) ? today : baseDate;
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: initialDate,
-      firstDate: DateTime(2020),
-      lastDate: today,
-      selectableDayPredicate: (day) {
-        final DateTime candidate = DateTime(day.year, day.month, day.day);
-        return !candidate.isAfter(today);
-      },
-      helpText: 'Select date',
+  Future<void> _pickDateRange() async {
+    final DateTimeRange? picked = await showDateRangePickerDialog(
+      context,
+      initialRange: _dateRange,
     );
-    if (picked == null) return;
-    setState(() {
-      _selectedDate = DateTime(picked.year, picked.month, picked.day);
-      _selectedDayFilter = _selectedDate;
-    });
-  }
-
-  void _setWholeMonthFilter() {
-    setState(() {
-      _selectedDayFilter = null;
-    });
-  }
-
-  String _formatDateLabel(DateTime date) {
-    final String mm = date.month.toString().padLeft(2, '0');
-    final String dd = date.day.toString().padLeft(2, '0');
-    return '$mm/$dd/${date.year}';
-  }
-
-  String _formatMonthLabel(DateTime date) {
-    final String mm = date.month.toString().padLeft(2, '0');
-    return '$mm/${date.year}';
+    if (picked == null || !mounted) return;
+    setState(() => _dateRange = picked);
   }
 
   String _verifiedByLabel(Map<String, dynamic> row) {
@@ -238,10 +208,7 @@ class _RenewMembershipHistoryDialogState
         context: context,
         memberName: _memberName,
         customerId: _customerId,
-        rangeLabel:
-            _selectedDayFilter != null
-                ? _formatDateLabel(_selectedDayFilter!)
-                : _formatMonthLabel(_selectedDate),
+        rangeLabel: formatDateRangeLabel(_dateRange ?? currentMonthDateRange()),
         membershipFilter: _typeFilter,
         rows: _buildPdfRows(rows),
       );
@@ -269,14 +236,9 @@ class _RenewMembershipHistoryDialogState
               _parseDate(row['start_date']);
           if (anchor == null) return false;
 
-          if (_selectedDayFilter != null) {
-            return anchor.year == _selectedDayFilter!.year &&
-                anchor.month == _selectedDayFilter!.month &&
-                anchor.day == _selectedDayFilter!.day;
-          }
-
-          return anchor.year == _selectedDate.year &&
-              anchor.month == _selectedDate.month;
+          final DateTimeRange effectiveRange =
+              _dateRange ?? currentMonthDateRange();
+          return isDateWithinRange(anchor, effectiveRange);
         }).toList();
 
     int compareDate(dynamic a, dynamic b) {
@@ -466,12 +428,11 @@ class _RenewMembershipHistoryDialogState
           ),
           const SizedBox(width: 10),
           OutlinedButton.icon(
-            onPressed: _pickDate,
-            icon: const Icon(Icons.calendar_today, size: 16),
+            onPressed: _pickDateRange,
+            icon: const Icon(Icons.event, size: 16),
             label: Text(
-              _selectedDayFilter != null
-                  ? _formatDateLabel(_selectedDayFilter!)
-                  : _formatMonthLabel(_selectedDate),
+              formatDateRangeLabel(_dateRange ?? currentMonthDateRange()),
+              overflow: TextOverflow.ellipsis,
             ),
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -506,15 +467,6 @@ class _RenewMembershipHistoryDialogState
               minimumSize: const Size(0, 40),
             ),
           ),
-          if (_selectedDayFilter != null) ...[
-            const SizedBox(width: 10),
-            IconButton(
-              onPressed: _setWholeMonthFilter,
-              tooltip: 'Whole Month',
-              icon: const Icon(Icons.filter_alt_off),
-            ),
-            const SizedBox(width: 6),
-          ],
           const SizedBox(width: 10),
           IconButton(
             onPressed: () => Navigator.of(context).pop(),

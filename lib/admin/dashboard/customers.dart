@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import '../sidenav.dart';
 import '../modal/customer_view_edit_modal.dart';
-import '../modal/member_history_modal.dart';
+import '../modal/timein_timeout_history_modal.dart';
 import '../modal/renew_membership_history_modal.dart';
 import '../services/api_service.dart';
 import '../services/refresh_service.dart';
@@ -373,49 +373,12 @@ class _CustomersPageState extends State<CustomersPage> {
     // Expired-only filter (applied after membership/search filters)
     List<Map<String, dynamic>> result = filtered;
     if (_showExpiredOnly) {
-      final DateTime now = DateTime.now();
-      result =
-          filtered.where((c) {
-            final DateTime exp = c['expirationDate'] as DateTime;
-            final String membershipType =
-                (c['membershipType'] ?? '').toString();
-            // For Daily memberships, compare with current time including hours/minutes
-            // Expires at or after 9 PM (inclusive)
-            // For other memberships, compare with start of day
-            if (membershipType == 'Daily') {
-              return !exp.isAfter(now);
-            } else {
-              final DateTime todayOnly = DateTime(now.year, now.month, now.day);
-              return exp.isBefore(todayOnly);
-            }
-          }).toList();
+      result = filtered.where(_isCustomerExpired).toList();
     } else if (_showNotExpiredOnly) {
-      final DateTime now = DateTime.now();
-      result =
-          filtered.where((c) {
-            final DateTime exp = c['expirationDate'] as DateTime;
-            final String membershipType =
-                (c['membershipType'] ?? '').toString();
-            // For Daily memberships, compare with current time including hours/minutes
-            // Not expired means expiration is after current time
-            // For other memberships, compare with start of day
-            if (membershipType == 'Daily') {
-              return exp.isAfter(now);
-            } else {
-              final DateTime todayOnly = DateTime(now.year, now.month, now.day);
-              return !exp.isBefore(todayOnly);
-            }
-          }).toList();
+      result = filtered.where((c) => !_isCustomerExpired(c)).toList();
     }
 
-    // Sort by soonest expiration when viewing All
-    if (_membershipFilter == 'All') {
-      result.sort((a, b) {
-        final DateTime aExp = a['expirationDate'] as DateTime;
-        final DateTime bExp = b['expirationDate'] as DateTime;
-        return aExp.compareTo(bExp);
-      });
-    }
+    result.sort(_compareCustomersByStatusAndExpiration);
 
     return result;
   }
@@ -796,13 +759,38 @@ class _CustomersPageState extends State<CustomersPage> {
     };
   }
 
+  bool _isCustomerExpired(Map<String, dynamic> customer) {
+    final DateTime exp = customer['expirationDate'] as DateTime;
+    final String membershipType = (customer['membershipType'] ?? '').toString();
+    final DateTime now = DateTime.now();
+    if (membershipType == 'Daily') {
+      return !exp.isAfter(now);
+    }
+    final DateTime todayOnly = DateTime(now.year, now.month, now.day);
+    return exp.isBefore(todayOnly);
+  }
+
+  int _compareCustomersByStatusAndExpiration(
+    Map<String, dynamic> a,
+    Map<String, dynamic> b,
+  ) {
+    final bool aExpired = _isCustomerExpired(a);
+    final bool bExpired = _isCustomerExpired(b);
+    if (aExpired != bExpired) {
+      return aExpired ? 1 : -1;
+    }
+
+    final DateTime aExp = a['expirationDate'] as DateTime;
+    final DateTime bExp = b['expirationDate'] as DateTime;
+    if (aExpired) {
+      return bExp.compareTo(aExp);
+    }
+    return aExp.compareTo(bExp);
+  }
+
   void _sortCustomersByExpiration() {
     if (_customers.isNotEmpty) {
-      _customers.sort((a, b) {
-        final DateTime dateA = a['expirationDate'] as DateTime;
-        final DateTime dateB = b['expirationDate'] as DateTime;
-        return dateA.compareTo(dateB);
-      });
+      _customers.sort(_compareCustomersByStatusAndExpiration);
     }
   }
 
@@ -978,7 +966,7 @@ class _CustomersPageState extends State<CustomersPage> {
                     children: const [
                       Icon(Icons.check_circle, size: 18, color: Colors.green),
                       SizedBox(width: 8),
-                      Text('Not Expired Only'),
+                      Text('Active Members'),
                     ],
                   ),
                 ),
@@ -1488,16 +1476,7 @@ class _CustomersPageState extends State<CustomersPage> {
                       membershipType: membershipType,
                       isStartDate: true,
                     );
-                    final DateTime _nowM = DateTime.now();
-                    // For Daily memberships, compare with current time including hours/minutes
-                    // Expires at or after 9 PM (inclusive)
-                    // For other memberships, compare with start of day
-                    final bool _isExpiredM =
-                        membershipType == 'Daily'
-                            ? !expirationDate.isAfter(_nowM)
-                            : expirationDate.isBefore(
-                              DateTime(_nowM.year, _nowM.month, _nowM.day),
-                            );
+                    final bool _isExpiredM = _isCustomerExpired(customer);
                     return Container(
                       margin: const EdgeInsets.only(bottom: 12),
                       decoration: BoxDecoration(
