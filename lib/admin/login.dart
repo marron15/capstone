@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'services/admin_service.dart';
 import '../services/unified_auth_state.dart';
+import '../utils/auth_feedback.dart';
 import '../utils/dom_input_utils.dart';
 
 class LoginPage extends StatefulWidget {
@@ -102,15 +103,14 @@ class _LoginPageState extends State<LoginPage> {
           refreshToken: result['refresh_token'],
         );
 
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Welcome back, ${result['admin']['first_name'] ?? 'Admin'}!',
-            ),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 2),
+        showLoginSuccessSnackBar(
+          context,
+          name: resolveAdminDisplayName(
+            result['admin'] is Map<String, dynamic>
+                ? result['admin'] as Map<String, dynamic>
+                : null,
           ),
+          isAdmin: true,
         );
 
         // Navigate to dashboard

@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
 import '../services/unified_auth_state.dart';
+import '../utils/auth_feedback.dart';
 import '../utils/dom_input_utils.dart';
 
 class LoginModal extends StatefulWidget {
@@ -231,14 +232,10 @@ class _LoginModalState extends State<LoginModal>
 
           if (mounted) {
             Navigator.of(context).pop();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  'Welcome back, ${result.adminData!['first_name'] ?? 'Admin'}!',
-                ),
-                backgroundColor: Colors.green,
-                duration: const Duration(seconds: 3),
-              ),
+            showLoginSuccessSnackBar(
+              context,
+              name: resolveAdminDisplayName(result.adminData),
+              isAdmin: true,
             );
             Navigator.of(context).pushReplacementNamed('/admin-statistics');
           }
@@ -258,15 +255,12 @@ class _LoginModalState extends State<LoginModal>
 
           if (mounted) {
             Navigator.of(context).pop();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  'Welcome back, ${result.customerData!.firstName} ${result.customerData!.lastName}!',
-                ),
-                backgroundColor: Colors.green,
-                duration: const Duration(seconds: 3),
-              ),
-            );
+            final memberName =
+                result.customerData!.fullName.trim().isNotEmpty
+                    ? result.customerData!.fullName
+                    : '${result.customerData!.firstName} ${result.customerData!.lastName}'
+                        .trim();
+            showLoginSuccessSnackBar(context, name: memberName);
           }
           return;
         }

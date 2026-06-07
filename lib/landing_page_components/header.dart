@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../services/unified_auth_state.dart';
 import '../services/apk_download_button.dart';
+import '../utils/auth_feedback.dart';
+import '../utils/logout_confirm_dialog.dart';
 import 'sidenav.dart';
 
 // Landing header: transparent over the hero; solid bar once scrolled (sticky).
@@ -48,12 +50,14 @@ class MainHeader extends StatelessWidget {
     final double bottomContentPadding = isDesktop ? 12 : 6;
 
     Future<void> handleLogout() async {
+      final confirmed = await showLogoutConfirmDialog(context);
+      if (!confirmed) return;
+
+      final memberName = unifiedAuthState.customerName;
       await unifiedAuthState.logout();
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Logged out successfully')),
-        );
         Navigator.pushReplacementNamed(context, '/home');
+        showLogoutSuccessSnackBarFromRoot(name: memberName);
       }
     }
 

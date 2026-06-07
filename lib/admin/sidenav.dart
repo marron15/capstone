@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/unified_auth_state.dart';
+import '../utils/auth_feedback.dart';
+import '../utils/logout_confirm_dialog.dart';
 import '../main.dart' show navigatorKey;
 
 class SideNav extends StatefulWidget {
@@ -340,11 +342,18 @@ class _SideNavState extends State<SideNav> {
                         ),
                       ),
                       onPressed: () async {
+                        final confirmed = await showLogoutConfirmDialog(context);
+                        if (!confirmed || !context.mounted) return;
+
+                        final adminName = resolveAdminDisplayName(
+                          unifiedAuthState.adminData,
+                        );
                         await unifiedAuthState.logout();
                         if (!context.mounted) return;
                         Navigator.of(
                           context,
                         ).pushNamedAndRemoveUntil('/home', (route) => false);
+                        showLogoutSuccessSnackBarFromRoot(name: adminName);
                       },
                     ),
                   ),

@@ -3,6 +3,8 @@ import '../services/auth_service.dart';
 
 import '../User Profile/profile_data.dart';
 import '../services/unified_auth_state.dart';
+import '../utils/auth_feedback.dart';
+import '../utils/logout_confirm_dialog.dart';
 
 class LogoutButton extends StatelessWidget {
   final Widget? child;
@@ -32,30 +34,12 @@ class LogoutButton extends StatelessWidget {
     bool shouldLogout = true;
 
     if (showConfirmDialog) {
-      shouldLogout =
-          await showDialog<bool>(
-            context: context,
-            builder: (BuildContext context) {
-              return AlertDialog(
-                title: const Text('Logout'),
-                content: const Text('Are you sure you want to logout?'),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(false),
-                    child: const Text('Cancel'),
-                  ),
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(true),
-                    child: Text('Logout', style: TextStyle(color: textColor)),
-                  ),
-                ],
-              );
-            },
-          ) ??
-          false;
+      shouldLogout = await showLogoutConfirmDialog(context);
     }
 
     if (!shouldLogout) return;
+
+    final memberName = unifiedAuthState.customerName;
 
     try {
       // Show loading indicator
@@ -68,9 +52,7 @@ class LogoutButton extends StatelessWidget {
       );
 
       // Call logout API
-      final result = await AuthService.logout(
-        customerId: unifiedAuthState.customerId,
-      );
+      await AuthService.logout(customerId: unifiedAuthState.customerId);
 
       // Clear auth state and local profile data
       unifiedAuthState.logout();
@@ -80,26 +62,13 @@ class LogoutButton extends StatelessWidget {
       Navigator.of(context).pop();
 
       if (context.mounted) {
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              result.success
-                  ? 'Logged out successfully!'
-                  : 'Successfully Logout',
-            ),
-            backgroundColor: Colors.green,
-          ),
-        );
-
-        // Call success callback if provided
         onLogoutSuccess?.call();
 
-        // Navigate to landing page
         Navigator.of(context).pushNamedAndRemoveUntil(
           '/home',
           (Route<dynamic> route) => false,
         );
+        showLogoutSuccessSnackBarFromRoot(name: memberName);
       }
     } catch (e) {
       // Close loading dialog
@@ -110,19 +79,13 @@ class LogoutButton extends StatelessWidget {
       profileNotifier.value = ProfileData();
 
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Successfully Logout'),
-            backgroundColor: Colors.orange,
-          ),
-        );
-
         onLogoutSuccess?.call();
 
         Navigator.of(context).pushNamedAndRemoveUntil(
           '/home',
           (Route<dynamic> route) => false,
         );
+        showLogoutSuccessSnackBarFromRoot(name: memberName);
       }
     }
   }
