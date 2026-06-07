@@ -6,7 +6,6 @@ import '../modal/timein_timeout_history_modal.dart';
 import '../modal/renew_membership_history_modal.dart';
 import '../services/api_service.dart';
 import '../services/refresh_service.dart';
-import '../excel/excel_import.dart';
 import '../../PH phone number valid/phone_formatter.dart';
 
 class CustomersPage extends StatefulWidget {
@@ -1279,44 +1278,8 @@ class _CustomersPageState extends State<CustomersPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // First row with Export and View Archives buttons
                   Row(
                     children: [
-                      // Export
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed:
-                              () => exportCustomersToExcel(
-                                context,
-                                _getVisibleCustomers(),
-                              ),
-                          icon: const Icon(Icons.table_view, size: 16),
-                          label: const Text('Export'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: Colors.black87,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
-                            ),
-                          ).copyWith(
-                            side: WidgetStateProperty.resolveWith(
-                              (states) => BorderSide(
-                                color:
-                                    states.contains(WidgetState.hovered)
-                                        ? const Color(0xFFFFA812)
-                                        : Colors.black26,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      // View Archives toggle
                       Expanded(
                         child: ElevatedButton.icon(
                           onPressed: _showArchivedCustomers,
@@ -1799,6 +1762,7 @@ class _CustomersPageState extends State<CustomersPage> {
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
@@ -1834,89 +1798,43 @@ class _CustomersPageState extends State<CustomersPage> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  // Toolbar wraps onto multiple lines instead of overflowing
-                  // on narrower desktop widths (e.g. sidebar open at ~900px).
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
-                    crossAxisAlignment: WrapCrossAlignment.center,
+                  Row(
                     children: [
-                      // Search box (responsive width)
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(
-                          minWidth: 240,
-                          maxWidth: 560,
-                        ),
-                        child: SizedBox(
-                          height: 42,
-                          width: 560,
-                          child: TextField(
-                            controller: _searchController,
-                            onChanged:
-                                (val) => setState(() {
-                                  _searchQuery = val;
-                                  _pageIndex = 0;
-                                }),
-                            style: const TextStyle(color: Colors.black87),
-                            decoration: InputDecoration(
-                              hintText: 'Search',
-                              prefixIcon: const Icon(
-                                Icons.search,
-                                size: 20,
-                                color: Colors.black54,
-                              ),
-                              filled: true,
-                              fillColor: Colors.white,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(
-                                  color: Colors.black26,
-                                ),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 0,
-                              ),
-                              isDense: true,
+                      SizedBox(
+                        width: 560,
+                        height: 42,
+                        child: TextField(
+                          controller: _searchController,
+                          onChanged:
+                              (val) => setState(() {
+                                _searchQuery = val;
+                                _pageIndex = 0;
+                              }),
+                          style: const TextStyle(color: Colors.black87),
+                          decoration: InputDecoration(
+                            hintText: 'Search',
+                            prefixIcon: const Icon(
+                              Icons.search,
+                              size: 20,
+                              color: Colors.black54,
                             ),
+                            filled: true,
+                            fillColor: Colors.white,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(
+                                color: Colors.black26,
+                              ),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 0,
+                            ),
+                            isDense: true,
                           ),
                         ),
                       ),
-                      // Export button (Excel icon + text)
-                      OutlinedButton.icon(
-                        onPressed:
-                            () => exportCustomersToExcel(
-                              context,
-                              _getVisibleCustomers(),
-                            ),
-                        icon: const Icon(
-                          Icons.table_chart_rounded,
-                          color: Colors.teal,
-                          size: 20,
-                        ),
-                        label: const Text('Export'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.black87,
-                          side: const BorderSide(color: Colors.black26),
-                          backgroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 10,
-                          ),
-                        ).copyWith(
-                          side: WidgetStateProperty.resolveWith(
-                            (states) => BorderSide(
-                              color:
-                                  states.contains(WidgetState.hovered)
-                                      ? const Color(0xFFFFA812)
-                                      : Colors.black26,
-                            ),
-                          ),
-                        ),
-                      ),
+                      const SizedBox(width: 12),
                       OutlinedButton.icon(
                         onPressed:
                             _selectedCustomerIds.isEmpty
@@ -1993,6 +1911,7 @@ class _CustomersPageState extends State<CustomersPage> {
                           ),
                         ),
                       ),
+                      const Spacer(),
                     ],
                   ),
                 ],

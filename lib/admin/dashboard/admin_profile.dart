@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../excel/excel_admin_export.dart';
 import '../modal/admin_modal.dart';
 import '../sidenav.dart';
 import 'package:capstone/admin/card/admin_profile_card.dart'
@@ -251,11 +250,6 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
   // Refresh admins from API
   Future<void> _refreshAdmins() async {
     await _loadAdmins();
-  }
-
-  // Export admins to Excel
-  Future<void> _exportAdmins() async {
-    await exportAdminsToExcel(context, _filteredAdmins);
   }
 
   // Table layout for desktop
@@ -554,48 +548,8 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                                     ],
                                   ),
                                   const SizedBox(height: 12),
-                                  // First row with Export and View Archives buttons
                                   Row(
                                     children: [
-                                      // Export
-                                      Expanded(
-                                        child: ElevatedButton.icon(
-                                          onPressed: _exportAdmins,
-                                          icon: const Icon(
-                                            Icons.table_view,
-                                            size: 16,
-                                          ),
-                                          label: const Text('Export'),
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.white,
-                                            foregroundColor: Colors.black87,
-                                            elevation: 0,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(20),
-                                            ),
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 12,
-                                              vertical: 8,
-                                            ),
-                                          ).copyWith(
-                                            side:
-                                                WidgetStateProperty.resolveWith(
-                                                  (states) => BorderSide(
-                                                    color:
-                                                        states.contains(
-                                                              WidgetState
-                                                                  .hovered,
-                                                            )
-                                                            ? hoverAccent
-                                                            : Colors.black26,
-                                                  ),
-                                                ),
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      // View Archives toggle
                                       Expanded(
                                         child: ElevatedButton.icon(
                                           onPressed: () {
@@ -761,44 +715,6 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                                                   vertical: 0,
                                                 ),
                                             isDense: true,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      // Export button styled like customers page
-                                      OutlinedButton.icon(
-                                        onPressed: _exportAdmins,
-                                        icon: const Icon(
-                                          Icons.table_chart_rounded,
-                                          color: Colors.teal,
-                                          size: 20,
-                                        ),
-                                        label: const Text('Export'),
-                                        style: OutlinedButton.styleFrom(
-                                          foregroundColor: Colors.black87,
-                                          side: const BorderSide(
-                                            color: Colors.black26,
-                                          ),
-                                          backgroundColor: Colors.white,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              12,
-                                            ),
-                                          ),
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 14,
-                                            vertical: 10,
-                                          ),
-                                        ).copyWith(
-                                          side: WidgetStateProperty.resolveWith(
-                                            (states) => BorderSide(
-                                              color:
-                                                  states.contains(
-                                                        WidgetState.hovered,
-                                                      )
-                                                      ? hoverAccent
-                                                      : Colors.black26,
-                                            ),
                                           ),
                                         ),
                                       ),

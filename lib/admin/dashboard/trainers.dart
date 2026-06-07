@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../sidenav.dart';
 import '../modal/trainer_modal.dart';
 import '../services/api_service.dart';
-import '../excel/excel_trainer_export.dart';
 import 'package:capstone/PH phone number valid/phone_formatter.dart';
 import 'package:capstone/PH phone number valid/phone_validator.dart';
 
@@ -353,54 +352,8 @@ class _TrainersPageState extends State<TrainersPage> {
                                     ],
                                   ),
                                   const SizedBox(height: 12),
-                                  // First row with Export and View Archives buttons
                                   Row(
                                     children: [
-                                      // Export
-                                      Expanded(
-                                        child: ElevatedButton.icon(
-                                          onPressed:
-                                              () => exportTrainersToExcel(
-                                                context,
-                                                _filteredTrainers,
-                                              ),
-                                          icon: const Icon(
-                                            Icons.table_view,
-                                            size: 16,
-                                          ),
-                                          label: const Text('Export'),
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.white,
-                                            foregroundColor: Colors.black87,
-                                            elevation: 0,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(20),
-                                            ),
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 12,
-                                              vertical: 8,
-                                            ),
-                                          ).copyWith(
-                                            side:
-                                                WidgetStateProperty.resolveWith(
-                                                  (states) => BorderSide(
-                                                    color:
-                                                        states.contains(
-                                                              WidgetState
-                                                                  .hovered,
-                                                            )
-                                                            ? const Color(
-                                                              0xFFFFA812,
-                                                            )
-                                                            : Colors.black26,
-                                                  ),
-                                                ),
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      // View Archives toggle
                                       Expanded(
                                         child: ElevatedButton.icon(
                                           onPressed: () {
@@ -985,48 +938,6 @@ class _TrainersPageState extends State<TrainersPage> {
                                                   vertical: 0,
                                                 ),
                                             isDense: true,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      // Export button (Excel icon + text)
-                                      OutlinedButton.icon(
-                                        onPressed:
-                                            () => exportTrainersToExcel(
-                                              context,
-                                              _filteredTrainers,
-                                            ),
-                                        icon: const Icon(
-                                          Icons.table_chart_rounded,
-                                          color: Colors.teal,
-                                          size: 20,
-                                        ),
-                                        label: const Text('Export'),
-                                        style: OutlinedButton.styleFrom(
-                                          foregroundColor: Colors.black87,
-                                          side: const BorderSide(
-                                            color: Colors.black26,
-                                          ),
-                                          backgroundColor: Colors.white,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              12,
-                                            ),
-                                          ),
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 14,
-                                            vertical: 10,
-                                          ),
-                                        ).copyWith(
-                                          side: WidgetStateProperty.resolveWith(
-                                            (states) => BorderSide(
-                                              color:
-                                                  states.contains(
-                                                        WidgetState.hovered,
-                                                      )
-                                                      ? const Color(0xFFFFA812)
-                                                      : Colors.black26,
-                                            ),
                                           ),
                                         ),
                                       ),

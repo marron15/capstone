@@ -166,6 +166,71 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
     _searchDebounce = Timer(const Duration(milliseconds: 350), _fetchLogs);
   }
 
+  Widget _buildSearchField({required bool isMobile}) {
+    final borderRadius = BorderRadius.circular(isMobile ? 20 : 12);
+    final borderSide =
+        isMobile
+            ? BorderSide(color: Colors.grey.shade300)
+            : const BorderSide(color: Colors.black26);
+
+    return SizedBox(
+      width: isMobile ? double.infinity : 560,
+      height: isMobile ? 36 : 42,
+      child: TextField(
+        controller: _searchController,
+        onChanged: _handleSearchChanged,
+        style: TextStyle(
+          color: Colors.black87,
+          fontSize: isMobile ? 14 : null,
+        ),
+        decoration: InputDecoration(
+          hintText: 'Search by members, action, ID...',
+          hintStyle: TextStyle(
+            fontSize: isMobile ? 14 : null,
+            color: Colors.grey.shade500,
+          ),
+          prefixIcon: Icon(
+            Icons.search,
+            size: isMobile ? 18 : 20,
+            color: Colors.black54,
+          ),
+          suffixIcon:
+              _searchQuery.isNotEmpty
+                  ? IconButton(
+                    icon: const Icon(Icons.clear, size: 18),
+                    onPressed: () {
+                      _searchController.clear();
+                      _handleSearchChanged('');
+                    },
+                  )
+                  : null,
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: borderRadius,
+            borderSide: borderSide,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: borderRadius,
+            borderSide: borderSide,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: borderRadius,
+            borderSide: BorderSide(
+              color: isMobile ? Colors.grey.shade400 : Colors.black26,
+              width: isMobile ? 1.5 : 1,
+            ),
+          ),
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: isMobile ? 8 : 0,
+          ),
+          isDense: true,
+        ),
+      ),
+    );
+  }
+
   void _handleActorTypeChange(String? actorType) {
     if (_selectedActorType == actorType) return;
     setState(() {
@@ -445,30 +510,7 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
           ),
           const SizedBox(height: 16),
           if (isMobile) ...[
-            TextField(
-              controller: _searchController,
-              onChanged: _handleSearchChanged,
-              decoration: InputDecoration(
-                prefixIcon: const Icon(Icons.search),
-                hintText: 'Search by members, action, ID...',
-                filled: true,
-                fillColor: Colors.grey.shade100,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide.none,
-                ),
-                suffixIcon:
-                    _searchQuery.isNotEmpty
-                        ? IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: () {
-                            _searchController.clear();
-                            _handleSearchChanged('');
-                          },
-                        )
-                        : null,
-              ),
-            ),
+            _buildSearchField(isMobile: true),
             const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
@@ -477,30 +519,7 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
             const SizedBox(height: 12),
             _buildActorFilterChipRow(isMobile: true),
           ] else ...[
-            TextField(
-              controller: _searchController,
-              onChanged: _handleSearchChanged,
-              decoration: InputDecoration(
-                prefixIcon: const Icon(Icons.search),
-                hintText: 'Search by members, action, ID...',
-                filled: true,
-                fillColor: Colors.grey.shade100,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide.none,
-                ),
-                suffixIcon:
-                    _searchQuery.isNotEmpty
-                        ? IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: () {
-                            _searchController.clear();
-                            _handleSearchChanged('');
-                          },
-                        )
-                        : null,
-              ),
-            ),
+            _buildSearchField(isMobile: false),
             const SizedBox(height: 12),
             _buildActorFilterChipRow(isMobile: false),
           ],
