@@ -149,15 +149,7 @@ class MainHeader extends StatelessWidget {
                           child: FittedBox(
                             fit: BoxFit.scaleDown,
                             alignment: Alignment.centerLeft,
-                            child: const Text(
-                              'RNR FITNESS GYM',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 30,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 1.2,
-                              ),
-                            ),
+                            child: const _BrandLogo(fontSize: 30),
                           ),
                         ),
                         Align(
@@ -285,15 +277,13 @@ class MainHeader extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: Text(
-                          'RNR FITNESS GYM',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: isSmallMobile ? 22 : 26,
-                            fontWeight: FontWeight.bold,
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.center,
+                          child: _BrandLogo(
+                            fontSize: isSmallMobile ? 18 : 22,
                             letterSpacing: 0.8,
+                            spacing: 8,
                           ),
                         ),
                       ),
@@ -303,6 +293,59 @@ class MainHeader extends StatelessWidget {
                   ),
         ),
       ),
+    );
+  }
+}
+
+class _BrandLogo extends StatelessWidget {
+  final double fontSize;
+  final double letterSpacing;
+  final double spacing;
+
+  const _BrandLogo({
+    required this.fontSize,
+    this.letterSpacing = 1.2,
+    this.spacing = 12,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // RNR1.png is a tall canvas; crop/zoom so letter height matches the text.
+    final double logoHeight = fontSize * 1.1;
+    final double logoWidth = fontSize * 2.5;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        SizedBox(
+          height: logoHeight,
+          width: logoWidth,
+          child: ClipRect(
+            child: Align(
+              alignment: Alignment.center,
+              child: Transform.scale(
+                scale: 2.8,
+                child: Image.asset(
+                  'assets/images/RNR1.png',
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+          ),
+        ),
+        SizedBox(width: spacing),
+        Text(
+          'FITNESS GYM',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: fontSize,
+            fontWeight: FontWeight.bold,
+            letterSpacing: letterSpacing,
+            height: 1.0,
+          ),
+        ),
+      ],
     );
   }
 }
