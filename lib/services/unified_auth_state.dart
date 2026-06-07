@@ -246,6 +246,9 @@ class UnifiedAuthState extends ChangeNotifier {
         // Fetch membership data when restoring auth state
         await _fetchMembershipData(customerData['customer_id']);
         await _fetchAttendanceSnapshot(customerData['customer_id']);
+        await AuthService.loadCustomerProfileIntoNotifier(
+          customerData['customer_id'],
+        );
 
         // Customer auth restored
       } else if (refreshToken != null) {
@@ -290,51 +293,6 @@ class UnifiedAuthState extends ChangeNotifier {
     try {
       final result = await AuthService.validateToken(token);
       if (result.success) {
-        // Also populate profile data when token is validated
-        if (result.customerData != null) {
-          // Parse composite address string into fields when possible
-          String? fullAddress = result.customerData!.address;
-          String? street;
-          String? city;
-          String? stateProvince;
-          String? postalCode;
-          String? country;
-          if (fullAddress != null && fullAddress.trim().isNotEmpty) {
-            final parts = fullAddress.split(',').map((e) => e.trim()).toList();
-            if (parts.isNotEmpty) street = parts[0];
-            if (parts.length > 1) city = parts[1];
-            if (parts.length > 2) stateProvince = parts[2];
-            if (parts.length > 3) postalCode = parts[3];
-            if (parts.length > 4) country = parts[4];
-          }
-          DateTime? birthdateObj;
-          if (result.customerData!.birthdate != null &&
-              result.customerData!.birthdate!.isNotEmpty) {
-            try {
-              birthdateObj = DateTime.parse(result.customerData!.birthdate!);
-            } catch (e) {
-              debugPrint('Birthdate parse error: $e');
-            }
-          }
-
-          profileNotifier.value = ProfileData(
-            firstName: result.customerData!.firstName,
-            middleName: result.customerData!.middleName ?? '',
-            lastName: result.customerData!.lastName,
-            contactNumber: result.customerData!.phoneNumber ?? '',
-            email: result.customerData!.email,
-            birthdate: birthdateObj,
-            emergencyContactName: result.customerData!.emergencyContactName,
-            emergencyContactPhone: result.customerData!.emergencyContactNumber,
-            address: fullAddress ?? '',
-            street: street,
-            city: city,
-            stateProvince: stateProvince,
-            postalCode: postalCode,
-            country: country,
-          );
-        }
-
         return {
           'success': true,
           'data': {
@@ -368,6 +326,9 @@ class UnifiedAuthState extends ChangeNotifier {
 
         await _fetchMembershipData(customerData['customer_id']);
         await _fetchAttendanceSnapshot(customerData['customer_id']);
+        await AuthService.loadCustomerProfileIntoNotifier(
+          customerData['customer_id'],
+        );
         await _saveCustomerTokens();
         notifyListeners();
       } else {

@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 
+import '../User Profile/profile_data.dart';
+
 class AuthService {
   static String _apiHost() {
     // Production: use your domain
@@ -362,6 +364,68 @@ class AuthService {
     }
   }
 
+  static Future<void> loadCustomerProfileIntoNotifier(int customerId) async {
+    try {
+      final result = await getProfileData(customerId);
+      if (!result.success || result.profileData == null) return;
+
+      final data = result.profileData!;
+      String? fullAddress = data['address']?.toString();
+      String? street;
+      String? city;
+      String? stateProvince;
+      String? postalCode;
+      String? country;
+
+      final addressDetails = data['address_details'];
+      if (addressDetails is Map<String, dynamic>) {
+        street = addressDetails['street']?.toString();
+        city = addressDetails['city']?.toString();
+        stateProvince =
+            addressDetails['state']?.toString() ??
+            addressDetails['state_province']?.toString();
+        postalCode =
+            addressDetails['zip_code']?.toString() ??
+            addressDetails['postal_code']?.toString();
+        country = addressDetails['country']?.toString();
+      }
+
+      if (fullAddress != null && fullAddress.trim().isNotEmpty) {
+        final parts = fullAddress.split(',').map((e) => e.trim()).toList();
+        street ??= parts.isNotEmpty ? parts[0] : null;
+        city ??= parts.length > 1 ? parts[1] : null;
+        stateProvince ??= parts.length > 2 ? parts[2] : null;
+        postalCode ??= parts.length > 3 ? parts[3] : null;
+        country ??= parts.length > 4 ? parts[4] : null;
+      }
+
+      DateTime? birthdateObj;
+      final birthdateRaw = data['birthdate']?.toString();
+      if (birthdateRaw != null && birthdateRaw.isNotEmpty) {
+        birthdateObj = DateTime.tryParse(birthdateRaw);
+      }
+
+      profileNotifier.value = ProfileData(
+        firstName: data['first_name']?.toString() ?? '',
+        middleName: data['middle_name']?.toString() ?? '',
+        lastName: data['last_name']?.toString() ?? '',
+        contactNumber: data['phone_number']?.toString() ?? '',
+        email: data['email']?.toString() ?? '',
+        birthdate: birthdateObj,
+        emergencyContactName: data['emergency_contact_name']?.toString(),
+        emergencyContactPhone: data['emergency_contact_number']?.toString(),
+        address: fullAddress ?? '',
+        street: street,
+        city: city,
+        stateProvince: stateProvince,
+        postalCode: postalCode,
+        country: country,
+      );
+    } catch (e) {
+      debugPrint('loadCustomerProfileIntoNotifier error: $e');
+    }
+  }
+
   // Update customer profile
   static Future<ProfileUpdateResult> updateProfile(
     Map<String, dynamic> profileData,
@@ -600,38 +664,36 @@ class CustomerData {
   }
 }
 
-// Helper to fetch composed address for a customer from address table when not returned by login APIs
+// Fetch only the logged-in customer's address (never all addresses).
 Future<String?> _fetchAddressForCustomer(int customerId) async {
   try {
-    final response = await http.get(
-      Uri.parse(AuthService._addressBase + '/getAllAddress.php'),
-      headers: {'Accept': 'application/json'},
+    final response = await http.post(
+      Uri.parse('${AuthService._addressBase}/getAddressByCustomerId.php'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: json.encode({'customer_id': customerId}),
     );
     if (response.statusCode != 200) return null;
-    final dynamic data = json.decode(response.body);
-    if (data is List) {
-      final match = data.cast<Map>().firstWhere(
-        (e) => e['customer_id']?.toString() == customerId.toString(),
-        orElse: () => {},
-      );
-      if (match.isNotEmpty) {
-        final street = (match['street'] ?? '').toString().trim();
-        final city = (match['city'] ?? '').toString().trim();
-        final state = (match['state'] ?? '').toString().trim();
-        final zip =
-            (match['zip_code'] ?? match['postal_code'] ?? '').toString().trim();
-        final country = (match['country'] ?? '').toString().trim();
-        final parts =
-            [
-              street,
-              city,
-              state,
-              zip,
-              country,
-            ].where((p) => p.isNotEmpty).toList();
-        if (parts.isNotEmpty) return parts.join(', ');
-      }
+
+    final dynamic decoded = json.decode(response.body);
+    if (decoded is! Map<String, dynamic> || decoded['success'] != true) {
+      return null;
     }
+
+    final dynamic data = decoded['data'];
+    if (data is! Map<String, dynamic>) return null;
+
+    final street = (data['street'] ?? '').toString().trim();
+    final city = (data['city'] ?? '').toString().trim();
+    final state = (data['state'] ?? '').toString().trim();
+    final zip =
+        (data['zip_code'] ?? data['postal_code'] ?? '').toString().trim();
+    final country = (data['country'] ?? '').toString().trim();
+    final parts =
+        [street, city, state, zip, country].where((p) => p.isNotEmpty).toList();
+    if (parts.isNotEmpty) return parts.join(', ');
   } catch (_) {}
   return null;
 }

@@ -1030,10 +1030,15 @@ class ApiService {
   }
 
   // Fetch all trainers
-  static Future<List<Map<String, String>>> getAllTrainers() async {
+  static Future<List<Map<String, String>>> getAllTrainers({
+    bool adminScope = false,
+  }) async {
     try {
+      final uri = Uri.parse(getAllTrainersEndpoint).replace(
+        queryParameters: adminScope ? {'scope': 'admin'} : null,
+      );
       final response = await http.get(
-        Uri.parse(getAllTrainersEndpoint),
+        uri,
         headers: {'Accept': 'application/json'},
       );
 
@@ -1065,7 +1070,7 @@ class ApiService {
   // Trainers total count helper
   static Future<int> getTrainersTotal({bool activeOnly = true}) async {
     try {
-      final list = await getAllTrainers();
+      final list = await getAllTrainers(adminScope: true);
       if (activeOnly) {
         return list
             .where((t) => (t['status'] ?? '').toLowerCase() != 'inactive')

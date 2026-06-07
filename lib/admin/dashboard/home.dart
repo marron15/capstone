@@ -286,7 +286,7 @@ class _StatisticPageState extends State<StatisticPage>
         AdminService.getAllAdmins(),
         ApiService.getCustomersByStatusWithPasswords(status: 'active'),
         ApiService.getCustomersByStatus(status: 'inactive'),
-        ApiService.getAllTrainers(),
+        ApiService.getAllTrainers(adminScope: true),
         ApiService.getMembershipTotals(),
         AttendanceService.fetchRecords(), // Fetch all attendance records
       ]);

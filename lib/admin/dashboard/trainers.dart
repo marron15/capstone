@@ -91,7 +91,8 @@ class _TrainersPageState extends State<TrainersPage> {
 
   Future<void> _loadTrainers() async {
     setState(() => _isLoading = true);
-    final List<Map<String, String>> list = await ApiService.getAllTrainers();
+    final List<Map<String, String>> list =
+        await ApiService.getAllTrainers(adminScope: true);
     setState(() {
       _trainers
         ..clear()

@@ -451,11 +451,6 @@ class AttendanceService {
     final int adminId =
         idRaw is int ? idRaw : int.tryParse(idRaw.toString()) ?? 0;
 
-    final String contact =
-        adminData['phone_number']?.toString().trim().isNotEmpty == true
-            ? adminData['phone_number'].toString()
-            : (adminData['email']?.toString() ?? '');
-
     final String firstName =
         (adminData['first_name'] ?? adminData['firstName'] ?? '')
             .toString()
@@ -466,17 +461,13 @@ class AttendanceService {
             .trim();
     final String displayName = '$firstName $lastName'.trim();
 
-    final String saltSource =
-        adminData['updated_at']?.toString() ??
-        adminData['created_at']?.toString() ??
-        DateTime.now().toIso8601String();
+    final String saltSource = DateTime.now().toUtc().toIso8601String();
 
     final payload = <String, dynamic>{
       'issuer': 'RNR_FITNESS',
       'type': 'admin_attendance',
       'adminId': adminId,
-      'contact': contact,
-      'salt': base64Url.encode(utf8.encode('$contact|$adminId|$saltSource')),
+      'salt': base64Url.encode(utf8.encode('$adminId|$saltSource')),
       'generatedAt': DateTime.now().toUtc().toIso8601String(),
     };
 
